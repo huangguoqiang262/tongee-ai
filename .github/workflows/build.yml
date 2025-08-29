@@ -46,9 +46,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Xcode command line tools
-        run: xcode-select --install
-
       - name: Build and notarize Electron app
         run: npm run build:mac
         env:
