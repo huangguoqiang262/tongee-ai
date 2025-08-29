@@ -1,0 +1,46 @@
+appId: com.tongee.ai
+productName: tongee-app
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+extraResources:
+  - build/**
+win:
+  executableName: tongee-app
+  target:
+    - target: nsis
+      arch:
+        - x64
+asarUnpack:
+  - build/icon.ico
+  - resources/**
+  - node_modules/**/*.node
+nsis:
+  oneClick: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createStartMenuShortcut: true
+  createDesktopShortcut: true
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  deleteAppDataOnUninstall: true
+mac:
+  category: public.app-category.utilities
+  artifactName: ${name}-${version}-setup.${ext}
+  target:
+    - { target: 'dmg', arch: 'x64' }
+    - { target: 'zip', arch: 'x64' }
+appImage:
+  artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+publish:
+  provider: generic
+  url: https://example.com/auto-updates
+electronDownload:
+  mirror: https://npmmirror.com/mirrors/electron/
