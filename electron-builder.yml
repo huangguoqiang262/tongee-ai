@@ -35,8 +35,14 @@ mac:
   category: public.app-category.utilities
   artifactName: ${name}-${version}-setup.${ext}
   icon: build/icon.icns
+  extendInfo:
+    LSMinimumSystemVersion: "10.15"
+    NSPrincipalClass: "NSApplication"
+    NSHighResolutionCapable: true
+    LSUIElement: false
   target:
-    - { target: 'dmg', arch: 'x64' }
+    - target: 'dmg'
+      arch: 'x64'
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
