@@ -12,6 +12,7 @@ extraResources:
   - build/**
 win:
   executableName: tongee-app
+  icon: build/icon.ico
   target:
     - target: nsis
       arch:
@@ -24,21 +25,16 @@ nsis:
   oneClick: false
   allowElevation: true
   allowToChangeInstallationDirectory: true
-  createStartMenuShortcut: true
   createDesktopShortcut: true
+  createStartMenuShortcut: true
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   deleteAppDataOnUninstall: true
 mac:
   category: public.app-category.utilities
-  entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   artifactName: ${name}-${version}-setup.${ext}
+  icon: build/icon.icns
   target:
     - { target: 'dmg', arch: 'x64' }
 appImage:
