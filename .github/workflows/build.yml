@@ -29,7 +29,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: dist/*
+          path:
+        - dist/*.exe
+        - dist/*.yml
 
   build-macos:
     runs-on: macos-latest
@@ -57,4 +59,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: dist/*
+          path:
+        - dist/*.dmg
+        - dist/*.yml
