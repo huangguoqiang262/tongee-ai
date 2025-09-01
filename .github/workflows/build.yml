@@ -30,8 +30,8 @@ jobs:
         with:
           name: windows-build
           path:
-            - dist/*.exe
-            - dist/*.yml
+            dist/*.exe
+            dist/*.yml
 
   build-macos:
     runs-on: macos-latest
@@ -60,5 +60,5 @@ jobs:
         with:
           name: macos-build
           path:
-              - dist/*.dmg
-              - dist/*.yml
+            dist/*.dmg
+            dist/*.yml
