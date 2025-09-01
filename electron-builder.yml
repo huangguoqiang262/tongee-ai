@@ -17,7 +17,7 @@ win:
       arch:
         - x64
 asarUnpack:
-  - build/icon.ico
+  - build/*
   - resources/**
   - node_modules/**/*.node
 nsis:

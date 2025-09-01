@@ -15,7 +15,8 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux",
+    "build-icon": "electron-icon-builder --input=./build/icon.png --output=build --flatten"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -29,6 +30,7 @@
     "@vitejs/plugin-vue": "^6.0.0",
     "electron": "^37.2.3",
     "electron-builder": "^25.1.8",
+    "electron-icon-builder": "^2.0.1",
     "electron-vite": "^4.0.0",
     "eslint": "^9.31.0",
     "eslint-plugin-vue": "^10.3.0",
