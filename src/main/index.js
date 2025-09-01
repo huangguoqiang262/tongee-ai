@@ -40,6 +40,8 @@ function createWindow() {
       sandbox: false
     }
   })
+  // 打开控制台
+  // mainWindow.webContents.openDevTools()
   // // 点击关闭按钮最小化到托盘
   // mainWindow.on('close', (event) => {
   //   // 阻止窗口默认关闭行为
