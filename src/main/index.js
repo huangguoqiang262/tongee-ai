@@ -4,22 +4,22 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // import icon from '../../resources/icon.png?asset'
 let mainWindow = null // 全局窗口变量
 let tray = null // 托盘实例变量
-// const gotTheLock = app.requestSingleInstanceLock()
-// // 新增多开限制逻辑（必须在协议注册前添加）
-// if (!gotTheLock) {
-//   app.quit()
-// } else {
-//   app.on('second-instance', () => {
-//     // 当第二个实例启动时，激活现有窗口
-//     if (!mainWindow || mainWindow.isDestroyed()) {
-//       createWindow()
-//     } else {
-//       if (mainWindow.isMinimized()) mainWindow.restore()
-//       mainWindow.show()
-//       mainWindow.focus()
-//     }
-//   })
-// }
+const gotTheLock = app.requestSingleInstanceLock()
+// 新增多开限制逻辑（必须在协议注册前添加）
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    // 当第二个实例启动时，激活现有窗口
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createWindow()
+    } else {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+}
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -29,13 +29,15 @@ function createWindow() {
     minHeight: 800, // 最小高度
     show: false,
     autoHideMenuBar: true,
-    icon: join(process.resourcesPath, 'build/icon.ico'), // 修改此行
+    icon: is.dev
+      ? join(__dirname, '../../build/icon.ico')
+      : join(process.resourcesPath, 'build/icon.ico'), // 修改此行
     webPreferences: {
       webSecurity: false,
       nodeIntegration: false, // 禁用 nodeIntegration
       contextIsolation: true, // 启用上下文隔离
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: true
+      sandbox: false
     }
   })
   // // 点击关闭按钮最小化到托盘
@@ -73,8 +75,10 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.tongee.ai')
   // 创建系统托盘
   if (!tray) {
-    const iconPath = join(process.resourcesPath, 'build/icon.ico')
-    tray = new Tray(iconPath)
+    const iconPath = is.dev
+        ? join(__dirname, '../../build/icon.ico')
+        : join(process.resourcesPath, 'build/icon.ico'), // 修改此行
+      tray = new Tray(iconPath)
     const contextMenu = Menu.buildFromTemplate([
       {
         label: '显示窗口',
@@ -157,5 +161,6 @@ app.on('before-quit', () => {
     tray.destroy()
   }
 })
+
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

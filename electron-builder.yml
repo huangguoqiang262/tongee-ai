@@ -40,6 +40,10 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
+  provider: github
+  owner: "your-github-username"
+  repo: "tongee-app"
+  private: true
   provider: generic
   url: https://example.com/auto-updates
 electronDownload:
