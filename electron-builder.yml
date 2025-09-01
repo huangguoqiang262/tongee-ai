@@ -35,16 +35,13 @@ mac:
   artifactName: ${name}-${version}-setup.${ext}
   target:
     - { target: 'dmg', arch: 'x64' }
-    - { target: 'zip', arch: 'x64' }
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: github
-  owner: "your-github-username"
-  repo: "tongee-app"
-  private: true
-  provider: generic
-  url: https://example.com/auto-updates
+    provider: github
+    owner: "your-github-username"
+    repo: "tongee-app"
+    private: true
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
