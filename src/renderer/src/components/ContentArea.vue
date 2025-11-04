@@ -55,7 +55,7 @@
 import { ref, computed } from 'vue'
 import SearchHome from './SearchHome.vue'
 import NotFound from './NotFound.vue'
-import AccountSettings from './AccountSettings.vue'
+import AccountSettings from './account-settings/AccountSettings.vue'
 import Square from './Square.vue'
 import MessageCenter from './MessageCenter.vue'
 import RepositoryStore from './RepositoryStore.vue'
