@@ -115,15 +115,20 @@
         class="input"
         placeholder="询问关于该文档的任何问题"
       ></el-input>
-      <!-- <img class="send-icon" src="@renderer/assets/send-icon.png" alt="" /> -->
-      <img class="send-icon disabled" src="@renderer/assets/disabled-send-icon.png" alt="" />
+      <img v-if="inputValue.trim().length" class="send-icon" src="@renderer/assets/send-icon.png" alt="" @click="handleSendClick" />
+      <img v-else class="send-icon disabled" src="@renderer/assets/disabled-send-icon.png" alt="" />
     </div>
   </div>
-  <OnlineFileSelection v-model="onlineFileVisible" :files="onlineFileList"></OnlineFileSelection>
+  <OnlineFileSelection
+    v-model="onlineFileVisible"
+    :files="onlineFileList"
+    @submit-import="handleSubmitImport"
+  ></OnlineFileSelection>
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted } from 'vue'
+import cloneDeep from 'lodash.clonedeep'
+import { ref, watch, nextTick, onMounted, inject } from 'vue'
 import Logo from '@renderer/assets/logo.png'
 import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
@@ -131,6 +136,7 @@ import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
+let replaceActiveTab = inject('replaceActiveTab')
 const inputValue = ref('')
 const emit = defineEmits(['closeMenu'])
 const closeMenu = () => {
@@ -148,17 +154,20 @@ const onlineFileList = ref([
   {
     name: '糖吉医疗最新文献更新.docx',
     cover: Logo,
-    id: '1'
+    id: '1',
+    type: 'docx'
   },
   {
-    name: '糖吉医疗最新文献更新.docx',
+    name: '糖吉医疗最新文献更新.ppt',
     cover: Logo,
-    id: '2'
+    id: '2',
+    type: 'ppt'
   },
   {
-    name: '糖吉医疗最新文献更新.docx',
+    name: '糖吉医疗最新文献更新.xlsx',
     cover: Logo,
-    id: '3'
+    id: '3',
+    type: 'xlsx'
   }
 ])
 // 文件列表
@@ -191,6 +200,27 @@ const localfileList = ref([
   //   checked: false
   // },
 ])
+// 处理发送点击
+const handleSendClick = () => {
+  if (inputValue.value.trim().length) {
+    console.log(inputValue.value, '发送消息')
+    replaceActiveTab({
+      title: inputValue.value,
+      url: 'FeedbackCenter',
+      isInternal: true,
+      attrs: {
+        files: cloneDeep(localfileList.value)
+      }
+    })
+    inputValue.value = ''
+    localfileList.value = []
+  }
+}
+// 处理导入文件
+const handleSubmitImport = (files) => {
+  console.log(files, '导入文件')
+  localfileList.value.push(...files)
+}
 const handleSelectChange = (file) => {
   // 如果是文件夹，使用新的目录树结构
   if (file.webkitRelativePath) {

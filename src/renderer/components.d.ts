@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AccountSettings: typeof import('./src/components/AccountSettings.vue')['default']
     AddRepository: typeof import('./src/components/convenient-component/AddRepository.vue')['default']
+    ChatInput: typeof import('./src/components/chat-components/chat-input.vue')['default']
     ContentArea: typeof import('./src/components/ContentArea.vue')['default']
     ContextMenu: typeof import('./src/components/ContextMenu.vue')['default']
     DepartmentSelector: typeof import('./src/components/convenient-component/DepartmentSelector.vue')['default']

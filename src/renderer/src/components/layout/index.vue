@@ -14,16 +14,25 @@ import { ref, provide } from 'vue'
 const mainContentRef = ref(null)
 
 // 提供全局添加标签的方法
-const addNewTabGlobal = (url = 'SearchHome', isInternal = true) => {
+const addNewTabGlobal = (config = {}) => {
   if (mainContentRef.value && mainContentRef.value.addNewTab) {
-    mainContentRef.value.addNewTab(url, isInternal)
+    mainContentRef.value.addNewTab(config)
   } else {
     console.warn('MainContent组件未加载或addNewTab方法不存在')
   }
 }
-
+// 提供全局替换当前活动标签的方法
+const replaceActiveTab = (config = {}) => {
+  if (mainContentRef.value && mainContentRef.value.replaceActiveTab) {
+    mainContentRef.value.replaceActiveTab(config)
+  } else {
+    console.warn('MainContent组件未加载或replaceActiveTab方法不存在')
+  }
+}
 // 使用provide将方法提供给所有子组件
 provide('addNewTab', addNewTabGlobal)
+// 提供全局替换当前活动标签的方法
+provide('replaceActiveTab', replaceActiveTab)
 </script>
 
 <style scoped lang="scss">

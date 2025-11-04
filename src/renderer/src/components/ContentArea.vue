@@ -17,6 +17,7 @@
         <template v-for="tab in tabs" :key="tab.id">
           <component
             :is="internalComponents[tab.url]"
+            v-bind="tab.attrs || {}"
             v-show="tab.isInternal && isActiveTab(tab.id)"
           />
         </template>
