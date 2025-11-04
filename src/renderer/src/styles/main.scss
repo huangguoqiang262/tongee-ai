@@ -1,0 +1,63 @@
+:root {
+  --primary-color: #1aa19b;
+  --primary-bg-color: #eeeff0;
+  --default-font-color: #221815;
+  // --el-input-text-color: var(--primary-color);
+  --el-text-color-regular: var(--default-font-color);
+  --el-input-icon-color: var(--primary-color);
+  --el-select-input-color: var(--primary-color) !important;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--primary-bg-color);
+  background-size: cover;
+  user-select: none;
+  margin: 0;
+  #screenShotPanel {
+    * {
+      box-sizing: content-box;
+    }
+    #screenShotContainer {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  }
+}
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background-color: #dddcdc;
+
+  &:hover {
+    background-color: #909090;
+  }
+}
+#app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+}
+.el-overlay {
+  background-color: rgba(216, 216, 216, 0.5) !important;
+  user-select: none;
+  .el-overlay-dialog {
+    user-select: none;
+  }
+  .el-message-box {
+    border-radius: 8px;
+  }
+  .el-dialog {
+    padding: 17px 20px;
+    box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
+    border-radius: 16px !important;
+  }
+}

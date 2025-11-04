@@ -1,0 +1,21 @@
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+  $colors: (
+    'primary': (
+      'base': #1aa19b
+    )
+  )
+);
+* {
+  box-sizing: border-box;
+  font-weight: normal;
+}
+
+ul {
+  list-style: none;
+}
+img {
+  -webkit-user-drag: none;
+  -moz-user-drag: none;
+  -ms-user-drag: none;
+  user-drag: none;
+}
