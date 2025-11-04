@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-box">
-    <img class="logo-img" src="@renderer/assets/default-avatar.png" alt="糖源AI" />
+    <img class="logo-img" src="@renderer/assets/default-avatar.png" alt="糖源AI" @click="accountClick()"/>
     <div class="memu-box">
       <div v-for="item in menuList" :key="item.url" class="menu-item" @click="handleClick(item)">
         <el-tooltip effect="light" content="" placement="right">
@@ -91,6 +91,15 @@ const handleClick = (item) => {
     isInternal: true
   })
 }
+
+const accountClick = () => {
+  addNewTab({
+    url: 'AccountSettings',
+    title: '账户设置',
+    icon: repositoryIcon,
+    isInternal: true
+  })
+}
 </script>
 
 <style scoped lang="scss">
@@ -116,6 +125,7 @@ const handleClick = (item) => {
     -moz-user-drag: none;
     -ms-user-drag: none;
     user-drag: none;
+    app-region: none;
   }
   .memu-box {
     flex: 1;
