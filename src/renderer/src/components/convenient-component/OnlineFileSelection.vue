@@ -43,22 +43,29 @@
         </div>
         <div class="file-list">
           <div v-for="item in props.files" :key="item.id" class="file-item">
-            <el-checkbox class="check" v-model="item.checked" />
+            <el-checkbox v-model="item.checked" class="check" />
             <div class="item-content">
               <div class="content-left">
                 <img :src="item.cover" alt="" />
                 <div class="title">{{ item.name }}</div>
               </div>
-              <div class="type">{{ item.type }}</div>
+              <div class="type">{{ item.type.toUpperCase() }}</div>
             </div>
           </div>
         </div>
-
       </div>
       <template #footer>
+        <div class="is_checked">已选择 {{ checkedFiles.length }} 个文件</div>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="close">取消</el-button>
-          <el-button class="confirm-btn" type="primary" @click="submitForm"> 导入 </el-button>
+          <el-button
+            class="confirm-btn"
+            :disabled="checkedFiles.length === 0"
+            type="primary"
+            @click="submitImport"
+          >
+            导入
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -66,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 const onlineFileVisible = defineModel({ type: Boolean })
 const props = defineProps({
   files: {
@@ -74,6 +81,7 @@ const props = defineProps({
     default: () => []
   }
 })
+const emits = defineEmits(['submitImport'])
 let pathlist = ref([
   {
     name: '知识库',
@@ -91,15 +99,21 @@ let pathlist = ref([
     level: 1
   }
 ])
+// 已选择的文件数量
+const checkedFiles = computed(() => {
+  return props.files.filter((item) => item.checked)
+})
 const close = () => {
   onlineFileVisible.value = false
 }
 onMounted(() => {
-  console.log(props.list,666);
-
+  console.log(props.list, 666)
 })
 // 提交
-const submitForm = () => {}
+const submitImport = () => {
+  emits('submitImport', checkedFiles.value)
+  onlineFileVisible.value = false
+}
 </script>
 
 <style scoped lang="scss">
@@ -222,12 +236,16 @@ const submitForm = () => {}
               .item-content {
                 flex: 1;
                 overflow: hidden;
+                display: flex;
+                align-items: center;
                 .content-left {
-                  flex-shrink: 0;
+                  flex: 1;
                   display: flex;
                   align-items: center;
                   gap: 10px;
+                  overflow: hidden;
                   img {
+                    flex-shrink: 0;
                     width: 18px;
                     height: 18px;
                     border-radius: 2px;
@@ -248,14 +266,24 @@ const submitForm = () => {}
               }
               .check {
                 flex-shrink: 0;
-                width: 18px;
-                height: 18px;
+                .el-checkbox__inner {
+                  width: 18px;
+                  height: 18px;
+                }
               }
             }
           }
         }
       }
       .el-dialog__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .is_checked {
+          font-size: 14px;
+          color: #909090;
+          line-height: 16px;
+        }
         .dialog-footer {
           flex-shrink: 0;
           .cancel-btn,

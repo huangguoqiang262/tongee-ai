@@ -133,6 +133,7 @@ const initTabs = () => {
       canGoForward: false,
       backgroundColor: '#fff',
       isInternal: true,
+      props: {},
       history: [],
       currentHistoryIndex: -1
     }
@@ -166,11 +167,17 @@ const addNewTab = (config = {}) => {
     canGoBack: false,
     canGoForward: false,
     isInternal: options.isInternal,
+    props: options.props || {},
     history: [],
     currentHistoryIndex: -1
   }
 
   newTab.isInternal = !/^(https?|ftp|file|mailto|tel):/.test(options.url)
+  const index = tabs.value.findIndex((tab) => tab.url === options.url)
+  if (index !== -1&& newTab.url != 'SearchHome') {
+    activeTabId.value = tabs.value[index].id
+    return
+  }
   tabs.value.push(newTab)
   activeTabId.value = newTab.id
   updateAddressBar()
@@ -194,7 +201,60 @@ const addNewTab = (config = {}) => {
     newTab.canGoForward = false
   }
 }
+//  替换当前活动标签
+const replaceActiveTab = (config = {}) => {
+  var options = Object.assign(
+    {
+      url: 'SearchHome',
+      title: '首页',
+      icon: defaultIcon,
+      isInternal: true
+    },
+    config
+  )
+  const newTab = {
+    id: Date.now(),
+    url: options.url,
+    title: options.title,
+    favicon: options.icon,
+    loading: options.isInternal ? false : true,
+    backgroundColor: options.backgroundColor || '#fff',
+    progress: 0,
+    canGoBack: false,
+    canGoForward: false,
+    isInternal: options.isInternal,
+    props: options.props || {},
+    history: [],
+    currentHistoryIndex: -1
+  }
 
+  newTab.isInternal = !/^(https?|ftp|file|mailto|tel):/.test(options.url)
+  const index = tabs.value.findIndex((tab) => tab.id === activeTabId.value)
+  if (index !== -1) {
+    tabs.value[index] = newTab
+    activeTabId.value = newTab.id
+  }
+  updateAddressBar()
+
+  // 更新标签布局
+  nextTick(() => {
+    updateTabLayout()
+    // 滚动到最右侧显示新标签
+    const tabsContainer = document.querySelector('.tabs-container')
+    if (tabsContainer) {
+      tabsContainer.scrollLeft = tabsContainer.scrollWidth
+    }
+  })
+
+  // 初始化历史记录 - 修复：确保新建标签页时正确初始化历史记录
+  if (!newTab.isInternal && newTab.url) {
+    newTab.history = [] // 直接初始化为包含当前URL的数组
+    newTab.currentHistoryIndex = -1
+    // 确保导航按钮状态正确
+    newTab.canGoBack = false
+    newTab.canGoForward = false
+  }
+}
 // 监听标签数量变化，自动更新布局
 watch(
   () => tabs.value.length,
@@ -609,7 +669,7 @@ const handleContextMenuAction = (action) => {
     case 'duplicate': {
       const tabToDuplicate = tabs.value.find((tab) => tab.id === tabId)
       if (tabToDuplicate) {
-        addNewTab(tabToDuplicate.url)
+        addNewTab(tabToDuplicate)
       }
       break
     }
@@ -655,7 +715,8 @@ onMounted(() => {
   document.addEventListener('click', hideContextMenu)
 })
 defineExpose({
-  addNewTab
+  addNewTab,
+  replaceActiveTab
 })
 </script>
 
