@@ -25,6 +25,10 @@ body {
     }
   }
 }
+@font-face {
+  font-family: DOUYINSANSBOLD;
+  src: url('@renderer/styles/douyinmeihaoti.otf');
+}
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;

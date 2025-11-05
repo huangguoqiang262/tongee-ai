@@ -168,6 +168,7 @@
       v-if="activeMenu === 'DocumentInterpretation'"
       @close-menu="closeMenu"
     />
+    <IntelligentWriting v-if="activeMenu === 'IntelligentWriting'" @close-menu="closeMenu" />
   </div>
 </template>
 <script>
@@ -179,7 +180,7 @@ import documentInterpretationIcon from '@renderer/assets/home/documentInterpreta
 import updateNotificationIcon from '@renderer/assets/home/updateNotification-icon.png'
 import quickAccessIcon from '@renderer/assets/home/quickAccess-icon.png'
 import imageProductionIcon from '@renderer/assets/home/imageProduction-icon.png'
-import IntelligentWriting from '@renderer/assets/home/intelligentWriting-icon.png'
+import IntelligentWritingIcon from '@renderer/assets/home/intelligentWriting-icon.png'
 export default {
   name: 'MessageInput',
   inject: ['addNewTab'],
@@ -311,7 +312,7 @@ export default {
         {
           url: 'IntelligentWriting',
           title: '智能写作',
-          icon: IntelligentWriting,
+          icon: IntelligentWritingIcon,
           isLink: false
         }
       ],
@@ -525,43 +526,43 @@ export default {
     customUpload(options) {
       console.log(options, 88888)
       return
-      const xhr = new XMLHttpRequest()
-      const formData = new FormData()
-      formData.append('file[]', options.file)
-      var otherParams = {
-        type: 'file',
-        uniacid: this.uniacid
-      }
-      // 添加其他参数到formData
-      for (const key in otherParams) {
-        formData.append(key, otherParams[key])
-      }
+      // const xhr = new XMLHttpRequest()
+      // const formData = new FormData()
+      // formData.append('file[]', options.file)
+      // var otherParams = {
+      //   type: 'file',
+      //   uniacid: this.uniacid
+      // }
+      // // 添加其他参数到formData
+      // for (const key in otherParams) {
+      //   formData.append(key, otherParams[key])
+      // }
 
-      xhr.open('POST', this.aiFileUpload, true)
+      // xhr.open('POST', this.aiFileUpload, true)
 
-      // 设置请求头
-      xhr.setRequestHeader('Authorization', this.importHeader.token)
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percent = (event.loaded / event.total) * 100
-          this.handleUploadProgress({ percent }, options.file, this.fileList)
-        }
-      })
+      // // 设置请求头
+      // xhr.setRequestHeader('Authorization', this.importHeader.token)
+      // xhr.upload.addEventListener('progress', (event) => {
+      //   if (event.lengthComputable) {
+      //     const percent = (event.loaded / event.total) * 100
+      //     this.handleUploadProgress({ percent }, options.file, this.fileList)
+      //   }
+      // })
 
-      xhr.addEventListener('load', () => {
-        var response = JSON.parse(xhr.response)
-        if (xhr.status == 200 && response.code == 200) {
-          this.handleUploadSuccess(response, options.file, this.fileList)
-        } else {
-          this.handleUploadError(response, options.file, this.fileList)
-        }
-      })
+      // xhr.addEventListener('load', () => {
+      //   var response = JSON.parse(xhr.response)
+      //   if (xhr.status == 200 && response.code == 200) {
+      //     this.handleUploadSuccess(response, options.file, this.fileList)
+      //   } else {
+      //     this.handleUploadError(response, options.file, this.fileList)
+      //   }
+      // })
 
-      xhr.addEventListener('error', (err) => {
-        this.handleUploadError(err, options.file, this.fileList)
-      })
+      // xhr.addEventListener('error', (err) => {
+      //   this.handleUploadError(err, options.file, this.fileList)
+      // })
 
-      xhr.send(formData)
+      // xhr.send(formData)
     },
     handleFileChange(file, fileListArr) {
       fileListArr.forEach((f) => {

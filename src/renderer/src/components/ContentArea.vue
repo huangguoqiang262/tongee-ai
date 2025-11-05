@@ -63,6 +63,7 @@ import History from './History.vue'
 import Recycled from './Recycled.vue'
 import FeedbackCenter from './FeedbackCenter.vue'
 import Note from './Note.vue'
+import ChatPage from './ChatPage.vue'
 const internalComponents = {
   SearchHome,
   NotFound,
@@ -73,7 +74,8 @@ const internalComponents = {
   History,
   Recycled,
   FeedbackCenter,
-  Note
+  Note,
+  ChatPage
 }
 const isValidInternalUrl = (url) => {
   return Object.keys(internalComponents).includes(url)

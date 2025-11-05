@@ -1,15 +1,17 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { handleCopyMsg } from '@renderer/utils/index'
-import { getToken } from '@renderer/utils/auth'
 import LOGO from '@renderer/assets/logo.png'
 const props = defineProps({
   //是否正在对话
   isChatting: {
     type: Boolean,
     default: false
+  },
+  direction: {
+    type: String,
+    default: 'left'
   },
   fontSize: {
     type: Number,
@@ -33,7 +35,7 @@ const props = defineProps({
   },
   showUser: {
     type: Boolean,
-    default: true
+    default: false
   },
   isFanCreation: {
     type: Boolean,
@@ -42,7 +44,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['newChat', 'retrievedDocumen', 'lookOver'])
 const localSpread = ref(props.message.spread || false)
-const router = useRouter()
 const markdownMessage = ref(null)
 
 const logo = LOGO
@@ -87,15 +88,6 @@ const lookOver = (file) => {
   emit('lookOver', file)
 }
 
-const fanCreation = () => {
-  const text = markdownMessage.value.$el.innerText
-  const content = JSON.parse(JSON.stringify(text)).replace(/\n+/g, '').substr(0, 1000)
-  const URI = `https://shuziren.zishuju.cn/auth-redirect?access_token=${getToken()}&redirect=/app/rewriter&textContent=${encodeURI(
-    content
-  )}`
-  router.push({ path: '/ai/external', query: { url: URI } })
-}
-
 const exportToMd = (msg) => {
   if (!msg.textContent?.trim()) {
     ElMessage.warning('暂无AI回复内容可保存')
@@ -118,14 +110,13 @@ const exportToMd = (msg) => {
 
 <!-- 整个div是用来调整内部消息的位置，每条消息占的空间都是一整行，然后根据right还是left来调整内部的消息是靠右边还是靠左边 -->
 <template>
-  <div :class="['message-row', props.showUser && props.message.type === 'USER' ? 'right' : 'left']">
+  <div :class="['message-row', (props.message.type === 'USER' && props.direction === 'right') ? 'right' : 'left']">
     <!-- 消息展示，分为上下，上面是头像，下面是消息 -->
     <div v-if="props.message.type === 'USER'" class="row">
       <!-- 发送的消息或者回复的消息 -->
       <div
-        class="message"
+        class="message message-user"
         :style="{
-          fontSize: props.fontSize + 'px',
           fontFamily: props.serif ? 'serif' : 'sans-serif'
         }"
       >
@@ -183,15 +174,11 @@ const exportToMd = (msg) => {
           </div>
         </div>
       </div>
-      <!-- 头像， -->
-      <div class="avatar-wrapper">
-        <el-avatar :src="props.avatar || logo" class="avatar" shape="square" />
-      </div>
     </div>
     <div v-if="props.message.type !== 'USER'" class="row">
       <div class="avatar-wrapper">
-        <el-avatar :src="logo" class="avatar" shape="square" />
-        <span>紫薯AI</span>
+        <el-avatar :size="18" :src="logo" class="avatar" shape="square" />
+        <span>糖源AI</span>
       </div>
       <!-- 发送的消息或者回复的消息 -->
       <div
@@ -257,17 +244,6 @@ const exportToMd = (msg) => {
               </div>
             </div>
           </div>
-          <div
-            v-if="
-              props.message.textContent &&
-              props.message.textContent !== '系统错误，请稍后再试' &&
-              props.message.textContent !== '已取消回答'
-            "
-            class="guidance"
-          >
-            <i class="el-icon-warning icon"></i>
-            本回答由 AI 生成，内容仅供参考，请仔细甄别。
-          </div>
           <div class="empty-message download-message" style="text-align: left">
             {{ props.message.dateline }}
             <el-tooltip
@@ -293,24 +269,6 @@ const exportToMd = (msg) => {
               placement="top"
             >
               <i class="el-icon-download icon" @click="exportToMd(props.message)"></i>
-            </el-tooltip>
-            <el-tooltip
-              v-if="
-                props.message.textContent &&
-                props.message.textContent !== '系统错误，请稍后再试' &&
-                props.message.textContent !== '已取消回答' &&
-                props.isFanCreation
-              "
-              effect="dark"
-              content="文案二创"
-              placement="top"
-            >
-              <img
-                class="fan-creation-icon"
-                src="@renderer/assets/fan-creation-icon.png"
-                alt=""
-                @click="fanCreation"
-              />
             </el-tooltip>
           </div>
           <div
@@ -354,25 +312,6 @@ const exportToMd = (msg) => {
     line-height: 24px;
     border-radius: 8px;
     cursor: pointer;
-  }
-}
-.guidance {
-  margin: 10px 0;
-  width: 100%;
-  padding: 10px;
-  background: #fef8f6;
-  border-radius: 6px;
-  border: 1px solid #ffd2b1;
-  font-family: 'PingFang SC', ping-fangSC;
-  font-weight: 400;
-  font-size: 14px;
-  color: #e5773d;
-  display: flex;
-  align-items: center;
-  .icon {
-    flex-shrink: 0;
-    margin-right: 5px;
-    font-size: 16px;
   }
 }
 .file-list {
@@ -521,13 +460,12 @@ const exportToMd = (msg) => {
         margin-bottom: 20px;
         justify-content: flex-start;
         align-items: center;
-        color: var(--primary-bg-color);
-        font-size: 16px;
+        color: var(--default-font-color);
+        font-size: 14px;
         font-weight: bold;
       }
       .message {
         box-sizing: border-box;
-        padding-left: 50px;
         max-width: 90%;
       }
     }
@@ -605,7 +543,7 @@ const exportToMd = (msg) => {
         font-family: inherit !important;
       }
       :deep(.vuepress-markdown-body:not(.custom)) {
-        padding: 0.5rem 1.5rem;
+        padding: 0;
         border-radius: 8px;
       }
       .image {
