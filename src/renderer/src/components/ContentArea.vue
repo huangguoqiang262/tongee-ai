@@ -50,12 +50,13 @@
     </template>
   </div>
 </template>
-
+    
 <script setup>
 import { ref, computed } from 'vue'
 import SearchHome from './SearchHome.vue'
 import NotFound from './NotFound.vue'
 import AccountSettings from './account-settings/AccountSettings.vue'
+import ServiceManual from './account-settings/ServiceManual.vue'
 import Square from './Square.vue'
 import MessageCenter from './MessageCenter.vue'
 import RepositoryStore from './RepositoryStore.vue'
@@ -73,7 +74,8 @@ const internalComponents = {
   History,
   Recycled,
   FeedbackCenter,
-  Note
+  Note,
+  ServiceManual
 }
 const isValidInternalUrl = (url) => {
   return Object.keys(internalComponents).includes(url)
