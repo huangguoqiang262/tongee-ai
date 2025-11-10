@@ -3,11 +3,6 @@ import { computed, ref } from 'vue'
 // import { handleCopyMsg } from '@renderer/utils/index'
 import LOGO from '@renderer/assets/logo.png'
 const props = defineProps({
-  //是否正在对话
-  isChatting: {
-    type: Boolean,
-    default: false
-  },
   direction: {
     type: String,
     default: 'left'
@@ -41,7 +36,7 @@ const props = defineProps({
     default: false
   }
 })
-const emit = defineEmits(['newChat', 'retrievedDocumen', 'lookOver','handleAction'])
+const emit = defineEmits(['newChat', 'retrievedDocumen', 'lookOver', 'handleAction', 'handleCheck'])
 const localSpread = ref(props.message.spread || false)
 const markdownMessage = ref(null)
 
@@ -52,33 +47,11 @@ const images = computed(() => {
   return medias.filter((media) => media.type === 'image').map((media) => media.data)
 })
 
-const issueContentItems = computed(() => {
-  let content = JSON.parse(JSON.stringify(props.message.issueContentText)) || ''
-  if (content) {
-    content = content.replace(/(\d?&\|)|(\n\n)*/g, '')
-    content = content.replace(/^\s*/, '')
-  }
-  // 根据分隔符类型拆分内容
-  return content.split('\n')
-})
-
-const newChat = (item) => {
-  if (props.isChatting && item) {
-    return false
-  }
-  emit('newChat', item)
-}
-
-//下载引用文件
-const retrievedDocumen = (fileId) => {
-  emit('retrievedDocumen', fileId)
-}
-
 const lookOver = (file) => {
   emit('lookOver', file)
 }
-const handleAction = (acticon) => {
-  emit('handleAction', acticon)
+const handleClick = () => {
+  emit('handleCheck', props.message)
 }
 // const exportToMd = (msg) => {
 //   if (!msg.textContent?.trim()) {
@@ -107,9 +80,15 @@ const handleAction = (acticon) => {
       'message-row',
       props.message.type === 'USER' && props.direction === 'right' ? 'right' : 'left'
     ]"
+    @click="handleClick"
   >
     <!-- 消息展示，分为上下，上面是头像，下面是消息 -->
     <div v-if="props.message.type === 'USER'" class="row">
+      <el-checkbox
+        user-type="user"
+        class="checkbox"
+        :model-value="props.message.checked"
+      ></el-checkbox>
       <!-- 发送的消息或者回复的消息 -->
       <div
         class="message message-user"
@@ -166,53 +145,54 @@ const handleAction = (acticon) => {
       </div>
     </div>
     <div v-if="props.message.type !== 'USER'" class="row">
-      <div class="avatar-wrapper">
-        <el-avatar :size="18" :src="logo" class="avatar" shape="square" />
-        <span>糖源AI</span>
-      </div>
-      <!-- 发送的消息或者回复的消息 -->
-      <div
-        class="message"
-        :style="{
-          fontSize: props.fontSize + 'px',
-          fontFamily: props.serif ? 'serif' : 'sans-serif'
-        }"
-      >
-        <div class="message-content" :class="{ 'no-line-number': !props.lineNumber }">
-          <!-- 如果消息的内容为空则显示加载动画 -->
-          <TextLoading
-            v-if="
-              props.message.textContent !== '系统错误，请稍后再试' &&
-              ((props.message.reasoningContentText && props.message.textContent) ||
-                !props.message.textContent)
-            "
-            v-model:spread="localSpread"
-            :reasoning-content-text="props.message.reasoningContentText"
-            :loading-text="
-              props.message.textContent
-                ? props.message.textContent == '已取消回答'
-                  ? '已取消'
-                  : '已思考完成'
-                : '思考中'
-            "
-          >
-          </TextLoading>
-          <div
-            v-if="props.message.reasoningContentText && props.message.spread"
-            class="reasoningContentText"
-          >
-            <div class="line"></div>
-            <div class="reasoning-content">
-              {{ props.message.reasoningContentText }}
+      <el-checkbox class="checkbox" :model-value="props.message.checked"></el-checkbox>
+      <div>
+        <div class="avatar-wrapper">
+          <el-avatar :size="18" :src="logo" class="avatar" shape="square" />
+          <span>糖源AI</span>
+        </div>
+        <!-- 发送的消息或者回复的消息 -->
+        <div
+          class="message"
+          :style="{
+            fontSize: props.fontSize + 'px',
+            fontFamily: props.serif ? 'serif' : 'sans-serif'
+          }"
+        >
+          <div class="message-content" :class="{ 'no-line-number': !props.lineNumber }">
+            <!-- 如果消息的内容为空则显示加载动画 -->
+            <TextLoading
+              v-if="
+                props.message.textContent !== '系统错误，请稍后再试' &&
+                ((props.message.reasoningContentText && props.message.textContent) ||
+                  !props.message.textContent)
+              "
+              v-model:spread="localSpread"
+              :reasoning-content-text="props.message.reasoningContentText"
+              :loading-text="
+                props.message.textContent
+                  ? props.message.textContent == '已取消回答'
+                    ? '已取消'
+                    : '已思考完成'
+                  : '思考中'
+              "
+            >
+            </TextLoading>
+            <div
+              v-if="props.message.reasoningContentText && props.message.spread"
+              class="reasoningContentText"
+            >
+              <div class="line"></div>
+              <div class="reasoning-content">
+                {{ props.message.reasoningContentText }}
+              </div>
             </div>
-          </div>
-          <MarkdownMessage
-            v-if="props.message.textContent"
-            ref="markdownMessage"
-            :type="props.message.type"
-            :message="props.message.textContent"
-          ></MarkdownMessage>
-          <div class="image-box">
+            <MarkdownMessage
+              v-if="props.message.textContent"
+              ref="markdownMessage"
+              :type="props.message.type"
+              :message="props.message.textContent"
+            ></MarkdownMessage>
             <el-image
               v-for="(image, index) in images"
               :key="'image' + index"
@@ -221,60 +201,6 @@ const handleAction = (acticon) => {
               :preview-src-list="images"
               :src="image"
             ></el-image>
-          </div>
-          <div v-if="props.message.retrievedDocumentList.length" class="file-list">
-            <div class="file-label">
-              本次回答共{{ props.message.retrievedDocumentList.length }}个引用文件
-            </div>
-            <div
-              v-for="file in props.message.retrievedDocumentList"
-              :key="file.fileId"
-              class="file-item"
-            >
-              <div class="file-name" @click="retrievedDocumen(file.fileId)">
-                {{ file.fileName }}
-              </div>
-            </div>
-          </div>
-          <div class="empty-message download-message">
-            <el-tooltip effect="light" content="记笔记" placement="bottom">
-              <img
-                class="chat-icon"
-                src="@renderer/assets/chat-icon/note-icon.png"
-                alt=""
-                @click="handleAction('takeNote')"
-              />
-            </el-tooltip>
-            <el-tooltip effect="light" content="分享" placement="bottom">
-              <img
-                class="chat-icon"
-                src="@renderer/assets/chat-icon/share-icon.png"
-                alt=""
-                @click="handleAction('share')"
-              />
-            </el-tooltip>
-            <el-tooltip effect="light" content="反馈" placement="bottom">
-              <img
-                class="chat-icon"
-                src="@renderer/assets/chat-icon/feedback-icon.png"
-                alt=""
-                @click="handleAction('feedback')"
-              />
-            </el-tooltip>
-          </div>
-          <div
-            v-if="props.message.issueContentText && props.message.issueContentText.length"
-            class="question-box"
-          >
-            <div
-              v-for="(item, index) in issueContentItems"
-              :key="index"
-              class="question-item"
-              :style="{ cursor: props.isChatting ? 'not-allowed' : 'pointer' }"
-              @click.stop="newChat(item)"
-            >
-              {{ item }}
-            </div>
           </div>
         </div>
       </div>
@@ -458,6 +384,23 @@ const handleAction = (acticon) => {
   // 默认靠左边显示
   .row {
     width: 100%;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 13px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    :deep(.checkbox) {
+      flex-shrink: 0;
+      height: 18px;
+      &[user-type='user'] {
+        margin-top: 11px;
+      }
+      .el-checkbox__inner {
+        width: 18px;
+        height: 18px;
+      }
+    }
     .avatar-wrapper {
       display: flex;
       gap: 10px;
@@ -532,23 +475,15 @@ const handleAction = (acticon) => {
         line-height: 20px;
         color: var(--default-font-color);
         font-family: inherit !important;
+        background: transparent;
       }
       :deep(.vuepress-markdown-body:not(.custom)) {
         padding: 0;
         border-radius: 8px;
       }
-      .image-box {
-        width: 100%;
-        margin: 10px 0;
-        display: flex;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 10px;
-        .image {
-          width: 246px;
-          height: 246px;
-          border-radius: 6px;
-        }
+      .image {
+        width: 600px;
+        height: 600px;
       }
     }
   }

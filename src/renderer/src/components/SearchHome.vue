@@ -66,7 +66,7 @@ const selectModel = (model) => {
 }
 const messageInput = ref(null)
 const handleClick = (e) => {
-  messageInput.value.focusChange(e)
+  messageInput.value?.focusChange(e)
 }
 const selectKnows = (know) => {
   console.log(know)

@@ -17,27 +17,14 @@
       <div class="empty-text">Hi，有任何问题，尽管提问</div>
     </div>
     <div class="search-box">
-      <chat-input
-        v-if="activeSession"
-        key="input"
+      <el-input
+        v-model="message.text"
+        autosize
         class="message-input"
-        :models="models"
-        :model_id="activeSession.model_id"
-        :userknows="userknows"
-        :source-knows="sourceKnows"
-        :send-shortcut="activeSession.sendShortcut"
-        :knowledge_ids="activeSession.knowledge_ids"
-        :is-chatting="isChatting"
-        :attach_file="attach_file"
-        :sold-out="activeSession.agent_chat_status == 0 ? true : false"
-        @select-model="selectModel"
-        @select-library="selectKnows"
-        @send="handleSendMessage"
-        @uploaded-attachment="uploadedAttachment"
-        @clear-attach="clearAttach"
-        @stop-chat="stopChat"
-      >
-      </chat-input>
+        type="textarea"
+        placeholder="继续输入调整图片内容"
+        @keydown.enter.prevent="sendMessage"
+      ></el-input>
     </div>
     <take-notes
       ref="takeNotes"
@@ -63,6 +50,9 @@ const closePreview = () => {
 let replaceActiveTab = inject('replaceActiveTab')
 let isChatting = ref(false)
 let showChat = ref(true)
+let message = ref({
+  text: ''
+})
 let back = () => {
   replaceActiveTab({
     title: '首页',
@@ -85,7 +75,6 @@ const handleAction = (action) => {
     previewVisible.value = true
   }
 }
-const models = ref([])
 const activeSession = reactive({
   name: '',
   messages: [
@@ -108,7 +97,24 @@ const activeSession = reactive({
       textContent: '你好！我是AI助手，很高兴为您服务。这是一个AI回复的测试消息。',
       type: 'AI',
       completion_tokens: 15,
-      medias: [],
+      medias: [
+        {
+          type: 'image',
+          data: 'https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800'
+        },
+        {
+          type: 'image',
+          data: 'https://gips3.baidu.com/it/u=3886271102,3123389489&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=960'
+        },
+        {
+          type: 'image',
+          data: 'https://gips0.baidu.com/it/u=3602773692,1512483864&fm=3028&app=3028&f=JPEG&fmt=auto?w=960&h=1280'
+        },
+        {
+          type: 'image',
+          data: 'https://gips0.baidu.com/it/u=3560029307,576412274&fm=3028&app=3028&f=JPEG&fmt=auto?w=960&h=1280'
+        }
+      ],
       total_tokens: 25,
       prompt_tokens: 10,
       spread: false,
@@ -141,27 +147,24 @@ const activeSession = reactive({
   generateQuestions: true,
   agentInfo: {}
 })
-const userknows = ref([])
-const sourceKnows = ref([])
-const attach_file = ref([])
-const selectModel = (model) => {
-  console.log(model)
+const sendMessage = (event) => {
+  if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey || event.altKey)) {
+    message.value.text += '\n'
+  } else {
+    if (!message.value.text.trim().length) {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        message: '请输入消息',
+        type: 'warning'
+      })
+      return
+    }
+  }
 }
-const selectKnows = (know) => {
-  console.log(know)
-}
-const handleSendMessage = (message) => {
-  console.log(message)
-}
-const uploadedAttachment = (file) => {
-  console.log(file)
-}
-const clearAttach = () => {
-  attach_file.value = []
-}
-const stopChat = () => {
-  isChatting.value = false
-}
+
+// const stopChat = () => {
+//   isChatting.value = false
+// }
 </script>
 <style scoped lang="scss">
 .chat-page-box {
@@ -216,10 +219,19 @@ const stopChat = () => {
   }
   .search-box {
     width: 100%;
-    .message-input {
+    :deep(.message-input) {
+      display: block;
       width: 100%;
       max-width: 770px;
-      margin: 0 auto;
+      margin: 0 auto 30px;
+      .el-textarea__inner {
+        padding: 20px 18px;
+        min-height: 58px;
+        font-size: 16px;
+        max-height: 150px;
+        background: #f6f6f6;
+        border-radius: 12px;
+      }
     }
   }
 }

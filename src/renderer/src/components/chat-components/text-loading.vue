@@ -47,14 +47,13 @@ const rotate = () => {
   font-size: 14px;
   max-width: 140px;
   width: fit-content;
-  padding: 15px;
-  background: #fff;
+  // background: #fff;
   border-radius: 8px;
   margin-bottom: 10px;
   cursor: pointer;
   user-select: none;
   .text {
-    color: #2c3e50;
+    color: #909090;
   }
 }
 .rotate {

@@ -8,23 +8,28 @@
         </div>
       </div>
       <div class="notebook-list">
-        <div class="item active-note">
+        <div
+          v-for="item in notebookLists"
+          :key="item.id"
+          class="item"
+          :class="{ 'active-note': item.id === activeNotebook }"
+          @contextmenu="(e) => showContextMenu(e, item, 'notebook')"
+        >
           <div class="icon-box">
             <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
           </div>
-          <div class="title">糖吉医疗最新文献更新</div>
-        </div>
-        <div v-for="value in 28" :key="value" class="item">
-          <div class="icon-box">
-            <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
+          <div class="title">
+            <el-input
+              v-if="item.isEdit"
+              v-model="item.title"
+              autofocus
+              class="create-input"
+              placeholder="请输入笔记名称"
+              @keyup.enter="editNoteName(item)"
+              @blur="editNoteName(item)"
+            />
+            <template v-else>{{ item.title }}</template>
           </div>
-          <div class="title">糖吉医疗最新文献更新</div>
-        </div>
-        <div class="item">
-          <div class="icon-box">
-            <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
-          </div>
-          <div class="title">糖吉医疗最新文献更新</div>
         </div>
       </div>
     </div>
@@ -32,7 +37,8 @@
       <div class="center-head">
         <div class="title">工作笔记</div>
         <div class="right-handle-box">
-          <img class="add-icon" src="@renderer/assets/repository/add-icon.png" alt="" />
+          <img class="add-icon" src="@renderer/assets/repository/add-icon.png" alt=""
+          @click="beforeAddNote"/>
           <el-input
             v-model="searchValue"
             class="search-input"
@@ -51,7 +57,7 @@
           v-for="item in noteList"
           :key="item.id"
           class="note-item"
-          @contextmenu="(e) => showContextMenu(e, item)"
+          @contextmenu="(e) => showContextMenu(e, item, 'note')"
         >
           <div class="title">
             <el-input
@@ -302,6 +308,11 @@
         </div>
       </template>
     </el-dialog>
+    <NoteDetail
+      v-model="noteDetailVisible"
+      :noteDetail="noteDetail"
+      @save="saveNote"
+    />
   </div>
 </template>
 
@@ -315,7 +326,41 @@ import moveIcon from '@renderer/assets/contextMenu/move-icon.png'
 import renameIcon from '@renderer/assets/contextMenu/rename-icon.png'
 import deleteIcon from '@renderer/assets/contextMenu/delete-icon.png'
 let notebookVisible = ref(false)
+let noteDetailVisible = ref(false)
+let noteDetail = ref({
+  title: '',
+  content: ''
+})
+const beforeAddNote = () => {
+  noteDetail.value = {
+    title: '',
+    content: ''
+  }
+  noteDetailVisible.value = true
+}
+const saveNote = (data) => {
+  console.log(data);
+
+}
 let notebookFormRef = ref(null)
+let notebookLists = ref([
+  {
+    id: 1,
+    title: '糖吉医疗',
+    desc: '默认笔记本描述'
+  },
+  {
+    id: 2,
+    title: '糖吉医疗最新文献更新',
+    desc: '默认笔记本描述2'
+  },
+  {
+    id: 3,
+    title: '糖吉医疗最新文献更新',
+    desc: '默认笔记本描述'
+  }
+])
+let activeNotebook = ref(1)
 let notebookForm = ref({
   title: '',
   desc: ''
@@ -502,40 +547,60 @@ const editNoteName = (item) => {
   item.isEdit = false
 }
 // 右键菜单相关函数
-const showContextMenu = (e, item) => {
+const showContextMenu = (e, item, type) => {
   e.preventDefault()
   activeNote.value = item
-  contextMenu.value = {
-    show: true,
-    x: e.clientX,
-    y: e.clientY,
-    actionSheet: [
-      {
-        name: '重命名',
-        icon: renameIcon,
-        action: 'rename'
-      },
-      {
-        name: '分享',
-        icon: shareIcon,
-        action: 'share'
-      },
-      {
-        name: '添加到知识库',
-        icon: repositoryIcon,
-        action: 'addToRepository'
-      },
-      {
-        name: '移动到笔记本',
-        icon: moveIcon,
-        action: 'moveToNotebook'
-      },
-      {
-        name: '删除',
-        icon: deleteIcon,
-        action: 'delete'
-      }
-    ]
+  if (type == 'note') {
+    contextMenu.value = {
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      actionSheet: [
+        {
+          name: '重命名',
+          icon: renameIcon,
+          action: 'rename'
+        },
+        {
+          name: '分享',
+          icon: shareIcon,
+          action: 'share'
+        },
+        {
+          name: '添加到知识库',
+          icon: repositoryIcon,
+          action: 'addToRepository'
+        },
+        {
+          name: '移动到笔记本',
+          icon: moveIcon,
+          action: 'moveToNotebook'
+        },
+        {
+          name: '删除',
+          icon: deleteIcon,
+          action: 'delete'
+        }
+      ]
+    }
+  } else if (type == 'notebook') {
+    contextMenu.value = {
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      actionSheet: [
+        {
+          name: '重命名',
+          icon: renameIcon,
+          action: 'rename'
+        },
+        {
+          name: '删除',
+          icon: deleteIcon,
+          action: 'delete'
+        }
+      ]
+    }
   }
 }
 const handleContextMenuAction = ({ action }) => {
@@ -1078,6 +1143,9 @@ onMounted(() => {
         .cancel-btn {
           background: #efefef;
           color: var(--default-font-color);
+          &:hover {
+            opacity: 0.7;
+          }
         }
       }
     }

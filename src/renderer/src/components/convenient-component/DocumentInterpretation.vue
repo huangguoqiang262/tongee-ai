@@ -359,7 +359,7 @@ const clearAttach = (i) => {
 const getFileIcon = (item) => {
   // 根据文件扩展名返回不同的图标
   // const ext = item.name?.split('.').pop()?.toLowerCase()
-  const ext = item.type
+  const ext = item
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,

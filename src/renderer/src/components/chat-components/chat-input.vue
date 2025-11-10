@@ -37,7 +37,7 @@
       </div>
       <div class="input-box">
         <!-- 按回车键发送，输入框高度三行 -->
-        <el-input
+        <el-mention
           v-model="message.text"
           :disabled="isChatting"
           autosize
@@ -45,10 +45,11 @@
           resize="none"
           placeholder="@知识库或直接提问"
           type="textarea"
+          :options="mentionOptions"
           @keydown.enter.prevent="sendMessage"
           @paste="handlePaste"
         >
-        </el-input>
+        </el-mention>
       </div>
       <div class="action-box">
         <div class="action-left">
@@ -183,6 +184,16 @@ export default {
   emits: ['stopChat', 'selectModel', 'selectLibrary', 'uploadedAttachment', 'send'],
   data() {
     return {
+      mentionOptions: [
+        {
+          value: '知识库',
+          label: '知识库'
+        },
+        {
+          value: '问题',
+          label: '问题'
+        }
+      ],
       modelTempId: '',
       knowledge_id: '',
       message: { text: '', image: '' },
@@ -970,8 +981,8 @@ export default {
         width: 24px;
         height: 24px;
       }
-      .input {
-        :deep(textarea) {
+      :deep(.input) {
+        .el-textarea__inner {
           padding: 0;
           min-height: 22px;
           max-height: 150px;

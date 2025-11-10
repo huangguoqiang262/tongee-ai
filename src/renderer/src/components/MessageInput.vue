@@ -42,7 +42,7 @@
           src="@renderer/assets/logo.png"
         />
         <!-- 按回车键发送，输入框高度三行 -->
-        <el-input
+        <el-mention
           ref="messageInputRef"
           v-model="message.text"
           :disabled="isChatting"
@@ -51,11 +51,12 @@
           resize="none"
           placeholder="@知识库或直接提问"
           type="textarea"
+          :options="mentionOptions"
           @focus="focus = true"
           @keydown.enter.prevent="sendMessage"
           @paste="handlePaste"
         >
-        </el-input>
+        </el-mention>
       </div>
       <div class="action-box">
         <div v-if="focus || fileList.length" class="action-left">
@@ -169,6 +170,8 @@
       @close-menu="closeMenu"
     />
     <IntelligentWriting v-if="activeMenu === 'IntelligentWriting'" @close-menu="closeMenu" />
+    <QuickAccess v-if="activeMenu === 'QuickAccess'" @close-menu="closeMenu" />
+    <ImageProduction v-if="activeMenu === 'ImageProduction'" @close-menu="closeMenu" />
   </div>
 </template>
 <script>
@@ -276,6 +279,16 @@ export default {
         {
           icon: modelIcon,
           label: '长安投研【持续更新】近期投资需注意规避的风险'
+        }
+      ],
+      mentionOptions: [
+        {
+          value: '知识库',
+          label: '知识库'
+        },
+        {
+          value: '问题',
+          label: '问题'
         }
       ],
       menuList: [
@@ -745,7 +758,7 @@ export default {
       window.customApi?.triggerScreenshot()
     },
     focusChange(e) {
-      if (this.$refs.inputWrapper.contains(e.target) || e.target == this.$refs.inputWrapper) {
+      if (this.$refs.inputWrapper?.contains(e.target) || e.target == this.$refs.inputWrapper) {
         this.focus = true
       } else if (!this.message.text) {
         this.focus = false
@@ -815,11 +828,6 @@ export default {
         this.$emit('send', this.message)
         this.message = { text: '', image: '' }
       }
-    },
-    // ... existing code ...
-    toSetting() {
-      this.closeModel('repository')
-      this.$router.push({ path: '/ai/repository' })
     }
   }
 }
@@ -1013,8 +1021,8 @@ export default {
         width: 24px;
         height: 24px;
       }
-      .input {
-        :deep(textarea) {
+      :deep(.input) {
+        .el-textarea__inner {
           padding: 0;
           min-height: 22px;
           max-height: 150px;

@@ -76,14 +76,107 @@
             v-model="activeRepository"
             size="large"
             class="quote-input"
-            :props="propsConfig"
             :options="repositoryList"
             placeholder="@知识库，输入关键词引用相关知识"
           >
           </el-mention>
           <div class="icon">@</div>
         </div>
+        <div class="label">详细要求</div>
+        <div class="textarea-container">
+          <div
+            v-if="localfileList.length"
+            ref="attachListBox"
+            class="attach-list-box"
+            :class="showPrevBtn"
+            @mouseenter="handleAttachBoxMouseEnter"
+            @mouseleave="handleAttachBoxMouseLeave"
+          >
+            <div v-show="showPrevBtn && isHoveringAttachBox" class="pre-btn" @click="prevAttach">
+              <el-icon><ArrowLeft /></el-icon>
+            </div>
+            <div v-show="showNextBtn && isHoveringAttachBox" class="next-btn" @click="nextAttach">
+              <el-icon><ArrowRight /></el-icon>
+            </div>
+            <div class="attach-list" @scroll="handleAttachListScroll">
+              <div v-for="(item, index) in localfileList" :key="index" class="attach-item">
+                <img
+                  class="del-icon"
+                  src="@renderer/assets/clear-icon1.png"
+                  alt=""
+                  @click.stop="clearAttach(index)"
+                />
+                <img class="attached-icon" :src="getFileIcon(item.type)" alt="" />
+                <div class="attached-content">
+                  <div class="attach-name">
+                    {{ item.name }}
+                  </div>
+                  <div class="attach-type">
+                    <span class="file-extension">{{ item.type.toUpperCase() }}</span>
+                    <span class="file-size">{{ formatFileSize(item.size) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <el-input
+            v-model="message.text"
+            resize="none"
+            class="input"
+            type="textarea"
+            placeholder="询问关于该文档的任何问题"
+            @keydown.enter.prevent="handleEnterSend"
+          ></el-input>
+          <div class="textarea-actions">
+            <el-popover
+              ref="subActionPopoverRef"
+              popper-class="sub-action-box"
+              trigger="click"
+              placement="bottom-start"
+            >
+              <template #reference>
+                <el-button class="reference-btn">
+                  <img
+                    class="icon"
+                    src="@renderer/assets/documentInterpretation/link-disable-icon.png"
+                    alt=""
+                  />
+                  参考文档
+                </el-button>
+              </template>
+              <div class="sub-action-upload" @click="beforeUploadFiles('local')">
+                <img
+                  class="icon"
+                  src="@renderer/assets/documentInterpretation/upload-icon.png"
+                  alt=""
+                />
+                本地文件
+              </div>
+              <div class="sub-action-upload" @click="beforeUploadFiles('repository')">
+                <img
+                  class="icon"
+                  src="@renderer/assets/documentInterpretation/repository-icon.png"
+                  alt=""
+                />
+                知识库文件
+              </div>
+            </el-popover>
 
+            <img
+              v-if="message.text.trim().length"
+              class="send-icon"
+              src="@renderer/assets/send-icon.png"
+              alt=""
+              @click="handleSendClick"
+            />
+            <img
+              v-else
+              class="send-icon disabled"
+              src="@renderer/assets/disabled-send-icon.png"
+              alt=""
+            />
+          </div>
+        </div>
       </div>
     </div>
     <el-upload
@@ -121,84 +214,6 @@
         </div>
       </div>
     </el-upload>
-    <div
-      v-if="localfileList.length"
-      ref="attachListBox"
-      class="attach-list-box"
-      :class="showPrevBtn"
-      @mouseenter="handleAttachBoxMouseEnter"
-      @mouseleave="handleAttachBoxMouseLeave"
-    >
-      <div v-show="showPrevBtn && isHoveringAttachBox" class="pre-btn" @click="prevAttach">
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <div v-show="showNextBtn && isHoveringAttachBox" class="next-btn" @click="nextAttach">
-        <el-icon><ArrowRight /></el-icon>
-      </div>
-      <div class="attach-list" @scroll="handleAttachListScroll">
-        <div v-for="(item, index) in localfileList" :key="index" class="attach-item">
-          <img
-            class="del-icon"
-            src="@renderer/assets/clear-icon1.png"
-            alt=""
-            @click.stop="clearAttach(index)"
-          />
-          <img class="attached-icon" :src="getFileIcon(item.type)" alt="" />
-          <div class="attached-content">
-            <div class="attach-name">
-              {{ item.name }}
-            </div>
-            <div class="attach-type">
-              <span class="file-extension">{{ item.type.toUpperCase() }}</span>
-              <span class="file-size">{{ formatFileSize(item.size) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <el-popover
-        ref="subActionPopoverRef"
-        popper-class="sub-action-box"
-        trigger="click"
-        placement="bottom-start"
-      >
-        <template #reference>
-          <div class="continue-box">
-            <img class="icon" src="@renderer/assets/documentInterpretation/link-icon.png" alt="" />
-            继续添加
-          </div>
-        </template>
-        <div class="sub-action-upload" @click="beforeUploadFiles('local')">
-          <img class="icon" src="@renderer/assets/documentInterpretation/upload-icon.png" alt="" />
-          本地文件
-        </div>
-        <div class="sub-action-upload" @click="beforeUploadFiles('repository')">
-          <img
-            class="icon"
-            src="@renderer/assets/documentInterpretation/repository-icon.png"
-            alt=""
-          />
-          知识库文件
-        </div>
-      </el-popover>
-    </div>
-    <div class="input-box">
-      <el-input
-        v-model="message.text"
-        resize="none"
-        class="input"
-        type="textarea"
-        placeholder="询问关于该文档的任何问题"
-        @keydown.enter.prevent="handleEnterSend"
-      ></el-input>
-      <img
-        v-if="message.text.trim().length"
-        class="send-icon"
-        src="@renderer/assets/send-icon.png"
-        alt=""
-        @click="handleSendClick"
-      />
-      <img v-else class="send-icon disabled" src="@renderer/assets/disabled-send-icon.png" alt="" />
-    </div>
   </div>
   <OnlineFileSelection
     v-model="onlineFileVisible"
@@ -217,7 +232,6 @@ import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
-let propsConfig =  { label: 'name', value: 'id', disabled: 'unable' }
 let firstTypeList = ref([
   {
     name: '技术文档',
@@ -302,24 +316,14 @@ const tabClick = (item) => {
 }
 
 let repositoryList = ref([
-{
-    name: 'Fuphoenixes',
-    id: 'Fuphoenixes',
-    unable: true,
+  {
+    label: '糖吉医疗知识库',
+    value: 1
   },
   {
-    name: 'kooriookami',
-    id: 'kooriookami',
-  },
-  {
-    name: 'Jeremy',
-    id: 'Jeremy',
-    unable: true,
-  },
-  {
-    name: 'btea',
-    id: 'btea',
-  },
+    label: '糖吉医疗知识库2',
+    value: 2
+  }
 ])
 let activeRepository = ref('')
 let replaceActiveTab = inject('replaceActiveTab')
@@ -539,7 +543,7 @@ const clearAttach = (i) => {
 const getFileIcon = (item) => {
   // 根据文件扩展名返回不同的图标
   // const ext = item.name?.split('.').pop()?.toLowerCase()
-  const ext = item.type
+  const ext = item
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -578,13 +582,18 @@ const formatFileSize = (bytes) => {
   transform: translate(-50%, -50%);
   width: 65vw;
   min-width: 1060px;
-  min-height: 726px;
+  height: 726px;
   background: #ffffff;
   box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
   border-radius: 16px;
   user-select: none;
-
+  overflow-y: auto;
   .head-box {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    background: #fff;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -671,7 +680,7 @@ const formatFileSize = (bytes) => {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 14px 60px;
+      gap: 14px 40px;
       .tab-item {
         flex-shrink: 0;
         font-size: 16px;
@@ -741,6 +750,78 @@ const formatFileSize = (bytes) => {
           left: 10px;
           top: 50%;
           transform: translateY(-50%);
+        }
+      }
+      .textarea-container {
+        margin-bottom: 20px;
+        position: relative;
+        background: #f9f9f9;
+        border-radius: 12px;
+        .input {
+          width: 100%;
+          // flex: 1;
+          flex-shrink: 0;
+          font-size: 14px;
+
+          :deep(.el-textarea__inner) {
+            padding: 16px 16px;
+            // width: 100%;
+            height: 58px;
+            overflow-y: auto;
+            box-shadow: none;
+            border-radius: 12px;
+            background: #f9f9f9;
+            // transition: all 0.3s ease;
+            /* 隐藏滚动条轨道 */
+            // &::-webkit-scrollbar {
+            //   display: none;
+            // }
+            // /* 对于IE和Edge的旧版浏览器 */
+            // -ms-overflow-style: none;
+          }
+        }
+        .textarea-actions {
+          padding: 0 16px;
+          width: 100%;
+          height: 52px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          .reference-btn {
+            flex-shrink: 0;
+            padding: 0;
+            height: 28px;
+            width: 96px;
+            color: #737475;
+            font-size: 14px;
+            background: #eee;
+            border-style: none;
+            &:hover {
+              filter: brightness(0.96);
+            }
+            .icon {
+              margin-right: 4px;
+              width: 16px;
+              height: 16px;
+            }
+          }
+          .send-icon {
+            margin-left: 5px;
+            flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            cursor: pointer;
+
+            &.disabled {
+              cursor: not-allowed;
+              box-shadow: none !important;
+            }
+
+            &:hover {
+              box-shadow: 0 0 5px 3px rgba(0, 0, 0, 0.1);
+            }
+          }
         }
       }
     }
@@ -823,11 +904,7 @@ const formatFileSize = (bytes) => {
   .attach-list-box {
     position: relative;
     box-sizing: border-box;
-    padding: 0 20px;
-    min-height: 150px;
-    max-height: 300px;
-    background: #f9f9f9;
-    border-radius: 10px;
+    padding: 0 16px;
     .pre-btn {
       position: absolute;
       height: 58px;
@@ -859,7 +936,6 @@ const formatFileSize = (bytes) => {
       border-radius: 8px 0 0 8px;
     }
     .attach-list {
-      margin-bottom: 14px;
       padding: 20px 10px 20px 0;
       display: flex;
       align-items: center;
@@ -951,54 +1027,6 @@ const formatFileSize = (bytes) => {
         width: 16px;
         height: 16px;
         display: block;
-      }
-    }
-  }
-
-  .input-box {
-    min-height: 68px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-
-    .input {
-      width: calc(100% - 40px);
-      // flex: 1;
-      flex-shrink: 0;
-      font-size: 16px;
-
-      :deep(.el-textarea__inner) {
-        // width: 100%;
-        height: 34px;
-        border: none;
-        box-shadow: none;
-        overflow-y: auto;
-        // transition: all 0.3s ease;
-        /* 隐藏滚动条轨道 */
-        // &::-webkit-scrollbar {
-        //   display: none;
-        // }
-        // /* 对于IE和Edge的旧版浏览器 */
-        // -ms-overflow-style: none;
-      }
-    }
-
-    .send-icon {
-      margin-left: 5px;
-      flex-shrink: 0;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      cursor: pointer;
-
-      &.disabled {
-        cursor: not-allowed;
-        box-shadow: none !important;
-      }
-
-      &:hover {
-        box-shadow: 0 0 5px 3px rgba(0, 0, 0, 0.1);
       }
     }
   }
