@@ -73,6 +73,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchHome: typeof import('./src/components/SearchHome.vue')['default']
+    ServiceManual: typeof import('./src/components/account-settings/ServiceManual.vue')['default']
     Sidebar: typeof import('./src/components/layout/Sidebar.vue')['default']
     Square: typeof import('./src/components/Square.vue')['default']
     TabBar: typeof import('./src/components/TabBar.vue')['default']
