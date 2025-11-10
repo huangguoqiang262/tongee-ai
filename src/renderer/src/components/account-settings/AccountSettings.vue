@@ -1,15 +1,15 @@
 <template>
   <div class="Recycled-box">
     <!-- 账号设置 -->
-    <div class="square" v-if="activeTab == 'account'">
+    <div v-if="activeTab == 'account'" class="square">
       <div class="page-title-box">
         <div class="page-title">账号设置</div>
       </div>
       <div class="content-box">
         <div class="account-box" @click="sonClick('person')">
           <div class="account-left">
-            <img class="buddha" src="@renderer/assets/default-avatar.png" alt="" />
-            <div class="name">糖源AI</div>
+            <img class="buddha" :src="userInfo.avatar || defaultAvatar" alt="" />
+            <div class="name">{{ userInfo.name }}</div>
           </div>
           <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" />
         </div>
@@ -53,7 +53,7 @@
       </div>
     </div>
     <!-- 个人设置 -->
-    <div class="square" v-if="activeTab == 'person'">
+    <div v-if="activeTab == 'person'" class="square">
       <div class="retreat-box" @click="tabHandle()">
         <img class="icon" src="@renderer/assets/down-icon.png" alt="" />
       </div>
@@ -120,7 +120,7 @@
       </div>
     </div>
     <!-- 帮助与反馈 -->
-    <div class="square" v-if="activeTab == 'assist'">
+    <div v-if="activeTab == 'assist'" class="square">
       <div class="retreat-box" @click="tabHandle()">
         <img class="icon" src="@renderer/assets/down-icon.png" alt="" />
       </div>
@@ -150,7 +150,7 @@
       </div>
     </div>
     <!-- ai划词工具栏 -->
-    <div class="square" v-if="activeTab == 'paddle'">
+    <div v-if="activeTab == 'paddle'" class="square">
       <div class="retreat-box" @click="tabHandle()">
         <img class="icon" src="@renderer/assets/down-icon.png" alt="" />
       </div>
@@ -160,7 +160,7 @@
       <div class="content-box">
         <div class="paddle-box">
           <div class="operate">
-            <div class="operate-item" v-for="(item, index) in operateList" :key="index">
+            <div v-for="(item, index) in operateList" :key="index" class="operate-item">
               <img class="item-icon" :src="item.icon" alt="" />
               <div class="item-title">{{ item.name }}</div>
             </div>
@@ -200,8 +200,8 @@
         <div class="title">修改密码</div>
       </template>
       <el-form
-        label-position="top"
         ref="passwordFormRef"
+        label-position="top"
         :model="passwordForm"
         :rules="passwordRules"
       >
@@ -235,11 +235,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { ref, inject } from 'vue'
+import { useUserStore } from '@renderer/stores/user'
 import unscrambleIcon from '@renderer/assets/settings/unscramble-icon.png'
 import translateIcon from '@renderer/assets/settings/translate-icon.png'
 import notebookIcon from '@renderer/assets/settings/notebook-icon.png'
 import copyIcon from '@renderer/assets/settings/copy-icon.png'
+import defaultAvatar from '@renderer/assets/default-avatar.png'
+const userStore = useUserStore()
+const userInfo = userStore.user
+let memberPrivileges = ref('')
 // 外观选择
 let appearanceList = ref([
   {
@@ -247,7 +252,6 @@ let appearanceList = ref([
     action: 'public'
   }
 ])
-let replaceActiveTab = inject('replaceActiveTab')
 const addNewTab = inject('addNewTab')
 let activeTab = ref('account')
 
@@ -314,7 +318,6 @@ const manualClick = () => {
     isInternal: true
   })
 }
-
 </script>
 
 <style scoped lang="scss">
@@ -408,7 +411,9 @@ const manualClick = () => {
             border-radius: 8px;
           }
           .name {
-            font-family: PingFangSC, PingFang SC;
+            font-family:
+              PingFangSC,
+              PingFang SC;
             font-weight: 500;
             font-size: 18px;
             color: #221815;
@@ -423,7 +428,9 @@ const manualClick = () => {
         }
       }
       .general-title {
-        font-family: PingFangSC, PingFang SC;
+        font-family:
+          PingFangSC,
+          PingFang SC;
         font-weight: 400;
         font-size: 16px;
         color: #909090;
@@ -463,7 +470,9 @@ const manualClick = () => {
           .item-right {
             display: flex;
             align-items: center;
-            font-family: PingFangSC, PingFang SC;
+            font-family:
+              PingFangSC,
+              PingFang SC;
             font-weight: 400;
             font-size: 16px;
             color: #221815;
@@ -486,7 +495,9 @@ const manualClick = () => {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: PingFangSC, PingFang SC;
+        font-family:
+          PingFangSC,
+          PingFang SC;
         font-weight: 500;
         font-size: 16px;
         color: #ff5151;
@@ -570,7 +581,9 @@ const manualClick = () => {
     .assist-item {
       cursor: pointer;
       color: var(--el-color-primary);
-      font-family: PingFangSC, PingFang SC;
+      font-family:
+        PingFangSC,
+        PingFang SC;
       font-weight: 400;
       font-size: 16px;
       line-height: 22px;
@@ -639,7 +652,9 @@ const manualClick = () => {
           }
         }
         .item-title {
-          font-family: PingFangSC, PingFang SC;
+          font-family:
+            PingFangSC,
+            PingFang SC;
           font-weight: 400;
           font-size: 14px;
           color: var(--default-font-color);
@@ -650,7 +665,9 @@ const manualClick = () => {
     .examples {
       width: 498px;
       height: 52px;
-      font-family: PingFangSC, PingFang SC;
+      font-family:
+        PingFangSC,
+        PingFang SC;
       font-weight: 400;
       font-size: 14px;
       color: #221815;
@@ -674,7 +691,9 @@ const manualClick = () => {
       align-items: center;
       justify-content: space-between;
       .label {
-        font-family: PingFangSC, PingFang SC;
+        font-family:
+          PingFangSC,
+          PingFang SC;
         font-weight: 500;
         font-size: 16px;
         color: #221815;

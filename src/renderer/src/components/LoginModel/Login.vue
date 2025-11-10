@@ -1,7 +1,18 @@
 <template>
   <div class="app-container" @click.stop>
     <div class="login-box">
-      <img class="login-img" src="@renderer/assets/login-img.png" alt="" />
+      <div class="login-left-box">
+        <div class="hd-title-box">
+          <img class="logo" src="@renderer/assets/login-logo.png" alt="" />
+          <div class="sub-title">糖吉医疗AI知识库智能平台</div>
+        </div>
+        <div class="broadcast-box">
+          <div v-for="(item, index) in broadcastLists" :key="index" class="broadcast-item">
+            <img class="icon" :src="item.icon" alt="" />
+            <div class="title">{{ item.title }}</div>
+          </div>
+        </div>
+      </div>
       <img src="@renderer/assets/close-icon.png" class="close-icon" @click.stop="handleClose" />
       <div class="ms-login" @click.stop>
         <template v-if="!isforgetPassword">
@@ -30,9 +41,9 @@
             class="ms-content"
           >
             <template v-if="switchType == 'password'">
-              <el-form-item prop="username" label="手机号">
+              <el-form-item prop="mobile" label="手机号">
                 <el-input
-                  v-model="loginForm.username"
+                  v-model="loginForm.mobile"
                   class="input"
                   placeholder="请输入您的手机号"
                   autocomplete="new-password"
@@ -63,9 +74,9 @@
               </div>
             </template>
             <template v-else>
-              <el-form-item prop="username" label="手机号">
+              <el-form-item prop="mobile" label="手机号">
                 <el-input
-                  v-model="loginForm.username"
+                  v-model="loginForm.mobile"
                   class="input"
                   placeholder="请输入您的手机号"
                   autocomplete="new-password"
@@ -113,9 +124,9 @@
             class="ms-content"
           >
             <template v-if="isforgetPassword && !nextForget">
-              <el-form-item prop="username" label="手机号">
+              <el-form-item prop="mobile" label="手机号">
                 <el-input
-                  v-model="loginForm.username"
+                  v-model="loginForm.mobile"
                   class="input"
                   placeholder="请输入您的手机号"
                   autocomplete="new-password"
@@ -182,7 +193,7 @@
         <div class="copyRight">© 2025 糖源Tongo AI知识库</div>
       </div>
     </div>
-    <div v-show="puzzle" class="puzzle-box">
+    <!-- <div v-show="puzzle" class="puzzle-box">
       <div class="puzzle-body">
         <div>
           <puzzleVerification
@@ -195,22 +206,29 @@
           />
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, nextTick } from 'vue'
+import { ref, reactive, nextTick, onMounted } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
-import { setToken } from '@renderer/utils/auth'
-import { login, passlogin, send_code } from '@renderer/api/user'
-
+import { login, passlogin, send_code, user_info } from '@renderer/api/user'
+import { get_login_item } from '@renderer/api/index'
+let broadcastLists = ref([])
+onMounted(() => {
+  get_login_item({}).then((res) => {
+    if (res.code == 200) {
+      broadcastLists.value = res.data
+    }
+  })
+})
 const userStore = useUserStore()
 const loginFormRef = ref()
 let rememberPassword = ref(false)
 // 响应式数据
 const loginForm = reactive({
-  username: '',
+  mobile: '',
   password: '',
   msg_code: '',
   re_password: '',
@@ -228,7 +246,7 @@ const tabs = ref([
 ])
 
 const loginRules = {
-  username: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
+  mobile: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   msg_code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
   re_password: [{ required: true, message: '请再次输入密码', trigger: 'blur' }]
@@ -244,7 +262,7 @@ const handlePuzzleSuccess = () => {
   if (codeTime.value > 0) return
   if (!validata()) return
 
-  send_code({ phone: loginForm.username }).then((res) => {
+  send_code({ mobile: loginForm.mobile }).then((res) => {
     if (res.code == 200) {
       // eslint-disable-next-line no-undef
       ElMessage.success('验证码发送成功')
@@ -283,7 +301,7 @@ const switchChange = (item) => {
 
 const validata = () => {
   const mPattern = /^1[345789]\d{9}$/
-  if (!mPattern.test(loginForm.username)) {
+  if (!mPattern.test(loginForm.mobile)) {
     // eslint-disable-next-line no-undef
     ElMessage.warning('请输入正确的手机号')
     return false
@@ -336,13 +354,12 @@ const handleLogin = () => {
               ElMessage.success('登录成功')
               const { data } = response
               loginData.value = data
-              localStorage.setItem('userId', loginData.value.userInfo.id)
               userStore.token = loginData.value.token
-              setToken(loginData.value.token)
+              userStore.updateToken(loginData.value.token)
+              getUserInfo()
               const timer = setTimeout(() => {
                 handleClose()
                 clearTimeout(timer)
-                window.location.reload()
               }, 1000)
             }
           })
@@ -355,13 +372,12 @@ const handleLogin = () => {
               ElMessage.success('登录成功')
               const { data } = response
               loginData.value = data
-              localStorage.setItem('userId', loginData.value.userInfo.id)
               userStore.token = loginData.value.token
-              setToken(loginData.value.token)
+              userStore.updateToken(loginData.value.token)
+              getUserInfo()
               const timer = setTimeout(() => {
                 handleClose()
                 clearTimeout(timer)
-                window.location.reload()
               }, 1000)
             }
           })
@@ -374,7 +390,13 @@ const handleLogin = () => {
     }
   })
 }
-
+const getUserInfo = () => {
+  user_info({}).then((res) => {
+    if (res.code == 200) {
+      userStore.updateUser(res.data?.user_info)
+    }
+  })
+}
 // 定义事件
 const emit = defineEmits(['close'])
 
@@ -449,7 +471,7 @@ input:-internal-autofill-selected {
 .app-container {
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.3);
+  background-color: rgba(216, 216, 216, 0.8);
   position: fixed;
   top: 0;
   left: 0;
@@ -466,11 +488,48 @@ input:-internal-autofill-selected {
     border-radius: 24px;
     overflow: hidden;
     display: flex;
-    .login-img {
+    .login-left-box {
       flex-shrink: 0;
+      padding: 70px 50px;
       width: 470px;
       height: 100%;
+      background: url('@renderer/assets/login-img.png') no-repeat center/100% 100%;
       user-select: none;
+      .hd-title-box {
+        margin-bottom: 60px;
+        .logo {
+          margin-bottom: 10px;
+          width: auto;
+          height: 58px;
+        }
+        .sub-title {
+          font-size: 16px;
+          color: var(--el-color-primary-light-5);
+          line-height: 22px;
+        }
+      }
+      .broadcast-box {
+        .broadcast-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 18px;
+          &:last-child {
+            margin-bottom: 0;
+          }
+          .icon {
+            width: 22px;
+            height: 22px;
+            object-fit: cover;
+            border-radius: 50%;
+          }
+          .title {
+            font-size: 14px;
+            color: #fff;
+            line-height: 20px;
+          }
+        }
+      }
     }
     .close-icon {
       position: absolute;
@@ -588,7 +647,7 @@ input:-internal-autofill-selected {
     background: linear-gradient(
       179deg,
       var(--el-color-primary) 0%,
-      var(--el-color-primary-dark-1) 100%
+      var(--el-color-primary-dark-2) 100%
     );
   }
   .switch-type {

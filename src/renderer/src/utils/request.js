@@ -35,7 +35,7 @@ var removePendingRequest = (config) => {
   }
 }
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL
+  baseURL: import.meta.env.VITE_API_BASE_URL + '/api'
 })
 // request interceptor
 service.interceptors.request.use(
@@ -106,8 +106,8 @@ service.interceptors.response.use(
     // if the custom code is not 20000, it is judged as an error.
     if (response.status != 200) {
       if (res.code === 300 || response.status === 401) {
-        window.localStorage.removeItem('token')
-        window.localStorage.removeItem('userId')
+        const userStore = useUserStore()
+        userStore.reset()
         return res
       } else {
         ElMessage({
@@ -139,9 +139,7 @@ service.interceptors.response.use(
     const errorCode = error.response ? error.response.status : null
 
     if (errorCode == 401) {
-      userStore.updateUser({})
-      window.localStorage.removeItem('token')
-      window.localStorage.removeItem('userId')
+      userStore.reset()
       return error
     }
     ElMessage({

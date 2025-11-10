@@ -175,7 +175,6 @@
   </div>
 </template>
 <script>
-import { getToken } from '@renderer/utils/auth'
 import modelIcon from '@renderer/assets/modelSelected.png'
 import repositoryIcon from '@renderer/assets/repositorySelected.png'
 import knowledgeBaseSquareIcon from '@renderer/assets/home/knowledgeBaseSquare-icon.png'
@@ -184,9 +183,10 @@ import updateNotificationIcon from '@renderer/assets/home/updateNotification-ico
 import quickAccessIcon from '@renderer/assets/home/quickAccess-icon.png'
 import imageProductionIcon from '@renderer/assets/home/imageProduction-icon.png'
 import IntelligentWritingIcon from '@renderer/assets/home/intelligentWriting-icon.png'
+import { useUserStore } from '@renderer/stores/user'
 export default {
   name: 'MessageInput',
-  inject: ['addNewTab'],
+  inject: ['addNewTab', '$LoginModel'],
   props: {
     // eslint-disable-next-line vue/prop-name-casing
     attach_file: {
@@ -226,7 +226,7 @@ export default {
       showModel: false,
       showRepository: false,
       ossUpload: import.meta.env.VITE_BASE_URL + '/intelligence/upload_attach',
-      token: getToken(),
+      token: '',
       firsetType: [
         {
           name: '选模型',
@@ -432,10 +432,18 @@ export default {
     // 移除事件监听
   },
   methods: {
+    checkLogin() {
+      const userStore = useUserStore()
+      if (!userStore.token) {
+        this.$LoginModel()
+        return false
+      }
+    },
     closeMenu() {
       this.activeMenu = ''
     },
     handleMenuClick(item) {
+      this.checkLogin()
       this.activeMenu = item.url
       // 打开新标签页
       if (item.isLink) {

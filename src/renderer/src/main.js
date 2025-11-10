@@ -17,6 +17,7 @@ import './styles/main.scss'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router'
 
@@ -24,7 +25,10 @@ const app = createApp(App)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
-app.use(createPinia())
+// 配置 pinia 插件
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
+app.use(pinia)
 app.use(router)
 app.component('Editor', Editor)
 app.component('Toolbar', Toolbar)

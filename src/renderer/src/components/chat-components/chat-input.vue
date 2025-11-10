@@ -139,7 +139,6 @@
   </div>
 </template>
 <script>
-import { getToken } from '@renderer/utils/auth'
 import modelIcon from '@renderer/assets/modelSelected.png'
 import repositoryIcon from '@renderer/assets/repositorySelected.png'
 import knowledgeBaseSquareIcon from '@renderer/assets/home/knowledgeBaseSquare-icon.png'
@@ -200,7 +199,7 @@ export default {
       showModel: false,
       showRepository: false,
       ossUpload: import.meta.env.VITE_BASE_URL + '/intelligence/upload_attach',
-      token: getToken(),
+      token: '',
       firsetType: [
         {
           name: '选模型',
