@@ -1,18 +1,93 @@
 <template>
-  <div class="DocumentInterpretation">
+  <div class="IntelligentWriting">
     <div class="head-box">
       <div class="head-left">
         <img
           class="unscramble-icon"
-          src="@renderer/assets/documentInterpretation/unscramble-icon.png"
+          src="@renderer/assets/intelligentWriting/writing-icon.png"
           alt=""
         />
-        <div>文档解读</div>
+        <div>智能写作</div>
       </div>
       <el-icon class="close-icon" @click="closeMenu"><Close /></el-icon>
     </div>
+    <div class="statistics-box">
+      <div class="statistics-item">
+        <div class="num">100</div>
+        <div class="name">本月生成文档</div>
+        <div class="trend">
+          <img class="trend-icon" src="@renderer/assets/intelligentWriting/go-up-icon.png" alt="" />
+          <div>12%较上月</div>
+        </div>
+      </div>
+      <div class="statistics-item center-item">
+        <div class="num">3.2min</div>
+        <div class="name">平均生成时间</div>
+        <div class="trend">
+          <img class="trend-icon" src="@renderer/assets/intelligentWriting/go-up-icon.png" alt="" />
+          <div>12%效率提升</div>
+        </div>
+      </div>
+      <div class="statistics-item">
+        <div class="num">98%</div>
+        <div class="name">团队使用率</div>
+        <div class="trend">
+          <img class="trend-icon" src="@renderer/assets/intelligentWriting/go-up-icon.png" alt="" />
+          <div>12%较上月</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-box">
+      <div class="form-head-label">选择文档类型并输入要求</div>
+      <div class="first-tab-box">
+        <div
+          v-for="item in firstTypeList"
+          :key="item.id"
+          class="tab-item"
+          :class="{ active: item.id === activeFirstTab }"
+          @click="firstTypeClick(item.id)"
+        >
+          {{ item.name }}
+        </div>
+      </div>
+      <div class="tab-content">
+        <div class="label">文档类型</div>
+        <div class="content-tabs">
+          <div
+            v-for="item in tabList"
+            :key="item.id"
+            class="tab-item"
+            :class="{ active: item.checked }"
+            @click="tabClick(item)"
+          >
+            {{ item.name }}
+          </div>
+        </div>
+        <div class="label">文档主题</div>
+        <el-input
+          v-model="inputValue"
+          size="large"
+          class="content-input"
+          placeholder="请输入文档主题"
+        />
+        <div class="label">知识库引用</div>
+        <div class="quote-box">
+          <el-mention
+            v-model="activeRepository"
+            size="large"
+            class="quote-input"
+            :props="propsConfig"
+            :options="repositoryList"
+            placeholder="@知识库，输入关键词引用相关知识"
+          >
+          </el-mention>
+          <div class="icon">@</div>
+        </div>
+
+      </div>
+    </div>
     <el-upload
-      v-show="!localfileList.length"
+      v-show="false"
       ref="elUploadRef"
       class="upload-box"
       drag
@@ -142,6 +217,111 @@ import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
+let propsConfig =  { label: 'name', value: 'id', disabled: 'unable' }
+let firstTypeList = ref([
+  {
+    name: '技术文档',
+    id: 1
+  },
+  {
+    name: '临床评价',
+    id: 2
+  },
+  {
+    name: '注册资料',
+    id: 3
+  },
+  {
+    name: '合规报告',
+    id: 4
+  },
+  {
+    name: '质量管理',
+    id: 5
+  },
+  {
+    name: '生产运营',
+    id: 6
+  },
+  {
+    name: '商业化服务',
+    id: 7
+  },
+  {
+    name: '项目申报',
+    id: 8
+  },
+  {
+    name: '人力资源',
+    id: 9
+  }
+])
+let activeFirstTab = ref(1)
+const firstTypeClick = (id) => {
+  activeFirstTab.value = id
+}
+let tabList = ref([
+  {
+    name: '产品技术要求',
+    id: 1
+  },
+  {
+    name: '产品说明书',
+    id: 2
+  },
+  {
+    name: '风险管理报告',
+    id: 3
+  },
+  {
+    name: '专利技术交底书',
+    id: 4
+  },
+  {
+    name: 'dhf文档',
+    id: 5
+  },
+  {
+    name: '设计验证',
+    id: 6
+  },
+  {
+    name: '研发历程',
+    id: 7
+  },
+  {
+    name: '理化性能',
+    id: 8
+  }
+])
+const tabClick = (item) => {
+  tabList.value.forEach((item) => {
+    item.checked = false
+  })
+  item.checked = true
+}
+
+let repositoryList = ref([
+{
+    name: 'Fuphoenixes',
+    id: 'Fuphoenixes',
+    unable: true,
+  },
+  {
+    name: 'kooriookami',
+    id: 'kooriookami',
+  },
+  {
+    name: 'Jeremy',
+    id: 'Jeremy',
+    unable: true,
+  },
+  {
+    name: 'btea',
+    id: 'btea',
+  },
+])
+let activeRepository = ref('')
 let replaceActiveTab = inject('replaceActiveTab')
 const message = ref({
   text: '',
@@ -389,15 +569,16 @@ const formatFileSize = (bytes) => {
 </script>
 
 <style scoped lang="scss">
-.DocumentInterpretation {
+.IntelligentWriting {
   box-sizing: border-box;
   padding: 0 20px;
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 850px;
-  max-height: 442px;
+  width: 65vw;
+  min-width: 1060px;
+  min-height: 726px;
   background: #ffffff;
   box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
   border-radius: 16px;
@@ -436,7 +617,134 @@ const formatFileSize = (bytes) => {
       }
     }
   }
+  .statistics-box {
+    margin-bottom: 20px;
+    padding: 18px;
+    height: 120px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-evenly;
+    background: #f9f9f9;
+    .statistics-item {
+      text-align: center;
+      color: var(--default-font-color);
+      &.center-item {
+        margin: 0 30px;
+      }
+      .num {
+        margin-bottom: 10px;
+        font-size: 24px;
+        line-height: 32px;
+        font-family: DOUYINSANSBOLD;
+      }
+      .name {
+        margin-bottom: 6px;
+        font-size: 14px;
+        line-height: 18px;
+      }
+      .trend {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-size: 12px;
+        color: #81889b;
+        .trend-icon {
+          flex-shrink: 0;
+          width: 12px;
+          height: 12px;
+        }
+      }
+    }
+  }
+  .form-box {
+    .form-head-label {
+      margin-bottom: 15px;
+      font-weight: 500;
+      font-size: 16px;
+      color: var(--default-font-color);
+      line-height: 24px;
+    }
+    .first-tab-box {
+      padding: 9px 30px;
+      border-bottom: 1px solid #efefef;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px 60px;
+      .tab-item {
+        flex-shrink: 0;
+        font-size: 16px;
+        color: var(--default-font-color);
+        line-height: 24px;
+        cursor: pointer;
+        &.active {
+          color: var(--el-color-primary);
+        }
+      }
+    }
+    .tab-content {
+      .label {
+        margin: 16px 0 10px;
+        font-size: 14px;
+        color: var(--default-font-color);
+        line-height: 24px;
+      }
+      .content-tabs {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        .tab-item {
+          flex-shrink: 0;
+          padding: 0 16px;
+          height: 40px;
+          font-size: 14px;
+          border: 1px solid #f9f9f9;
+          color: var(--default-font-color);
+          line-height: 38px;
+          background: #f9f9f9;
+          border-radius: 6px;
+          text-transform: uppercase;
+          cursor: pointer;
+          &.active {
+            color: var(--el-color-primary);
+            border-color: var(--el-color-primary);
+            background: var(--el-color-primary-light-9);
+          }
+        }
+      }
+      :deep(.content-input) {
+        .el-input__wrapper {
+          background-color: #f9f9f9 !important;
+          border-radius: 6px !important;
+          box-shadow: none;
 
+          &.is-focus {
+            box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+          }
+        }
+      }
+      :deep(.quote-box) {
+        position: relative;
+        .el-input__wrapper {
+          padding-left: 27px;
+          background-color: #f9f9f9 !important;
+          border-radius: 6px !important;
+          box-shadow: none;
+
+          &.is-focus {
+            box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+          }
+        }
+        .icon {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+      }
+    }
+  }
   .upload-box {
     :deep(.el-upload-dragger) {
       width: 100%;

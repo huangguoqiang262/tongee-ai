@@ -1,6 +1,6 @@
 <template>
-  <div :class="{ focus: focus || fileList.length }" class="message-input" @click="focusChange">
-    <div ref="inputWrapper" class="input-wrapper" @click.stop="focusChange">
+  <div class="message-input focus">
+    <div ref="inputWrapper" class="input-wrapper">
       <div
         v-if="fileList.length"
         ref="attachListBox"
@@ -38,7 +38,6 @@
       <div class="input-box">
         <!-- 按回车键发送，输入框高度三行 -->
         <el-input
-          ref="messageInputRef"
           v-model="message.text"
           :disabled="isChatting"
           autosize
@@ -46,14 +45,13 @@
           resize="none"
           placeholder="@知识库或直接提问"
           type="textarea"
-          @focus="focus = true"
           @keydown.enter.prevent="sendMessage"
           @paste="handlePaste"
         >
         </el-input>
       </div>
       <div class="action-box">
-        <div v-if="focus || fileList.length" class="action-left">
+        <div class="action-left">
           <el-select
             v-model="modelValue"
             size="small"
@@ -136,6 +134,7 @@
         </div>
       </div>
     </div>
+    <div class="tips">内容由AI生成仅供参考</div>
   </div>
 </template>
 <script>
@@ -207,7 +206,6 @@ export default {
       ],
       loading: false,
       uniacid: 2,
-      focus: false,
       modelValue: undefined,
       cities: [
         {
@@ -382,24 +380,7 @@ export default {
       { deep: true }
     )
   },
-  beforeUnmount() {
-    // 移除事件监听
-  },
   methods: {
-    closeMenu() {
-      this.activeMenu = ''
-    },
-    handleMenuClick(item) {
-      this.activeMenu = item.url
-      // 打开新标签页
-      if (item.isLink) {
-        this.addNewTab({
-          url: item.url,
-          title: item.title,
-          isInternal: true
-        })
-      }
-    },
     // 是否联网
     networkChange() {
       this.isNetwork = !this.isNetwork
@@ -711,13 +692,6 @@ export default {
       }
       window.customApi?.triggerScreenshot()
     },
-    focusChange(e) {
-      if (this.$refs.inputWrapper.contains(e.target) || e.target == this.$refs.inputWrapper) {
-        this.focus = true
-      } else if (!this.message.text) {
-        this.focus = false
-      }
-    },
     clearAttach(i) {
       this.fileList.splice(i, 1)
     },
@@ -769,9 +743,20 @@ export default {
       if (event.type == 'keydown') {
         if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey || event.altKey)) {
           this.message.text += '\n'
+        } else {
+          if (!this.message.text.trim().length) {
+            // eslint-disable-next-line no-undef
+            ElMessage({
+              message: '请输入消息',
+              type: 'warning'
+            })
+            return
+          }
+          this.$emit('send', this.message)
+          this.message = { text: '', image: '' }
         }
       } else {
-        if (!this.message.text) {
+        if (!this.message.text.trim().length) {
           // eslint-disable-next-line no-undef
           ElMessage({
             message: '请输入消息',
@@ -792,6 +777,11 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+.tips {
+  font-size: 12px;
+  color: #909090;
+  text-align: center;
+}
 .empty {
   box-sizing: border-box;
   max-width: 420px;
@@ -833,7 +823,7 @@ export default {
     }
   }
   .input-wrapper {
-    margin-bottom: 22px;
+    margin-bottom: 12px;
     padding: 15px;
     min-height: 60px;
     max-height: 60px;
