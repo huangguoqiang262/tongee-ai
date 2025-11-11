@@ -349,14 +349,23 @@ const submitpasswordForm = async (formRef) => {
   })
 }
 const quitLogin = () => {
-  logout().then((res) => {
-    if (res.code == 200) {
-      // eslint-disable-next-line no-undef
-      ElMessage.primary('退出登录成功')
-      userStore.reset()
-      activeTab.value = 'account'
-    }
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm('确认退出吗？', '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
   })
+    .then(() => {
+      logout().then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage.primary('退出登录成功')
+          userStore.reset()
+          activeTab.value = 'account'
+        }
+      })
+    })
+    .catch(() => {})
 }
 // 修改密码end
 // 进入个人设置

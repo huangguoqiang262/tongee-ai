@@ -7,7 +7,7 @@
             <img class="icon" src="@renderer/assets/repository/common-repository-icon.png" alt="" />
             公共知识库
           </div>
-          <div class="square-icon-box">
+          <div class="square-icon-box" @click="squaretabChange">
             <img class="square-icon" src="@renderer/assets/repository/square-icon.png" alt="" />
           </div>
         </div>
@@ -602,6 +602,7 @@ import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
+import headSquareIcon from '@renderer/assets/repository/head-square-icon.png'
 let repositorySortPopover = ref(null)
 let repositoryNotePopover = ref(null)
 let sortList = ref([
@@ -621,6 +622,14 @@ let sortList = ref([
 let sortType = ref('create_time')
 let addRepositoryVisible = ref(false)
 const addNewTab = inject('addNewTab')
+const squaretabChange = () => {
+  addNewTab({
+    icon: headSquareIcon,
+    title: '知识库广场',
+    url: 'Square',
+    isInternal: true
+  })
+}
 // 反馈
 const beforeRepositoryFeedback = () => {
   addNewTab({
