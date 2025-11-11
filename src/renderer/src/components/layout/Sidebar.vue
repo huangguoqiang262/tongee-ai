@@ -42,6 +42,7 @@
 
 <script setup>
 import { ref, inject } from 'vue'
+import { useCheckLogin } from '@renderer/hooks/checkLogin'
 import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
 import managementIcon from '@renderer/assets/menu/management-icon.png'
@@ -93,6 +94,9 @@ const handleClick = (item) => {
 }
 
 const accountClick = () => {
+  if (!useCheckLogin().value) {
+    return
+  }
   addNewTab({
     url: 'AccountSettings',
     title: '账户设置',

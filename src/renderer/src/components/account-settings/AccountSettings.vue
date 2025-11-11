@@ -16,15 +16,16 @@
         <div class="general-title">通用设置</div>
         <div class="handle-box">
           <div class="handle-item">
-            <div class="label">外观选择配置</div>
-            <el-select v-model="memberPrivileges" placeholder="请选择" style="width: 160px">
+            <div class="label">主题色配置</div>
+            <!-- <el-select v-model="memberPrivileges" placeholder="请选择" style="width: 160px">
               <el-option
                 v-for="item in appearanceList"
                 :key="item.action"
                 :label="item.name"
                 :value="item.action"
               />
-            </el-select>
+            </el-select> -->
+            <theme-picker></theme-picker>
           </div>
           <div class="handle-item" @click="sonClick('paddle')">
             <div class="label">ai划词工具栏</div>
@@ -64,40 +65,53 @@
         <div class="handle-box">
           <div class="handle-item">
             <div class="label">头像</div>
-            <img class="buddha" src="@renderer/assets/default-avatar.png" alt="" />
+            <img class="buddha" :src="userInfo.avatar || defaultAvatar" alt="" />
           </div>
-          <div class="handle-item">
+          <!-- <div class="handle-item">
             <div class="label">昵称</div>
             <div class="item-right">
               <div>昵称</div>
               <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" />
             </div>
-          </div>
+          </div> -->
           <div class="handle-item">
             <div class="label">姓名</div>
             <div class="item-right">
-              <div>姓名</div>
+              <div>{{ userInfo.name }}</div>
             </div>
             <!-- <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" /> -->
           </div>
           <div class="handle-item">
             <div class="label">部门</div>
             <div class="item-right">
-              <div>部门</div>
+              <template v-if="userInfo?.organs">
+                <el-popover title="" popper-class="more-position-popover" placement="bottom-end">
+                  <template #reference>
+                    <div>
+                      {{ userInfo?.organs?.[0]?.hierarchy_names || '--' }}
+                    </div>
+                  </template>
+                  <div class="more-position-box">
+                    <span v-for="item in userInfo?.organs" :key="item" class="more-position">{{
+                      item.hierarchy_names
+                    }}</span>
+                  </div>
+                </el-popover>
+              </template>
             </div>
             <!-- <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" /> -->
           </div>
           <div class="handle-item">
             <div class="label">职位</div>
             <div class="item-right">
-              <div>职位</div>
+              <div>{{ userInfo?.position || '--' }}</div>
             </div>
             <!-- <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" /> -->
           </div>
           <div class="handle-item">
             <div class="label">手机号</div>
             <div class="item-right">
-              <div>手机号</div>
+              <div>{{ userInfo?.mobile || '--' }}</div>
             </div>
             <!-- <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" /> -->
           </div>
@@ -116,7 +130,7 @@
             <!-- <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" /> -->
           </div>
         </div>
-        <div class="quit-box">退出登录</div>
+        <div class="quit-box" @click="quitLogin">退出登录</div>
       </div>
     </div>
     <!-- 帮助与反馈 -->
@@ -171,12 +185,17 @@
           </div>
           <div class="bottom-operate">
             <div class="label">当选中文本时显示工具栏</div>
-            <el-select v-model="memberPrivileges" placeholder="请选择" style="width: 160px">
+            <el-select
+              v-model="toolbarShow"
+              placeholder="请选择"
+              style="width: 160px"
+              @change="updateToolbarShow"
+            >
               <el-option
-                v-for="item in appearanceList"
-                :key="item.action"
+                v-for="item in toolbarList"
+                :key="item.value"
                 :label="item.name"
-                :value="item.action"
+                :value="item.value"
               />
             </el-select>
           </div>
@@ -185,7 +204,7 @@
     </div>
     <!-- 修改密码弹窗 -->
     <el-dialog
-      v-model="clearRecycled"
+      v-model="passwordVisible"
       draggable
       align-center
       modal-class="clear-recycled-dialog"
@@ -205,27 +224,35 @@
         :model="passwordForm"
         :rules="passwordRules"
       >
-        <el-form-item prop="title" label="新密码">
+        <el-form-item prop="password" label="新密码">
           <el-input
             v-model="passwordForm.password"
             class="book-input"
+            type="password"
             size="large"
+            show-password
             placeholder="设置您的新密码"
           />
         </el-form-item>
-        <el-form-item prop="title" label="确认密码">
+        <el-form-item prop="repeatPassword" label="确认密码">
           <el-input
             v-model="passwordForm.repeatPassword"
             class="book-input"
+            type="password"
             size="large"
+            show-password
             placeholder="再次输入新密码"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button class="cancel-btn" @click="clearRecycled = false">取消</el-button>
-          <el-button class="confirm-btn" type="primary" @click="clearRecycled = false">
+          <el-button class="cancel-btn" @click="passwordVisible = false">取消</el-button>
+          <el-button
+            class="confirm-btn"
+            type="primary"
+            @click="submitpasswordForm(passwordFormRef)"
+          >
             确定
           </el-button>
         </div>
@@ -236,15 +263,32 @@
 
 <script setup>
 import { ref, inject } from 'vue'
-import { useUserStore } from '@renderer/stores/user'
+import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+import { edit_user, logout } from '@renderer/api/user'
+import { useUserStore, useToolBarStore } from '@renderer/stores/user'
 import unscrambleIcon from '@renderer/assets/settings/unscramble-icon.png'
 import translateIcon from '@renderer/assets/settings/translate-icon.png'
 import notebookIcon from '@renderer/assets/settings/notebook-icon.png'
 import copyIcon from '@renderer/assets/settings/copy-icon.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 const userStore = useUserStore()
-const userInfo = userStore.user
+const userInfo = useUserInfo()
 let memberPrivileges = ref('')
+let toolbarShow = ref(useToolBarStore().toolbarShow)
+// 工具栏选择
+let toolbarList = ref([
+  {
+    name: '开启',
+    value: true
+  },
+  {
+    name: '关闭',
+    value: false
+  }
+])
+const updateToolbarShow = (val) => {
+  useToolBarStore().toolbarShow = val
+}
 // 外观选择
 let appearanceList = ref([
   {
@@ -255,37 +299,71 @@ let appearanceList = ref([
 const addNewTab = inject('addNewTab')
 let activeTab = ref('account')
 
-const tabHandle = (id) => {
+const tabHandle = () => {
   activeTab.value = 'account'
 }
-let dateValue = ref([])
-const list = ref(Array(6))
 // 修改密码
-let clearRecycled = ref(false)
+let passwordVisible = ref(false)
 let beforeClearChange = () => {
-  clearRecycled.value = true
+  passwordVisible.value = true
+  passwordFormRef.value?.resetFields()
 }
+let passwordFormRef = ref(null)
 let passwordForm = ref({
   password: '',
   repeatPassword: ''
 })
 let passwordRules = ref({
-  password: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
-  repeatPassword: [{ required: true, message: '请确认新密码', trigger: 'blur' }]
+  password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+  ],
+  repeatPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== passwordForm.value.password) {
+          callback(new Error('两次输入密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
 })
 const submitpasswordForm = async (formRef) => {
   formRef.validate((valid) => {
     if (valid) {
-      console.log('表单验证通过')
-      passwordVisible.value = false
-    } else {
-      console.log('表单验证失败')
+      edit_user({
+        password: passwordForm.value.password
+      }).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage.primary('修改成功')
+          passwordVisible.value = false
+        }
+      })
+    }
+  })
+}
+const quitLogin = () => {
+  logout().then((res) => {
+    if (res.code == 200) {
+      // eslint-disable-next-line no-undef
+      ElMessage.primary('退出登录成功')
+      userStore.reset()
+      activeTab.value = 'account'
     }
   })
 }
 // 修改密码end
 // 进入个人设置
 const sonClick = (val) => {
+  if (!useCheckLogin().value) {
+    return
+  }
   activeTab.value = val
 }
 // 提问输入
@@ -332,7 +410,7 @@ const manualClick = () => {
 
   .square {
     width: 100%;
-    max-width: 910px;
+    max-width: 808px;
     height: 100%;
     margin: 0 auto;
     overflow: hidden;
@@ -374,9 +452,8 @@ const manualClick = () => {
         height: 34px;
         background: var(--el-color-primary);
         border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        text-align: center;
+        line-height: 34px;
         font-size: 16px;
         color: #fff;
         cursor: pointer;
@@ -409,6 +486,7 @@ const manualClick = () => {
             width: 60px;
             height: 60px;
             border-radius: 8px;
+            object-fit: cover;
           }
           .name {
             font-family:
@@ -466,6 +544,12 @@ const manualClick = () => {
             font-size: 16px;
             color: var(--default-font-color);
             line-height: 22px;
+          }
+          .buddha {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
           }
           .item-right {
             display: flex;
@@ -606,6 +690,7 @@ const manualClick = () => {
     }
   }
   :deep(.quiz-box) {
+    margin-bottom: 30px;
     .quiz-input,
     .el-input__wrapper {
       height: 58px;
@@ -712,6 +797,13 @@ const manualClick = () => {
 }
 </style>
 <style lang="scss">
+.more-position-popover {
+  .more-position-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
 .Recycled-handle-popover {
   border-radius: 8px !important;
   padding: 19px 18px !important;

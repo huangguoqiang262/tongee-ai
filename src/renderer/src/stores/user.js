@@ -13,8 +13,6 @@ export const useUserStore = defineStore('user', {
   actions: {
     updateUser(user) {
       this.user = user
-      console.log(user);
-
     },
     updateToken(token) {
       this.token = token
@@ -22,7 +20,15 @@ export const useUserStore = defineStore('user', {
     reset() {
       this.user = {}
       this.token = ''
-      this.uniacid = 2
     }
+  }
+})
+export const useToolBarStore = defineStore('toolBar', {
+  state: () => ({
+    toolbarShow: true
+  }),
+  persist: {
+    enabled: true,
+    storage: localStorage
   }
 })

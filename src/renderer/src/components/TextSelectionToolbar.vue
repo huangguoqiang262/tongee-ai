@@ -21,7 +21,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
-
+import { useToolBarStore } from '@renderer/stores/user'
 // 工具栏状态和位置
 const showToolbar = ref(false)
 const position = ref({ x: 0, y: 0 })
@@ -128,6 +128,10 @@ const calculatePosition = async (selectionRect) => {
 
 // 处理文本选择
 const handleSelection = debounce(async () => {
+  if (!useToolBarStore().toolbarShow) {
+    showToolbar.value = false
+    return
+  }
   try {
     const selection = window.getSelection()
     if (!selection || !selection.toString().trim()) {
@@ -213,7 +217,7 @@ const handleCopy = async () => {
   try {
     await navigator.clipboard.writeText(selectedText.value)
     // eslint-disable-next-line no-undef
-    ElMessage.success('文本已复制到剪贴板')
+    ElMessage.primary('文本已复制到剪贴板')
     console.log('文本已复制到剪贴板')
   } catch (error) {
     console.error('复制文本失败:', error)

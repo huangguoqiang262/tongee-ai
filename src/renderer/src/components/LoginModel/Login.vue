@@ -7,10 +7,20 @@
           <div class="sub-title">糖吉医疗AI知识库智能平台</div>
         </div>
         <div class="broadcast-box">
-          <div v-for="(item, index) in broadcastLists" :key="index" class="broadcast-item">
-            <img class="icon" :src="item.icon" alt="" />
-            <div class="title">{{ item.title }}</div>
-          </div>
+          <el-skeleton style="width: 100%; opacity: 0.2" :loading="loading" animated>
+            <template #template>
+              <div v-for="i in 6" :key="i" class="broadcast-item">
+                <el-skeleton-item variant="image" class="icon" />
+                <el-skeleton-item variant="h3" class="title" />
+              </div>
+            </template>
+            <template #default>
+              <div v-for="(item, index) in broadcastLists" :key="index" class="broadcast-item">
+                <img class="icon" :src="item.icon" alt="" />
+                <div class="title">{{ item.title }}</div>
+              </div>
+            </template>
+          </el-skeleton>
         </div>
       </div>
       <img src="@renderer/assets/close-icon.png" class="close-icon" @click.stop="handleClose" />
@@ -213,13 +223,20 @@
 <script setup>
 import { ref, reactive, nextTick, onMounted } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
-import { login, passlogin, send_code, user_info } from '@renderer/api/user'
+import { login, passlogin, send_code, check_sms_code, set_new_pass } from '@renderer/api/user'
 import { get_login_item } from '@renderer/api/index'
 let broadcastLists = ref([])
+let loading = ref(true)
+
 onMounted(() => {
   get_login_item({}).then((res) => {
     if (res.code == 200) {
       broadcastLists.value = res.data
+      if (broadcastLists.value.length > 0) {
+        loading.value = false
+      } else {
+        loading.value = true
+      }
     }
   })
 })
@@ -239,7 +256,6 @@ const switchType = ref('msg_code')
 const puzzle = ref(false)
 const codeTime = ref(0)
 const codeTitle = ref('获取验证码')
-const loginData = ref(null)
 const tabs = ref([
   { id: 'msg_code', title: '验证码登录' },
   { id: 'password', title: '账号密码登录' }
@@ -247,9 +263,20 @@ const tabs = ref([
 
 const loginRules = {
   mobile: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+  ],
   msg_code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
-  re_password: [{ required: true, message: '请再次输入密码', trigger: 'blur' }]
+  re_password: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) =>
+        value === loginForm.password || callback('两次输入密码不一致'),
+      trigger: 'blur'
+    }
+  ]
 }
 let nextForget = ref(false)
 let isforgetPassword = ref(false)
@@ -265,7 +292,7 @@ const handlePuzzleSuccess = () => {
   send_code({ mobile: loginForm.mobile }).then((res) => {
     if (res.code == 200) {
       // eslint-disable-next-line no-undef
-      ElMessage.success('验证码发送成功')
+      ElMessage.primary('验证码发送成功')
       codeTime.value = 60
       const timer = setInterval(() => {
         if (codeTime.value >= 1) {
@@ -294,6 +321,17 @@ const backLogin = () => {
 
 const switchChange = (item) => {
   switchType.value = item.id
+  if (switchType.value == 'password') {
+    var rememberPasswordData = JSON.parse(localStorage.getItem('rememberPassword'))
+    if (rememberPasswordData) {
+      loginForm.mobile = rememberPasswordData.mobile
+      loginForm.password = rememberPasswordData.password
+      rememberPassword.value = true
+    }
+  } else {
+    loginForm.mobile = ''
+    loginForm.password = ''
+  }
   nextTick(() => {
     loginFormRef.value?.resetFields()
   })
@@ -324,24 +362,37 @@ const handleNext = () => {
   loginFormRef.value?.validate((valid) => {
     if (valid) {
       if (isforgetPassword.value) {
-        nextForget.value = true
+        check_sms_code({ mobile: loginForm.mobile, msg_code: loginForm.msg_code }).then((res) => {
+          if (res.code == 200) {
+            nextForget.value = true
+          }
+        })
       }
-      // register(loginForm)
-      //   .then((response) => {
-      //     if (response.code == 200) {
-      //       // eslint-disable-next-line no-undef
-      //       ElMessage.success('注册成功，请登录')
-      //       backLogin()
-      //     }
-      //   })
-      //   .catch(() => {})
     }
   })
 }
 const handleForget = () => {
-  if (nextForget.value) {
-    handleLogin()
-  }
+  loginFormRef.value?.validate((valid) => {
+    if (valid) {
+      if (nextForget.value) {
+        set_new_pass({ mobile: loginForm.mobile, password: loginForm.password }).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('修改成功，并已登录')
+            const { data } = res
+            const loginData = data
+            userStore.updateToken(loginData.token)
+            userStore.updateUser(loginData.userInfo)
+            // getUserInfo()
+            const timer = setTimeout(() => {
+              handleClose()
+              clearTimeout(timer)
+            }, 1000)
+          }
+        })
+      }
+    }
+  })
 }
 const handleLogin = () => {
   loginFormRef.value?.validate((valid) => {
@@ -351,12 +402,12 @@ const handleLogin = () => {
           .then(async (response) => {
             if (response.code == 200) {
               // eslint-disable-next-line no-undef
-              ElMessage.success('登录成功')
+              ElMessage.primary('登录成功')
               const { data } = response
-              loginData.value = data
-              userStore.token = loginData.value.token
-              userStore.updateToken(loginData.value.token)
-              getUserInfo()
+              const loginData = data
+              userStore.updateToken(loginData.token)
+              userStore.updateUser(loginData.userInfo)
+              // getUserInfo()
               const timer = setTimeout(() => {
                 handleClose()
                 clearTimeout(timer)
@@ -369,12 +420,23 @@ const handleLogin = () => {
           .then(async (response) => {
             if (response.code == 200) {
               // eslint-disable-next-line no-undef
-              ElMessage.success('登录成功')
+              ElMessage.primary('登录成功')
               const { data } = response
-              loginData.value = data
-              userStore.token = loginData.value.token
-              userStore.updateToken(loginData.value.token)
-              getUserInfo()
+              const loginData = data
+              userStore.updateToken(loginData.token)
+              userStore.updateUser(loginData.userInfo)
+              if (rememberPassword.value) {
+                localStorage.setItem(
+                  'rememberPassword',
+                  JSON.stringify({
+                    mobile: loginForm.mobile,
+                    password: loginForm.password
+                  })
+                )
+              } else {
+                localStorage.removeItem('rememberPassword')
+              }
+              // getUserInfo()
               const timer = setTimeout(() => {
                 handleClose()
                 clearTimeout(timer)
@@ -390,13 +452,13 @@ const handleLogin = () => {
     }
   })
 }
-const getUserInfo = () => {
-  user_info({}).then((res) => {
-    if (res.code == 200) {
-      userStore.updateUser(res.data?.user_info)
-    }
-  })
-}
+// const getUserInfo = () => {
+//   user_info({}).then((res) => {
+//     if (res.code == 200) {
+//       userStore.updateUser(res.data?.user_info)
+//     }
+//   })
+// }
 // 定义事件
 const emit = defineEmits(['close'])
 
@@ -493,7 +555,13 @@ input:-internal-autofill-selected {
       padding: 70px 50px;
       width: 470px;
       height: 100%;
-      background: url('@renderer/assets/login-img.png') no-repeat center/100% 100%;
+      background:
+        url('@renderer/assets/login-img.png') no-repeat center/100% 100%,
+        linear-gradient(
+          165deg,
+          color-mix(in srgb, var(--el-color-primary) 90%, #ffffff) 0%,
+          var(--el-color-primary-dark-2) 100%
+        );
       user-select: none;
       .hd-title-box {
         margin-bottom: 60px;
@@ -518,6 +586,7 @@ input:-internal-autofill-selected {
             margin-bottom: 0;
           }
           .icon {
+            flex-shrink: 0;
             width: 22px;
             height: 22px;
             object-fit: cover;

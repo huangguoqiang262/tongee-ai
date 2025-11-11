@@ -548,7 +548,7 @@ export default {
       this.$refs.fileList.scrollTo(0, this.$refs.fileList.scrollHeight)
       // eslint-disable-next-line no-undef
       ElMessage({
-        type: 'success',
+        type: 'primary',
         message: '上传成功'
       })
     },

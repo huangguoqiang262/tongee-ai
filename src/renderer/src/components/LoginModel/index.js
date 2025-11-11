@@ -1,12 +1,10 @@
 import { createApp } from 'vue'
-import { ElMessage } from 'element-plus'
 import LoginComponent from './Login.vue'
 
 let currentInstance = null
 
 export function showLoginModel() {
   if (currentInstance) {
-    ElMessage.warning('登录窗口已打开')
     return
   }
 

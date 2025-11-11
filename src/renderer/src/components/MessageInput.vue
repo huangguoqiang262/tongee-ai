@@ -183,10 +183,10 @@ import updateNotificationIcon from '@renderer/assets/home/updateNotification-ico
 import quickAccessIcon from '@renderer/assets/home/quickAccess-icon.png'
 import imageProductionIcon from '@renderer/assets/home/imageProduction-icon.png'
 import IntelligentWritingIcon from '@renderer/assets/home/intelligentWriting-icon.png'
-import { useUserStore } from '@renderer/stores/user'
+import { useCheckLogin } from '@renderer/hooks/checkLogin'
 export default {
   name: 'MessageInput',
-  inject: ['addNewTab', '$LoginModel'],
+  inject: ['addNewTab'],
   props: {
     // eslint-disable-next-line vue/prop-name-casing
     attach_file: {
@@ -432,26 +432,20 @@ export default {
     // 移除事件监听
   },
   methods: {
-    checkLogin() {
-      const userStore = useUserStore()
-      if (!userStore.token) {
-        this.$LoginModel()
-        return false
-      }
-    },
     closeMenu() {
       this.activeMenu = ''
     },
     handleMenuClick(item) {
-      this.checkLogin()
-      this.activeMenu = item.url
-      // 打开新标签页
-      if (item.isLink) {
-        this.addNewTab({
-          url: item.url,
-          title: item.title,
-          isInternal: true
-        })
+      if (useCheckLogin().value) {
+        this.activeMenu = item.url
+        // 打开新标签页
+        if (item.isLink) {
+          this.addNewTab({
+            url: item.url,
+            title: item.title,
+            isInternal: true
+          })
+        }
       }
     },
     // 是否联网
@@ -611,7 +605,7 @@ export default {
       this.$refs.fileList.scrollTo(0, this.$refs.fileList.scrollHeight)
       // eslint-disable-next-line no-undef
       ElMessage({
-        type: 'success',
+        type: 'primary',
         message: '上传成功'
       })
     },

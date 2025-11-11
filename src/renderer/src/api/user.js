@@ -52,7 +52,7 @@ export function edit_user(data) {
 // 校验短信验证码
 export function check_sms_code(data) {
   return request({
-    url: '/api/login/check_sms_code',
+    url: '/login/check_sms_code',
     method: 'post',
     data
   })
@@ -60,7 +60,7 @@ export function check_sms_code(data) {
 // 忘记密码-设置新密码
 export function set_new_pass(data) {
   return request({
-    url: '/api/login/set_new_pass',
+    url: '/login/set_new_pass',
     method: 'post',
     data
   })

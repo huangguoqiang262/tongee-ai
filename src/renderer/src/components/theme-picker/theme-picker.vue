@@ -17,15 +17,12 @@
 </template>
 
 <script setup>
-import { inject } from 'vue'
 import { ref, watch } from 'vue'
 import { useThemeStore } from '@renderer/stores/theme'
 const themeStore = useThemeStore()
 var theme = ref(themeStore.theme)
-const $LoginModel = inject('$LoginModel')
 watch(theme, (newTheme) => {
   themeStore.theme = newTheme
-  $LoginModel()
 })
 </script>
 

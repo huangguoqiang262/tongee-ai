@@ -147,7 +147,7 @@ export const handleCopyMsg = async (data) => {
         .then(() => {
           ElMessage({
             message: '复制成功',
-            type: 'success'
+            type: 'primary'
           })
         })
         .catch(() => {
