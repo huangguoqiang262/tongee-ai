@@ -28,6 +28,7 @@
     "electron-screenshots": "^0.5.27",
     "electron-updater": "^6.3.9",
     "element-plus": "^2.11.1",
+    "element-tree-line": "^0.2.1",
     "html2canvas": "^1.4.1",
     "lodash.clonedeep": "^4.5.0",
     "pinia": "^3.0.3",

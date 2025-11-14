@@ -27,28 +27,20 @@
             </div>
           </div>
           <div class="commom-list" :class="{ 'close-box': closeCommonList }">
-            <div class="item active-repository">
+            <div
+              v-for="item in commonCreateList"
+              :key="item.id"
+              class="item"
+              :class="{ 'active-repository': activeRepositoryId == item.id }"
+              @click="getRepositoryInfo(item.id)"
+            >
               <div class="icon-box">
-                <img class="icon" src="@renderer/assets/logo.png" alt="" />
+                <img class="icon" :src="item.picurl || defaultCover" alt="" />
               </div>
-              <div class="title">糖吉医疗最新文献更新</div>
-              <div class="dot-dark"></div>
+              <div class="title">{{ item.title }}</div>
+              <div v-if="item.is_prompt == 1" class="dot-dark"></div>
             </div>
-            <div class="item">
-              <div class="icon-box">
-                <img class="icon" src="@renderer/assets/logo.png" alt="" />
-              </div>
-              <div class="title">糖吉医疗最新文献更新</div>
-              <div class="dot-dark"></div>
-            </div>
-            <div class="item">
-              <div class="icon-box">
-                <img class="icon" src="@renderer/assets/logo.png" alt="" />
-              </div>
-              <div class="title">糖吉医疗最新文献更新</div>
-              <div class="dot-dark"></div>
-            </div>
-            <div class="expand" @click="commonExpandChange">
+            <div v-if="commonCreateList.length > 3" class="expand" @click="commonExpandChange">
               {{ createCommonExpand ? '收起' : '展开' }}
             </div>
           </div>
@@ -66,28 +58,20 @@
             </div>
           </div>
           <div class="commom-list" :class="{ 'close-box': closeJoinList }">
-            <div class="item">
+            <div
+              v-for="item in commonJoinList"
+              :key="item.id"
+              class="item"
+              :class="{ 'active-repository': activeRepositoryId == item.id }"
+              @click="getRepositoryInfo(item.id)"
+            >
               <div class="icon-box">
-                <img class="icon" src="@renderer/assets/logo.png" alt="" />
+                <img class="icon" :src="item.picurl || defaultCover" alt="" />
               </div>
-              <div class="title">糖吉医疗最新文献更新</div>
-              <div class="dot-dark"></div>
+              <div class="title">{{ item.title }}</div>
+              <div v-if="item.is_prompt == 1" class="dot-dark"></div>
             </div>
-            <div class="item">
-              <div class="icon-box">
-                <img class="icon" src="@renderer/assets/logo.png" alt="" />
-              </div>
-              <div class="title">糖吉医疗最新文献更新</div>
-              <div class="dot-dark"></div>
-            </div>
-            <div class="item">
-              <div class="icon-box">
-                <img class="icon" src="@renderer/assets/logo.png" alt="" />
-              </div>
-              <div class="title">糖吉医疗最新文献更新</div>
-              <div class="dot-dark"></div>
-            </div>
-            <div class="expand" @click="joinExpandChange">
+            <div v-if="commonJoinList.length > 3" class="expand" @click="joinExpandChange">
               {{ joinCommonExpand ? '收起' : '展开' }}
             </div>
           </div>
@@ -115,30 +99,22 @@
           </div>
         </div>
         <div class="personage-list" :class="{ 'close-box': closePersonageList }">
-          <div class="item">
+          <div
+            v-for="item in personalCreateList"
+            :key="item.id"
+            class="item"
+            :class="{ 'active-repository': activeRepositoryId == item.id }"
+            @click="getRepositoryInfo(item.id)"
+          >
             <div class="icon-box">
-              <img class="icon" src="@renderer/assets/logo.png" alt="" />
+              <img class="icon" :src="item.picurl || defaultCover" alt="" />
             </div>
-            <div class="title">糖吉医疗最新糖吉医疗最新文献更新文献更新</div>
-            <div class="dot-dark"></div>
-          </div>
-          <div class="item">
-            <div class="icon-box">
-              <img class="icon" src="@renderer/assets/logo.png" alt="" />
-            </div>
-            <div class="title">糖吉医疗最新文献更新</div>
-            <div class="dot-dark"></div>
-          </div>
-          <div class="item">
-            <div class="icon-box">
-              <img class="icon" src="@renderer/assets/logo.png" alt="" />
-            </div>
-            <div class="title">糖吉医疗最新文献更新</div>
-            <div class="dot-dark"></div>
+            <div class="title">{{ item.title }}</div>
+            <div v-if="item.is_prompt == 1" class="dot-dark"></div>
           </div>
           <div class="storage-space-box">
             <div class="space-box">已使用 30MB/30GB</div>
-            <div class="expand" @click="personageExpandChange">
+            <div v-if="personalCreateList.length > 3" class="expand" @click="personageExpandChange">
               {{ personageExpand ? '收起' : '展开' }}
             </div>
           </div>
@@ -148,6 +124,7 @@
     <div class="center-box">
       <div class="repository-detail-box">
         <el-popover
+          v-if="Object.keys(activeRepository).length"
           ref="repositoryPopover"
           popper-class="custom-repository-popover"
           trigger="click"
@@ -160,7 +137,7 @@
             </div>
           </template>
           <div class="common-handle-box" @click="hidePopover(repositoryPopover)">
-            <div class="item" @click="beforeEditRepository({ type: 'common' })">
+            <div class="item" @click="beforeEditRepository">
               <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
               <div class="title">资料修改</div>
             </div>
@@ -186,28 +163,55 @@
             </div>
           </div>
         </el-popover>
-        <div class="detail-box">
-          <div class="top" @click="beforeEditRepository({ type: 'common' })">
-            <img class="cover-img" src="@renderer/assets/logo.png" alt="" />
+        <div v-if="Object.keys(activeRepository).length" class="detail-box">
+          <div class="top" @click="beforeEditRepository">
+            <img class="cover-img" :src="activeRepository.picurl || defaultCover" alt="" />
             <div class="top-right">
-              <div class="title">糖吉医疗最新文献更新</div>
+              <div class="title">{{ activeRepository.title }}</div>
               <div class="top-right-bottom">
                 <div class="author-or-num-box">
-                  <img class="avatar" src="@renderer/assets/default-avatar.png" alt="" />
-                  <div class="author-name">糖吉医疗</div>
+                  <img
+                    class="avatar"
+                    :src="activeRepository.create_user?.avatar || defaultAvatar"
+                    alt=""
+                  />
+                  <div class="author-name">{{ activeRepository.create_user?.name }}</div>
                   <div class="vertical-line"></div>
-                  <div class="num">6个内容</div>
+                  <div class="num">{{ activeRepository.content_count }}个内容</div>
                 </div>
                 <div class="management-box">
-                  <MultiAvatar :avatars="avatarList" :size="18" :max-count="5" :spacing="-5" />
+                  <MultiAvatar
+                    :avatars="activeRepository.manager_avatars"
+                    :size="18"
+                    :max-count="5"
+                    :spacing="-5"
+                  />
                 </div>
               </div>
             </div>
           </div>
-          <div class="repository-des" @click="beforeEditRepository({ type: 'common' })">
-            快来填写知识库的描述吧～
+          <div class="repository-des" @click="beforeEditRepository">
+            {{ activeRepository.desc || '快来填写知识库的描述吧～' }}
           </div>
         </div>
+        <el-skeleton v-else class="detail-box" animated>
+          <template #template>
+            <div class="top">
+              <el-skeleton-item class="cover-img" />
+              <div class="top-right">
+                <el-skeleton-item class="title"></el-skeleton-item>
+                <div class="top-right-bottom">
+                  <div class="author-or-num-box">
+                    <el-skeleton-item variant="image" class="avatar" />
+                    <el-skeleton-item class="author-name" style="width: 60px" />
+                    <el-skeleton-item class="author-name" style="width: 60px" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <el-skeleton-item class="repository-des"> </el-skeleton-item>
+          </template>
+        </el-skeleton>
       </div>
       <div class="detail-list-box">
         <div v-show="!isSearching" class="list-handle-box">
@@ -343,7 +347,7 @@
           </el-icon>
         </div>
         <div class="list-box">
-          <template v-for="item in commomList" :key="item.id">
+          <template v-for="item in detailFileList" :key="item.id">
             <div
               v-if="item.type == 'directory'"
               class="list-item"
@@ -562,13 +566,15 @@
     <AddRepository
       v-model="addRepositoryVisible"
       :type="repositoryType"
+      :repository="activeRepository"
       :submit-type="submitRepositoryType"
       @close="closeAddRepositoryDialog"
-      @add-repository="addRepository"
+      @submit-repository="submitRepository"
     />
     <!-- 知识库权限弹窗 -->
     <RepositoryPermission
       v-model="repositoryPermissionVisible"
+      :permission="repositoryPermission"
       @close="closeRepositoryPermissionDialog"
       @set-permission="setRepositoryPermission"
     />
@@ -603,6 +609,18 @@ import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
 import headSquareIcon from '@renderer/assets/repository/head-square-icon.png'
+import defaultCover from '@renderer/assets/repository/default-cover.png'
+import defaultAvatar from '@renderer/assets/default-avatar.png'
+import {
+  get_knows,
+  create_know,
+  edit_know,
+  del_know,
+  get_know_info,
+  get_know_permission,
+  // set_know_permission,
+
+} from '@renderer/api/repository'
 let repositorySortPopover = ref(null)
 let repositoryNotePopover = ref(null)
 let sortList = ref([
@@ -630,6 +648,68 @@ const squaretabChange = () => {
     isInternal: true
   })
 }
+// 公共知识库我的创建
+const commonCreateList = ref([])
+const getCommonCreateList = () => {
+  get_knows({ is_public: 1, is_creater: 1 }).then((res) => {
+    commonCreateList.value = res.data
+    if (!activeRepositoryId.value && commonCreateList.value.length) {
+      activeRepositoryId.value = commonCreateList.value[0].id
+      repositoryType.value = 'common'
+      getRepositoryInfo(activeRepositoryId.value)
+    } else if (
+      !activeRepositoryId.value &&
+      !commonCreateList.value.length &&
+      personalCreateList.value.length
+    ) {
+      activeRepositoryId.value = personalCreateList.value[0].id
+      repositoryType.value = 'personage'
+      getRepositoryInfo(activeRepositoryId.value)
+    }
+  })
+}
+// 公共知识库我的加入
+const commonJoinList = ref([])
+const getCommonJoinList = () => {
+  get_knows({ is_public: 1, is_creater: 0 }).then((res) => {
+    commonJoinList.value = res.data
+  })
+}
+// 个人知识库我的创建
+const personalCreateList = ref([])
+const getPersonalCreateList = () => {
+  get_knows({ is_public: 0 }).then((res) => {
+    personalCreateList.value = res.data
+    if (!activeRepositoryId.value && personalCreateList.value.length) {
+      activeRepositoryId.value = personalCreateList.value[0].id
+      repositoryType.value = 'personage'
+      getRepositoryInfo(activeRepositoryId.value)
+    } else if (
+      !activeRepositoryId.value &&
+      !personalCreateList.value.length &&
+      commonCreateList.value.length
+    ) {
+      activeRepositoryId.value = commonCreateList.value[0].id
+      repositoryType.value = 'common'
+      getRepositoryInfo(activeRepositoryId.value)
+    }
+  })
+}
+onMounted(() => {
+  getCommonCreateList()
+  getCommonJoinList()
+  getPersonalCreateList()
+})
+const repositoryPermission = ref({})
+// 获取知识库权限
+const getRepositoryPermission = () => {
+  get_know_permission({ know_id: activeRepositoryId.value }).then((res) => {
+    if (res.code == 200) {
+      repositoryPermission.value = res.data
+      repositoryPermissionVisible.value = true
+    }
+  })
+}
 // 反馈
 const beforeRepositoryFeedback = () => {
   addNewTab({
@@ -644,15 +724,99 @@ const closeAddRepositoryDialog = () => {
   addRepositoryVisible.value = false
 }
 // 确认添加知识库
-const addRepository = (repository) => {
-  console.log(repository)
+const submitRepository = (repository) => {
+  var data = {
+    ...repository
+  }
+  if (repositoryType.value == 'common') {
+    data.is_public = 1
+    if (submitRepositoryType.value == 'create') {
+      create_know(data).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '创建成功'
+          })
+          getCommonCreateList()
+          closeAddRepositoryDialog()
+        }
+      })
+    } else {
+      data.know_id = activeRepository.value.id
+      edit_know(data).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '修改成功'
+          })
+          getRepositoryInfo(activeRepository.value.id)
+          getCommonCreateList()
+          closeAddRepositoryDialog()
+        }
+      })
+    }
+  } else {
+    data.is_public = 0
+    if (submitRepositoryType.value == 'create') {
+      create_know(data).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '创建成功'
+          })
+          getPersonalCreateList()
+          closeAddRepositoryDialog()
+        }
+      })
+    } else {
+      data.know_id = activeRepository.value.id
+      edit_know(data).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '修改成功'
+          })
+          getRepositoryInfo(activeRepository.value.id)
+          getPersonalCreateList()
+          closeAddRepositoryDialog()
+        }
+      })
+    }
+  }
 
   // addRepositoryVisible.value = false
 }
+const activeRepositoryId = ref('')
 // 添加知识库类型
 const repositoryType = ref('common')
 // 知识库提交类型
 const submitRepositoryType = ref('create')
+// 知识库详情文件列表
+const detailFileList = ref([])
+// 活动知识库
+const activeRepository = ref({})
+const getRepositoryInfo = (id) => {
+  activeRepositoryId.value = id
+  get_know_info({ know_id: id }).then((res) => {
+    if (res.code == 200) {
+      activeRepository.value = res.data
+      detailFileList.value = res.data.items
+    }
+  })
+}
+
+// 知识库详情列表
+const getFiles = (parent_item_id = 0) => {
+  get_know_info({ know_id: activeRepositoryId.value, parent_item_id }).then((res) => {
+    if (res.code == 200) {
+      detailFileList.value = res.data.items
+    }
+  })
+}
 // 唤起添加知识库弹窗
 const beforeAddRepository = (type) => {
   repositoryType.value = type
@@ -661,8 +825,8 @@ const beforeAddRepository = (type) => {
 }
 // 资料修改
 // 唤起资料修改弹窗
-const beforeEditRepository = (item) => {
-  repositoryType.value = item.type
+const beforeEditRepository = () => {
+  repositoryType.value = activeRepository.value.is_public == 1 ? 'common' : 'personage'
   submitRepositoryType.value = 'update'
   addRepositoryVisible.value = true
 }
@@ -679,10 +843,21 @@ const beforeDeleteRepository = () => {
     type: 'warning'
   })
     .then(() => {
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'primary',
-        message: '删除成功'
+      del_know({ know_id: activeRepository.value.id }).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '删除成功'
+          })
+          activeRepository.value = {}
+          activeRepositoryId.value = ''
+          if (activeRepository.value.is_public == 1) {
+            getCommonCreateList()
+          } else {
+            getPersonalCreateList()
+          }
+        }
       })
     })
     .catch(() => {})
@@ -690,7 +865,7 @@ const beforeDeleteRepository = () => {
 // 知识库权限弹窗
 let repositoryPermissionVisible = ref(false)
 const beforeRepositoryPermission = () => {
-  repositoryPermissionVisible.value = true
+  getRepositoryPermission()
 }
 const closeRepositoryPermissionDialog = () => {
   repositoryPermissionVisible.value = false
@@ -761,54 +936,6 @@ const setRepositoryMemberPermission = (permission) => {
   console.log(permission)
   repositoryMemberVisible.value = false
 }
-// 知识库列表
-const commomList = ref([
-  {
-    type: 'directory',
-    name: '糖源医疗',
-    count: 3,
-    size: 1600,
-    create_time: '2025/09/09',
-    id: 1,
-    checked: false
-  },
-  {
-    type: 'docx',
-    name: '糖源医疗',
-    count: 3,
-    size: 326,
-    create_time: '2025/09/09',
-    id: 2,
-    checked: false
-  },
-  {
-    type: 'xlsx',
-    name: '糖源医疗',
-    count: 3,
-    size: 3699,
-    create_time: '2025/09/09',
-    id: 3,
-    checked: false
-  },
-  {
-    type: 'img',
-    name: '糖源医疗',
-    count: 3,
-    size: 123,
-    create_time: '2025/09/09',
-    id: 4,
-    checked: false
-  },
-  {
-    type: 'web',
-    name: 'https://www.baidu.com',
-    count: 3,
-    size: 562,
-    create_time: '2025/09/09',
-    id: 5,
-    checked: false
-  }
-])
 // 创建文件夹
 const createFolder = (item) => {
   item.isCreated = false
@@ -845,7 +972,7 @@ const submitWebForm = (FormRef) => {
   })
 }
 let activeFiles = computed(() => {
-  return commomList.value.filter((item) => item.checked)
+  return detailFileList.value.filter((item) => item.checked)
 })
 // 右键菜单相关函数
 const showContextMenu = (e, item) => {
@@ -970,7 +1097,7 @@ const handleContextMenuAction = ({ action }) => {
   contextMenu.value.show = false
 }
 const resetChecks = () => {
-  commomList.value.map((item) => {
+  detailFileList.value.map((item) => {
     item.checked = false
   })
 }
@@ -1005,14 +1132,6 @@ const searchMenuClick = () => {
 onMounted(() => {
   document.addEventListener('click', hideContextMenu)
 })
-const avatarList = ref([
-  'https://gips0.baidu.com/it/u=2715557971,1924949551&fm=3074&app=3074&f=PNG?w=2048&h=2048',
-  'https://img1.baidu.com/it/u=2347178170,458451905&fm=253&app=138&f=JPEG?w=500&h=500',
-  'https://gips0.baidu.com/it/u=2715557971,1924949551&fm=3074&app=3074&f=PNG?w=2048&h=2048',
-  'https://gips3.baidu.com/it/u=2776647388,3101487920&fm=3074&app=3074&f=PNG?w=2048&h=2048',
-  'https://gips0.baidu.com/it/u=2715557971,1924949551&fm=3074&app=3074&f=PNG?w=2048&h=2048',
-  'https://img0.baidu.com/it/u=4127955635,2106699935&fm=253&app=138&f=JPEG?w=500&h=500'
-])
 let createCommonExpand = ref(false)
 const commonExpandChange = () => {
   createCommonExpand.value = !createCommonExpand.value
@@ -1065,7 +1184,7 @@ const beforeUploadFiles = (type) => {
   } else if (type == 'import-web') {
     importWebVisible.value = true
   } else if (type == 'createFolder') {
-    commomList.value.unshift({
+    detailFileList.value.unshift({
       type: 'directory',
       name: '新建文件夹' + Date.now(),
       count: 0,
@@ -1490,7 +1609,7 @@ const formatFileSize = (bytes) => {
             }
           }
 
-          .active-repository {
+          &.active-repository {
             background: var(--el-color-primary-light-9);
 
             .icon-box {
@@ -1611,9 +1730,11 @@ const formatFileSize = (bytes) => {
           cursor: pointer;
 
           .cover-img {
+            flex-shrink: 0;
             display: block;
             width: 64px;
             height: 64px;
+            object-fit: cover;
             border-radius: 8px;
           }
 
@@ -1648,9 +1769,12 @@ const formatFileSize = (bytes) => {
                 gap: 4px;
 
                 .avatar {
+                  flex-shrink: 0;
                   display: block;
                   width: 18px;
                   height: 18px;
+                  border-radius: 2px;
+                  object-fit: cover;
                 }
 
                 .author-name {

@@ -31,15 +31,15 @@
           <el-form-item v-if="props.type == 'common'" label="类型" prop="type_id">
             <el-select v-model="form.type_id" size="large" placeholder="请选择类型">
               <el-option
-                v-for="item in options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+                v-for="item in knowTypes"
+                :key="item.id"
+                :label="item.title"
+                :value="item.id"
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="名称" prop="name">
-            <el-input v-model="form.name" size="large" placeholder="请输入知识库名称" />
+          <el-form-item label="名称" prop="title">
+            <el-input v-model="form.title" size="large" placeholder="请输入知识库名称" />
           </el-form-item>
           <!-- 封面 -->
           <el-form-item label="封面">
@@ -47,6 +47,10 @@
               class="cover-uploader"
               :action="uploadUrl"
               :show-file-list="false"
+              accept=".jpg,.jpeg,.png"
+              name="file[]"
+              :data="{ uniacid: uniacid }"
+              :headers="{ Authorization: token }"
               :on-success="handleAvatarSuccess"
             >
               <div class="cover-box">
@@ -55,14 +59,14 @@
                   src="@renderer/assets/repository/edit-cover-icon.png"
                   alt=""
                 />
-                <img v-if="cover" :src="cover" class="cover" />
+                <img v-if="form.pic_url" :src="form.pic_url" class="cover" />
                 <img v-else src="@renderer/assets/repository/default-cover.png" class="cover" />
               </div>
             </el-upload>
           </el-form-item>
           <el-form-item label="描述">
             <el-input
-              v-model="form.description"
+              v-model="form.desc"
               type="textarea"
               size="large"
               resize="none"
@@ -105,7 +109,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import cloneDeep from 'lodash.clonedeep'
+import { useUserStore } from '@renderer/stores/user'
+import { ref, watch, onMounted, computed } from 'vue'
+import { know_types } from '@renderer/api/repository'
 import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
 import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
 const props = defineProps({
@@ -116,57 +123,85 @@ const props = defineProps({
   submitType: {
     type: String,
     default: 'create'
+  },
+  repository: {
+    type: Object,
+    default: () => ({})
   }
 })
+const emits = defineEmits(['submitRepository'])
+let uniacid = computed(() => useUserStore().uniacid)
+let token = computed(() => useUserStore().token)
 let formRef = ref(null)
-const options = ref([
-  {
-    value: 'Option1',
-    label: 'Option1'
-  },
-  {
-    value: 'Option2',
-    label: 'Option2'
-  },
-  {
-    value: 'Option3',
-    label: 'Option3'
-  },
-  {
-    value: 'Option4',
-    label: 'Option4'
-  },
-  {
-    value: 'Option5',
-    label: 'Option5'
-  }
-])
-let uploadUrl = ''
+let uploadUrl = import.meta.env.VITE_API_BASE_URL + '/api/common/upload'
 let repositoryVisible = defineModel({ type: Boolean })
+const knowTypes = ref([])
+const getKnowTypes = () => {
+  know_types().then((res) => {
+    if (res.code == 200) {
+      knowTypes.value = res.data
+    }
+  })
+}
+onMounted(() => {
+  getKnowTypes()
+})
 watch(repositoryVisible, (newVal) => {
   if (newVal) {
-    form.value = {
-      type_id: '',
-      name: '',
-      cover: '',
-      description: '',
-      recommendQuestions: [
-        {
-          question: ''
-        },
-        {
-          question: ''
-        },
-        {
-          question: ''
-        },
-        {
-          question: ''
-        },
-        {
-          question: ''
-        }
-      ]
+    const deepRepository = cloneDeep(props.repository)
+    if (deepRepository && props.submitType != 'create' && Object.keys(deepRepository).length) {
+      form.value = {
+        type_id: deepRepository.type_id,
+        title: deepRepository.title,
+        pic_url: deepRepository.picurl,
+        desc: deepRepository.desc,
+        recommendQuestions: [
+          {
+            question: ''
+          },
+          {
+            question: ''
+          },
+          {
+            question: ''
+          },
+          {
+            question: ''
+          },
+          {
+            question: ''
+          }
+        ]
+      }
+      if (deepRepository.questions.length) {
+        form.value.recommendQuestions = deepRepository.questions.map((item) => ({
+          question: item
+        }))
+      }
+    } else {
+      form.value = {
+        type_id: '',
+        title: '',
+        pic_url: '',
+        desc: '',
+        recommendQuestions: [
+          {
+            question: ''
+          },
+          {
+            question: ''
+          },
+          {
+            question: ''
+          },
+          {
+            question: ''
+          },
+          {
+            question: ''
+          }
+        ]
+      }
     }
   }
 })
@@ -180,9 +215,9 @@ watch(
 )
 const form = ref({
   type_id: '',
-  name: '',
-  cover: '',
-  description: '',
+  title: '',
+  pic_url: '',
+  desc: '',
   recommendQuestions: [
     {
       question: ''
@@ -213,21 +248,22 @@ const removeRecommendQuestion = (index) => {
 }
 const rules = ref({
   type_id: [{ required: true, message: '请选择类型', trigger: 'blur' }],
-  name: [{ required: true, message: '请输入知识库名称', trigger: 'blur' }],
-  description: [{ required: true, message: '请对知识库简要描述', trigger: 'blur' }]
+  title: [{ required: true, message: '请输入知识库名称', trigger: 'blur' }],
+  desc: [{ required: true, message: '请对知识库简要描述', trigger: 'blur' }]
   // recommendQuestions: [{ required: true, message: '请设置推荐问题', trigger: 'blur' }]
 })
-const handleAvatarSuccess = (res, file) => {
-  console.log(file)
-
-  form.value.cover = res.data.url
+const handleAvatarSuccess = (res) => {
+  form.value.pic_url = res.data[0].url
 }
 // 提交
 const submitForm = () => {
   formRef.value.validate((valid) => {
     if (valid) {
-      // 提交表单数据
-      console.log('表单数据:', form.value)
+      var submitData = {
+        ...form.value,
+        question: form.value.recommendQuestions.map((item) => item.question).filter((item) => item)
+      }
+      emits('submitRepository', submitData)
     } else {
       console.log('表单验证失败')
     }
@@ -372,7 +408,7 @@ const submitForm = () => {
           height: 90px;
           .el-upload {
             box-sizing: border-box;
-            border: 1px dashed var(--el-border-color);
+            border: 1px dashed transparent;
             border-radius: 10px;
             cursor: pointer;
             position: relative;

@@ -19,22 +19,22 @@
       </template>
       <div class="form-box">
         <div class="type-list-box">
-          <div class="list-item" @click="permissionChange('autoAddMember')">
-            <div class="radio" :class="{ 'is-checked': permissionType === 'autoAddMember' }"></div>
+          <div class="list-item" @click="permissionChange(0)">
+            <div class="radio" :class="{ 'is-checked': permissionType == 0 }"></div>
             <div class="right">
               <div class="title">自动添加成员</div>
               <div class="desc">根据部门组织设置，自动将成员加入知识库</div>
             </div>
           </div>
-          <div class="list-item" @click="permissionChange('private')">
-            <div class="radio" :class="{ 'is-checked': permissionType === 'private' }"></div>
+          <div class="list-item" @click="permissionChange(1)">
+            <div class="radio" :class="{ 'is-checked': permissionType == 1 }"></div>
             <div class="right">
               <div class="title">转为私密</div>
               <div class="desc">知识库仅自己可见</div>
             </div>
           </div>
         </div>
-        <div v-if="permissionType === 'autoAddMember'" class="handle-box">
+        <div v-if="permissionType == 0" class="handle-box">
           <div class="handle-item">
             <div class="label">成员内容权限</div>
             <el-select v-model="memberPrivileges" placeholder="请选择" style="width: 160px">
@@ -74,7 +74,7 @@
           <div class="">选择组织</div>
         </template>
         <div class="organization-box">
-          <DepartmentSelector />
+          <DepartmentSelector :tree="treeData" />
         </div>
         <template #footer>
           <div class="dialog-footer">
@@ -96,33 +96,39 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watchEffect } from 'vue'
 const repositoryVisible = defineModel({ type: Boolean })
 const props = defineProps({
-  type: {
-    type: String,
-    default: 'private'
+  permission: {
+    type: Object,
+    default: () => ({})
   }
 })
 // 权限类型
 let permissionList = ref([
   {
     name: '可查看、导出',
-    action: 'public'
+    action: 1
   },
   {
     name: '可查看、不可导出',
-    action: 'private'
+    action: 2
   },
   {
     name: '不可查看',
-    action: 'cannotView'
+    action: 3
   }
 ])
 // 权限类型
-let permissionType = ref(props.type)
+let permissionType = ref(props.permission.setting?.is_private || 1)
+watchEffect(() => {
+  permissionType.value = props.permission.setting?.is_private || 1
+})
 // 成员权限
-let memberPrivileges = ref('public')
+let memberPrivileges = ref(props.permission.setting?.permission_type || 1)
+watchEffect(() => {
+  memberPrivileges.value = props.permission.setting?.permission_type || 1
+})
 const permissionChange = (type) => {
   permissionType.value = type
 }
@@ -131,23 +137,19 @@ const getOrganizationList = () => {
   organizationVisible.value = true
 }
 // 成员加入需确认
-let isConfirm = ref(true)
+let isConfirm = ref(props.permission.setting?.join_type === 2 || true)
+watchEffect(() => {
+  isConfirm.value = props.permission.setting?.join_type === 2 || true
+})
 // 组织权限选择
 let organizationVisible = ref(false)
-let formRef = ref(null)
-const form = ref({
-  type: props.type
+let treeData = ref(props.permission?.tree || [])
+watchEffect(() => {
+  treeData.value = props.permission?.tree || []
 })
 // 提交
 const submitForm = () => {
-  formRef.value.validate((valid) => {
-    if (valid) {
-      // 提交表单数据
-      console.log('表单数据:', form.value)
-    } else {
-      console.log('表单验证失败')
-    }
-  })
+
 }
 </script>
 

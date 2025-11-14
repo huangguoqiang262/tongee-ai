@@ -7,7 +7,8 @@ var generateRequestKey = (config = {}) => {
   // 通过url，method，params，data生成唯一key，用于判断是否重复请求
   // params为get请求参数，data为post请求参数
   const { url, method, params, data } = config
-  return [url, method, params, data].join('&')
+  const postData = JSON.stringify(data)
+  return [url, method, params, postData].join('&')
 
   // return [method, url, qs.stringify(params), qs.stringify(data)].join('&');
 }
