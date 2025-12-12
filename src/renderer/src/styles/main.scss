@@ -1,6 +1,6 @@
 :root {
   --primary-color: #1aa19b;
-  --primary-bg-color: #eeeff0;
+  --primary-bg-color: #EAEBEC;
   --default-font-color: #221815;
   // --el-input-text-color: var(--primary-color);
   --el-text-color-regular: var(--default-font-color);
@@ -64,4 +64,11 @@ body {
     box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
     border-radius: 16px !important;
   }
+}
+.el-splitter-bar__dragger::before, .el-splitter-bar__dragger::after {
+  background-color: #efefef !important;
+  width: 1px !important;
+}
+.el-splitter-bar__dragger:hover:not(.is-disabled)::before, .el-splitter-bar__dragger:hover:not(.is-disabled)::after {
+  background-color: var(--el-color-primary) !important;
 }

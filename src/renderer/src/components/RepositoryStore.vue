@@ -137,30 +137,77 @@
             </div>
           </template>
           <div class="common-handle-box" @click="hidePopover(repositoryPopover)">
-            <div class="item" @click="beforeEditRepository">
-              <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
-              <div class="title">资料修改</div>
-            </div>
-            <div class="item" @click="beforeRepositoryPermission">
-              <img class="icon" src="@renderer/assets/repository/qxsz-icon.png" alt="" />
-              <div class="title">权限设置</div>
-            </div>
-            <div class="item" @click="beforeRepositoryMember">
-              <img class="icon" src="@renderer/assets/repository/cysz-icon.png" alt="" />
-              <div class="title">知识库成员</div>
-            </div>
-            <div class="item" @click="beforeRepositoryFeedback">
-              <img class="icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
-              <div class="title">反馈</div>
-            </div>
-            <div class="item" @click="addQuickAccess">
-              <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
-              <div class="title">添加快捷访问</div>
-            </div>
-            <div class="item" @click="beforeDeleteRepository">
-              <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
-              <div class="title">删除知识库</div>
-            </div>
+            <template
+              v-if="
+                activeRepository.is_public == 1 &&
+                (activeRepository.user_permission?.is_manager == 1 ||
+                  activeRepository.user_permission?.is_creator == 1)
+              "
+            >
+              <div class="item" @click="beforeEditRepository">
+                <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
+                <div class="title">资料修改</div>
+              </div>
+              <div class="item" @click="beforeRepositoryPermission">
+                <img class="icon" src="@renderer/assets/repository/qxsz-icon.png" alt="" />
+                <div class="title">权限设置</div>
+              </div>
+              <div class="item" @click="beforeRepositoryMember(true)">
+                <img class="icon" src="@renderer/assets/repository/cysz-icon.png" alt="" />
+                <div class="title">
+                  知识库成员
+                  <div v-if="unreadApplyNumber > 0" class="unreadApplyNumber">
+                    {{ unreadApplyNumber > 99 ? 99 : unreadApplyNumber }}
+                  </div>
+                </div>
+              </div>
+              <div class="item" @click="beforeRepositoryFeedback">
+                <img class="icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
+                <div class="title">反馈</div>
+              </div>
+              <div class="item" @click="addQuickAccess">
+                <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
+                <div class="title">添加快捷访问</div>
+              </div>
+              <div class="item" @click="beforeDeleteRepository">
+                <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
+                <div class="title">删除知识库</div>
+              </div>
+            </template>
+            <template
+              v-else-if="
+                activeRepository.is_public == 1 &&
+                activeRepository.user_permission?.is_manager == 0 &&
+                activeRepository.user_permission?.is_creator == 0
+              "
+            >
+              <div class="item" @click="beforeRepositoryFeedback">
+                <img class="icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
+                <div class="title">反馈</div>
+              </div>
+              <div class="item" @click="addQuickAccess">
+                <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
+                <div class="title">添加快捷访问</div>
+              </div>
+              <div class="item" @click="beforeQuitRepository">
+                <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
+                <div class="title">退出知识库</div>
+              </div>
+            </template>
+            <template v-if="activeRepository.is_public == 0">
+              <div class="item" @click="beforeEditRepository">
+                <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
+                <div class="title">资料修改</div>
+              </div>
+              <div class="item" @click="addQuickAccess">
+                <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
+                <div class="title">添加快捷访问</div>
+              </div>
+              <div class="item" @click="beforeDeleteRepository">
+                <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
+                <div class="title">删除知识库</div>
+              </div>
+            </template>
           </div>
         </el-popover>
         <div v-if="Object.keys(activeRepository).length" class="detail-box">
@@ -216,7 +263,19 @@
       <div class="detail-list-box">
         <div v-show="!isSearching" class="list-handle-box">
           <div class="path-box">
-            <span>内容</span>
+            <!-- <span>内容</span> -->
+            <!-- <div class="path-box"> -->
+            <div
+              v-for="(item, index) in pathList"
+              :key="index"
+              class="path-item"
+              :class="{ active: index === pathList.length - 1 }"
+              @click="pathChange(index)"
+            >
+              <el-icon v-if="index !== 0" class="icon"><ArrowRight /></el-icon>
+              {{ item.name }}
+            </div>
+            <!-- </div> -->
           </div>
           <div class="icons">
             <el-popover
@@ -272,7 +331,7 @@
                     </div>
                   </template>
                   <div class="common-handle-box" @click="hidePopover(repositoryNotePopover)">
-                    <div class="item">
+                    <div class="item" @click="beforeUploadFiles('createNote')">
                       <img
                         class="icon"
                         src="@renderer/assets/repository/new-note-icon.png"
@@ -280,7 +339,7 @@
                       />
                       <div class="title">新建笔记</div>
                     </div>
-                    <div class="item">
+                    <div class="item" @click="beforeUploadFiles('importNotes')">
                       <img
                         class="icon"
                         src="@renderer/assets/repository/import-notes-icon.png"
@@ -341,138 +400,155 @@
             placeholder="搜索"
             clearable
             @blur="handleBlur"
+            @keyup.enter="handleBlur"
           />
           <el-icon class="search-icon">
             <Search />
           </el-icon>
         </div>
-        <div class="list-box">
+        <div v-if="detailFileList.length" class="list-box">
           <template v-for="item in detailFileList" :key="item.id">
             <div
-              v-if="item.type == 'directory'"
+              v-if="item.item_type == 2"
               class="list-item"
               :class="{ 'active-repository': item.checked }"
               @contextmenu="(e) => showContextMenu(e, item)"
+              @click="dirChange(item)"
             >
               <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
               <img class="cover-img" :src="getFileIcon(item)" alt="" />
-              <template v-if="!item.isCreated">
-                <div class="item-right">
-                  <div class="title">{{ item.name }}</div>
-                  <div class="item-right-bottom">
-                    <div class="size-or-num-box">
-                      <div class="num">{{ item.count }}个内容</div>
-                      <div class="vertical-line"></div>
-                      <div class="size">{{ formatFileSize(item.size) }}</div>
-                    </div>
-                    <div class="management-box">{{ item.create_time }}</div>
-                  </div>
+              <div class="item-right">
+                <div v-if="!item.isCreated" class="title">{{ item.title }}</div>
+                <div v-else class="title">
+                  <el-input
+                    v-model="item.title"
+                    autofocus
+                    class="create-input"
+                    placeholder="请输入文件夹名称"
+                    @keyup.enter="createOrRename(item)"
+                    @blur="createOrRename(item)"
+                  />
                 </div>
-              </template>
-              <template v-else>
-                <div class="item-right">
-                  <div class="title">
-                    <el-input
-                      v-model="item.name"
-                      autofocus
-                      class="create-input"
-                      placeholder="请输入文件夹名称"
-                      @keyup.enter="createFolder(item)"
-                      @blur="createFolder(item)"
-                    />
-                  </div>
-                  <div class="item-right-bottom">
-                    <div class="size-or-num-box">
-                      <div class="num">{{ item.count }}个内容</div>
-                      <div class="vertical-line"></div>
-                      <div class="size">{{ formatFileSize(item.size) }}</div>
-                    </div>
-                    <div class="management-box">{{ item.isCreated ? '' : item.create_time }}</div>
-                  </div>
-                </div>
-              </template>
-            </div>
-            <div
-              v-else
-              class="list-item"
-              :class="{ 'active-repository': item.checked }"
-              @contextmenu="(e) => showContextMenu(e, item)"
-            >
-              <el-checkbox
-                v-model="item.checked"
-                class="checkbox"
-                size="large"
-                @click.stop="contextMenu.show = false"
-              />
-              <img
-                class="cover-img cover-file-img"
-                src="https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800"
-                alt=""
-              />
-              <template v-if="!item.isCreated">
-                <div class="item-right">
-                  <div class="title">{{ item.name }}</div>
-                  <div class="item-right-bottom">
-                    <div class="size-or-num-box">
-                      <div class="type-box">
-                        <img class="icon" :src="getFileIcon(item)" alt="" />
-                        <span v-if="item.type == 'web'">{{ item.name }}</span>
-                        <span v-else-if="item.type == 'txt'">文本</span>
-                        <span v-else-if="item.type == 'img'">图片</span>
-                        <span v-else>{{ item.type.toLocaleUpperCase() }}</span>
-                      </div>
-                      <div v-if="item.type != 'web'" class="size">
-                        {{ formatFileSize(item.size) }}
+                <div class="item-right-bottom">
+                  <div class="size-or-num-box">
+                    <div class="num">{{ item.file_count }}个内容</div>
+                    <div class="vertical-line"></div>
+                    <div class="size">{{ formatFileSize(item.total_space) }}</div>
+                    <div v-if="item.tags" class="tags">
+                      <div v-for="tag in item.tags.split(',')" :key="tag" class="tag">
+                        <img class="icon" src="@renderer/assets/repository/tag-icon.png" alt="" />
+                        {{ tag }}
                       </div>
                     </div>
-                    <div class="management-box">{{ item.create_time }}</div>
                   </div>
+                  <div class="management-box">{{ item.createtime }}</div>
                 </div>
-              </template>
-              <template v-else>
-                <div class="item-right">
-                  <div class="title">
-                    <el-input
-                      v-model="item.name"
-                      autofocus
-                      class="create-input"
-                      placeholder="请输入文件名称"
-                      @keyup.enter="createFolder(item)"
-                      @blur="createFolder(item)"
-                    />
-                  </div>
-                  <div class="item-right-bottom">
-                    <div class="size-or-num-box">
-                      <div class="num">{{ item.count }}个内容</div>
-                      <div class="vertical-line"></div>
-                      <div class="size">{{ formatFileSize(item.size) }}</div>
-                    </div>
-                    <div class="management-box">{{ item.isCreated ? '' : item.create_time }}</div>
-                  </div>
-                </div>
-              </template>
+              </div>
             </div>
+            <el-popover v-else popper-class="abstract-box-popover" placement="right-start">
+              <template #reference>
+                <div
+                  class="list-item"
+                  :class="{ 'active-repository': item.checked }"
+                  @contextmenu="(e) => showContextMenu(e, item)"
+                >
+                  <el-checkbox
+                    v-model="item.checked"
+                    class="checkbox"
+                    size="large"
+                    @click.stop="contextMenu.show = false"
+                  />
+                  <img class="cover-img cover-file-img" :src="item.info.icon" alt="" />
+                  <div class="item-right">
+                    <div v-if="!item.isCreated" class="title">{{ item.title }}</div>
+                    <div v-else class="title">
+                      <el-input
+                        v-model="item.title"
+                        autofocus
+                        class="create-input"
+                        placeholder="请输入文件名称"
+                        @keyup.enter="createOrRename(item)"
+                        @blur="createOrRename(item)"
+                      />
+                    </div>
+                    <div class="item-right-bottom">
+                      <div class="size-or-num-box">
+                        <div class="type-box">
+                          <img class="icon" :src="getFileIcon(item)" alt="" />
+                          <span v-if="item.item_type == 3" class="web-url">{{
+                            item.info.web_url
+                          }}</span>
+                          <span v-else-if="item.title.split('.').pop() == 'txt'">文本</span>
+                          <span
+                            v-else-if="
+                              ['png', 'jpg', 'jpeg', 'gif'].includes(item.title.split('.').pop())
+                            "
+                            >图片</span
+                          >
+                          <span v-else>{{ item.title.split('.').pop().toLocaleUpperCase() }}</span>
+                        </div>
+                        <div v-if="item.item_type != 3" class="size">
+                          {{ formatFileSize(item.total_space) }}
+                        </div>
+                        <div v-if="item.tags" class="tags">
+                          <div v-for="tag in item.tags.split(',')" :key="tag" class="tag">
+                            <img
+                              class="icon"
+                              src="@renderer/assets/repository/tag-icon.png"
+                              alt=""
+                            />
+                            {{ tag }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="management-box">{{ item.createtime }}</div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <div class="abstract-box">
+                <div class="abstract-title">{{ item.title }}</div>
+                <div class="time">上传时间：{{ item.createtime }}</div>
+                <div class="abstract-desc">{{ item.info?.ai_desc || '该内容暂未生成摘要' }}</div>
+              </div>
+            </el-popover>
           </template>
         </div>
+        <div v-else class="empty">
+          <div class="empty-text">暂无内容，快去添加吧</div>
+        </div>
       </div>
+    </div>
+    <div class="right-box">
+      <RepositoryChatPage
+        :know-id="activeRepository.id"
+        :item-id="parentItemId"
+        :repository-name="activeRepository.title"
+        :questions="activeRepository.questions"
+      />
     </div>
     <HandleContextMenu
       :show="contextMenu.show"
       :x="contextMenu.x"
       :y="contextMenu.y"
+      :permission-type="contextMenu.permission_type"
       :action-sheet="contextMenu.actionSheet"
       @action="handleContextMenuAction"
     />
     <UploadFiles
       v-model="uploadVisible"
       :ready-upload-list="ReadyUploadList"
+      :knowledge-id="activeRepositoryId"
+      :parent-item-id="parentItemId"
       @close="closeUploadDialog"
+      @refresh-list="refreshList"
       @before-upload-files="beforeUploadFiles"
     />
     <el-upload
       v-show="false"
       ref="elUploadRef"
       :auto-upload="false"
+      accept=".txt,.png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
       :on-change="handleSelectChange"
     >
       <button ref="uploadBtnRef"></button>
@@ -543,7 +619,7 @@
           </div>
         </template>
       </el-input-tag>
-      <div class="hased-tag-box">
+      <div v-if="hasedTagList.length" class="hased-tag-box">
         <div class="hased-label">我的标签</div>
         <div class="hased-list">
           <el-tag
@@ -581,14 +657,33 @@
     <!-- 知识库成员弹窗 -->
     <RepositoryMember
       v-model="repositoryMemberVisible"
+      :member-list="repositoryMemberList"
+      :unread-apply-number="unreadApplyNumber"
+      :apply-list="repositoryMemberApplyList"
+      :tree-data="repositoryMemberTree"
       @close="closeRepositoryMemberDialog"
       @set-permission="setRepositoryMemberPermission"
+    />
+    <input
+      ref="directoryInputRef"
+      type="file"
+      webkitdirectory
+      directory
+      accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif"
+      multiple
+      style="display: none"
+      @change="handleDirectorySelect"
+    />
+    <take-notes
+      v-model="onlineNoteVisible"
+      import-type="repository"
+      @submit-import="submitImport"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick, inject, computed } from 'vue'
+import { ref, reactive, onMounted, watch, nextTick, inject, computed } from 'vue'
 import topIcon from '@renderer/assets/contextMenu/top-icon.png'
 import unstickIcon from '@renderer/assets/contextMenu/unstick-icon.png'
 import editIcon from '@renderer/assets/contextMenu/edit-icon.png'
@@ -611,6 +706,7 @@ import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
 import headSquareIcon from '@renderer/assets/repository/head-square-icon.png'
 import defaultCover from '@renderer/assets/repository/default-cover.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
+import noteIcon from '@renderer/assets/menu/note-icon.png'
 import {
   get_knows,
   create_know,
@@ -618,26 +714,51 @@ import {
   del_know,
   get_know_info,
   get_know_permission,
-  // set_know_permission,
-
+  set_know_permission,
+  get_know_persons,
+  set_know_person,
+  apply_know_persons,
+  apply_know_agree,
+  know_apply_number,
+  add_know_person,
+  add_access,
+  setTags,
+  doTopKnowFile,
+  create_dir,
+  reNameItem,
+  delItem,
+  create_know_website,
+  setKnowItemPermission,
+  withdraw_join,
+  import_note
 } from '@renderer/api/repository'
+const props = defineProps({
+  attrs: {
+    type: Object,
+    default: () => ({})
+  }
+})
 let repositorySortPopover = ref(null)
 let repositoryNotePopover = ref(null)
 let sortList = ref([
   {
-    label: '上传时间',
-    value: 'create_time'
+    label: '默认',
+    value: 'createtime'
   },
   {
     label: '大小',
-    value: 'size'
+    value: 'total_space '
   },
   {
     label: '名称',
-    value: 'name'
+    value: 'title'
   }
 ])
-let sortType = ref('create_time')
+let directoryInputRef = ref(null)
+let onlineNoteVisible = ref(false)
+// 未读申请数量
+let unreadApplyNumber = ref(0)
+let sortType = ref('createtime')
 let addRepositoryVisible = ref(false)
 const addNewTab = inject('addNewTab')
 const squaretabChange = () => {
@@ -650,9 +771,18 @@ const squaretabChange = () => {
 }
 // 公共知识库我的创建
 const commonCreateList = ref([])
-const getCommonCreateList = () => {
+const getCommonCreateList = (repositoryId = '') => {
   get_knows({ is_public: 1, is_creater: 1 }).then((res) => {
     commonCreateList.value = res.data
+    if (repositoryId) {
+      const repo = commonCreateList.value.find((item) => item.id == repositoryId)
+      if (repo) {
+        activeRepositoryId.value = repo.id
+        repositoryType.value = 'common'
+        getRepositoryInfo(activeRepositoryId.value)
+        return
+      }
+    }
     if (!activeRepositoryId.value && commonCreateList.value.length) {
       activeRepositoryId.value = commonCreateList.value[0].id
       repositoryType.value = 'common'
@@ -670,16 +800,25 @@ const getCommonCreateList = () => {
 }
 // 公共知识库我的加入
 const commonJoinList = ref([])
-const getCommonJoinList = () => {
+const getCommonJoinList = (repositoryId = '') => {
   get_knows({ is_public: 1, is_creater: 0 }).then((res) => {
     commonJoinList.value = res.data
+    if (repositoryId) {
+      const repo = commonJoinList.value.find((item) => item.id == repositoryId)
+      if (repo) {
+        activeRepositoryId.value = repo.id
+        repositoryType.value = 'common'
+        getRepositoryInfo(activeRepositoryId.value)
+      }
+    }
   })
 }
 // 个人知识库我的创建
 const personalCreateList = ref([])
-const getPersonalCreateList = () => {
-  get_knows({ is_public: 0 }).then((res) => {
+const getPersonalCreateList = (repositoryId = '') => {
+  get_knows({ is_public: 0, is_creater: 1 }).then((res) => {
     personalCreateList.value = res.data
+    if (repositoryId) return
     if (!activeRepositoryId.value && personalCreateList.value.length) {
       activeRepositoryId.value = personalCreateList.value[0].id
       repositoryType.value = 'personage'
@@ -696,17 +835,26 @@ const getPersonalCreateList = () => {
   })
 }
 onMounted(() => {
-  getCommonCreateList()
-  getCommonJoinList()
-  getPersonalCreateList()
+  getCommonCreateList(props.attrs.RepositoryId)
+  getCommonJoinList(props.attrs.RepositoryId)
+  getPersonalCreateList(props.attrs.RepositoryId)
 })
+watch(
+  () => props.attrs.RepositoryId,
+  (newVal) => {
+    if (newVal) {
+      activeRepositoryId.value = newVal
+      getRepositoryInfo(activeRepositoryId.value)
+    }
+  }
+)
 const repositoryPermission = ref({})
 // 获取知识库权限
 const getRepositoryPermission = () => {
   get_know_permission({ know_id: activeRepositoryId.value }).then((res) => {
     if (res.code == 200) {
       repositoryPermission.value = res.data
-      repositoryPermissionVisible.value = true
+      repositoryMemberTree.value = res.data.tree
     }
   })
 }
@@ -717,7 +865,10 @@ const beforeRepositoryFeedback = () => {
     title: '反馈中心',
     url: 'FeedbackCenter',
     backgroundColor: 'var(--primary-bg-color)',
-    isInternal: true
+    isInternal: true,
+    attrs: {
+      knowId: activeRepositoryId.value
+    }
   })
 }
 const closeAddRepositoryDialog = () => {
@@ -799,21 +950,70 @@ const submitRepositoryType = ref('create')
 const detailFileList = ref([])
 // 活动知识库
 const activeRepository = ref({})
-const getRepositoryInfo = (id) => {
-  activeRepositoryId.value = id
-  get_know_info({ know_id: id }).then((res) => {
+// 导入笔记
+const submitImport = (ids) => {
+  console.log(ids)
+  import_note({
+    knowledge_id: activeRepositoryId.value,
+    note_ids: ids
+  }).then((res) => {
     if (res.code == 200) {
-      activeRepository.value = res.data
-      detailFileList.value = res.data.items
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        type: 'primary',
+        message: '导入成功'
+      })
+      refreshList()
+      onlineNoteVisible.value = false
     }
   })
 }
-
-// 知识库详情列表
-const getFiles = (parent_item_id = 0) => {
-  get_know_info({ know_id: activeRepositoryId.value, parent_item_id }).then((res) => {
+const getRepositoryInfo = (id) => {
+  activeRepositoryId.value = id
+  pathList.value = [
+    {
+      name: '内容',
+      id: 0
+    }
+  ]
+  get_know_info({
+    know_id: id,
+    parent_item_id: 0,
+    sort_type: sortType.value,
+    search_key: searchText.value
+  }).then((res) => {
     if (res.code == 200) {
+      activeRepository.value = res.data
       detailFileList.value = res.data.items
+      if (activeRepository.value.is_public == 1) {
+        getRepositoryPermission()
+        getUnreadApplyNumber()
+      }
+    }
+  })
+}
+// 刷新知识库详情列表
+const refreshList = () => {
+  get_know_info({
+    know_id: activeRepository.value.id,
+    parent_item_id: parentItemId.value,
+    sort_type: sortType.value,
+    search_key: searchText.value
+  }).then((res) => {
+    if (res.code == 200) {
+      activeRepository.value = res.data
+      detailFileList.value = res.data.items
+      // if (activeRepository.value.is_public == 1) {
+      //   getRepositoryPermission()
+      //   getUnreadApplyNumber()
+      // }
+    }
+  })
+}
+const getUnreadApplyNumber = () => {
+  know_apply_number({ know_id: activeRepositoryId.value }).then((res) => {
+    if (res.code == 200) {
+      unreadApplyNumber.value = res.data.new_number
     }
   })
 }
@@ -832,7 +1032,15 @@ const beforeEditRepository = () => {
 }
 // 添加快捷访问
 const addQuickAccess = () => {
-  console.log(6666)
+  add_access({ know_id: activeRepository.value.id }).then((res) => {
+    if (res.code == 200) {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        type: 'primary',
+        message: '添加成功'
+      })
+    }
+  })
 }
 // 删除知识库
 const beforeDeleteRepository = () => {
@@ -862,41 +1070,58 @@ const beforeDeleteRepository = () => {
     })
     .catch(() => {})
 }
+// 退出知识库
+const beforeQuitRepository = () => {
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm('确认退出吗？', '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(() => {
+      withdraw_join({ know_id: activeRepository.value.id }).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '退出成功'
+          })
+          activeRepository.value = {}
+          activeRepositoryId.value = ''
+          if (activeRepository.value.is_public == 1) {
+            getCommonCreateList()
+          } else {
+            getPersonalCreateList()
+          }
+        }
+      })
+    })
+    .catch(() => {})
+}
 // 知识库权限弹窗
 let repositoryPermissionVisible = ref(false)
 const beforeRepositoryPermission = () => {
-  getRepositoryPermission()
+  repositoryPermissionVisible.value = true
 }
 const closeRepositoryPermissionDialog = () => {
   repositoryPermissionVisible.value = false
 }
-let tagList = ref(['糖源医疗', '品质部', '销售部', '采购部'])
+let tagList = ref([])
 let editTagVisible = ref(false)
-let hasedTagList = ref([
-  {
-    name: '糖源医疗',
-    type: 'primary',
-    id: new Date().getTime()
-  },
-  {
-    name: '品质部',
-    type: 'primary',
-    id: new Date().getTime()
-  },
-  {
-    name: '销售部',
-    type: 'primary',
-    id: new Date().getTime()
-  },
-  {
-    name: '采购部',
-    type: 'primary',
-    id: new Date().getTime()
-  }
-])
+let hasedTagList = ref([])
+let itemId = ref('')
 const submitEditTag = () => {
-  hasedTagList.value = tagList.value
-  editTagVisible.value = false
+  var data = {
+    knowledge_id: activeRepository.value.id,
+    tags: tagList.value.join(','),
+    item_id: itemId.value
+  }
+  setTags(data).then((res) => {
+    if (res.code == 200) {
+      refreshList()
+      editTagVisible.value = false
+    }
+  })
 }
 const addTagChange = () => {
   let newTagList = [...new Set(tagList.value)]
@@ -920,25 +1145,142 @@ const checkTagChange = (item) => {
 }
 // 确认设置知识库权限
 const setRepositoryPermission = (permission) => {
-  console.log(999999, permission)
-  repositoryPermissionVisible.value = false
+  set_know_permission({
+    know_id: activeRepository.value.id,
+    ...permission
+  }).then((res) => {
+    if (res.code == 200) {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        type: 'primary',
+        message: '知识库权限设置成功'
+      })
+      repositoryPermissionVisible.value = false
+      getRepositoryPermission()
+    }
+  })
 }
 // 知识库成员弹窗
 let repositoryMemberVisible = ref(false)
-const beforeRepositoryMember = () => {
-  repositoryMemberVisible.value = true
+// 知识库成员列表
+let repositoryMemberList = ref([])
+// 知识库成员申请列表
+let repositoryMemberApplyList = ref([])
+// 知识库成员树
+let repositoryMemberTree = ref([])
+const beforeRepositoryMember = async (visible = true) => {
+  try {
+    await get_know_persons({ know_id: activeRepository.value.id }).then((res) => {
+      if (res.code == 200) {
+        repositoryMemberList.value = res.data
+      }
+    })
+    await apply_know_persons({ know_id: activeRepository.value.id }).then((res) => {
+      if (res.code == 200) {
+        repositoryMemberApplyList.value = res.data
+      }
+    })
+    repositoryMemberVisible.value = visible
+  } catch (err) {
+    console.log(err)
+    repositoryMemberVisible.value = false
+  }
 }
 const closeRepositoryMemberDialog = () => {
   repositoryMemberVisible.value = false
 }
 // 确认设置知识库成员权限
 const setRepositoryMemberPermission = (permission) => {
-  console.log(permission)
-  repositoryMemberVisible.value = false
+  if (permission.type == 'member') {
+    set_know_person({
+      know_id: activeRepository.value.id,
+      ...permission.data
+    }).then((res) => {
+      if (res.code == 200) {
+        // eslint-disable-next-line no-undef
+        ElMessage({
+          type: 'primary',
+          message: '设置成功'
+        })
+        beforeRepositoryMember()
+      }
+    })
+  } else if (permission.type == 'join') {
+    add_know_person({
+      know_id: activeRepository.value.id,
+      ...permission.data
+    }).then((res) => {
+      if (res.code == 200) {
+        // eslint-disable-next-line no-undef
+        ElMessage({
+          type: 'primary',
+          message: '添加成功'
+        })
+        beforeRepositoryMember(false)
+      }
+    })
+  } else if (permission.type == 'allowable') {
+    apply_know_agree({
+      know_id: activeRepository.value.id,
+      ...permission.data
+    }).then((res) => {
+      if (res.code == 200) {
+        // eslint-disable-next-line no-undef
+        ElMessage({
+          type: 'primary',
+          message: '添加成功'
+        })
+        getUnreadApplyNumber()
+        beforeRepositoryMember()
+      }
+    })
+  }
+  // repositoryMemberVisible.value = false
 }
-// 创建文件夹
-const createFolder = (item) => {
-  item.isCreated = false
+// 创建文件夹或重命名
+const createOrRename = (item) => {
+  if (!item.title.trim()) {
+    refreshList()
+    return
+  }
+  var data
+  if (item.item_type == 2) {
+    if (!item.updatetime) {
+      data = {
+        know_id: activeRepository.value.id,
+        folder_name: item.title,
+        parent_item_id: parentItemId.value
+      }
+      create_dir(data).then((res) => {
+        if (res.code == 200) {
+          item.isCreated = false
+          refreshList()
+        }
+      })
+    } else {
+      data = {
+        item_id: item.id,
+        new_name: item.title
+      }
+      reNameItem(data).then((res) => {
+        if (res.code == 200) {
+          item.isCreated = false
+          refreshList()
+        }
+      })
+    }
+  } else {
+    data = {
+      item_id: item.id,
+      new_name: item.title
+    }
+    reNameItem(data).then((res) => {
+      if (res.code == 200) {
+        item.isCreated = false
+        refreshList()
+      }
+    })
+  }
 }
 const contextMenu = ref({ show: false, x: 0, y: 0, actionSheet: [] })
 let importWebVisible = ref(false)
@@ -964,8 +1306,32 @@ const webRules = ref({
 const submitWebForm = (FormRef) => {
   FormRef.validate((valid) => {
     if (valid) {
-      console.log('表单验证通过')
-      importWebVisible.value = false
+      var data = {
+        web_url: webForm.value.urls,
+        know_id: activeRepository.value.id,
+        parent_item_id: parentItemId.value
+      }
+      // eslint-disable-next-line no-undef
+      const loading = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
+      create_know_website(data)
+        .then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage({
+              type: 'primary',
+              message: '添加成功'
+            })
+            refreshList()
+            importWebVisible.value = false
+          }
+        })
+        .finally(() => {
+          loading.close()
+        })
     } else {
       console.log('表单验证失败')
     }
@@ -983,75 +1349,197 @@ const showContextMenu = (e, item) => {
   if (!item.checked) {
     resetChecks()
   }
-  item.checked = true
-  e.preventDefault()
-  contextMenu.value = {
-    show: true,
-    x: e.clientX,
-    y: e.clientY,
-    actionSheet: [
-      {
-        name: '置顶',
-        icon: topIcon,
-        action: 'top'
-      },
-      {
-        name: '取消置顶',
-        icon: unstickIcon,
-        action: 'unstick'
-      },
-      {
-        name: '编辑标签',
-        icon: editIcon,
-        action: 'editTag'
-      },
-      {
-        name: '重命名',
-        icon: renameIcon,
-        action: 'rename'
-      },
-      {
-        name: '内容权限',
-        icon: permissionIcon,
-        action: 'permission',
-        children: [
+
+  if (
+    activeRepository.value.user_permission?.is_creator ||
+    activeRepository.value.user_permission?.is_manager
+  ) {
+    item.checked = true
+    e.preventDefault()
+    if (activeFiles.value.length > 1) {
+      contextMenu.value = {
+        show: true,
+        permission_type: 'cannotView',
+        x: e.clientX,
+        y: e.clientY,
+        actionSheet: [
           {
-            name: '可查看、导出',
-            icon: canViewIcon,
-            action: 'canView'
-          },
-          {
-            name: '可查看、不可导出',
-            icon: disabledExportIcon,
-            action: 'private'
-          },
-          {
-            name: '不可查看',
-            icon: cannotViewIcon,
-            action: 'cannotView'
+            name: '删除',
+            icon: deleteIcon,
+            action: 'delete'
           }
         ]
-      },
-      {
-        name: '导出',
-        icon: exportIcon,
-        action: 'export'
-      },
-      {
-        name: '删除',
-        icon: deleteIcon,
-        action: 'delete'
       }
-    ]
+    } else {
+      if (item.item_type == 2) {
+        contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: item.is_top ? '取消置顶' : '置顶',
+              icon: item.is_top ? unstickIcon : topIcon,
+              action: item.is_top ? 'unstick' : 'top'
+            },
+            {
+              name: '编辑标签',
+              icon: editIcon,
+              action: 'editTag'
+            },
+            {
+              name: '重命名',
+              icon: renameIcon,
+              action: 'rename'
+            },
+            {
+              name: '删除',
+              icon: deleteIcon,
+              action: 'delete'
+            }
+          ]
+        }
+      } else {
+        contextMenu.value = {
+          show: true,
+          permission_type:
+            activeFiles.value[0].permission_type == 1
+              ? 'canView'
+              : activeFiles.value[0].permission_type == 2
+                ? 'private'
+                : 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: item.is_top ? '取消置顶' : '置顶',
+              icon: item.is_top ? unstickIcon : topIcon,
+              action: item.is_top ? 'unstick' : 'top'
+            },
+            {
+              name: '编辑标签',
+              icon: editIcon,
+              action: 'editTag'
+            },
+            {
+              name: '重命名',
+              icon: renameIcon,
+              action: 'rename'
+            },
+            {
+              name: '删除',
+              icon: deleteIcon,
+              action: 'delete'
+            }
+          ]
+        }
+        if (repositoryPermission.value.setting?.permission_type == 1) {
+          contextMenu.value.actionSheet.splice(
+            3,
+            0,
+            {
+              name: '内容权限',
+              icon: permissionIcon,
+              action: 'permission',
+              children: [
+                {
+                  name: '可查看、导出',
+                  icon: canViewIcon,
+                  action: 'canView'
+                },
+                {
+                  name: '可查看、不可导出',
+                  icon: disabledExportIcon,
+                  action: 'private'
+                },
+                {
+                  name: '不可查看',
+                  icon: cannotViewIcon,
+                  action: 'cannotView'
+                }
+              ]
+            },
+            {
+              name: '导出',
+              icon: exportIcon,
+              action: 'export'
+            }
+          )
+        } else if (repositoryPermission.value.setting?.permission_type == 2) {
+          contextMenu.value.actionSheet.splice(3, 0, {
+            name: '内容权限',
+            icon: permissionIcon,
+            action: 'permission',
+            children: [
+              {
+                name: '可查看、不可导出',
+                icon: disabledExportIcon,
+                action: 'private'
+              },
+              {
+                name: '不可查看',
+                icon: cannotViewIcon,
+                action: 'cannotView'
+              }
+            ]
+          })
+        }
+      }
+    }
+  } else if (item.permission_type === 1) {
+    item.checked = true
+    contextMenu.value = {
+      show: true,
+      permission_type: 'cannotView',
+      x: e.clientX,
+      y: e.clientY,
+      actionSheet: [
+        {
+          name: '导出',
+          icon: exportIcon,
+          action: 'export'
+        }
+      ]
+    }
   }
 }
 const handleContextMenuAction = ({ action }) => {
   if (action === 'top') {
     // 置顶
+    doTopKnowFile({
+      knowledge_id: activeRepositoryId.value,
+      item_id: activeFiles.value[0].id,
+      is_top: 1
+    }).then((res) => {
+      if (res.code == 200) {
+        refreshList()
+      }
+    })
   } else if (action === 'unstick') {
     // 取消置顶
+    doTopKnowFile({
+      knowledge_id: activeRepositoryId.value,
+      item_id: activeFiles.value[0].id,
+      is_top: 0
+    }).then((res) => {
+      if (res.code == 200) {
+        refreshList()
+      }
+    })
   } else if (action === 'editTag') {
     // 编辑标签
+    tagList.value = JSON.parse(JSON.stringify(activeFiles.value[0].tags?.split(',') || []))
+    hasedTagList.value = []
+    tagList.value.map((item) => {
+      var tag = {
+        name: item,
+        type: 'primary',
+        id: new Date().getTime()
+      }
+      hasedTagList.value.push(tag)
+    })
+    itemId.value = activeFiles.value[0].id
     editTagVisible.value = true
   } else if (action === 'rename') {
     // 重命名
@@ -1072,6 +1560,7 @@ const handleContextMenuAction = ({ action }) => {
   } else if (action === 'export') {
     // 导出
   } else if (action === 'delete') {
+    let tempFiles = JSON.parse(JSON.stringify(activeFiles.value))
     // 删除
     // eslint-disable-next-line no-undef
     ElMessageBox.confirm('确认删除吗？', '提示', {
@@ -1080,19 +1569,53 @@ const handleContextMenuAction = ({ action }) => {
       type: 'warning'
     })
       .then(() => {
-        // eslint-disable-next-line no-undef
-        ElMessage({
-          type: 'primary',
-          message: '删除成功'
+        delItem({
+          item_ids: tempFiles.map((item) => item.id)
+        }).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage({
+              type: 'primary',
+              message: '删除成功'
+            })
+            refreshList()
+          }
         })
       })
       .catch(() => {})
   } else if (action === 'canView') {
     // 可查看、导出
+    setKnowItemPermission({
+      knowledge_id: activeRepositoryId.value,
+      item_id: activeFiles.value[0].id,
+      permission_type: 1
+    }).then((res) => {
+      if (res.code == 200) {
+        refreshList()
+      }
+    })
   } else if (action === 'private') {
     // 可查看、不可导出
+    setKnowItemPermission({
+      knowledge_id: activeRepositoryId.value,
+      item_id: activeFiles.value[0].id,
+      permission_type: 2
+    }).then((res) => {
+      if (res.code == 200) {
+        refreshList()
+      }
+    })
   } else if (action === 'cannotView') {
     // 不可查看
+    setKnowItemPermission({
+      knowledge_id: activeRepositoryId.value,
+      item_id: activeFiles.value[0].id,
+      permission_type: 3
+    }).then((res) => {
+      if (res.code == 200) {
+        refreshList()
+      }
+    })
   }
   contextMenu.value.show = false
 }
@@ -1112,16 +1635,17 @@ const isSearching = ref(false)
 const searchText = ref('')
 const searchBoxRef = ref(null)
 const handleBlur = () => {
-  if (!searchText.value) {
+  if (!searchText.value.trim()) {
     isSearching.value = false
   }
+  refreshList()
 }
 const addMenuClick = () => {
   // console.log('添加文件')
 }
 const sortMenuClick = (item) => {
   sortType.value = item.value
-  console.log('排序')
+  refreshList()
 }
 const searchMenuClick = () => {
   isSearching.value = true
@@ -1180,16 +1704,17 @@ const beforeUploadFiles = (type) => {
   } else if (type == 'local-folder') {
     elUploadRef.value.clearFiles()
     ReadyUploadList.length = 0
-    openDirectorySelector()
+    // openDirectorySelector()
+    directoryInputRef.value?.click()
   } else if (type == 'import-web') {
     importWebVisible.value = true
   } else if (type == 'createFolder') {
     detailFileList.value.unshift({
-      type: 'directory',
-      name: '新建文件夹' + Date.now(),
-      count: 0,
-      size: 0,
-      create_time: new Date().toLocaleString().split(' ')[0],
+      item_type: 2,
+      title: '新建文件夹' + Date.now(),
+      file_count: 0,
+      total_space: 0,
+      createtime: '',
       id: Date.now(),
       checked: false,
       isCreated: true
@@ -1203,6 +1728,16 @@ const beforeUploadFiles = (type) => {
         newInput.select()
       }, 100)
     })
+  } else if (type == 'createNote') {
+    // createNoteVisible.value = true
+    addNewTab({
+      title: '笔记',
+      url: 'Note',
+      icon: noteIcon,
+      isInternal: true
+    })
+  } else if (type == 'importNotes') {
+    onlineNoteVisible.value = true
   }
 }
 const ReadyUploadList = reactive([])
@@ -1230,53 +1765,165 @@ const handleSelectChange = (file) => {
     uploadVisible.value = true
   }
 }
-const openDirectorySelector = async () => {
-  const directoryPath = await window.customApi.openDirectoryDialog()
-  if (directoryPath) {
-    try {
-      // 使用新的readDir函数获取目录树结构
-      const directoryTree = await window.customApi.readDir(directoryPath)
-      // console.log('目录树结构:', directoryTree)
-      // 将目录树添加到准备上传列表
-      if (directoryTree && directoryTree.children && directoryTree.children.length > 0) {
-        // 清空现有列表
-        ReadyUploadList.length = 0
-        // 添加目录树到上传列表
-        ReadyUploadList.push({
-          type: 'directory',
-          name: directoryTree.name,
-          path: directoryTree.path,
-          fileCount: directoryTree.fileCount,
-          children: directoryTree.children,
-          uploadStatus: 'pending'
-        })
-        // 显示上传对话框
-        uploadVisible.value = true
-      } else {
-        // eslint-disable-next-line no-undef
-        ElMessage({
-          message: '选择的目录为空或没有可上传的文件',
-          type: 'warning'
-        })
-      }
-    } catch (error) {
-      console.error('读取文件或目录出错:', error)
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        message: '读取目录失败: ' + error.message,
-        type: 'error'
-      })
-    }
+// 分析文件夹结构
+// const analyzeFolderStructure = (files) => {
+//   var folderTree = {}
+
+//   files.forEach((file) => {
+//     const path = file.webkitRelativePath
+//     const parts = path.split('/')
+
+//     let currentLevel = folderTree
+
+//     parts.forEach((part, index) => {
+//       if (index === parts.length - 1) {
+//         // 文件
+//         currentLevel[part] = {
+//           type: 'file',
+//           size: file.size,
+//           file: file
+//         }
+//       } else {
+//         // 文件夹
+//         if (!currentLevel[part]) {
+//           currentLevel[part] = {
+//             type: 'folder',
+//             children: {}
+//           }
+//         }
+//         currentLevel = currentLevel[part].children
+//       }
+//     })
+//   })
+//   return folderTree
+// }
+// // 处理文件
+// const processFiles = (files, isFolder) => {
+//   if (files.length === 0) {
+//     // eslint-disable-next-line no-undef
+//     ElMessage({
+//       message: isFolder ? '选择的文件夹为空或没有文件' : '未选择任何文件',
+//       type: 'error'
+//     })
+//     return
+//   }
+//   if (isFolder) {
+//     // 分析文件夹结构
+//     const folderTree = analyzeFolderStructure(files)
+//     console.log(folderTree)
+//   }
+// }
+const handleDirectorySelect = (event) => {
+  let exts = [
+    'doc',
+    'xls',
+    'xlsx',
+    'pdf',
+    'txt',
+    'docx',
+    'ppt',
+    'pptx',
+    'png',
+    'jpg',
+    'jpeg',
+    'gif'
+  ]
+  const files = Array.from(event.target.files).filter((file) =>
+    exts.includes(file.name.split('.').pop())
+  )
+  if (!files.length) {
+    // eslint-disable-next-line no-undef
+    ElMessage({
+      message: '选择的文件夹为空或没有文件',
+      type: 'error'
+    })
+    return
   }
+  // 显示文件信息
+  const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+  let fileItem = {
+    type: 'directory',
+    name: files[0].webkitRelativePath.split('/')[0],
+    totalCount: files.length,
+    size: totalSize,
+    children: files,
+    uploadStatus: 'pending'
+  }
+  ReadyUploadList.length = 0
+  // 添加目录树到上传列表
+  ReadyUploadList.push(fileItem)
+  if (directoryInputRef.value) {
+    directoryInputRef.value.value = ''
+  }
+  // 显示上传对话框
+  uploadVisible.value = true
+  // processFiles(files, true)
+
+  // if (files.length > 0 && files.length <= 10) {
+  //   const directoryName = files[0].webkitRelativePath.split('/')[0]
+  //   // 构造目录信息
+  //   const directoryData = {
+  //     knowledge_id: this.repositoryChecked.id,
+  //     local_dir: directoryName, // 目录名称
+  //     uniacid: this.uniacid
+  //   }
+  //   // 这里可以处理选中的目录和文件
+  // } else {
+  //   // eslint-disable-next-line no-undef
+  //   ElMessage({
+  //     message: '请选择包含文件的目录',
+  //     type: 'warning'
+  //   })
+  // }
 }
+// const openDirectorySelector = async () => {
+//   const directoryPath = await window.customApi.openDirectoryDialog()
+//   if (directoryPath) {
+//     try {
+//       // 使用新的readDir函数获取目录树结构
+//       const directoryTree = await window.customApi.readDir(directoryPath)
+//       // console.log('目录树结构:', directoryTree)
+//       // 将目录树添加到准备上传列表
+//       if (directoryTree && directoryTree.children && directoryTree.children.length > 0) {
+//         // 清空现有列表
+//         ReadyUploadList.length = 0
+//         // 添加目录树到上传列表
+//         ReadyUploadList.push({
+//           type: 'directory',
+//           name: directoryTree.name,
+//           path: directoryTree.path,
+//           fileCount: directoryTree.fileCount,
+//           children: directoryTree.children,
+//           uploadStatus: 'pending'
+//         })
+//         // 显示上传对话框
+//         uploadVisible.value = true
+//       } else {
+//         // eslint-disable-next-line no-undef
+//         ElMessage({
+//           message: '选择的目录为空或没有可上传的文件',
+//           type: 'warning'
+//         })
+//       }
+//     } catch (error) {
+//       console.error('读取文件或目录出错:', error)
+//       // eslint-disable-next-line no-undef
+//       ElMessage({
+//         message: '读取目录失败: ' + error.message,
+//         type: 'error'
+//       })
+//     }
+//   }
+// }
 // 获取文件图标
 const getFileIcon = (item) => {
-  if (item.type === 'directory') {
+  if (item.item_type == 2) {
     return catalogueIcon
+  } else if (item.item_type == 3) {
+    return webPageIcon
   }
   // 根据文件扩展名返回不同的图标
-  // const ext = item.name?.split('.').pop()?.toLowerCase()
-  const ext = item.type
+  const ext = item.title?.split('.').pop()?.toLowerCase()
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -1286,23 +1933,67 @@ const getFileIcon = (item) => {
     ppt: pptIcon,
     pptx: pptIcon,
     txt: txtIcon,
-    img: imgIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon,
     web: webPageIcon
   }
 
   return iconMap[ext] || wordIcon
 }
-const formatFileSize = (bytes) => {
-  if (!bytes) return '0 B'
-  if (bytes < 1024) {
-    return bytes + ' B'
-  } else if (bytes < 1024 * 1024) {
-    return (bytes / 1024).toFixed(2) + ' KB'
-  } else if (bytes < 1024 * 1024 * 1024) {
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+const formatFileSize = (kb) => {
+  if (!kb) return '0 KB'
+  if (kb < 1024) {
+    return kb + ' KB'
+  } else if (kb < 1024 * 1024) {
+    return (kb / 1024).toFixed(2) + ' MB'
+  } else if (kb < 1024 * 1024 * 1024) {
+    return (kb / (1024 * 1024)).toFixed(2) + ' GB'
   } else {
-    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+    return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
   }
+}
+let pathList = ref([
+  {
+    name: '内容',
+    id: 0
+  }
+  // {
+  //   name: '个人知识库',
+  //   id: 'personal',
+  //   level: 1
+  // },
+  // {
+  //   name: '公共知识库',
+  //   id: 'public',
+  //   level: 1
+  // }
+])
+// parentItemId 知识库文件父级id
+let parentItemId = computed(() => {
+  return pathList.value[pathList.value.length - 1].id
+})
+// 点击文件夹
+const dirChange = (e) => {
+  pathList.value.push({
+    name: e.title,
+    id: e.id
+  })
+
+  refreshList()
+}
+const pathChange = (i) => {
+  pathList.value = removeItemsAfterIndex(pathList.value, i)
+  nextTick(() => {
+    refreshList()
+  })
+}
+const removeItemsAfterIndex = (array, index) => {
+  if (index > -1 && index < array.length) {
+    array.splice(index + 1, array.length - index - 1)
+  }
+  return array
 }
 </script>
 
@@ -1314,6 +2005,7 @@ const formatFileSize = (bytes) => {
   display: flex;
   align-items: flex-end;
   .left-box {
+    flex-shrink: 0;
     box-sizing: border-box;
     padding: 25px 8px 20px;
     width: 236px;
@@ -1686,6 +2378,7 @@ const formatFileSize = (bytes) => {
   }
 
   .center-box {
+    flex-shrink: 0;
     box-sizing: border-box;
     padding: 10px 6px 20px;
     width: 399px;
@@ -1773,7 +2466,7 @@ const formatFileSize = (bytes) => {
                   display: block;
                   width: 18px;
                   height: 18px;
-                  border-radius: 2px;
+                  border-radius: 50%;
                   object-fit: cover;
                 }
 
@@ -1827,15 +2520,43 @@ const formatFileSize = (bytes) => {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 10px;
         font-size: 12px;
         color: var(--default-font-color);
         line-height: 16px;
         overflow: hidden;
 
         .path-box {
-          white-space: nowrap;
-          text-overflow: ellipsis;
+          flex: 1;
+          display: flex;
+          align-items: center;
           overflow: hidden;
+          .path-item {
+            display: inline-flex;
+            align-items: center;
+            // font-size: 14px;
+            // line-height: 50px;
+            color: #737475;
+            cursor: pointer;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            .icon {
+              flex-shrink: 0;
+              line-height: 50px;
+              color: #909090;
+              margin: 0 2px;
+            }
+            &:first-of-type {
+              flex-shrink: 0;
+            }
+            &:last-of-type {
+              flex-shrink: 0;
+            }
+            &.active {
+              color: var(--default-font-color);
+            }
+          }
         }
 
         .icons {
@@ -1882,11 +2603,21 @@ const formatFileSize = (bytes) => {
           cursor: pointer;
         }
       }
-
+      .empty {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #909090;
+        line-height: 22px;
+        .empty-text {
+          margin-bottom: 16vh;
+        }
+      }
       .list-box {
         flex: 1;
         overflow: auto;
-
         &::-webkit-scrollbar {
           width: 4px;
           height: 4px;
@@ -1974,34 +2705,60 @@ const formatFileSize = (bytes) => {
               display: flex;
               align-items: center;
               justify-content: space-between;
+              gap: 0 10px;
               font-size: 10px;
               color: #909090;
               line-height: 12px;
-
+              overflow: hidden;
               .size-or-num-box {
-                flex-shrink: 0;
+                flex: 1;
                 display: flex;
                 align-items: center;
                 gap: 10px;
-
+                overflow: hidden;
                 .size {
+                  flex-shrink: 0;
                   font-size: 10px;
                   color: #909090;
                   line-height: 12px;
                 }
 
                 .vertical-line {
+                  flex-shrink: 0;
                   width: 1px;
                   height: 10px;
                   background: #ccc;
                 }
 
                 .num {
+                  flex-shrink: 0;
                   font-size: 10px;
                   color: #909090;
                   line-height: 12px;
                 }
-
+                .tags {
+                  flex: 1;
+                  overflow: hidden;
+                  white-space: nowrap;
+                  text-overflow: ellipsis;
+                  .tag {
+                    margin-right: 10px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0 2px;
+                    font-size: 10px;
+                    color: #909090;
+                    line-height: 12px;
+                    &:nth-last-of-type(1) {
+                      margin-right: 0;
+                    }
+                    .icon {
+                      vertical-align: middle;
+                      width: 10px;
+                      height: 10px;
+                    }
+                  }
+                }
                 .type-box {
                   display: flex;
                   align-items: center;
@@ -2009,7 +2766,14 @@ const formatFileSize = (bytes) => {
                   font-size: 10px;
                   color: #909090;
                   line-height: 12px;
-
+                  overflow: hidden;
+                  .web-url {
+                    display: block;
+                    max-width: calc(100% - 20px);
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                  }
                   .icon {
                     display: block;
                     width: 10px;
@@ -2020,6 +2784,7 @@ const formatFileSize = (bytes) => {
             }
 
             .management-box {
+              flex-shrink: 0;
               font-size: 10px;
               color: #909090;
               line-height: 12px;
@@ -2029,7 +2794,11 @@ const formatFileSize = (bytes) => {
       }
     }
   }
-
+  .right-box {
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+  }
   :deep(.import-web-dialog) {
     .el-dialog {
       .el-dialog__header {
@@ -2037,13 +2806,13 @@ const formatFileSize = (bytes) => {
         align-items: center;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
 
         .dialog-header-del-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
       }
 
@@ -2117,6 +2886,32 @@ const formatFileSize = (bytes) => {
 }
 </style>
 <style lang="scss">
+.abstract-box-popover {
+  padding: 20px !important;
+  width: 376px !important;
+  background: #ffffff;
+  box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
+  border-radius: 16px !important;
+  .abstract-box {
+    .abstract-title {
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 18px;
+    }
+    .time {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #adadad;
+      line-height: 16px;
+    }
+    .abstract-desc {
+      font-size: 14px;
+      color: #646464;
+      line-height: 24px;
+    }
+  }
+}
 .custom-repository-popover {
   border-radius: 8px !important;
   padding: 12px 8px !important;
@@ -2149,10 +2944,24 @@ const formatFileSize = (bytes) => {
       }
 
       .title {
+        position: relative;
         flex: 1;
         white-space: nowrap;
         text-overflow: ellipsis;
-        overflow: hidden;
+        .unreadApplyNumber {
+          position: absolute;
+          top: 50%;
+          right: -8px;
+          transform: translateY(-50%);
+          width: 16px;
+          height: 16px;
+          background: #ff5151;
+          border-radius: 50%;
+          font-size: 10px;
+          color: #fff;
+          text-align: center;
+          line-height: 16px;
+        }
       }
       .check-icon {
         display: none;

@@ -11,19 +11,20 @@
             size="large"
             placeholder="搜索知识库"
             :suffix-icon="searchVal ? '' : Search"
+            @change="resetList"
           />
         </div>
       </div>
       <div class="square-content">
         <div ref="tabsContainer" class="tabs">
-          <template v-for="(tab, i) in tabs" :key="tab.id">
+          <template v-for="(tab, i) in tabs" :key="i">
             <div
               v-if="showMoreTab ? (!isExpand ? i < visibleTabNum - 1 : true) : true"
               class="tab-item"
               :class="{ 'active-tab': tab.id == activeTab }"
               @click="tabHandle(tab.id)"
             >
-              {{ tab.name }}
+              {{ tab.title }}
             </div>
           </template>
           <template v-if="showMoreTab">
@@ -35,33 +36,57 @@
             </div>
           </template>
         </div>
-        <div v-if="list.length" class="list-box">
-          <div class="list-item">
-            <img class="logo" src="@renderer/assets/logo.png" alt="" />
-            <div class="item-right">
-              <div class="right-top">
-                <div class="title">知识库广场</div>
-                <div class="desc">
-                  知识库广场是一个知识管理平台，提供了知识库的创建、管理、分享和使用等功能。
+        <el-skeleton class="list-box" :loading="dataLoading" animated>
+          <template #template>
+            <div v-for="item in 8" :key="item" class="list-item skeleton-item">
+              <el-skeleton-item class="logo-skeleton" />
+              <div class="item-right">
+                <div class="right-top">
+                  <el-skeleton-item class="title"></el-skeleton-item>
+                  <el-skeleton-item class="desc"></el-skeleton-item>
                 </div>
-              </div>
-              <div class="right-bottom">
-                <div class="_left">
-                  <img class="avatar" src="@renderer/assets/default-avatar.png" alt="" />
-                  <span>李白</span>
-                  <div class="line"></div>
-                  <span>6个内容</span>
-                  <div class="line"></div>
-                  <span> 54人加入 </span>
+                <div class="right-bottom">
+                  <div class="_left">
+                    <el-skeleton-item variant="text" class="avatar" />
+                    <el-skeleton-item variant="text"></el-skeleton-item>
+                    <el-skeleton-item variant="text"></el-skeleton-item>
+                    <el-skeleton-item variant="text"></el-skeleton-item>
+                  </div>
                 </div>
-                <div class="_operation">加入知识库</div>
               </div>
             </div>
-          </div>
-        </div>
-        <div v-else class="empty-box">
-          <el-empty :image-size="120" description="暂无知识库" />
-        </div>
+          </template>
+          <template #default>
+            <div v-if="list.length" v-infinite-scroll="loadData" class="list-box">
+              <div v-for="item in list" :key="item.id" class="list-item">
+                <img class="logo" :src="item.picurl || defaultCover" alt="" />
+                <div class="item-right">
+                  <div class="right-top">
+                    <div class="title">{{ item.title }}</div>
+                    <div class="desc">
+                      {{ item.desc || '暂无描述' }}
+                    </div>
+                  </div>
+                  <div class="right-bottom">
+                    <div class="_left">
+                      <img class="avatar" :src="item.user_avatar || defaultAvatar" alt="" />
+                      <span>{{ item.user_name || '' }}</span>
+                      <div class="line"></div>
+                      <span>{{ item.item_count }}个内容</span>
+                      <div class="line"></div>
+                      <span> {{ item.user_count }}人加入 </span>
+                    </div>
+                    <div v-if="item.already_joined" class="_operation is_join">已加入</div>
+                    <div v-else class="_operation" @click="joinKnowledge(item)">加入知识库</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="empty-box">
+              <el-empty :image-size="120" description="暂无知识库" />
+            </div>
+          </template>
+        </el-skeleton>
       </div>
     </div>
   </div>
@@ -70,40 +95,28 @@
 <script setup>
 import { Search } from '@element-plus/icons-vue'
 import { ref, onMounted } from 'vue'
+import { know_types, getKnowSquareList, apply_know_join } from '@renderer/api/repository'
+import defaultCover from '@renderer/assets/repository/default-cover.png'
+import defaultAvatar from '@renderer/assets/default-avatar.png'
 let searchVal = ref('')
-let tabs = ref([
-  {
-    id: '',
-    name: '全部'
-  },
-  {
-    id: '2',
-    name: '文献类'
-  },
-  {
-    id: '3',
-    name: '科普类'
-  },
-  {
-    id: '4',
-    name: '数据类'
-  },
-  {
-    id: '5',
-    name: '教学类'
-  },
-  {
-    id: '6',
-    name: '参考数据'
-  },
-  {
-    id: '7',
-    name: '科研类'
-  }
-])
+let tabs = ref([])
 let activeTab = ref('')
 const tabHandle = (id) => {
   activeTab.value = id
+  resetList()
+}
+let dataLoading = ref(false)
+let pagination = ref({
+  page: 1,
+  page_size: 10,
+  total: 0
+})
+const resetList = () => {
+  list.value = []
+  pagination.value.page = 1
+  pagination.value.page_size = 10
+  pagination.value.total = 0
+  getList()
 }
 let tabsContainer = ref(null)
 // 是否显示更多
@@ -130,9 +143,69 @@ const calculateMoreTab = () => {
     }
   })
 }
+const joinKnowledge = (item) => {
+  apply_know_join({
+    know_id: item.id
+  }).then((res) => {
+    if (res.code == 200) {
+      if (res.data.join_status == 1) {
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('加入成功')
+        item.already_joined = 1
+      } else {
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('申请已提交')
+      }
+    }
+  })
+}
 const list = ref([])
+const getTabList = () => {
+  know_types({}).then((res) => {
+    if (res.code == 200) {
+      tabs.value = res.data
+      if (tabs.value.length) {
+        tabs.value.unshift({
+          id: '',
+          title: '全部'
+        })
+        activeTab.value = tabs.value[0].id
+        calculateMoreTab()
+      }
+      getList()
+    }
+  })
+}
+const loadData = () => {
+  if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
+    return
+  }
+  pagination.value.page++
+  getList(false)
+}
+const getList = (load = true) => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size,
+    type_id: activeTab.value,
+    title: searchVal.value
+  }
+  dataLoading.value = load
+  getKnowSquareList(data)
+    .then((res) => {
+      if (res.code == 200) {
+        list.value = list.value.concat(res.data.data || [])
+        pagination.value.total = res.data.total
+        pagination.value.page = res.data.current_page
+        pagination.value.page_size = res.data.per_page
+      }
+    })
+    .finally(() => {
+      dataLoading.value = false
+    })
+}
 onMounted(() => {
-  calculateMoreTab()
+  getTabList()
 })
 </script>
 
@@ -227,6 +300,7 @@ onMounted(() => {
         overflow-y: auto;
         display: flex;
         flex-wrap: wrap;
+        align-content: flex-start;
         gap: 16px;
         .list-item {
           box-sizing: border-box;
@@ -239,6 +313,11 @@ onMounted(() => {
           gap: 0 10px;
           border-radius: 16px;
           border: 1px solid #d8d8d8;
+          &.skeleton-item {
+            &:hover {
+              background: inherit !important;
+            }
+          }
           &:hover {
             background: rgba(0, 0, 0, 0.02);
           }
@@ -247,6 +326,13 @@ onMounted(() => {
             width: 64px;
             height: 64px;
             background: #ffffff;
+            border-radius: 8px;
+            object-fit: cover;
+          }
+          .logo-skeleton {
+            flex-shrink: 0;
+            width: 64px;
+            height: 64px;
             border-radius: 8px;
             object-fit: cover;
           }
@@ -288,6 +374,7 @@ onMounted(() => {
                   width: 18px;
                   height: 18px;
                   object-fit: cover;
+                  border-radius: 50%;
                 }
                 .line {
                   margin: 0 6px;
@@ -309,6 +396,10 @@ onMounted(() => {
                 color: var(--el-color-primary);
                 line-height: 16px;
                 cursor: pointer;
+                &.is_join {
+                  background: #ccc;
+                  color: #fff;
+                }
                 &:active {
                   opacity: 0.7;
                 }
@@ -320,7 +411,6 @@ onMounted(() => {
       .empty-box {
         padding-top: 100px;
         width: 100%;
-        height: 100px;
         .empty-text {
           font-size: 14px;
           color: #737475;

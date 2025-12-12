@@ -223,8 +223,14 @@
 <script setup>
 import { ref, reactive, nextTick, onMounted } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
-import { login, passlogin, send_code, check_sms_code, set_new_pass } from '@renderer/api/user'
-import { get_login_item } from '@renderer/api/index'
+import {
+  login,
+  passlogin,
+  send_code,
+  check_sms_code,
+  set_new_pass,
+  get_login_item
+} from '@renderer/api/user'
 let broadcastLists = ref([])
 let loading = ref(true)
 

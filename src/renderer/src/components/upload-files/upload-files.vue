@@ -7,6 +7,7 @@
       align-center
       modal-class="upload-files-box-dialog"
       width="430"
+      @close="closeUploadDialog"
     >
       <template #header>
         <img
@@ -135,8 +136,11 @@
 </template>
 
 <script setup>
+import { Buffer } from 'buffer'
+import { create_folder_task, task_list } from '@renderer/api/uploadRepository'
+import { useUserStore } from '@renderer/stores/user'
 import cloneDeep from 'lodash.clonedeep'
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-icon.png'
@@ -154,7 +158,12 @@ const uploadStatus = {
   SUCCESS: 'success', // 上传成功
   ERROR: 'error' // 上传失败
 }
-
+let mapStatus = {
+  0: uploadStatus.PENDING,
+  1: uploadStatus.UPLOADING,
+  2: uploadStatus.SUCCESS,
+  3: uploadStatus.ERROR
+}
 // 上传列表数据
 const uploadList = ref([])
 
@@ -162,10 +171,18 @@ const props = defineProps({
   readyUploadList: {
     type: Array,
     default: () => []
+  },
+  knowledgeId: {
+    type: [String, Number],
+    default: ''
+  },
+  parentItemId: {
+    type: [String, Number],
+    default: ''
   }
 })
 
-const emits = defineEmits(['beforeUploadFiles'])
+const emits = defineEmits(['beforeUploadFiles', 'refreshList'])
 
 // 监听readyUploadList变化，初始化上传列表
 watch(
@@ -180,7 +197,7 @@ watch(
 
 // 初始化上传列表
 const initializeUploadList = (fileList) => {
-      console.log('初始化上传列表:', fileList)
+  console.log('初始化上传列表:', fileList)
   var tempList = []
   tempList = fileList.map((file, index) => ({
     uid: file.uid || `file-${Date.now()}-${index}`,
@@ -203,7 +220,6 @@ const initializeUploadList = (fileList) => {
 
 // 开始上传（添加错误边界）
 const startUpload = async () => {
-
   for (const item of uploadList.value) {
     // 检查是否已经有上传任务在进行
     if (item.status === uploadStatus.UPLOADING) {
@@ -248,6 +264,7 @@ const uploadItem = async (item) => {
 
 // 上传单个文件（简化版本，去掉重试机制）
 const uploadSingleFile = async (fileItem) => {
+  const userStore = useUserStore()
   try {
     // 如果还没有file对象，先读取文件
     if (!fileItem.file && fileItem.path) {
@@ -272,13 +289,13 @@ const uploadSingleFile = async (fileItem) => {
   return new Promise((resolve, reject) => {
     // 模拟文件上传过程
     const formData = new FormData()
+    formData.append('uniacid', userStore.uniacid)
+    formData.append('knowledge_id', props.knowledgeId)
+    formData.append('parent_item_id', props.parentItemId)
     formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
-
     const xhr = new XMLHttpRequest()
 
     xhr.upload.onprogress = (event) => {
-      console.log('上传进度:', event.loaded, event.total);
-
       if (event.lengthComputable) {
         const progress = (event.loaded / event.total) * 100
         fileItem.progress = Math.round(progress)
@@ -286,13 +303,17 @@ const uploadSingleFile = async (fileItem) => {
     }
 
     xhr.onload = () => {
-      if (xhr.status === 200) {
+      console.log('上传完成:', xhr)
+      let response = JSON.parse(xhr.response)
+      if (xhr.status == 200 && response.code == 200) {
         fileItem.status = uploadStatus.SUCCESS
         fileItem.progress = 100
         fileItem.uploadedCount = 1
+        // 刷新知识库详情列表
+        emits('refreshList')
         resolve()
       } else {
-        reject(new Error(xhr.status))
+        reject(new Error(response.code || xhr.status))
       }
     }
 
@@ -301,65 +322,155 @@ const uploadSingleFile = async (fileItem) => {
     }
 
     // 实际使用时需要配置正确的上传地址
-    xhr.open('POST', '/api/upload')
+    xhr.open('POST', import.meta.env.VITE_API_BASE_URL + '/api/intelligence/upload_know_file')
+    xhr.setRequestHeader('Authorization', userStore.token)
     xhr.send(formData)
   })
 }
+let taskPollingInterval = null
+let isTask = ref(true)
+// 开始任务状态轮询
+const startTaskPolling = (taskId) => {
+  console.log('task_id:', taskId)
 
+  // 如果已有轮询，先清除
+  if (taskPollingInterval) {
+    clearInterval(taskPollingInterval)
+  }
+
+  // 每1秒轮询一次任务状态（加快轮询频率以更快反映进度变化）
+  taskPollingInterval = setInterval(() => {
+    // 无进行任务后停止轮询
+    if (!isTask.value) {
+      if (taskPollingInterval) {
+        clearInterval(taskPollingInterval)
+        taskPollingInterval = null
+      }
+      return
+    }
+    getUploadProgress(taskId)
+  }, 2000)
+}
+const closeUploadDialog = () => {
+  if (taskPollingInterval) {
+    clearInterval(taskPollingInterval)
+    taskPollingInterval = null
+  }
+}
+onUnmounted(() => {
+  if (taskPollingInterval) {
+    clearInterval(taskPollingInterval)
+    taskPollingInterval = null
+  }
+})
+// 获取文件上传进度
+// 获取文件上传进度
+const getUploadProgress = async (taskId) => {
+  task_list({
+    page: 1,
+    page_size: 100,
+    task_id: taskId
+  }).then((res) => {
+    res.data.data.filter((item) => {
+      uploadList.value.forEach((file) => {
+        if (item.task_id == file.task_id) {
+          file.progress = item.progress
+          file.uploadedCount = item.success_files
+          file.status = mapStatus[item.status]
+          file.totalCount = item.total_files
+          if (item.processed_files == item.total_files) {
+            isTask.value = false
+          }
+        }
+      })
+    })
+    if (res.data.data.length == 0) {
+      isTask.value = false
+    }
+  })
+}
 // 上传文件夹（保持错误边界）
 const uploadDirectory = async (directoryItem) => {
-  const files = flattenDirectory(directoryItem)
-  directoryItem.totalCount = files.length
+  // eslint-disable-next-line no-undef
+  let loadcontext = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.3)',
+    customClass: 'upload-loading'
+  })
+  // const files = flattenDirectory(directoryItem)
+  // directoryItem.totalCount = files.length
+  const userStore = useUserStore()
+  const formData = new FormData()
+  // 添加所有文件，保持目录结构
+  directoryItem.children.forEach((file) => {
+    // 对于普通文件，使用文件名作为key；对于文件夹中的文件，使用相对路径
+    const key = file.webkitRelativePath || file.name
+    formData.append(Buffer.from(key).toString('base64'), file)
+  })
+  formData.append('uniacid', userStore.uniacid)
+  formData.append('know_id', props.knowledgeId)
+  formData.append('file_type', 2)
+  formData.append('parent_item_id', props.parentItemId)
+  create_folder_task(formData)
+    .then((res) => {
+      directoryItem.task_id = res.data.task_id
+      emits('refreshList')
+      startTaskPolling(res.data.task_id)
+    })
+    .finally(() => {
+      loadcontext.close()
+    })
+  return
   // 错误边界
-  let hasError = false
+  // let hasError = false
 
-  for (let i = 0; i < files.length; i++) {
-    console.log('上传文件:', files[i].name);
+  // for (let i = 0; i < files.length; i++) {
+  //   console.log('上传文件:', files[i].name);
 
-    // 如果已经有错误，停止上传
-    if (hasError) {
-      continue
-    }
+  //   // 如果已经有错误，停止上传
+  //   if (hasError) {
+  //     continue
+  //   }
 
-    try {
-      await uploadSingleFile(files[i])
-      directoryItem.uploadedCount = i + 1
-      directoryItem.progress = Math.round(((i + 1) / files.length) * 100)
-    } catch (error) {
-      // 设置错误状态，但只设置一次
-      if (!hasError) {
-        // hasError = true
-        directoryItem.status = uploadStatus.ERROR
-        directoryItem.errorMessage = `文件 ${files[i].name}  ${error.message}`
-        // 抛出错误，让上层函数知道上传失败
-        // throw error
-      }
-    }
-  }
+  //   try {
+  //     await uploadSingleFile(files[i])
+  //     directoryItem.uploadedCount = i + 1
+  //     directoryItem.progress = Math.round(((i + 1) / files.length) * 100)
+  //   } catch (error) {
+  //     // 设置错误状态，但只设置一次
+  //     if (!hasError) {
+  //       // hasError = true
+  //       directoryItem.status = uploadStatus.ERROR
+  //       directoryItem.errorMessage = `文件 ${files[i].name}  ${error.message}`
+  //       // 抛出错误，让上层函数知道上传失败
+  //       // throw error
+  //     }
+  //   }
+  // }
 
-  // 只有当所有文件都成功上传时才标记为成功
-  if (!hasError && directoryItem.uploadedCount === files.length) {
-    directoryItem.status = uploadStatus.SUCCESS
-  }
+  // // 只有当所有文件都成功上传时才标记为成功
+  // if (!hasError && directoryItem.uploadedCount === files.length) {
+  //   directoryItem.status = uploadStatus.SUCCESS
+  // }
 }
+// // 扁平化目录结构，获取所有文件
+// const flattenDirectory = (directory) => {
+//   const files = []
 
-// 扁平化目录结构，获取所有文件
-const flattenDirectory = (directory) => {
-  const files = []
+//   const traverse = async (node) => {
+//     if (node.type === 'file') {
+//       files.push(node)
+//     } else if (node.children && node.children.length) {
+//       node.children.forEach((child) => traverse(child))
+//     }
+//   }
 
-  const traverse = async (node) => {
-    if (node.type === 'file') {
-      files.push(node)
-    } else if (node.children && node.children.length) {
-      node.children.forEach((child) => traverse(child))
-    }
-  }
+//   traverse(directory)
+//   console.log('files',files);
 
-  traverse(directory)
-  console.log('files',files);
-
-  return files
-}
+//   return files
+// }
 
 // 获取文件图标
 const getFileIcon = (item) => {
@@ -377,7 +488,10 @@ const getFileIcon = (item) => {
     ppt: pptIcon,
     pptx: pptIcon,
     txt: txtIcon,
-    img: imgIcon
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon
   }
 
   return iconMap[ext] || wordIcon
@@ -428,7 +542,11 @@ const formatFileSize = (bytes) => {
   }
 }
 </script>
-
+<style lang="scss">
+.upload-loading {
+  z-index: 9999 !important;
+}
+</style>
 <style scoped lang="scss">
 :deep(.upload-files-box-dialog) {
   .el-dialog {
@@ -444,13 +562,13 @@ const formatFileSize = (bytes) => {
       align-items: center;
       gap: 10px;
       font-weight: 500;
-      font-size: 16px;
+      font-size: 14px;
       color: var(--default-font-color);
       line-height: 22px;
 
       .dialog-header-del-icon {
-        width: 20px;
-        height: 20px;
+        width: 16px;
+        height: 16px;
       }
     }
 

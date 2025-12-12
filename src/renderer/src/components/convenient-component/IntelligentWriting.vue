@@ -13,27 +13,42 @@
     </div>
     <div class="statistics-box">
       <div class="statistics-item">
-        <div class="num">100</div>
+        <div class="num">{{ statistics.month_create_count || 0 }}</div>
         <div class="name">本月生成文档</div>
         <div class="trend">
-          <img class="trend-icon" src="@renderer/assets/intelligentWriting/go-up-icon.png" alt="" />
-          <div>12%较上月</div>
+          <img
+            v-if="statistics.month_create_type == 'up'"
+            class="trend-icon"
+            src="@renderer/assets/intelligentWriting/go-up-icon.png"
+            alt=""
+          />
+          <div>{{ statistics.month_create_change_percent || 0 }}%较上月</div>
         </div>
       </div>
       <div class="statistics-item center-item">
-        <div class="num">3.2min</div>
+        <div class="num">{{ statistics.avg_create_count || 0 }}min</div>
         <div class="name">平均生成时间</div>
         <div class="trend">
-          <img class="trend-icon" src="@renderer/assets/intelligentWriting/go-up-icon.png" alt="" />
-          <div>12%效率提升</div>
+          <img
+            v-if="statistics.avg_create_type == 'up'"
+            class="trend-icon"
+            src="@renderer/assets/intelligentWriting/go-up-icon.png"
+            alt=""
+          />
+          <div>{{ statistics.avg_create_percent || 0 }}%效率提升</div>
         </div>
       </div>
       <div class="statistics-item">
-        <div class="num">98%</div>
+        <div class="num">{{ statistics.group_use_count || 0 }}%</div>
         <div class="name">团队使用率</div>
         <div class="trend">
-          <img class="trend-icon" src="@renderer/assets/intelligentWriting/go-up-icon.png" alt="" />
-          <div>12%较上月</div>
+          <img
+            v-if="statistics.group_use_type == 'up'"
+            class="trend-icon"
+            src="@renderer/assets/intelligentWriting/go-up-icon.png"
+            alt=""
+          />
+          <div>{{ statistics.group_use_change_percent || 0 }}%较上月</div>
         </div>
       </div>
     </div>
@@ -44,31 +59,45 @@
           v-for="item in firstTypeList"
           :key="item.id"
           class="tab-item"
-          :class="{ active: item.id === activeFirstTab }"
-          @click="firstTypeClick(item.id)"
+          :class="{ active: item.id === activeFirstTab.id }"
+          @click="firstTypeClick(item)"
         >
-          {{ item.name }}
+          {{ item.title }}
         </div>
       </div>
       <div class="tab-content">
-        <div class="label">文档类型</div>
+        <div class="label">{{ activeFirstTab.child_type_title || '' }}</div>
         <div class="content-tabs">
           <div
-            v-for="item in tabList"
+            v-for="item in activeFirstTab.children"
             :key="item.id"
             class="tab-item"
             :class="{ active: item.checked }"
             @click="tabClick(item)"
           >
-            {{ item.name }}
+            {{ item.title }}
           </div>
         </div>
-        <div class="label">文档主题</div>
+        <template v-if="activeFirstTab.standards && activeFirstTab.standards.length">
+          <div class="label">适用标准</div>
+          <div class="content-tabs">
+            <div
+              v-for="item in activeFirstTab.standards.split(',')"
+              :key="item"
+              class="tab-item"
+              :class="{ active: item == activeFirstTab.activeStandard }"
+              @click="standardClick(item)"
+            >
+              {{ item }}
+            </div>
+          </div>
+        </template>
+        <div class="label">{{ activeFirstTab.theme_title || '' }}</div>
         <el-input
-          v-model="inputValue"
+          v-model="theme_value"
           size="large"
           class="content-input"
-          placeholder="请输入文档主题"
+          :placeholder="activeFirstTab.theme_tip || ''"
         />
         <div class="label">知识库引用</div>
         <div class="quote-box">
@@ -76,13 +105,16 @@
             v-model="activeRepository"
             size="large"
             class="quote-input"
-            :options="repositoryList"
+            :options="mentionOptions"
+            :whole="true"
             placeholder="@知识库，输入关键词引用相关知识"
+            @select="handleMentionSelect"
+            @whole-remove="handleWholeRemove"
           >
           </el-mention>
           <div class="icon">@</div>
         </div>
-        <div class="label">详细要求</div>
+        <div class="label">{{ activeFirstTab.require_title || '' }}</div>
         <div class="textarea-container">
           <div
             v-if="localfileList.length"
@@ -106,14 +138,14 @@
                   alt=""
                   @click.stop="clearAttach(index)"
                 />
-                <img class="attached-icon" :src="getFileIcon(item.type)" alt="" />
+                <img class="attached-icon" :src="getFileIcon(item)" alt="" />
                 <div class="attached-content">
                   <div class="attach-name">
-                    {{ item.name }}
+                    {{ item.title }}
                   </div>
                   <div class="attach-type">
-                    <span class="file-extension">{{ item.type.toUpperCase() }}</span>
-                    <span class="file-size">{{ formatFileSize(item.size) }}</span>
+                    <span class="file-extension">{{ item.title?.split('.').pop()?.toUpperCase() }}</span>
+                    <span class="file-size">{{ formatFileSize(item.total_space) }}</span>
                   </div>
                 </div>
               </div>
@@ -124,7 +156,7 @@
             resize="none"
             class="input"
             type="textarea"
-            placeholder="询问关于该文档的任何问题"
+            :placeholder="activeFirstTab.require_tip || ''"
             @keydown.enter.prevent="handleEnterSend"
           ></el-input>
           <div class="textarea-actions">
@@ -217,114 +249,86 @@
   </div>
   <OnlineFileSelection
     v-model="onlineFileVisible"
-    :files="onlineFileList"
     @submit-import="handleSubmitImport"
   ></OnlineFileSelection>
 </template>
 
 <script setup>
+import { doc_create_count, doc_type_tree } from '@renderer/api/IntelligentWriting'
+import { useUserStore } from '@renderer/stores/user'
+import { get_user_knows } from '@renderer/api/chat'
 import cloneDeep from 'lodash.clonedeep'
 import { ref, watch, nextTick, onMounted, inject } from 'vue'
-import Logo from '@renderer/assets/logo.png'
 import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
 import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
-let firstTypeList = ref([
-  {
-    name: '技术文档',
-    id: 1
-  },
-  {
-    name: '临床评价',
-    id: 2
-  },
-  {
-    name: '注册资料',
-    id: 3
-  },
-  {
-    name: '合规报告',
-    id: 4
-  },
-  {
-    name: '质量管理',
-    id: 5
-  },
-  {
-    name: '生产运营',
-    id: 6
-  },
-  {
-    name: '商业化服务',
-    id: 7
-  },
-  {
-    name: '项目申报',
-    id: 8
-  },
-  {
-    name: '人力资源',
-    id: 9
-  }
-])
-let activeFirstTab = ref(1)
-const firstTypeClick = (id) => {
-  activeFirstTab.value = id
+let theme_value = ref('')
+const statistics = ref({})
+const getStatistics = () => {
+  doc_create_count({}).then((res) => {
+    if (res.code == 200) {
+      statistics.value = res.data || {}
+    }
+  })
 }
-let tabList = ref([
-  {
-    name: '产品技术要求',
-    id: 1
-  },
-  {
-    name: '产品说明书',
-    id: 2
-  },
-  {
-    name: '风险管理报告',
-    id: 3
-  },
-  {
-    name: '专利技术交底书',
-    id: 4
-  },
-  {
-    name: 'dhf文档',
-    id: 5
-  },
-  {
-    name: '设计验证',
-    id: 6
-  },
-  {
-    name: '研发历程',
-    id: 7
-  },
-  {
-    name: '理化性能',
-    id: 8
+let firstTypeList = ref([])
+let activeFirstTab = ref({})
+const firstTypeClick = (item) => {
+  activeFirstTab.value = item
+  if (activeFirstTab.value.children.length) {
+    var flag = activeFirstTab.value.children.find((item) => item.checked)
+    if (!flag) {
+      activeFirstTab.value.children[0].checked = true
+    }
   }
-])
+  if (activeFirstTab.value.standards && activeFirstTab.value.standards.length) {
+    if (!activeFirstTab.value.activeStandard) {
+      activeFirstTab.value.activeStandard = activeFirstTab.value.standards.split(',')[0]
+    }
+  }
+}
 const tabClick = (item) => {
-  tabList.value.forEach((item) => {
+  activeFirstTab.value.children.forEach((item) => {
     item.checked = false
   })
   item.checked = true
 }
-
-let repositoryList = ref([
-  {
-    label: '糖吉医疗知识库',
-    value: 1
-  },
-  {
-    label: '糖吉医疗知识库2',
-    value: 2
-  }
-])
+const standardClick = (item) => {
+  activeFirstTab.value.activeStandard = item
+}
+let mentionOptions = ref([])
+let mentioned = ref([])
+const getKnows = () => {
+  get_user_knows().then((res) => {
+    var list = []
+    if (res.data.length) {
+      res.data.map((item) => {
+        item.knows.map((children) => {
+          list.push({
+            value: children.title,
+            know_key: children.know_key,
+            label: children.title,
+            model_name: children.vector_model?.model_name || '',
+            provider_key: children.vector_model?.provider_key || ''
+          })
+        })
+      })
+    }
+    mentionOptions.value = list
+  })
+}
+const handleWholeRemove = (e) => {
+  // 匹配提及内容并删除
+  // var reg = new RegExp('@' + e, 'g')
+  // this.message.text = this.message.text.replace(reg, '')
+  mentioned.value = mentioned.value.filter((item) => item.label !== e)
+}
+const handleMentionSelect = (item) => {
+  mentioned.value.push(item)
+}
 let activeRepository = ref('')
 let replaceActiveTab = inject('replaceActiveTab')
 const message = ref({
@@ -343,65 +347,49 @@ let showPrevBtn = ref(false)
 let showNextBtn = ref(false)
 let isHoveringAttachBox = ref(false)
 let onlineFileVisible = ref(false)
-const onlineFileList = ref([
-  {
-    name: '糖吉医疗最新文献更新.docx',
-    cover: Logo,
-    id: '1',
-    type: 'docx'
-  },
-  {
-    name: '糖吉医疗最新文献更新.ppt',
-    cover: Logo,
-    id: '2',
-    type: 'ppt'
-  },
-  {
-    name: '糖吉医疗最新文献更新.xlsx',
-    cover: Logo,
-    id: '3',
-    type: 'xlsx'
-  }
-])
+const getTree = () => {
+  doc_type_tree({}).then((res) => {
+    if (res.code == 200) {
+      firstTypeList.value = res.data || []
+      if (firstTypeList.value.length) {
+        activeFirstTab.value = firstTypeList.value[0]
+        if (activeFirstTab.value.children.length) {
+          var flag = activeFirstTab.value.children.find((item) => item.checked)
+          if (!flag) {
+            activeFirstTab.value.children[0].checked = true
+          }
+        }
+        if (activeFirstTab.value.standards && activeFirstTab.value.standards.length) {
+          if (!activeFirstTab.value.activeStandard) {
+            activeFirstTab.value.activeStandard = activeFirstTab.value.standards.split(',')[0]
+          }
+        }
+      }
+    }
+  })
+}
 // 文件列表
-const localfileList = ref([
-  // {
-  //   type: 'docx',
-  //   name: '糖源医疗',
-  //   count: 3,
-  //   size: 326,
-  //   create_time: '2025/09/09',
-  //   id: 2,
-  //   checked: false
-  // },
-  // {
-  //   type: 'xlsx',
-  //   name: '糖源医疗',
-  //   count: 3,
-  //   size: 3699,
-  //   create_time: '2025/09/09',
-  //   id: 3,
-  //   checked: false
-  // },
-  // {
-  //   type: 'img',
-  //   name: '糖源医疗',
-  //   count: 3,
-  //   size: 123,
-  //   create_time: '2025/09/09',
-  //   id: 4,
-  //   checked: false
-  // },
-])
+const localfileList = ref([])
 // 处理发送点击
 const handleSendClick = () => {
   if (message.value.text.trim().length) {
+    var prompt = `
+    ${activeFirstTab.value.title}
+    1、${activeFirstTab.value.child_type_title}：${activeFirstTab.value.children.find((item) => item.checked).title}；
+    2、 ${activeFirstTab.value.theme_title}：${theme_value.value}；`
+    if (activeFirstTab.value.standards && activeFirstTab.value.activeStandard) {
+      prompt += `
+      3、${'适用标准'}：${activeFirstTab.value.activeStandard} `
+    }
     replaceActiveTab({
       title: message.value.text,
-      url: 'ChatPage',
+      url: 'IntelligentWritingChat',
       isInternal: true,
       attrs: {
-        files: cloneDeep(localfileList.value)
+        attach_files: cloneDeep(localfileList.value),
+        message_text: message.value.text,
+        knows: cloneDeep(mentioned.value),
+        prompt: prompt
       }
     })
     message.value.text = ''
@@ -434,15 +422,20 @@ const handleSubmitImport = (files) => {
 const handleSelectChange = (file) => {
   // 如果是文件夹，使用新的目录树结构
   if (file.webkitRelativePath) {
-    // 处理文件夹上传
-    file.type = 'directory'
-    file.uploadStatus = 'pending'
-    localfileList.value.push(file)
+    // // 处理文件夹上传
+    // file.type = 'directory'
+    // file.uploadStatus = 'pending'
+    // localfileList.value.push(file)
   } else {
     // 处理单个文件
     file.type = 'file'
     file.uploadStatus = 'pending'
-    localfileList.value.push(file)
+    // localfileList.value.push(file)
+    let fileItem = {
+      ...file,
+      file: file.raw
+    }
+    uploadSingleFile(fileItem)
     // ReadyUploadList.push({
     //   type: 'directory',
     //   name: directoryTree.name,
@@ -453,6 +446,56 @@ const handleSelectChange = (file) => {
     // })
   }
 }
+// 上传单个文件（简化版本，去掉重试机制）
+const uploadSingleFile = async (fileItem) => {
+  const userStore = useUserStore()
+  // eslint-disable-next-line no-undef
+  let loadcontext = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.3)',
+    customClass: 'upload-loading'
+  })
+  const formData = new FormData()
+  formData.append('uniacid', userStore.uniacid)
+  formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
+  const xhr = new XMLHttpRequest()
+
+  xhr.upload.onprogress = (event) => {
+    if (event.lengthComputable) {
+      const progress = (event.loaded / event.total) * 100
+      fileItem.progress = Math.round(progress)
+    }
+  }
+
+  xhr.onload = () => {
+    loadcontext.close()
+    let response = JSON.parse(xhr.response)
+    if (xhr.status == 200 && response.code == 200) {
+      var uploadedFile = {
+        full_path: response.data[0].url,
+        title: response.data[0].file_name,
+        total_space: response.data[0].file_size
+      }
+      localfileList.value.push(uploadedFile)
+    } else {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        message: response.msg || '上传失败',
+        type: 'error'
+      })
+    }
+  }
+
+  xhr.onerror = () => {
+    loadcontext.close()
+  }
+
+  // 实际使用时需要配置正确的上传地址
+  xhr.open('POST', import.meta.env.VITE_API_BASE_URL + '/api/common/upload')
+  xhr.setRequestHeader('Authorization', userStore.token)
+  xhr.send(formData)
+}
 const beforeUploadFiles = (type) => {
   if (subActionPopoverRef.value) {
     subActionPopoverRef.value.hide()
@@ -460,7 +503,6 @@ const beforeUploadFiles = (type) => {
   if (type === 'repository') {
     // 知识库文件上传
     onlineFileVisible.value = true
-    console.log('知识库文件上传')
   } else if (type === 'local') {
     // 本地文件上传
     elUploadRef.value.clearFiles()
@@ -535,6 +577,9 @@ onMounted(() => {
     },
     { deep: true }
   )
+  getStatistics()
+  getTree()
+  getKnows()
 })
 const clearAttach = (i) => {
   localfileList.value.splice(i, 1)
@@ -542,8 +587,7 @@ const clearAttach = (i) => {
 // 获取文件图标
 const getFileIcon = (item) => {
   // 根据文件扩展名返回不同的图标
-  // const ext = item.name?.split('.').pop()?.toLowerCase()
-  const ext = item
+  const ext = item.title?.split('.').pop()?.toLowerCase()
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -553,21 +597,24 @@ const getFileIcon = (item) => {
     ppt: pptIcon,
     pptx: pptIcon,
     txt: txtIcon,
-    img: imgIcon
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon
   }
 
   return iconMap[ext] || wordIcon
 }
-const formatFileSize = (bytes) => {
-  if (!bytes) return '0 B'
-  if (bytes < 1024) {
-    return bytes + ' B'
-  } else if (bytes < 1024 * 1024) {
-    return (bytes / 1024).toFixed(2) + ' KB'
-  } else if (bytes < 1024 * 1024 * 1024) {
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+const formatFileSize = (kb) => {
+  if (!kb) return '0 KB'
+  if (kb < 1024) {
+    return kb + ' KB'
+  } else if (kb < 1024 * 1024) {
+    return (kb / 1024).toFixed(2) + ' MB'
+  } else if (kb < 1024 * 1024 * 1024) {
+    return (kb / (1024 * 1024)).toFixed(2) + ' GB'
   } else {
-    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+    return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
   }
 }
 </script>
@@ -702,6 +749,7 @@ const formatFileSize = (bytes) => {
       .content-tabs {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 10px;
         .tab-item {
           flex-shrink: 0;

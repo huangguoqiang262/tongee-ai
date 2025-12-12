@@ -33,6 +33,7 @@
       @update-loading-state="handleUpdateLoadingState"
       @update-webview-instance="handleUpdateWebviewInstance"
       @new-webview="handleNewWebview"
+      @add-syc-tab="addSycTab"
     />
 
     <ContextMenu
@@ -46,6 +47,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { add_web_log } from '@renderer/api/history'
 import defaultIcon from '../../assets/logo.png'
 const tabs = ref([])
 const activeTabId = ref(null)
@@ -56,7 +58,14 @@ const addressBarUrl = ref('')
 const webviewInstances = ref(new Map())
 // 阻止默认  自定义打开新窗口
 const handleNewWebview = (info) => {
-  addNewTab(info.url)
+  addNewTab({
+    url: decodeURIComponent(info.url),
+    title: decodeURIComponent(info.url),
+    isInternal: false
+  })
+}
+const addSycTab = (data) => {
+  add_web_log({ ...data, t: Date.now() })
 }
 // 计算当前活动标签
 const activeTab = computed(() => {
@@ -133,7 +142,7 @@ const initTabs = () => {
       canGoForward: false,
       backgroundColor: '#fff',
       isInternal: true,
-      props: {},
+      attrs: {},
       history: [],
       currentHistoryIndex: -1
     }
@@ -146,16 +155,20 @@ const initTabs = () => {
 // 新建标签
 const addNewTab = (config = {}) => {
   var options = Object.assign(
+    // {
+    //   url: 'SearchHome',
+    //   title: '首页',
+    //   icon: defaultIcon,
+    //   isInternal: true
+    // },
     {
-      url: 'SearchHome',
-      title: '首页',
+      url: 'Maintain',
+      title: '设备保养',
       icon: defaultIcon,
       isInternal: true
     },
     config
   )
-  console.log(options)
-
   const newTab = {
     id: Date.now(),
     url: options.url,
@@ -167,14 +180,22 @@ const addNewTab = (config = {}) => {
     canGoBack: false,
     canGoForward: false,
     isInternal: options.isInternal,
-    props: options.props || {},
+    attrs: options.attrs || {},
     history: [],
     currentHistoryIndex: -1
   }
 
   newTab.isInternal = !/^(https?|ftp|file|mailto|tel):/.test(options.url)
   const index = tabs.value.findIndex((tab) => tab.url === options.url)
-  if (index !== -1&& newTab.url != 'SearchHome') {
+  let whiteList = [
+    'SearchHome',
+    'HomePage',
+    'ImageProductionChat',
+    'IntelligentWritingChat',
+    'ChatPage'
+  ]
+  if (index !== -1 && newTab.isInternal && !whiteList.includes(newTab.url)) {
+    tabs.value[index].attrs = newTab.attrs
     activeTabId.value = tabs.value[index].id
     return
   }
@@ -223,7 +244,7 @@ const replaceActiveTab = (config = {}) => {
     canGoBack: false,
     canGoForward: false,
     isInternal: options.isInternal,
-    props: options.props || {},
+    attrs: options.attrs || {},
     history: [],
     currentHistoryIndex: -1
   }

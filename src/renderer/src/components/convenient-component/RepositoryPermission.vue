@@ -74,14 +74,12 @@
           <div class="">选择组织</div>
         </template>
         <div class="organization-box">
-          <DepartmentSelector :tree="treeData" />
+          <DepartmentSelector :tree-data="treeData" @edit-tree="updataTree" />
         </div>
         <template #footer>
           <div class="dialog-footer">
             <el-button class="cancel-btn" @click="organizationVisible = false">取消</el-button>
-            <el-button class="confirm-btn" type="primary" @click="organizationVisible = false">
-              确定
-            </el-button>
+            <el-button class="confirm-btn" type="primary" @click="affirmTissue"> 确定 </el-button>
           </div>
         </template>
       </el-dialog>
@@ -120,9 +118,9 @@ let permissionList = ref([
   }
 ])
 // 权限类型
-let permissionType = ref(props.permission.setting?.is_private || 1)
+let permissionType = ref(props.permission.setting?.is_private || 0)
 watchEffect(() => {
-  permissionType.value = props.permission.setting?.is_private || 1
+  permissionType.value = props.permission.setting?.is_private || 0
 })
 // 成员权限
 let memberPrivileges = ref(props.permission.setting?.permission_type || 1)
@@ -137,9 +135,9 @@ const getOrganizationList = () => {
   organizationVisible.value = true
 }
 // 成员加入需确认
-let isConfirm = ref(props.permission.setting?.join_type === 2 || true)
+let isConfirm = ref(props.permission.setting?.join_type === 2)
 watchEffect(() => {
-  isConfirm.value = props.permission.setting?.join_type === 2 || true
+  isConfirm.value = props.permission.setting?.join_type === 2
 })
 // 组织权限选择
 let organizationVisible = ref(false)
@@ -147,9 +145,85 @@ let treeData = ref(props.permission?.tree || [])
 watchEffect(() => {
   treeData.value = props.permission?.tree || []
 })
+const tempTreeData = ref([])
+const selectedOrgan = ref([])
+const updataTree = (e) => {
+  tempTreeData.value = e
+}
+
+const affirmTissue = () => {
+  selectedOrgan.value = findSelectedNodes(
+    tempTreeData.value.length ? tempTreeData.value : treeData.value
+  )
+  if (selectedOrgan.value.length == 0) {
+    // eslint-disable-next-line no-undef
+    ElMessage.error('请选择组织')
+    return
+  }
+  organizationVisible.value = false
+}
+
+const findSelectedNodes = (data) => {
+  function traverse(nodes) {
+    const selectedNodes = []
+
+    for (const node of nodes) {
+      if (node.selected) {
+        const selectedNode = {
+          father_id: node.parent_diction_id.toString(),
+          organ_id: node.diction_id.toString(),
+          child: []
+        }
+
+        // 如果当前节点有子节点，递归处理子节点
+        if (node.children && node.children.length > 0) {
+          selectedNode.child = traverse(node.children)
+        }
+
+        selectedNodes.push(selectedNode)
+      } else {
+        // 如果当前节点没有被选中，但是可能有被选中的子节点
+        if (node.children && node.children.length > 0) {
+          const selectedChildren = traverse(node.children)
+          if (selectedChildren.length > 0) {
+            selectedNodes.push(...selectedChildren)
+          }
+        }
+      }
+    }
+
+    return selectedNodes
+  }
+
+  return traverse(data)
+}
+
+const emit = defineEmits(['setPermission'])
 // 提交
 const submitForm = () => {
+  if (permissionType.value == 0) {
+    selectedOrgan.value = findSelectedNodes(
+      tempTreeData.value.length ? tempTreeData.value : treeData.value
+    )
+    let data = {
+      is_private: 0,
+      join_type: isConfirm.value ? 2 : 1,
+      permission_type: memberPrivileges.value,
+      organs: JSON.stringify(selectedOrgan.value)
+    }
 
+    if (selectedOrgan.value.length == 0) {
+      // eslint-disable-next-line no-undef
+      ElMessage.error('请选择组织')
+      return
+    }
+    emit('setPermission', data)
+  } else if (permissionType.value == 1) {
+    let data = {
+      is_private: 1
+    }
+    emit('setPermission', data)
+  }
 }
 </script>
 
@@ -195,13 +269,13 @@ const submitForm = () => {
         align-items: center;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
 
         .dialog-header-del-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
       }
 

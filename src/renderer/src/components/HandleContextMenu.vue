@@ -1,5 +1,10 @@
 <template>
-  <div v-if="show" class="handleContextMenu" :style="{ left: x + 'px', top: y + 'px' }">
+  <div
+    v-if="show"
+    ref="handleContextMenuRef"
+    class="handleContextMenu"
+    :style="{ left: pageX + 'px', top: pageY + 'px' }"
+  >
     <template v-for="(item, index) in actionSheet" :key="index">
       <el-popover
         v-if="item.children && item.children.length"
@@ -21,6 +26,9 @@
             v-for="childrenItem in item.children"
             :key="childrenItem.name"
             class="item"
+            :class="{
+              active: item.action == 'permission' && childrenItem.action == permissionType
+            }"
             @click="$emit('action', childrenItem)"
           >
             <img class="icon" :src="childrenItem.icon" alt="" />
@@ -38,16 +46,34 @@
 </template>
 
 <script setup>
-defineProps({
+import { ref, computed } from 'vue'
+let handleContextMenuRef = ref(null)
+let props = defineProps({
   show: Boolean,
   x: Number,
   y: Number,
+  permissionType: [Number, String],
   actionSheet: {
     type: Array,
     default: () => []
   }
 })
-
+let pageX = computed(() => {
+  let handleContextMenu = handleContextMenuRef.value || {}
+  if (props.x + handleContextMenu.clientWidth > window.innerWidth) {
+    return window.innerWidth - handleContextMenu.clientWidth
+  } else {
+    return props.x
+  }
+})
+let pageY = computed(() => {
+  let handleContextMenu = handleContextMenuRef.value || {}
+  if (props.y + handleContextMenu.clientHeight > window.innerHeight) {
+    return window.innerHeight - handleContextMenu.clientHeight
+  } else {
+    return props.y
+  }
+})
 defineEmits(['action'])
 </script>
 
@@ -60,7 +86,7 @@ defineEmits(['action'])
   box-shadow: 0px 2px 20px 8px rgba(0, 0, 0, 0.07);
   border: 1px solid var(--el-popover-border-color);
   border-radius: 8px;
-  z-index: 1000;
+  z-index: 9999;
   min-width: 146px;
   overflow: hidden;
   transition: all 0.3s;
@@ -149,7 +175,9 @@ defineEmits(['action'])
       &:hover {
         background: var(--primary-bg-color);
       }
-
+      &.active {
+        background: var(--el-color-primary-light-9);
+      }
       .title {
         flex: 1;
         white-space: nowrap;

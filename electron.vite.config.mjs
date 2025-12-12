@@ -13,6 +13,9 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    server: {
+      host: '0.0.0.0' // 暴露到网络
+    },
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src')

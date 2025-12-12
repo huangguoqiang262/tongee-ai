@@ -35,16 +35,41 @@
                 alt=""
                 @click.stop="clearAttach(index)"
               />
-              <img class="attached-icon" :src="getFileIcon(item.type)" alt="" />
+              <el-image
+                class="image-cover"
+                fit="cover"
+                :preview-teleported="true"
+                :preview-src-list="localfileList.map((item) => item.full_path)"
+                :src="item.full_path"
+              >
+                <template #toolbar="{ actions, prev, next, reset, activeIndex, setActiveItem }">
+                  <el-icon @click="prev"><Back /></el-icon>
+                  <el-icon @click="next"><Right /></el-icon>
+                  <el-icon @click="setActiveItem(localfileList.length - 1)">
+                    <DArrowRight />
+                  </el-icon>
+                  <el-icon @click="actions('zoomOut')"><ZoomOut /></el-icon>
+                  <el-icon @click="actions('zoomIn', { enableTransition: false, zoomRate: 2 })">
+                    <ZoomIn />
+                  </el-icon>
+                  <el-icon @click="actions('clockwise', { rotateDeg: 180, enableTransition: false })">
+                    <RefreshRight />
+                  </el-icon>
+                  <el-icon @click="actions('anticlockwise')"><RefreshLeft /></el-icon>
+                  <el-icon @click="reset"><Refresh /></el-icon>
+                  <el-icon @click="download(activeIndex, localfileList)"><Download /></el-icon>
+                </template>
+              </el-image>
+              <!-- <img class="attached-icon" :src="getFileIcon(item)" alt="" />
               <div class="attached-content">
                 <div class="attach-name">
-                  {{ item.name }}
+                  {{ item.title }}
                 </div>
                 <div class="attach-type">
-                  <span class="file-extension">{{ item.type.toUpperCase() }}</span>
-                  <span class="file-size">{{ formatFileSize(item.size) }}</span>
+                  <span class="file-extension">{{ item.title?.split('.').pop()?.toUpperCase() }}</span>
+                  <span class="file-size">{{ formatFileSize(item.total_space) }}</span>
                 </div>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
@@ -67,7 +92,7 @@
             >
               <template #reference>
                 <el-button class="reference-btn size-btn">
-                  {{ activeSize }}
+                  {{ activeSize.title }}
                   <el-icon><ArrowDown /></el-icon>
                 </el-button>
               </template>
@@ -76,13 +101,13 @@
                   v-for="item in sizeLists"
                   :key="item.title"
                   class="item"
-                  :class="{ active: item.title == activeSize }"
-                  @click="setActiveSize(item.title)"
+                  :class="{ active: item.id == activeSize.id }"
+                  @click="setActiveSize(item)"
                 >
                   <div class="item-left">
                     <img
                       class="icon"
-                      :src="item.title == activeSize ? item.checkedIcon : item.icon"
+                      :src="item.id == activeSize.id ? item.checkedIcon : item.icon"
                       alt=""
                     />
                     <div class="title">{{ item.title }}</div>
@@ -105,7 +130,7 @@
                 </el-button>
               </template>
               <div class="handle-box">
-                <div class="item">
+                <div class="item default-item">
                   <img
                     class="cover"
                     src="@renderer/assets/ImageProduction/default-style.png"
@@ -113,6 +138,22 @@
                   />
                   <div class="title default-title">风格不限</div>
                   <img
+                    v-if="activeStyle == '风格不限'"
+                    class="checked-icon"
+                    src="@renderer/assets/ImageProduction/checked-icon.png"
+                    alt=""
+                  />
+                </div>
+                <div
+                  v-for="item in styleLists"
+                  :key="item.id"
+                  class="item"
+                  @click="setActiveStyle(item.title)"
+                >
+                  <img class="cover" :src="item.thumb" alt="" />
+                  <div class="title">{{ item.title }}</div>
+                  <img
+                    v-if="item.title == activeStyle"
                     class="checked-icon"
                     src="@renderer/assets/ImageProduction/checked-icon.png"
                     alt=""
@@ -135,16 +176,16 @@
               </template>
               <div class="call-word-box">
                 <div v-for="item in callWordLists" :key="item.label" class="item-box">
-                  <div class="label">{{ item.label }}</div>
+                  <div class="label">{{ item.name }}</div>
                   <div class="children-box">
                     <div
                       v-for="child in item.children"
                       :key="child"
                       class="children-item"
-                      :class="{ active: activeCallWord.includes(child) }"
-                      @click="setActiveCallWord(child)"
+                      :class="{ active: activeCallWord.includes(child.name) }"
+                      @click="setActiveCallWord(child.name)"
                     >
-                      {{ child }}
+                      {{ child.name }}
                     </div>
                   </div>
                 </div>
@@ -216,13 +257,14 @@
 <script setup>
 import cloneDeep from 'lodash.clonedeep'
 import { ref, watch, nextTick, onMounted, inject } from 'vue'
+import { useUserStore } from '@renderer/stores/user'
 // import Logo from '@renderer/assets/logo.png'
-import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
-import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
-import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
-import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
-import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
-import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
+// import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
+// import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
+// import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
+// import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
+// import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
+// import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import img11 from '@renderer/assets//ImageProduction/1-1.png'
 import img43 from '@renderer/assets//ImageProduction/4-3.png'
 import img34 from '@renderer/assets//ImageProduction/3-4.png'
@@ -233,6 +275,7 @@ import img43Checked from '@renderer/assets//ImageProduction/4-3-checked.png'
 import img34Checked from '@renderer/assets//ImageProduction/3-4-checked.png'
 import img169Checked from '@renderer/assets//ImageProduction/16-9-checked.png'
 import img916Checked from '@renderer/assets//ImageProduction/9-16-checked.png'
+import { get_image_style, get_image_cueword } from '@renderer/api/IntelligentWriting'
 let replaceActiveTab = inject('replaceActiveTab')
 const message = ref({
   text: '',
@@ -248,11 +291,21 @@ const hidePopover = (popoverName) => {
     popoverName.hide()
   }
 }
+const download = (index, images) => {
+  const url = images[index].full_path
+  const suffix = url.slice(url.lastIndexOf('.'))
+  const filename = suffix + Date.now()
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+}
 const sizeLists = ref([
   {
     icon: img11,
     checkedIcon: img11Checked,
     title: '1:1',
+    id: '512x512',
     width: 512,
     height: 512
   },
@@ -260,6 +313,7 @@ const sizeLists = ref([
     icon: img43,
     checkedIcon: img43Checked,
     title: '4:3',
+    id: '682x512',
     width: 682,
     height: 512
   },
@@ -267,6 +321,7 @@ const sizeLists = ref([
     icon: img34,
     checkedIcon: img34Checked,
     title: '3:4',
+    id: '512x682',
     width: 512,
     height: 682
   },
@@ -274,6 +329,7 @@ const sizeLists = ref([
     icon: img169,
     checkedIcon: img169Checked,
     title: '16:9',
+    id: '910x512',
     width: 910,
     height: 512
   },
@@ -281,97 +337,41 @@ const sizeLists = ref([
     icon: img916,
     checkedIcon: img916Checked,
     title: '9:16',
+    id: '512x910',
     width: 512,
     height: 910
   }
 ])
-let activeSize = ref('1:1')
-const setActiveSize = (title) => {
-  activeSize.value = title
+let activeSize = ref({
+  title: '1:1',
+  id: '512x512',
+  width: 512,
+  height: 512
+})
+const setActiveSize = (item) => {
+  activeSize.value = item
   hidePopover(sizePopoverRef.value)
 }
 let stylePopoverRef = ref(null)
+let activeStyle = ref('风格不限')
+let styleLists = ref([])
 let callWordPopoverRef = ref(null)
 let activeCallWord = ref([])
-let callWordLists = ref([
-  {
-    label: '光线',
-    children: [
-      '逆光',
-      '顶光',
-      '自然光',
-      '体积光',
-      '轮廓光',
-      '摄影棚光',
-      '丁达尔效应',
-      '日落光',
-      '月光',
-      '伦勃朗光',
-      '暖光',
-      '蓝调冷光',
-      '霓虹灯',
-      '聚光灯',
-      '透镜光晕'
-    ]
-  },
-  {
-    label: '镜头',
-    children: [
-      '大景深',
-      '全景',
-      '广角',
-      '全身',
-      '长焦镜头',
-      '微距镜头',
-      '第一人称视角',
-      '鸟瞰视角',
-      '人眼视角',
-      '航拍',
-      '大透视',
-      '俯视',
-      '仰视',
-      '水下摄影',
-      '多重曝光',
-      '散焦'
-    ]
-  },
-  {
-    label: '背景',
-    children: [
-      '森林背景',
-      '海边日落背景',
-      '雨天街道背景',
-      '繁华都市背景',
-      '烟花背景',
-      '雪地背景',
-      '星空背景',
-      '晚霞背景',
-      '极光背景',
-      '乡村背景',
-      '田园背景',
-      '背景虚化',
-      '背景渐变',
-      '纯色背景'
-    ]
-  },
-  {
-    label: '结构',
-    children: [
-      '对称',
-      '紧凑',
-      '松散',
-      '镜像',
-      '留白',
-      '对角线构图',
-      '中心构图',
-      '主体突出',
-      '空间感',
-      '简约',
-      '细节丰富',
-      '黄金分割'
-    ]
-  }
-])
+let callWordLists = ref([])
+const getStyles = () => {
+  get_image_style({}).then((res) => {
+    styleLists.value = res.data || []
+  })
+}
+const setActiveStyle = (title) => {
+  activeStyle.value = title
+  hidePopover(stylePopoverRef.value)
+}
+const getCueword = () => {
+  get_image_cueword({}).then((res) => {
+    callWordLists.value = res.data || []
+  })
+}
 const setActiveCallWord = (word) => {
   if (activeCallWord.value.includes(word)) {
     activeCallWord.value = activeCallWord.value.filter((item) => item !== word)
@@ -390,27 +390,6 @@ let attachListBox = ref(null)
 let showPrevBtn = ref(false)
 let showNextBtn = ref(false)
 let isHoveringAttachBox = ref(false)
-// let onlineFileVisible = ref(false)
-// const onlineFileList = ref([
-//   {
-//     name: '糖吉医疗最新文献更新.docx',
-//     cover: Logo,
-//     id: '1',
-//     type: 'docx'
-//   },
-//   {
-//     name: '糖吉医疗最新文献更新.ppt',
-//     cover: Logo,
-//     id: '2',
-//     type: 'ppt'
-//   },
-//   {
-//     name: '糖吉医疗最新文献更新.xlsx',
-//     cover: Logo,
-//     id: '3',
-//     type: 'xlsx'
-//   }
-// ])
 // 文件列表
 const localfileList = ref([])
 // 处理发送点击
@@ -421,7 +400,10 @@ const handleSendClick = () => {
       url: 'ImageProductionChat',
       isInternal: true,
       attrs: {
-        files: cloneDeep(localfileList.value)
+        attach_files: cloneDeep(localfileList.value),
+        message_text: message.value.text,
+        image_size: activeSize.value.id,
+        image_style: activeStyle.value
       }
     })
     message.value.text = ''
@@ -454,30 +436,67 @@ const handleSelectChange = (file) => {
   // 如果是文件夹，使用新的目录树结构
   if (file.webkitRelativePath) {
     // 处理文件夹上传
-    file.type = 'directory'
-    file.uploadStatus = 'pending'
-    localfileList.value.push(file)
   } else {
-    console.log(file);
-    const ext = file.name?.split('.').pop()?.toLowerCase()
-    if (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'gif' || ext === 'webp') {
-      file.type = 'img'
-      file.uploadStatus = 'pending'
-      localfileList.value.push(file)
-    }
     // 处理单个文件
-    // file.type = 'img'
-    // file.uploadStatus = 'pending'
+    file.type = 'file'
+    file.uploadStatus = 'pending'
     // localfileList.value.push(file)
-    // ReadyUploadList.push({
-    //   type: 'directory',
-    //   name: directoryTree.name,
-    //   path: directoryTree.path,
-    //   fileCount: directoryTree.fileCount,
-    //   children: directoryTree.children,
-    //   uploadStatus: 'pending'
-    // })
+    let fileItem = {
+      ...file,
+      file: file.raw
+    }
+    uploadSingleFile(fileItem)
   }
+}
+// 上传单个文件（简化版本，去掉重试机制）
+const uploadSingleFile = async (fileItem) => {
+  const userStore = useUserStore()
+  // eslint-disable-next-line no-undef
+  let loadcontext = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.3)',
+    customClass: 'upload-loading'
+  })
+  const formData = new FormData()
+  formData.append('uniacid', userStore.uniacid)
+  formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
+  const xhr = new XMLHttpRequest()
+
+  xhr.upload.onprogress = (event) => {
+    if (event.lengthComputable) {
+      const progress = (event.loaded / event.total) * 100
+      fileItem.progress = Math.round(progress)
+    }
+  }
+
+  xhr.onload = () => {
+    loadcontext.close()
+    let response = JSON.parse(xhr.response)
+    if (xhr.status == 200 && response.code == 200) {
+      var uploadedFile = {
+        full_path: response.data[0].url,
+        title: response.data[0].file_name,
+        total_space: response.data[0].file_size
+      }
+      localfileList.value = [uploadedFile]
+    } else {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        message: response.msg || '上传失败',
+        type: 'error'
+      })
+    }
+  }
+
+  xhr.onerror = () => {
+    loadcontext.close()
+  }
+
+  // 实际使用时需要配置正确的上传地址
+  xhr.open('POST', import.meta.env.VITE_API_BASE_URL + '/api/common/upload')
+  xhr.setRequestHeader('Authorization', userStore.token)
+  xhr.send(formData)
 }
 const beforeUploadFiles = (type) => {
   if (sizePopoverRef.value) {
@@ -513,7 +532,7 @@ const updateScrollButtons = () => {
 const prevAttach = () => {
   const attachList = attachListBox.value?.querySelector('.attach-list')
   if (!attachListBox.value || !attachList) return
-  const scrollAmount = 200 // 每次滚动200px
+  const scrollAmount = 100 // 每次滚动100px
   attachList.scrollLeft -= scrollAmount
 
   // 滚动结束后更新按钮状态
@@ -527,7 +546,7 @@ const nextAttach = () => {
   const attachList = attachListBox.value?.querySelector('.attach-list')
   if (!attachListBox.value || !attachList) return
 
-  const scrollAmount = 210 // 每次滚动200px
+  const scrollAmount = 110 // 每次滚动100px
   attachList.scrollLeft += scrollAmount
 
   // 滚动结束后更新按钮状态
@@ -551,6 +570,8 @@ const handleAttachListScroll = () => {
   updateScrollButtons()
 }
 onMounted(() => {
+  getStyles()
+  getCueword()
   updateScrollButtons()
   watch(
     localfileList,
@@ -566,37 +587,37 @@ const clearAttach = (i) => {
   localfileList.value.splice(i, 1)
 }
 // 获取文件图标
-const getFileIcon = (item) => {
-  // 根据文件扩展名返回不同的图标
-  // const ext = item.name?.split('.').pop()?.toLowerCase()
-  const ext = item
-  const iconMap = {
-    doc: wordIcon,
-    docx: wordIcon,
-    pdf: pdfIcon,
-    xls: excelIcon,
-    xlsx: excelIcon,
-    ppt: pptIcon,
-    pptx: pptIcon,
-    txt: txtIcon,
-    img: imgIcon
-  }
-  console.log(iconMap[ext], ext);
-
-  return iconMap[ext] || wordIcon
-}
-const formatFileSize = (bytes) => {
-  if (!bytes) return '0 B'
-  if (bytes < 1024) {
-    return bytes + ' B'
-  } else if (bytes < 1024 * 1024) {
-    return (bytes / 1024).toFixed(2) + ' KB'
-  } else if (bytes < 1024 * 1024 * 1024) {
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-  } else {
-    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
-  }
-}
+// const getFileIcon = (item) => {
+//   // 根据文件扩展名返回不同的图标
+//   const ext = item.title?.split('.').pop()?.toLowerCase()
+//   const iconMap = {
+//     doc: wordIcon,
+//     docx: wordIcon,
+//     pdf: pdfIcon,
+//     xls: excelIcon,
+//     xlsx: excelIcon,
+//     ppt: pptIcon,
+//     pptx: pptIcon,
+//     txt: txtIcon,
+//     png: imgIcon,
+//     jpg: imgIcon,
+//     jpeg: imgIcon,
+//     gif: imgIcon
+//   }
+//   return iconMap[ext] || wordIcon
+// }
+// const formatFileSize = (kb) => {
+//   if (!kb) return '0 KB'
+//   if (kb < 1024) {
+//     return kb + ' KB'
+//   } else if (kb < 1024 * 1024) {
+//     return (kb / 1024).toFixed(2) + ' MB'
+//   } else if (kb < 1024 * 1024 * 1024) {
+//     return (kb / (1024 * 1024)).toFixed(2) + ' GB'
+//   } else {
+//     return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
+//   }
+// }
 </script>
 
 <style scoped lang="scss">
@@ -877,10 +898,10 @@ const formatFileSize = (bytes) => {
         flex-shrink: 0;
         position: relative;
         box-sizing: border-box;
-        padding: 10px;
+        // padding: 10px;
         display: flex;
         align-items: center;
-        width: 200px;
+        width: 120px;
         height: 58px;
         border-radius: 4px;
         border: 1px solid #efefef;
@@ -898,6 +919,8 @@ const formatFileSize = (bytes) => {
           z-index: 1;
           width: 16px;
           height: 16px;
+          background: #fff;
+          border-radius: 50%;
           cursor: pointer;
         }
         .attached-icon {
@@ -906,6 +929,11 @@ const formatFileSize = (bytes) => {
           margin-right: 4px;
           width: 36px;
           height: 36px;
+        }
+        .image-cover {
+          width: 100%;
+          height: 100%;
+          border-radius: 4px;
         }
         .attached-content {
           flex: 1;
@@ -1036,6 +1064,21 @@ const formatFileSize = (bytes) => {
       border-radius: 4px;
       overflow: hidden;
       transition: all 0.2s linear;
+      &.default-item {
+        &::before {
+          background: transparent;
+        }
+      }
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.8) 100%);
+        z-index: 1;
+      }
       &:hover {
         &::after {
           content: '';
@@ -1068,6 +1111,9 @@ const formatFileSize = (bytes) => {
         color: #fff;
         text-align: center;
         line-height: 16px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
         &.default-title {
           color: var(--el-color-primary);
         }

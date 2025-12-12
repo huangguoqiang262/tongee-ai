@@ -56,13 +56,8 @@ export function parseTime(time, cFormat) {
  * @param {string} option
  * @returns {string}
  */
-export function formatTime(time, option) {
-  if (('' + time).length === 10) {
-    time = parseInt(time) * 1000
-  } else {
-    time = +time
-  }
-  const d = new Date(time)
+export function formatTime(date) {
+  const d = new Date(date).getTime()
   const now = Date.now()
 
   const diff = (now - d) / 1000
@@ -77,13 +72,7 @@ export function formatTime(time, option) {
   } else if (diff < 3600 * 24 * 2) {
     return '1天前'
   }
-  if (option) {
-    return parseTime(time, option)
-  } else {
-    return (
-      d.getMonth() + 1 + '月' + d.getDate() + '日' + d.getHours() + '时' + d.getMinutes() + '分'
-    )
-  }
+  return date.split(' ')[0]
 }
 
 /**

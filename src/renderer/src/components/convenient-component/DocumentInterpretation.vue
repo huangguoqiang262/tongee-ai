@@ -68,14 +68,14 @@
             alt=""
             @click.stop="clearAttach(index)"
           />
-          <img class="attached-icon" :src="getFileIcon(item.type)" alt="" />
+          <img class="attached-icon" :src="getFileIcon(item)" alt="" />
           <div class="attached-content">
             <div class="attach-name">
-              {{ item.name }}
+              {{ item.title }}
             </div>
             <div class="attach-type">
-              <span class="file-extension">{{ item.type.toUpperCase() }}</span>
-              <span class="file-size">{{ formatFileSize(item.size) }}</span>
+              <span class="file-extension">{{ item.title?.split('.').pop()?.toUpperCase() }}</span>
+              <span class="file-size">{{ formatFileSize(item.total_space) }}</span>
             </div>
           </div>
         </div>
@@ -127,15 +127,14 @@
   </div>
   <OnlineFileSelection
     v-model="onlineFileVisible"
-    :files="onlineFileList"
     @submit-import="handleSubmitImport"
   ></OnlineFileSelection>
 </template>
 
 <script setup>
 import cloneDeep from 'lodash.clonedeep'
+import { useUserStore } from '@renderer/stores/user'
 import { ref, watch, nextTick, onMounted, inject } from 'vue'
-import Logo from '@renderer/assets/logo.png'
 import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
 import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
@@ -159,56 +158,8 @@ let showPrevBtn = ref(false)
 let showNextBtn = ref(false)
 let isHoveringAttachBox = ref(false)
 let onlineFileVisible = ref(false)
-const onlineFileList = ref([
-  {
-    name: '糖吉医疗最新文献更新.docx',
-    cover: Logo,
-    id: '1',
-    type: 'docx'
-  },
-  {
-    name: '糖吉医疗最新文献更新.ppt',
-    cover: Logo,
-    id: '2',
-    type: 'ppt'
-  },
-  {
-    name: '糖吉医疗最新文献更新.xlsx',
-    cover: Logo,
-    id: '3',
-    type: 'xlsx'
-  }
-])
 // 文件列表
-const localfileList = ref([
-  // {
-  //   type: 'docx',
-  //   name: '糖源医疗',
-  //   count: 3,
-  //   size: 326,
-  //   create_time: '2025/09/09',
-  //   id: 2,
-  //   checked: false
-  // },
-  // {
-  //   type: 'xlsx',
-  //   name: '糖源医疗',
-  //   count: 3,
-  //   size: 3699,
-  //   create_time: '2025/09/09',
-  //   id: 3,
-  //   checked: false
-  // },
-  // {
-  //   type: 'img',
-  //   name: '糖源医疗',
-  //   count: 3,
-  //   size: 123,
-  //   create_time: '2025/09/09',
-  //   id: 4,
-  //   checked: false
-  // },
-])
+const localfileList = ref([])
 // 处理发送点击
 const handleSendClick = () => {
   if (message.value.text.trim().length) {
@@ -217,7 +168,8 @@ const handleSendClick = () => {
       url: 'ChatPage',
       isInternal: true,
       attrs: {
-        files: cloneDeep(localfileList.value)
+        attach_files: cloneDeep(localfileList.value),
+        message_text: message.value.text
       }
     })
     message.value.text = ''
@@ -244,21 +196,25 @@ const handleEnterSend = (event) => {
 }
 // 处理导入文件
 const handleSubmitImport = (files) => {
-  console.log(files, '导入文件')
   localfileList.value.push(...files)
 }
 const handleSelectChange = (file) => {
   // 如果是文件夹，使用新的目录树结构
   if (file.webkitRelativePath) {
-    // 处理文件夹上传
-    file.type = 'directory'
-    file.uploadStatus = 'pending'
-    localfileList.value.push(file)
+    // // 处理文件夹上传
+    // file.type = 'directory'
+    // file.uploadStatus = 'pending'
+    // localfileList.value.push(file)
   } else {
     // 处理单个文件
     file.type = 'file'
     file.uploadStatus = 'pending'
-    localfileList.value.push(file)
+    // localfileList.value.push(file)
+    let fileItem = {
+      ...file,
+      file: file.raw
+    }
+    uploadSingleFile(fileItem)
     // ReadyUploadList.push({
     //   type: 'directory',
     //   name: directoryTree.name,
@@ -269,6 +225,56 @@ const handleSelectChange = (file) => {
     // })
   }
 }
+// 上传单个文件（简化版本，去掉重试机制）
+const uploadSingleFile = async (fileItem) => {
+  const userStore = useUserStore()
+  // eslint-disable-next-line no-undef
+  let loadcontext = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.3)',
+    customClass: 'upload-loading'
+  })
+  const formData = new FormData()
+  formData.append('uniacid', userStore.uniacid)
+  formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
+  const xhr = new XMLHttpRequest()
+
+  xhr.upload.onprogress = (event) => {
+    if (event.lengthComputable) {
+      const progress = (event.loaded / event.total) * 100
+      fileItem.progress = Math.round(progress)
+    }
+  }
+
+  xhr.onload = () => {
+    loadcontext.close()
+    let response = JSON.parse(xhr.response)
+    if (xhr.status == 200 && response.code == 200) {
+      var uploadedFile = {
+        full_path: response.data[0].url,
+        title: response.data[0].file_name,
+        total_space: response.data[0].file_size
+      }
+      localfileList.value.push(uploadedFile)
+    } else {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        message: response.msg || '上传失败',
+        type: 'error'
+      })
+    }
+  }
+
+  xhr.onerror = () => {
+    loadcontext.close()
+  }
+
+  // 实际使用时需要配置正确的上传地址
+  xhr.open('POST', import.meta.env.VITE_API_BASE_URL + '/api/common/upload')
+  xhr.setRequestHeader('Authorization', userStore.token)
+  xhr.send(formData)
+}
 const beforeUploadFiles = (type) => {
   if (subActionPopoverRef.value) {
     subActionPopoverRef.value.hide()
@@ -276,7 +282,6 @@ const beforeUploadFiles = (type) => {
   if (type === 'repository') {
     // 知识库文件上传
     onlineFileVisible.value = true
-    console.log('知识库文件上传')
   } else if (type === 'local') {
     // 本地文件上传
     elUploadRef.value.clearFiles()
@@ -358,8 +363,7 @@ const clearAttach = (i) => {
 // 获取文件图标
 const getFileIcon = (item) => {
   // 根据文件扩展名返回不同的图标
-  // const ext = item.name?.split('.').pop()?.toLowerCase()
-  const ext = item
+  const ext = item.title?.split('.').pop()?.toLowerCase()
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -369,21 +373,24 @@ const getFileIcon = (item) => {
     ppt: pptIcon,
     pptx: pptIcon,
     txt: txtIcon,
-    img: imgIcon
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon
   }
 
   return iconMap[ext] || wordIcon
 }
-const formatFileSize = (bytes) => {
-  if (!bytes) return '0 B'
-  if (bytes < 1024) {
-    return bytes + ' B'
-  } else if (bytes < 1024 * 1024) {
-    return (bytes / 1024).toFixed(2) + ' KB'
-  } else if (bytes < 1024 * 1024 * 1024) {
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+const formatFileSize = (kb) => {
+  if (!kb) return '0 KB'
+  if (kb < 1024) {
+    return kb + ' KB'
+  } else if (kb < 1024 * 1024) {
+    return (kb / 1024).toFixed(2) + ' MB'
+  } else if (kb < 1024 * 1024 * 1024) {
+    return (kb / (1024 * 1024)).toFixed(2) + ' GB'
   } else {
-    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+    return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
   }
 }
 </script>
@@ -555,7 +562,6 @@ const formatFileSize = (bytes) => {
       padding: 20px 10px 20px 0;
       display: flex;
       align-items: center;
-      gap: 12px;
       white-space: nowrap;
       overflow-x: auto;
       gap: 10px;

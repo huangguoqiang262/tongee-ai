@@ -1,5 +1,9 @@
 <template>
-  <div class="message-input focus">
+  <div class="message-input" :class="{ focus: focus }">
+    <div v-if="isChatting" class="stop-chat-box" @click="stopChat">
+      <img class="stop-icon" src="@renderer/assets/chat-icon/stop-icon.png" alt="" />
+      停止回答
+    </div>
     <div ref="inputWrapper" class="input-wrapper">
       <div
         v-if="fileList.length"
@@ -22,13 +26,15 @@
               alt=""
               @click.stop="clearAttach(index)"
             />
-            <img class="attached-icon" src="@renderer/assets/attached-icon.png" alt="" />
+            <img class="attached-icon" :src="getFileIcon(item)" alt="" />
             <div class="attached-content">
               <div class="attach-name">
-                {{ item.name }}
+                {{ item.title }}
               </div>
               <div class="attach-type">
-                <span class="file-extension">{{ getFileExtension(item.type).toUpperCase() }}</span>
+                <span class="file-extension">{{
+                  item.title?.split('.').pop()?.toUpperCase()
+                }}</span>
                 <!-- <span class="file-size">{{ formatFileSize(item.size) }}</span> -->
               </div>
             </div>
@@ -46,6 +52,11 @@
           placeholder="@知识库或直接提问"
           type="textarea"
           :options="mentionOptions"
+          :whole="true"
+          @whole-remove="handleWholeRemove"
+          @focus="focus = true"
+          @select="handleMentionSelect"
+          @blur="focus = false"
           @keydown.enter.prevent="sendMessage"
           @paste="handlePaste"
         >
@@ -58,23 +69,31 @@
             size="small"
             popper-class="message-input-model-select"
             placeholder="选择模型"
+            @change="selectModel"
           >
-            <el-option v-for="item in cities" :key="item.value" :value="item.value">
-              <div class="value-text">{{ item.value }}</div>
-              <div class="value-label">{{ item.label }}</div>
+            <el-option
+              v-for="item in models"
+              :key="item.model_name + '/' + item.provider_key + '/' + item.id"
+              :label="item.model_name"
+              :value="
+                item.model_name + '/' + item.provider_key + '/' + item.id + '/' + item.net_status
+              "
+            >
+              <div class="value-text">{{ item.model_name }}</div>
+              <div class="value-label">{{ item.desc }}</div>
             </el-option>
           </el-select>
-          <div class="line"></div>
-          <div class="networking" :class="{ 'is-network': isNetwork }" @click.stop="networkChange">
-            联网
-            <div class="circle-icon"></div>
-          </div>
-          <div class="histore-issue-box">
-            <div v-for="(item, index) in historyIssueList" :key="index" class="issue-item">
-              <img class="issue-img" :src="item.icon" alt="" />
-              <div class="issue-text">{{ item.label }}</div>
+          <template v-if="enableSearch == 1">
+            <div class="line"></div>
+            <div
+              class="networking"
+              :class="{ 'is-network': isNetwork }"
+              @click.stop="networkChange"
+            >
+              联网
+              <div class="circle-icon"></div>
             </div>
-          </div>
+          </template>
         </div>
         <div class="btn-box">
           <el-tooltip effect="light" content="" placement="top">
@@ -86,7 +105,6 @@
               name="file[]"
               :disabled="isChatting"
               :show-file-list="false"
-              :on-change="handleFileChange"
               :http-request="customUpload"
               :multiple="true"
               accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
@@ -139,40 +157,41 @@
   </div>
 </template>
 <script>
-import modelIcon from '@renderer/assets/modelSelected.png'
-import repositoryIcon from '@renderer/assets/repositorySelected.png'
-import knowledgeBaseSquareIcon from '@renderer/assets/home/knowledgeBaseSquare-icon.png'
-import documentInterpretationIcon from '@renderer/assets/home/documentInterpretation-icon.png'
-import updateNotificationIcon from '@renderer/assets/home/updateNotification-icon.png'
-import quickAccessIcon from '@renderer/assets/home/quickAccess-icon.png'
-import imageProductionIcon from '@renderer/assets/home/imageProduction-icon.png'
-import IntelligentWriting from '@renderer/assets/home/intelligentWriting-icon.png'
+import { get_user_knows } from '@renderer/api/chat'
+import { useUserStore } from '@renderer/stores/user'
+import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
+import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
+import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
+import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
+import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
+import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 export default {
-  name: 'MessageInput',
+  name: 'MessageChatInput',
   inject: ['addNewTab'],
   props: {
-    // eslint-disable-next-line vue/prop-name-casing
-    attach_file: {
-      type: Array,
-      default: () => []
+    // 是否是活动标签
+    isActiveTab: {
+      type: Boolean,
+      default: false
     },
     models: {
       type: Array,
       default: () => []
     },
+    // 是否联网
+    enableSearch: {
+      type: Number,
+      default: 2
+    },
+    // 是否联网
+    isNetwork: {
+      type: Boolean,
+      default: false
+    },
     // eslint-disable-next-line vue/prop-name-casing
     model_id: {
       type: [Number, String],
       default: ''
-    },
-    // eslint-disable-next-line vue/prop-name-casing
-    knowledge_ids: {
-      type: [Number, String],
-      default: ''
-    },
-    sourceKnows: {
-      type: Array,
-      default: () => []
     },
     //是否正在对话
     isChatting: {
@@ -180,206 +199,51 @@ export default {
       default: false
     }
   },
-  emits: ['stopChat', 'selectModel', 'selectLibrary', 'uploadedAttachment', 'send'],
+  emits: [
+    'stopChat',
+    'selectModel',
+    'uploadedAttachment',
+    'send',
+    'mention-change',
+    'networkChange'
+  ],
   data() {
     return {
-      mentionOptions: [
-        {
-          value: '知识库',
-          label: '知识库'
-        },
-        {
-          value: '问题',
-          label: '问题'
-        }
-      ],
-      modelTempId: '',
-      knowledge_id: '',
+      mentionOptions: [],
       message: { text: '', image: '' },
-      showModel: false,
-      showRepository: false,
-      ossUpload: import.meta.env.VITE_BASE_URL + '/intelligence/upload_attach',
-      token: '',
-      firsetType: [
-        {
-          name: '选模型',
-          icon: modelIcon,
-          type: 'model',
-          modelList: []
-        },
-        {
-          name: '知识库',
-          icon: repositoryIcon,
-          type: 'repository',
-          libraryList: []
-        }
-      ],
       loading: false,
       uniacid: 2,
       modelValue: undefined,
-      cities: [
-        {
-          value: 'DS V3.1-Think',
-          label: 'DeepSeek更快深度推理(最新)'
-        },
-        {
-          value: 'DeepSeek V3.1',
-          label: '多种场景回答更精炼(最新)'
-        },
-        {
-          value: 'DeepSeek',
-          label: 'V3适用多种应用场景'
-        },
-        {
-          value: 'DeepSeek R1',
-          label: '深度思考推理'
-        },
-        {
-          value: 'Hunyuan',
-          label: '适合大部分任务'
-        }
-      ],
-      historyIssueList: [
-        {
-          icon: modelIcon,
-          label: '长安投研【持续更新】近期投资需注意规避的风险'
-        },
-        {
-          icon: modelIcon,
-          label: '长安投研【持续更新】近期投资需注意规避的风险'
-        },
-        {
-          icon: modelIcon,
-          label: '长安投研【持续更新】近期投资需注意规避的风险'
-        }
-      ],
-      menuList: [
-        {
-          url: 'Square',
-          title: '知识库广场',
-          icon: knowledgeBaseSquareIcon,
-          isLink: true
-        },
-        {
-          url: 'DocumentInterpretation',
-          title: '文档解读',
-          icon: documentInterpretationIcon,
-          isLink: false
-        },
-        {
-          url: 'MessageCenter',
-          title: '更新通知',
-          icon: updateNotificationIcon,
-          isLink: true
-        },
-        {
-          url: 'QuickAccess',
-          title: '快捷访问',
-          icon: quickAccessIcon,
-          isLink: false
-        },
-        {
-          url: 'ImageProduction',
-          title: '图像生成',
-          icon: imageProductionIcon,
-          isLink: false
-        },
-        {
-          url: 'IntelligentWriting',
-          title: '智能写作',
-          icon: IntelligentWriting,
-          isLink: false
-        }
-      ],
-      activeMenu: '',
+      historyIssueList: [],
+      focus: false,
       fileList: [],
       showPrevBtn: false,
       showNextBtn: false,
       isHoveringAttachBox: false,
-      isNetwork: false
-    }
-  },
-  computed: {
-    modelList() {
-      var list = []
-      this.models.map((item) => {
-        item.models.map((item) => {
-          list.push(item)
-        })
-      })
-      return list
+      mentioned: [],
+      allowable: false
     }
   },
   watch: {
-    models(val) {
-      if (val.length) {
-        this.firsetType[0].modelList = val
-      }
-    },
-    sourceKnows(val) {
-      if (val.length) {
-        this.firsetType[1].libraryList = val
-      } else {
-        this.firsetType[1].libraryList = []
-      }
-      if (this.knowledge_id) {
-        var behalf = [this.knowledge_id.split(',')[0]]
-        this.firsetType[1].libraryList.forEach((item) => {
-          item.knows.map((childrenItem) => {
-            if (behalf.includes(childrenItem.id + '')) {
-              this.firsetType[1].name = childrenItem.title + '...'
-            }
-          })
-        })
-      } else {
-        this.firsetType[1].name = '知识库'
-      }
-    },
-    model_id(val) {
-      this.modelTempId = val
-      this.modelList.forEach((item) => {
-        if (item.id == val) {
-          this.firsetType[0].name = item.title
+    model_id: {
+      handler(newVal, oldVal) {
+        if (newVal != oldVal) {
+          this.modelValue = newVal
         }
-      })
+      },
+      immediate: true
     },
-    knowledge_ids(val) {
-      this.knowledge_id = val + ''
-      if (val) {
-        var behalf = [val.split(',')[0]]
-        this.firsetType[1].libraryList.forEach((item) => {
-          item.knows.map((childrenItem) => {
-            if (behalf.includes(childrenItem.id + '')) {
-              this.firsetType[1].name = childrenItem.title + '...'
-            }
-          })
-        })
-      } else {
-        this.firsetType[1].name = '知识库'
-      }
+    isActiveTab: {
+      handler(newVal) {
+        if (newVal) {
+          // this.setupScreenshotListeners()
+        }
+      },
+      immediate: true
     }
   },
   mounted() {
-    this.modelTempId = this.model_id
-    this.modelList.forEach((item) => {
-      if (item.id == this.modelTempId) {
-        this.firsetType[0].name = item.title
-      }
-    })
-    this.knowledge_id = this.knowledge_ids
-    if (this.knowledge_id) {
-      var behalf = [this.knowledge_id.split(',')[0]]
-      this.firsetType[1].libraryList.forEach((item) => {
-        item.knows.map((childrenItem) => {
-          if (behalf.includes(childrenItem.id + '')) {
-            this.firsetType[1].name = childrenItem.title + '...'
-          }
-        })
-      })
-    } else {
-      this.firsetType[1].name = '知识库'
-    }
-    this.setupScreenshotListeners()
+    this.modelValue = this.model_id
     this.$watch(
       'fileList',
       () => {
@@ -389,11 +253,64 @@ export default {
       },
       { deep: true }
     )
+    this.getKnows()
   },
   methods: {
+    // 获取文件图标
+    getFileIcon(item) {
+      // 根据文件扩展名返回不同的图标
+      const ext = item.title?.split('.').pop()?.toLowerCase()
+      const iconMap = {
+        doc: wordIcon,
+        docx: wordIcon,
+        pdf: pdfIcon,
+        xls: excelIcon,
+        xlsx: excelIcon,
+        ppt: pptIcon,
+        pptx: pptIcon,
+        txt: txtIcon,
+        png: imgIcon,
+        jpg: imgIcon,
+        jpeg: imgIcon,
+        gif: imgIcon
+      }
+
+      return iconMap[ext] || wordIcon
+    },
+    handleWholeRemove(e) {
+      // 匹配提及内容并删除
+      var reg = new RegExp('@' + e, 'g')
+      this.message.text = this.message.text.replace(reg, '')
+      this.mentioned = this.mentioned.filter((item) => item.label !== e)
+      this.$emit('mention-change', this.mentioned)
+    },
+    handleMentionSelect(item) {
+      this.mentioned.push(item)
+      this.$emit('mention-change', this.mentioned)
+    },
+    getKnows() {
+      get_user_knows().then((res) => {
+        var list = []
+        if (res.data.length) {
+          res.data.map((item) => {
+            item.knows.map((children) => {
+              list.push({
+                value: children.title,
+                know_key: children.know_key,
+                label: children.title,
+                model_name: children.vector_model?.model_name || '',
+                provider_key: children.vector_model?.provider_key || ''
+              })
+            })
+          })
+        }
+        this.mentionOptions = list
+      })
+    },
     // 是否联网
     networkChange() {
-      this.isNetwork = !this.isNetwork
+      if (!this.enableSearch || this.enableSearch == 2) return
+      this.$emit('networkChange', this.isNetwork)
     },
     // 更新滚动按钮显示状态
     updateScrollButtons() {
@@ -460,7 +377,6 @@ export default {
         // ElMessage.warning('正在对话中，无法粘贴图片')
         return
       }
-
       const clipboardData = event.clipboardData || window.clipboardData
       if (!clipboardData) return
 
@@ -481,103 +397,66 @@ export default {
       }
     },
     // 自定义上传逻辑
-    customUpload(options) {
-      console.log(options, 88888)
-      return
-      // const xhr = new XMLHttpRequest()
-      // const formData = new FormData()
-      // formData.append('file[]', options.file)
-      // var otherParams = {
-      //   type: 'file',
-      //   uniacid: this.uniacid
-      // }
-      // // 添加其他参数到formData
-      // for (const key in otherParams) {
-      //   formData.append(key, otherParams[key])
-      // }
-
-      // xhr.open('POST', this.aiFileUpload, true)
-
-      // // 设置请求头
-      // xhr.setRequestHeader('Authorization', this.importHeader.token)
-      // xhr.upload.addEventListener('progress', (event) => {
-      //   if (event.lengthComputable) {
-      //     const percent = (event.loaded / event.total) * 100
-      //     this.handleUploadProgress({ percent }, options.file, this.fileList)
-      //   }
-      // })
-
-      // xhr.addEventListener('load', () => {
-      //   var response = JSON.parse(xhr.response)
-      //   if (xhr.status == 200 && response.code == 200) {
-      //     this.handleUploadSuccess(response, options.file, this.fileList)
-      //   } else {
-      //     this.handleUploadError(response, options.file, this.fileList)
-      //   }
-      // })
-
-      // xhr.addEventListener('error', (err) => {
-      //   this.handleUploadError(err, options.file, this.fileList)
-      // })
-
-      // xhr.send(formData)
-    },
-    handleFileChange(file, fileListArr) {
-      fileListArr.forEach((f) => {
-        if (!f.progress) f.progress = 0
-        if (!f.status) f.status = 'pending'
-        if (!f.serial_key) f.serial_key = ''
-        if (!f.is_zy_success) f.is_zy_success = 0
-      })
-      this.fileList = fileListArr
-    },
-    handleUploadProgress(event, file) {
-      const targetFile = this.fileList.find((f) => f.uid === file.uid)
-      if (targetFile) {
-        targetFile.status = 'uploading'
-        targetFile.progress = Math.floor(event.percent)
-      }
-    },
-    handleUploadSuccess(response, file) {
-      const targetFile = this.fileList.find((f) => f.uid === file.uid)
-      if (targetFile) {
-        targetFile.status = 'success'
-        targetFile.progress = 100
-        targetFile.serial_key = response.data[0]
-      }
-      this.$refs.fileList.scrollTo(0, this.$refs.fileList.scrollHeight)
+    customUpload(fileItem) {
+      const userStore = useUserStore()
       // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'primary',
-        message: '上传成功'
+      let loadcontext = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(0, 0, 0, 0.3)',
+        customClass: 'upload-loading'
       })
-    },
+      const formData = new FormData()
+      formData.append('uniacid', userStore.uniacid)
+      formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
+      const xhr = new XMLHttpRequest()
 
-    // 处理上传失败事件
-    handleUploadError(error, file) {
-      const i = this.fileList.findIndex((f) => f.uid === file.uid)
-      // if (targetFile) {
-      //   targetFile.status = "error";
-      //   targetFile.progress = 0;
-      // }
-      if (i !== -1) {
-        this.fileList.splice(i, 1)
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 100
+          fileItem.progress = Math.round(progress)
+        }
       }
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'error',
-        message: error.msg || '上传失败'
-      })
+
+      xhr.onload = () => {
+        loadcontext.close()
+        let response = JSON.parse(xhr.response)
+        if (xhr.status == 200 && response.code == 200) {
+          var uploadedFile = {
+            full_path: response.data[0].url,
+            title: response.data[0].file_name,
+            total_space: response.data[0].file_size
+          }
+          this.fileList.push(uploadedFile)
+          this.$emit('uploadedAttachment', this.fileList)
+        } else {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            message: response.msg || '上传失败',
+            type: 'error'
+          })
+        }
+      }
+
+      xhr.onerror = () => {
+        loadcontext.close()
+      }
+
+      // 实际使用时需要配置正确的上传地址
+      xhr.open('POST', import.meta.env.VITE_API_BASE_URL + '/api/common/upload')
+      xhr.setRequestHeader('Authorization', userStore.token)
+      xhr.send(formData)
     },
-    formatFileSize(bytes) {
-      if (bytes < 1024) {
-        return bytes + ' B'
-      } else if (bytes < 1024 * 1024) {
-        return (bytes / 1024).toFixed(2) + ' KB'
-      } else if (bytes < 1024 * 1024 * 1024) {
-        return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+    formatFileSize(kb) {
+      if (!kb) return '0 KB'
+      if (kb < 1024) {
+        return kb + ' KB'
+      } else if (kb < 1024 * 1024) {
+        return (kb / 1024).toFixed(2) + ' MB'
+      } else if (kb < 1024 * 1024 * 1024) {
+        return (kb / (1024 * 1024)).toFixed(2) + ' GB'
       } else {
-        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+        return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
       }
     },
     // 处理图片文件
@@ -588,15 +467,8 @@ export default {
         return
       }
       var tempFile = {
-        uid: Date.now() + '-' + Math.random().toString(36).substring(2, 10),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        status: 'uploading',
-        progress: 0,
-        serial_key: ''
+        file: file
       }
-      this.fileList.push(tempFile)
       this.customUpload(tempFile)
     },
 
@@ -621,28 +493,11 @@ export default {
     },
     // 设置截图事件监听
     setupScreenshotListeners() {
-      // 截图开始事件
-      // window.customApi?.onScreenshotStart(() => {
-      //   console.log('截图开始')
-      // })
-
+      window.customApi?.removeScreenshotOk(this.handleScreenshotAsPaste)
       // 截图确定事件
-      window.customApi?.onScreenshotOk((event, data) => {
-        this.handleScreenshotAsPaste(data)
-      })
-
-      // 截图保存事件
-      // window.customApi?.onScreenshotSave((event, data) => {
-      //   console.log('收到截图保存事件:', data)
-      //   // this.handleScreenshotData(data)
-      // })
-
-      // 截图取消事件
-      // window.customApi?.onScreenshotCancel(() => {
-      //   console.log('截图已取消')
-      // })
+      window.customApi?.onScreenshotOk(this.handleScreenshotAsPaste)
     },
-    handleScreenshotAsPaste(data) {
+    handleScreenshotAsPaste(event, data) {
       try {
         // 处理截图数据并创建文件对象
         let base64String
@@ -704,49 +559,34 @@ export default {
     },
     clearAttach(i) {
       this.fileList.splice(i, 1)
-    },
-    beforeUpload() {
-      this.loading = this.$loading({
-        text: '上传中',
-        spinner: 'el-icon-loading',
-        background: 'rgba(0, 0, 0, 0.7)'
-      })
-      return true
+      this.$emit('uploadedAttachment', this.fileList)
     },
     // 暂停会话
     stopChat() {
       this.$emit('stopChat')
     },
-    selectModel(model, provider_appid) {
-      this.$emit('selectModel', model, provider_appid)
-      this.closeModel('model')
-      this.$nextTick(() => {
-        this.$forceUpdate()
-      })
+    selectModel(e) {
+      this.$emit('selectModel', e)
     },
-    selectLibrary(item) {
-      this.$emit('selectLibrary', item)
-      this.closeModel('repository')
-    },
-    closeModel(type) {
-      if (type == 'model') {
-        this.showModel = false
-      } else if (type == 'repository') {
-        this.showRepository = false
-      }
-    },
-    showPop(type) {
-      if (this.isChatting) {
+    checkIfSearchingMention(text) {
+      if (!text.includes('@')) return false
+      // 获取最后一个 @ 的位置
+      const lastAtIndex = text.lastIndexOf('@')
+      if (lastAtIndex === -1) return false
+      // 获取 @ 之后到文本结尾的内容
+      const afterAt = text.substring(lastAtIndex + 1)
+      // 如果 @ 后面是空字符串，返回 false
+      if (afterAt.length > 0) return false
+      // 检查 @ 后面是否有空格或换行（如果有，说明提及已结束）
+      const firstCharAfterAt = afterAt[0]
+      if (firstCharAfterAt === ' ' || firstCharAfterAt === '\n') {
         return false
       }
-      if (!this.$verifyHasToken()) {
+      // 检查 @ 后面的内容是否包含空格（如果包含，说明提及已结束）
+      if (afterAt.includes(' ') || afterAt.includes('\n')) {
         return false
       }
-      if (type == 'model') {
-        this.showModel = true
-      } else if (type == 'repository') {
-        this.showRepository = true
-      }
+      return true
     },
     // ... existing code ...
     sendMessage(event) {
@@ -762,7 +602,11 @@ export default {
             })
             return
           }
+          if (this.checkIfSearchingMention(this.message.text)) {
+            return
+          }
           this.$emit('send', this.message)
+          this.fileList = []
           this.message = { text: '', image: '' }
         }
       } else {
@@ -775,13 +619,9 @@ export default {
           return
         }
         this.$emit('send', this.message)
+        this.fileList = []
         this.message = { text: '', image: '' }
       }
-    },
-    // ... existing code ...
-    toSetting() {
-      this.closeModel('repository')
-      this.$router.push({ path: '/ai/repository' })
     }
   }
 }
@@ -814,40 +654,57 @@ export default {
   }
 }
 .message-input {
+  position: relative;
   min-height: 58px;
   user-select: none;
+  .stop-chat-box {
+    position: absolute;
+    left: 50%;
+    top: -58px;
+    transform: translateX(-50%);
+    z-index: 1;
+    width: 116px;
+    height: 38px;
+    background: #fff;
+    box-shadow: 0px 2px 18px 2px rgba(0, 0, 0, 0.07);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 14px;
+    color: var(--default-font-color);
+    line-height: 20px;
+    cursor: pointer;
+    .stop-icon {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
+    &:active {
+      opacity: 0.6;
+    }
+  }
   &.focus {
     .input-wrapper {
-      min-height: 99px;
-      max-height: 311px;
-      flex-direction: column;
       border-color: var(--el-color-primary);
-      .action-box {
-        flex: 1;
-        padding-top: 15px;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
     }
   }
   .input-wrapper {
     margin-bottom: 12px;
     padding: 15px;
-    min-height: 60px;
-    max-height: 60px;
+    min-height: 99px;
+    max-height: 311px;
     position: relative;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
     overflow: hidden;
     background: #f9f9f9;
     border-radius: 16px;
     border: 1px solid #dfdfdf;
-    transition:
-      min-height 0.3s linear,
-      max-height 0.6s linear;
+    transition: border-color 0.1s linear;
     .attach-list-box {
       position: relative;
       box-sizing: border-box;
@@ -1005,6 +862,12 @@ export default {
       }
     }
     .action-box {
+      flex: 1;
+      padding-top: 15px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 0 60px;
       overflow: hidden;
       .action-left {

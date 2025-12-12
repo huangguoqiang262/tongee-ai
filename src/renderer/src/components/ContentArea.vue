@@ -17,12 +17,13 @@
         <template v-for="tab in tabs" :key="tab.id">
           <component
             :is="internalComponents[tab.url]"
-            v-bind="tab.attrs || {}"
             v-show="tab.isInternal && isActiveTab(tab.id)"
+            :attrs="tab.attrs || {}"
+            :is-active-tab="isActiveTab(tab.id)"
           />
         </template>
       </div>
-      <div v-else class="webview-container">
+      <div v-show="!activeTab.isInternal" class="webview-container">
         <!-- 加载状态覆盖层 -->
         <div v-if="activeTab.loading" class="loading-overlay">
           <div class="loading-spinner"></div>
@@ -66,6 +67,9 @@ import FeedbackCenter from './FeedbackCenter.vue'
 import Note from './Note.vue'
 import ChatPage from './ChatPage.vue'
 import ImageProductionChat from './ImageProductionChat.vue'
+import IntelligentWritingChat from './IntelligentWritingChat.vue'
+import HomePage from './HomePage.vue'
+import Maintain from './Maintain.vue'
 const internalComponents = {
   SearchHome,
   NotFound,
@@ -79,7 +83,10 @@ const internalComponents = {
   Note,
   ChatPage,
   ServiceManual,
-  ImageProductionChat
+  ImageProductionChat,
+  IntelligentWritingChat,
+  HomePage,
+  Maintain
 }
 const isValidInternalUrl = (url) => {
   return Object.keys(internalComponents).includes(url)
@@ -89,7 +96,8 @@ const emit = defineEmits([
   'update-tab-info',
   'update-loading-state',
   'update-webview-instance',
-  'new-webview'
+  'new-webview',
+  'add-syc-tab'
 ])
 
 const props = defineProps({
@@ -178,6 +186,10 @@ const setupWebviewListeners = (tabId, webview) => {
   webview.addEventListener('page-title-updated', (event) => {
     // 只有当该标签页是活动标签时才更新标题
     if (props.activeTab && props.activeTab.id === tabId) {
+      emit('add-syc-tab', {
+        title: event.title,
+        web_url: webview.getURL()
+      })
       emit('update-tab-info', {
         tabId: tabId,
         title: event.title,

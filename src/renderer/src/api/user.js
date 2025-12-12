@@ -65,3 +65,11 @@ export function set_new_pass(data) {
     data
   })
 }
+// 获取登录页条目
+export function get_login_item(data) {
+  return request({
+    url: '/system/get_login_item',
+    method: 'post',
+    data
+  })
+}

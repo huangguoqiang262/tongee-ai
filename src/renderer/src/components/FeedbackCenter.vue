@@ -10,7 +10,7 @@
             v-for="tab in tabs"
             :key="tab.id"
             class="tab-item"
-            :class="{ 'active-tab': tab.id == activeTab }"
+            :class="{ 'active-tab': tab.id == feedbackData.sug_or_pb }"
             @click="tabHandle(tab.id)"
           >
             <img class="icon" :src="tab.icon" alt="" />
@@ -31,15 +31,25 @@
           >
             <el-form-item label="文档类别" prop="doc_type">
               <el-select v-model="feedbackData.doc_type" size="large" placeholder="请选择文档类别">
-                <el-option label="问题反馈" value="problem" />
-                <el-option label="建议反馈" value="suggestion" />
+                <el-option
+                  v-for="value in docTypeList"
+                  :key="value.id"
+                  :label="value.title"
+                  :value="value.id"
+                />
               </el-select>
             </el-form-item>
             <!-- 反馈分类 -->
             <el-form-item label="反馈分类" prop="type">
               <el-select v-model="feedbackData.type" size="large" placeholder="请选择反馈分类">
-                <el-option label="反馈分类" value="problem" />
-                <el-option label="反馈分类" value="suggestion" />
+                <el-option-group v-for="group in typeTreeList" :key="group.id" :label="group.name">
+                  <el-option
+                    v-for="item in group.children"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id"
+                  />
+                </el-option-group>
               </el-select>
             </el-form-item>
             <el-form-item class="editor-container-box" label="反馈内容" prop="content">
@@ -53,7 +63,7 @@
                   @on-created="handleCreated"
                 />
                 <div class="footer-btns">
-                  <el-button class="cancel-btn">取消</el-button>
+                  <!-- <el-button class="cancel-btn">取消</el-button> -->
                   <el-button class="confirm-btn" type="primary" @click="submitFeedback"
                     >提交反馈</el-button
                   >
@@ -66,74 +76,18 @@
     </div>
     <div class="history-box">
       <div class="history-hd">反馈历史</div>
-      <div class="list-box">
-        <div class="hisrory-item">
-          <div class="status">建议</div>
-          <div class="title">建议在质量体系文档中增加审核流程可视化图表</div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status">建议</div>
-          <div class="title">
-            建议在质量体系文档中增加审核流程可视化图表建议在质量体系文档中增加审核流程可视化图表
+      <div v-infinite-scroll="loadData" class="list-box">
+        <template v-if="historyList.length">
+          <div v-for="item in historyList" :key="item.id" class="hisrory-item">
+            <div class="status" :class="{ 'status-err': item.sug_or_pb == 1 }">
+              {{ item.sug_or_pb == 1 ? '问题' : '建议' }}
+            </div>
+            <div class="title" v-html="item.content"></div>
+            <div class="time">{{ item.createtime }}</div>
           </div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status status-err">问题</div>
-          <div class="title">建议在质量体系文档中增加审核流程可视化图表</div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status">建议</div>
-          <div class="title">建议在质量体系文档中增加审核流程可视化图表</div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status">建议</div>
-          <div class="title">
-            建议在质量体系文档中增加审核流程可视化图表建议在质量体系文档中增加审核流程可视化图表
-          </div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status status-err">问题</div>
-          <div class="title">建议在质量体系文档中增加审核流程可视化图表</div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status">建议</div>
-          <div class="title">建议在质量体系文档中增加审核流程可视化图表</div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status">建议</div>
-          <div class="title">
-            建议在质量体系文档中增加审核流程可视化图表建议在质量体系文档中增加审核流程可视化图表
-          </div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status status-err">问题</div>
-          <div class="title">建议在质量体系文档中增加审核流程可视化图表</div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status">建议</div>
-          <div class="title">建议在质量体系文档中增加审核流程可视化图表</div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status">建议</div>
-          <div class="title">
-            建议在质量体系文档中增加审核流程可视化图表建议在质量体系文档中增加审核流程可视化图表
-          </div>
-          <div class="time">2023-08-10</div>
-        </div>
-        <div class="hisrory-item">
-          <div class="status status-err">问题</div>
-          <div class="title">建议在质量体系文档中增加审核流程可视化图表</div>
-          <div class="time">2023-08-10</div>
+        </template>
+        <div v-else class="empty">
+          <div class="empty-text">暂无反馈历史</div>
         </div>
       </div>
     </div>
@@ -141,27 +95,36 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted } from 'vue'
+import { ref, shallowRef, onMounted, watchEffect } from 'vue'
+import {
+  feedback_type_tree,
+  feedback_doc_type,
+  feedback_add,
+  feedback_get_list
+} from '@renderer/api/feedback'
 import problemIcon from '@renderer/assets/feedback/problem-icon.png'
 import suggestionIcon from '@renderer/assets/feedback/suggestion-icon.png'
+let props = defineProps({
+  attrs: {
+    type: Object,
+    default: () => ({})
+  }
+})
+
 let tabs = ref([
   {
-    id: '1',
+    id: '2',
     name: '建议',
     icon: problemIcon,
     des: '提供文档缺少、改进或新想法'
   },
   {
-    id: '2',
+    id: '1',
     name: '问题',
     icon: suggestionIcon,
     des: '报告文档中错误的内容等问题'
   }
 ])
-let activeTab = ref('1')
-const tabHandle = (id) => {
-  activeTab.value = id
-}
 let feedbackForm = ref(null)
 let defaultConfig = {
   excludeKeys: [
@@ -180,8 +143,21 @@ let defaultConfig = {
 let feedbackData = ref({
   content: '',
   type: '',
-  doc_type: ''
+  doc_type: '',
+  sug_or_pb: '2',
+  know_id: ''
 })
+let pagination = ref({
+  page: 1,
+  page_size: 10,
+  total: 0
+})
+watchEffect(() => {
+  feedbackData.value.know_id = props.attrs.knowId
+})
+const tabHandle = (id) => {
+  feedbackData.value.sug_or_pb = id
+}
 let editorRef = shallowRef(null)
 let editorConfig = { placeholder: '请输入内容...' }
 let isEmpty = (rule, value, callback) => {
@@ -205,23 +181,69 @@ let feedbackRules = ref({
 })
 // 提交
 const submitFeedback = () => {
-  feedbackForm.value.validate((valid, errors) => {
+  feedbackForm.value.validate((valid) => {
     if (valid) {
-      console.log('提交反馈', feedbackData.value)
-    } else {
-      console.log('验证失败', errors)
-      console.log(feedbackData.value)
+      feedback_add(feedbackData.value).then(() => {
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('提交成功')
+        feedbackForm.value.resetFields()
+        pagination.value = {
+          page: 1,
+          page_size: 10,
+          total: 0
+        }
+        historyList.value = []
+        getHistoryList()
+      })
     }
   })
 }
 const handleCreated = (editor) => {
   editorRef.value = editor
   editorRef.value.clear()
-  console.log(editorRef.value)
-
   // editorRef.value.setContent(feedbackData.value.content)
 }
-onMounted(() => {})
+// 文档类型列表
+let docTypeList = ref([])
+const getDocTypeList = () => {
+  feedback_doc_type().then((res) => {
+    docTypeList.value = res.data
+  })
+}
+// 反馈类型树
+let typeTreeList = ref([])
+const getTypeTreeList = () => {
+  feedback_type_tree().then((res) => {
+    typeTreeList.value = res.data
+  })
+}
+const loadData = () => {
+  if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
+    return
+  }
+  pagination.value.page++
+  getHistoryList()
+}
+// 反馈历史列表
+let historyList = ref([])
+const getHistoryList = () => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size,
+    search_type: 0
+  }
+  feedback_get_list(data).then((res) => {
+    historyList.value = historyList.value.concat(res.data.data || [])
+    pagination.value.total = res.data.total
+    pagination.value.page = res.data.current_page
+    pagination.value.page_size = res.data.per_page
+  })
+}
+onMounted(() => {
+  getDocTypeList()
+  getTypeTreeList()
+  getHistoryList()
+})
 </script>
 
 <style scoped lang="scss">
@@ -365,7 +387,11 @@ onMounted(() => {})
           .editor-content {
             flex: 1;
             background: #fff !important;
+            border-radius: 6px;
             overflow: hidden;
+            .w-e-text-placeholder {
+              top: 10px;
+            }
           }
           .footer-btns {
             width: 100%;
@@ -425,11 +451,26 @@ onMounted(() => {})
           background-color: #909090;
         }
       }
+      .empty {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #909090;
+        .empty-text {
+          margin-bottom: 16vh;
+        }
+      }
       .hisrory-item {
         margin-bottom: 10px;
         padding: 14px 10px;
         background: #f9f9f9;
         border-radius: 4px;
+        * {
+          margin: 0;
+        }
         &:last-of-type {
           margin-bottom: 0;
         }

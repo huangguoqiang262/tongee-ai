@@ -27,6 +27,9 @@
             @click="tabChange(item.id)"
           >
             {{ item.name }}
+            <div v-if="item.id === '2' && props.unreadApplyNumber > 0" class="unreadApplyNumber">
+              {{ props.unreadApplyNumber > 99 ? 99 : props.unreadApplyNumber }}
+            </div>
           </div>
         </div>
         <div class="content-box">
@@ -35,52 +38,81 @@
               <div class="member-header-item">成员</div>
               <div class="member-header-item member-header-item-role">项目角色</div>
             </div>
-            <div v-for="item in memberList" :key="item.id" class="member-item">
-              <div class="item-left">
-                <img :src="item.avatar || DefaultAvatar" alt="" class="member-avatar" />
-                <div class="member-name">{{ item.name }}</div>
+            <template v-if="props.memberList.length">
+              <div v-for="item in props.memberList" :key="item.id" class="member-item">
+                <div class="item-left">
+                  <img :src="item.user_avatar || DefaultAvatar" alt="" class="member-avatar" />
+                  <div class="member-name">{{ item.user_name }}</div>
+                </div>
+                <div class="item-right">
+                  <template v-if="item.is_creator == 1">
+                    <div class="creator">创建者</div>
+                  </template>
+                  <el-select
+                    v-else
+                    v-model="item.is_manager"
+                    placeholder="请选择角色"
+                    @change="handlePermissionsChange(item)"
+                  >
+                    <el-option label="普通成员" :value="0" />
+                    <el-option label="管理员" :value="1" />
+                    <el-option label="移出" :value="2" />
+                  </el-select>
+                </div>
               </div>
-              <div class="item-right">
-                <el-select v-model="item.role" placeholder="请选择角色">
-                  <el-option label="普通成员" value="member" />
-                  <el-option label="管理员" value="admin" />
-                </el-select>
-              </div>
-            </div>
+            </template>
+            <div v-else class="no-member">暂无成员</div>
           </div>
           <div v-if="activeTab === '2'" class="member-list-box">
             <div class="member-header">
               <div class="member-header-item">成员</div>
               <div class="member-header-item member-header-item-role">操作</div>
             </div>
-            <div v-for="item in memberList" :key="item.id" class="member-item">
-              <div class="item-left">
-                <img :src="item.avatar || DefaultAvatar" alt="" class="member-avatar" />
-                <div class="member-name">{{ item.name }}</div>
+            <template v-if="props.applyList.length">
+              <div v-for="item in props.applyList" :key="item.id" class="member-item">
+                <div class="item-left">
+                  <img :src="item.avatar || DefaultAvatar" alt="" class="member-avatar" />
+                  <div class="member-name">{{ item.name }}</div>
+                </div>
+                <div class="item-right">
+                  <el-button
+                    class="confirm-btn"
+                    size="small"
+                    type="primary"
+                    @click="handleAdd(item)"
+                    >确认添加</el-button
+                  >
+                </div>
               </div>
-              <div class="item-right">
-                <el-button class="confirm-btn" size="small" type="primary">确认添加</el-button>
-              </div>
-            </div>
+            </template>
+            <div v-else class="no-member">暂无申请</div>
           </div>
           <div v-if="activeTab === '3'" class="add-member-box">
-            <div class="hd-label">可选列：99</div>
-            <el-tree
-              ref="organizationRef"
-              style="width: 100%"
-              :data="selectedItems"
-              show-checkbox
-              node-key="value"
-              :default-checked-keys="['5', '6', '10']"
-              default-expand-all
-              :expand-on-click-node="false"
-              :props="{ class: 'customNodeClass', label: 'name' }"
-              @check="handleCheckChange"
-            >
-            </el-tree>
-            <div class="foot-box">
-              <el-button class="confirm-btn" type="primary">确认</el-button>
-            </div>
+            <template v-if="props.treeData.length">
+              <div class="hd-label">可选列：{{ choosableCount(props.treeData) }}</div>
+              <el-tree
+                ref="organizationRef"
+                style="width: 100%"
+                :data="props.treeData"
+                show-checkbox
+                node-key="ding_id"
+                default-expand-all
+                :expand-on-click-node="false"
+                :props="{ class: 'customNodeClass', label: 'name' }"
+                @check="handleCheckChange"
+              >
+              </el-tree>
+              <div class="foot-box">
+                <el-button
+                  :disabled="!checkedNodes.length"
+                  class="confirm-btn"
+                  type="primary"
+                  @click="handleConfirm"
+                  >确认</el-button
+                >
+              </div>
+            </template>
+            <div v-else class="empty">暂无可选成员</div>
           </div>
         </div>
       </div>
@@ -92,14 +124,27 @@
 import { ref } from 'vue'
 import DefaultAvatar from '@renderer/assets/default-avatar.png'
 const repositoryVisible = defineModel({ type: Boolean })
+const emits = defineEmits(['setPermission'])
 let organizationRef = ref(null)
 let checkedNodes = ref([])
-// const props = defineProps({
-//   type: {
-//     type: String,
-//     default: 'private'
-//   }
-// })
+const props = defineProps({
+  treeData: {
+    type: Array,
+    default: () => []
+  },
+  memberList: {
+    type: Array,
+    default: () => []
+  },
+  applyList: {
+    type: Array,
+    default: () => []
+  },
+  unreadApplyNumber: {
+    type: Number,
+    default: 0
+  }
+})
 let tabList = ref([
   {
     name: '成员',
@@ -118,127 +163,79 @@ let activeTab = ref('1')
 const tabChange = (id) => {
   activeTab.value = id
 }
-let memberList = ref([
-  {
-    name: '张三',
-    id: '1'
-  },
-  {
-    name: '李四',
-    id: '2'
-  },
-  {
-    name: '王五',
-    id: '3'
-  },
-  {
-    name: '赵六',
-    id: '4'
-  },
-  {
-    name: '钱七',
-    id: '5'
-  },
-  {
-    name: '孙八',
-    id: '6'
-  },
-  {
-    name: '周九',
-    id: '7'
-  }
-])
-const selectedItems = ref([
-  {
-    name: '所有部门',
-    value: '1',
-    pid: '0',
-    children: [
-      {
-        name: '人力资源',
-        value: '2',
-        pid: '1',
-        children: [
-          {
-            name: '李白',
-            value: '4',
-            pid: '2',
-          },
-          {
-            name: '王大陆',
-            value: '7',
-            pid: '2',
-          },
-          {
-            name: '王小文',
-            value: '8',
-            pid: '2',
-          }
-        ]
-      },
-      {
-        name: '研发部',
-        value: '3',
-        pid: '1',
-        children: [
-          {
-            name: '胡杨',
-            value: '5',
-            pid: '3',
-          },
-          {
-            name: '李晓',
-            value: '6',
-            pid: '3',
-          },
-          {
-            name: '李阳',
-            value: '9',
-            pid: '3',
-          }
-        ]
-      },
-      {
-        name: '销售部',
-        value: '4',
-        pid: '1',
-        children: [
-          {
-            name: '王芳',
-            value: '10',
-            pid: '4'
-          },
-          {
-            name: '王岩',
-            value: '11',
-            pid: '4'
-          }
-        ]
+// 统计用户节点数量
+const choosableCount = (nodes) => {
+  let count = 0
+  const countNodes = (nodeList) => {
+    nodeList.forEach((node) => {
+      // 只统计用户类型
+      if (node.is_person) {
+        count++
       }
-    ]
+      if (node.children && node.children.length > 0) {
+        countNodes(node.children)
+      }
+    })
   }
-])
+  countNodes(nodes)
+  return count
+}
 // 递归标记节点选中状态
-const markSelectedNodes = (treeData, checkedNodes) => {
-  return treeData.map((node) => {
-    const isSelected = checkedNodes.some((checkedNode) => checkedNode.value === node.value)
-    const newNode = {
-      ...node,
-      selected: isSelected
+const markSelectedNodes = (checkedNodes) => {
+  let ding_ids = []
+  checkedNodes.some((checkedNode) => {
+    if (checkedNode.is_person) {
+      ding_ids.push(checkedNode.ding_id)
     }
-
-    if (node.children && node.children.length > 0) {
-      newNode.children = markSelectedNodes(node.children, checkedNodes)
+  })
+  //  treeData.map((node) => {
+  //     const isSelected = checkedNodes.some((checkedNode) => checkedNode.ding_id === node.ding_id)
+  //     if (isSelected) {
+  //       console.log(isSelected);
+  //       console.log(node.ding_id,66666);
+  //       ding_ids.push(node.ding_id)
+  //     }
+  //     if (node.children && node.children.length > 0) {
+  //       ding_ids = ding_ids.concat(markSelectedNodes(node.children, checkedNodes))
+  //     }
+  //   })
+  return ding_ids
+}
+const handleConfirm = () => {
+  emits('setPermission', {
+    type: 'join',
+    data: {
+      ding_ids: checkedNodes.value.join(',')
     }
-
-    return newNode
   })
 }
+// 处理添加成员
+const handleAdd = (item) => {
+  emits('setPermission', {
+    type: 'allowable',
+    data: {
+      join_id: item.id
+    }
+  })
+}
+// 处理权限变更
+const handlePermissionsChange = (item) => {
+  var option = {
+    type: 'member',
+    data: {
+      ding_uid: item.ding_uid,
+      is_manager: item.is_manager,
+      is_remove: item.is_manager == 2 ? 1 : 0
+    }
+  }
+  emits('setPermission', option)
+}
 const getCompleteSelectedTree = () => {
-  const checkedNodes = organizationRef.value.getCheckedNodes(false, false)
+  const tempCheckedNodes = organizationRef.value.getCheckedNodes(false, false)
   // 标记选中状态
-  const markedTree = markSelectedNodes(selectedItems.value, checkedNodes)
-  return markedTree
+  // const uids = markSelectedNodes(props.treeData, tempCheckedNodes)
+  const uids = markSelectedNodes(tempCheckedNodes)
+  return uids
 }
 const handleCheckChange = () => {
   checkedNodes.value = getCompleteSelectedTree()
@@ -252,22 +249,23 @@ const handleCheckChange = () => {
       height: 492px;
       padding: 17px 20px 20px;
       .el-dialog__header {
-        padding-bottom: 28px;
+        padding-bottom: 20px;
         display: flex;
         align-items: center;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
 
         .dialog-header-del-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
       }
 
       .el-dialog__body {
+        padding-top: 8px;
         font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
@@ -276,12 +274,12 @@ const handleCheckChange = () => {
         .form-box {
           box-sizing: border-box;
           .tab-list-box {
-            overflow: hidden;
             margin-bottom: 18px;
             display: flex;
             align-items: center;
             gap: 9px;
             .tab-item {
+              position: relative;
               width: 110px;
               height: 32px;
               line-height: 30px;
@@ -300,6 +298,19 @@ const handleCheckChange = () => {
                 &:hover {
                   opacity: 0.8;
                 }
+              }
+              .unreadApplyNumber {
+                position: absolute;
+                top: -2px;
+                right: 15px;
+                width: 16px;
+                height: 16px;
+                background: #ff5151;
+                border-radius: 50%;
+                font-size: 10px;
+                color: #fff;
+                text-align: center;
+                line-height: 16px;
               }
             }
           }
@@ -348,6 +359,13 @@ const handleCheckChange = () => {
                   }
                 }
               }
+              .no-member {
+                height: 260px;
+                line-height: 260px;
+                text-align: center;
+                font-size: 13px;
+                color: #909090;
+              }
               .member-item {
                 display: flex;
                 align-items: center;
@@ -376,6 +394,10 @@ const handleCheckChange = () => {
                 .item-right {
                   flex-shrink: 0;
                   width: 124px;
+                  .creator {
+                    width: 100%;
+                    padding: 0 12px;
+                  }
                   .el-select__wrapper {
                     background-color: #eaeaea !important;
                     border-radius: 4px !important;
@@ -428,6 +450,13 @@ const handleCheckChange = () => {
                     background-color: #909090;
                   }
                 }
+              }
+              .empty {
+                height: 260px;
+                line-height: 260px;
+                text-align: center;
+                font-size: 13px;
+                color: #909090;
               }
               .foot-box {
                 height: 63px;

@@ -24,7 +24,7 @@ export function edit_know(data) {
   })
 }
 
-// 删除
+// 删除知识库
 export function del_know(data) {
   return request({
     url: '/intelligence/del_know',
@@ -53,14 +53,6 @@ export function upload_know_file(data) {
 export function create_know_website(data) {
   return request({
     url: '/intelligence/create_know_website',
-    method: 'post',
-    data
-  })
-}
-// 删除文件
-export function del_know_file(data) {
-  return request({
-    url: '/intelligence/del_know_file',
     method: 'post',
     data
   })
@@ -101,6 +93,14 @@ export function get_know_persons(data) {
 export function set_know_person(data) {
   return request({
     url: '/intelligence/set_know_person',
+    method: 'post',
+    data
+  })
+}
+// 知识库文件设置内容权限(限制创建者、管理员)
+export function setKnowItemPermission(data) {
+  return request({
+    url: '/intelligence/setKnowItemPermission',
     method: 'post',
     data
   })
@@ -169,6 +169,14 @@ export function commonly_used_knows(data) {
     data
   })
 }
+// 首页侧栏知识库列表
+export function getIndexLeftKnowList(data) {
+  return request({
+    url: '/intelligence/getIndexLeftKnowList',
+    method: 'post',
+    data
+  })
+}
 // 根据分类获取模型
 export function get_type_models(data) {
   return request({
@@ -194,4 +202,67 @@ export function get_know_info(data) {
     data
   })
 }
-
+// 知识库文件设置标签(仅限自己创建的)
+export function setTags(data) {
+  return request({
+    url: '/intelligence/setTags',
+    method: 'post',
+    data
+  })
+}
+// 知识库文件置顶/取消置顶(仅限自己创建的)
+export function doTopKnowFile(data) {
+  return request({
+    url: '/intelligence/doTopKnowFile',
+    method: 'post',
+    data
+  })
+}
+// 删除 文件|文件夹|网址
+export function delItem(data) {
+  return request({
+    url: '/intelligence/delItem',
+    method: 'post',
+    data
+  })
+}
+// 添加快捷访问
+export function add_access(data) {
+  return request({
+    url: '/home/add_access',
+    method: 'post',
+    data
+  })
+}
+// 创建文件夹
+export function create_dir(data) {
+  return request({
+    url: '/intelligence/create_dir',
+    method: 'post',
+    data
+  })
+}
+// 重命名项目(包含文件，网址，文件夹)
+export function reNameItem(data) {
+  return request({
+    url: '/intelligence/reNameItem',
+    method: 'post',
+    data
+  })
+}
+// 用户退出加入知识库
+export function withdraw_join(data) {
+  return request({
+    url: '/intelligence/withdraw_join',
+    method: 'post',
+    data
+  })
+}
+// 知识库广场列表
+export function getKnowSquareList(data) {
+  return request({
+    url: '/intelligence/getKnowSquareList',
+    method: 'post',
+    data
+  })
+}

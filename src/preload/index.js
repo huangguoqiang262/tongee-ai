@@ -21,6 +21,7 @@ const customApi = {
   triggerScreenshot: () => ipcRenderer.send('trigger-screenshot'),
   onScreenshotStart: (callback) => ipcRenderer.on('screenshot-start', callback),
   onScreenshotOk: (callback) => ipcRenderer.on('screenshot-ok', callback),
+  removeScreenshotOk: () => ipcRenderer.removeAllListeners('screenshot-ok'),
   onScreenshotSave: (callback) => ipcRenderer.on('screenshot-save', callback),
   onScreenshotCancel: (callback) => ipcRenderer.on('screenshot-cancel', callback),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
@@ -74,7 +75,11 @@ const customApi = {
                 '.txt',
                 '.docx',
                 '.ppt',
-                '.pptx'
+                '.pptx',
+                '.png',
+                '.jpg',
+                '.jpeg',
+                '.gif'
               ]
               const fileExt = path.extname(dirent.name).toLowerCase()
 

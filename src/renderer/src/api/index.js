@@ -1,102 +1,32 @@
 import request from '@renderer/utils/request'
-// 获取登录页条目
-export function get_login_item(data) {
+// 首页问题(问问知识库)
+export function get_index_question(data) {
   return request({
-    url: '/system/get_login_item',
+    url: '/intelligence/get_index_question',
     method: 'post',
     data
   })
 }
-// 账号密码登录
-export function passlogin(data) {
+//删除快捷访问
+export function del_access(data) {
   return request({
-    url: '/login/passlogin',
+    url: '/home/del_access',
     method: 'post',
     data
   })
 }
-export function logout(data) {
+//快捷访问列表
+export function lists_access(data) {
   return request({
-    url: '/login/logout',
+    url: '/home/lists_access',
     method: 'post',
     data
   })
 }
-
-// 获取短信验证码
-export function send_code(data) {
+//文档解读-文件列表
+export function get_file_list(data) {
   return request({
-    url: '/login/send_code',
-    method: 'post',
-    data
-  })
-}
-// 注册
-export function register(data) {
-  return request({
-    url: '/login/register',
-    method: 'post',
-    data
-  })
-}
-// 获取后台用户个人信息
-export function getInfo(data) {
-  return request({
-    // url: "/common/get_user_info",
-    url: '/user/user_info',
-    method: 'post',
-    data
-  })
-}
-// 修改用户昵称
-export function edit_user(data) {
-  return request({
-    url: '/user/edit_user',
-    method: 'post',
-    data
-  })
-}
-//获取用户园区和企业的关系列表
-export function get_user_park_company_rel(data) {
-  if (localStorage.getItem('loginType') && localStorage.getItem('loginType') == 3) {
-    data.type = localStorage.getItem('loginType')
-  }
-  return request({
-    url: '/common/get_user_park_company_rel',
-    method: 'post',
-    data
-  })
-}
-// 后台用户密码修改
-export function editPassword(data) {
-  return request({
-    url: '/admin_user_v4/edit_password',
-    method: 'post',
-    data
-  })
-}
-
-// 获取项目域名
-export function getDomain(data) {
-  return request({
-    url: '/common/get_domain',
-    method: 'post',
-    data
-  })
-}
-
-// 获取登录验证码
-export function getCaptcha() {
-  return request({
-    url: '/login/captcha',
-    method: 'get'
-  })
-}
-
-// 修改自己密码
-export function editMyPass(data) {
-  return request({
-    url: '/common/my_edit_password',
+    url: '/ai_desc/get_file_list',
     method: 'post',
     data
   })

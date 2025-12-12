@@ -2,6 +2,12 @@
 import { computed, ref } from 'vue'
 // import { handleCopyMsg } from '@renderer/utils/index'
 import LOGO from '@renderer/assets/logo.png'
+import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
+import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
+import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
+import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
+import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
+import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 const props = defineProps({
   //是否正在对话
   isChatting: {
@@ -11,6 +17,14 @@ const props = defineProps({
   direction: {
     type: String,
     default: 'left'
+  },
+  imageSize: {
+    type: String,
+    default: '246px'
+  },
+  chatType: {
+    type: String,
+    default: 'text'
   },
   fontSize: {
     type: Number,
@@ -32,16 +46,16 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  showUser: {
+  isPreView: {
     type: Boolean,
     default: false
   },
-  isFanCreation: {
+  showUser: {
     type: Boolean,
     default: false
   }
 })
-const emit = defineEmits(['newChat', 'retrievedDocumen', 'lookOver','handleAction'])
+const emit = defineEmits(['newChat', 'retrievedDocumen', 'lookOver', 'handleAction'])
 const localSpread = ref(props.message.spread || false)
 const markdownMessage = ref(null)
 
@@ -49,7 +63,13 @@ const logo = LOGO
 
 const images = computed(() => {
   const medias = props.message.medias || []
-  return medias.filter((media) => media.type === 'image').map((media) => media.data)
+  var list = []
+  medias
+    .filter((media) => media.type === 'image')
+    .map((media) => {
+      list.push(...media.data)
+    })
+  return list
 })
 
 const issueContentItems = computed(() => {
@@ -69,16 +89,37 @@ const newChat = (item) => {
   emit('newChat', item)
 }
 
-//下载引用文件
-const retrievedDocumen = (fileId) => {
-  emit('retrievedDocumen', fileId)
-}
+// //下载引用文件
+// const retrievedDocumen = (fileId) => {
+//   emit('retrievedDocumen', fileId)
+// }
 
-const lookOver = (file) => {
-  emit('lookOver', file)
+// const lookOver = (file) => {
+//   emit('lookOver', file)
+// }
+// 获取文件图标
+const getFileIcon = (item) => {
+  // 根据文件扩展名返回不同的图标
+  const ext = item.title?.split('.').pop()?.toLowerCase()
+  const iconMap = {
+    doc: wordIcon,
+    docx: wordIcon,
+    pdf: pdfIcon,
+    xls: excelIcon,
+    xlsx: excelIcon,
+    ppt: pptIcon,
+    pptx: pptIcon,
+    txt: txtIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon
+  }
+
+  return iconMap[ext] || wordIcon
 }
-const handleAction = (acticon) => {
-  emit('handleAction', acticon)
+const handleAction = (acticon, textContent) => {
+  emit('handleAction', acticon, textContent)
 }
 // const exportToMd = (msg) => {
 //   if (!msg.textContent?.trim()) {
@@ -98,6 +139,48 @@ const handleAction = (acticon) => {
 //   link.click()
 //   URL.revokeObjectURL(link.href)
 // }
+// const popoverFile = (i) => {
+//   var obj = {}
+//   props.message.retrievedDocumentList[i].filter(item => {
+//     if (item.index == i) {
+//       obj = item
+//     }
+//   })
+//   return obj
+// }
+const formatFileSize = (kb) => {
+  if (!kb) return '0 KB'
+  if (kb < 1024) {
+    return kb + ' KB'
+  } else if (kb < 1024 * 1024) {
+    return (kb / 1024).toFixed(2) + ' MB'
+  } else if (kb < 1024 * 1024 * 1024) {
+    return (kb / (1024 * 1024)).toFixed(2) + ' GB'
+  } else {
+    return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
+  }
+}
+const download = (index, images) => {
+  const url = images[index].full_path
+  const suffix = url.slice(url.lastIndexOf('.'))
+  const filename = suffix + Date.now()
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  // fetch(url)
+  //   .then((response) => response.blob())
+  //   .then((blob) => {
+  //     const blobUrl = URL.createObjectURL(new Blob([blob]))
+  //     const link = document.createElement('a')
+  //     link.href = blobUrl
+  //     link.download = filename
+  //     document.body.appendChild(link)
+  //     link.click()
+  //     URL.revokeObjectURL(blobUrl)
+  //     link.remove()
+  //   })
+}
 </script>
 
 <!-- 整个div是用来调整内部消息的位置，每条消息占的空间都是一整行，然后根据right还是left来调整内部的消息是靠右边还是靠左边 -->
@@ -112,62 +195,78 @@ const handleAction = (acticon) => {
     <div v-if="props.message.type === 'USER'" class="row">
       <!-- 发送的消息或者回复的消息 -->
       <div
-        class="message message-user"
+        class="message"
+        :class="{ 'message-user': props.direction == 'right' }"
         :style="{
           fontFamily: props.serif ? 'serif' : 'sans-serif'
         }"
       >
         <div class="message-content">
-          <!-- 附件 -->
-          <div class="attachment">
-            <div
-              v-for="(item, index) in props.message.attach_file_ids"
-              :key="index"
-              class="attachment-item"
-            >
-              <template v-if="item.fileType == 'image'">
-                <el-image
-                  :key="'image' + index"
-                  class="attachment-image"
-                  fit="cover"
-                  :preview-src-list="[item.fileUrl]"
-                  :src="item.fileUrl"
-                ></el-image>
-              </template>
-              <template v-else>
-                <div class="file-item" @click.stop="lookOver(item)">
-                  <img class="file-icon" src="@renderer/assets/attached-icon.png" alt="" />
-                  <div class="file-name">
-                    {{ item.fileName }}
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
           <!-- 如果消息是文本，用markdown展示 -->
           <MarkdownMessage
             :type="props.message.type"
             :message="props.message.textContent"
           ></MarkdownMessage>
-
-          <!-- 如果消息的内容是图片，则显示图片  -->
-          <el-image
-            v-for="(image, index) in images"
-            :key="'image' + index"
-            class="image"
-            fit="cover"
-            :preview-src-list="images"
-            :src="image"
-          ></el-image>
-          <div class="empty-message">
+          <div v-if="props.direction != 'right'" class="empty-message">
             {{ props.message.dateline }}
+          </div>
+          <!-- 附件 -->
+          <div class="attachment">
+            <div
+              v-for="(item, index) in props.message.attach_file_ids"
+              :key="index"
+              class="attach-item"
+            >
+              <img class="attached-icon" :src="getFileIcon(item)" alt="" />
+              <div class="attached-content">
+                <div class="attach-name">
+                  {{ item.title }}
+                </div>
+                <div class="attach-type">
+                  <span class="file-extension">{{
+                    item.title?.split('.').pop()?.toUpperCase()
+                  }}</span>
+                  <span class="file-size">{{ formatFileSize(item.total_space) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 如果消息的内容是图片，则显示图片  -->
+          <div class="image-user-box">
+            <el-image
+              v-for="(image, index) in images"
+              :key="'image' + index"
+              class="image-user"
+              crossorigin="anonymous"
+              fit="cover"
+              :preview-src-list="images.map((item) => item.full_path)"
+              :src="image.full_path"
+            >
+              <template #toolbar="{ actions, prev, next, reset, activeIndex, setActiveItem }">
+                <el-icon @click="prev"><Back /></el-icon>
+                <el-icon @click="next"><Right /></el-icon>
+                <el-icon @click="setActiveItem(images.length - 1)">
+                  <DArrowRight />
+                </el-icon>
+                <el-icon @click="actions('zoomOut')"><ZoomOut /></el-icon>
+                <el-icon @click="actions('zoomIn', { enableTransition: false, zoomRate: 2 })">
+                  <ZoomIn />
+                </el-icon>
+                <el-icon @click="actions('clockwise', { rotateDeg: 180, enableTransition: false })">
+                  <RefreshRight />
+                </el-icon>
+                <el-icon @click="actions('anticlockwise')"><RefreshLeft /></el-icon>
+                <el-icon @click="reset"><Refresh /></el-icon>
+                <el-icon @click="download(activeIndex, images)"><Download /></el-icon>
+              </template>
+            </el-image>
           </div>
         </div>
       </div>
     </div>
     <div v-if="props.message.type !== 'USER'" class="row">
       <div class="avatar-wrapper">
-        <el-avatar :size="18" :src="logo" class="avatar" shape="square" />
+        <el-avatar :size="18" fit="contain" :src="logo" class="avatar" shape="square" />
         <span>糖源AI</span>
       </div>
       <!-- 发送的消息或者回复的消息 -->
@@ -184,7 +283,8 @@ const handleAction = (acticon) => {
             v-if="
               props.message.textContent !== '系统错误，请稍后再试' &&
               ((props.message.reasoningContentText && props.message.textContent) ||
-                !props.message.textContent)
+                !props.message.textContent) &&
+              !images.length
             "
             v-model:spread="localSpread"
             :reasoning-content-text="props.message.reasoningContentText"
@@ -218,31 +318,51 @@ const handleAction = (acticon) => {
               :key="'image' + index"
               class="image"
               fit="cover"
-              :preview-src-list="images"
-              :src="image"
-            ></el-image>
-          </div>
-          <div v-if="props.message.retrievedDocumentList.length" class="file-list">
-            <div class="file-label">
-              本次回答共{{ props.message.retrievedDocumentList.length }}个引用文件
-            </div>
-            <div
-              v-for="file in props.message.retrievedDocumentList"
-              :key="file.fileId"
-              class="file-item"
+              crossorigin="anonymous"
+              :preview-src-list="images.map((item) => item.full_path)"
+              :src="image.full_path"
             >
-              <div class="file-name" @click="retrievedDocumen(file.fileId)">
-                {{ file.fileName }}
-              </div>
-            </div>
+              <template #toolbar="{ actions, prev, next, reset, activeIndex, setActiveItem }">
+                <el-icon @click="prev"><Back /></el-icon>
+                <el-icon @click="next"><Right /></el-icon>
+                <el-icon @click="setActiveItem(images.length - 1)">
+                  <DArrowRight />
+                </el-icon>
+                <el-icon @click="actions('zoomOut')"><ZoomOut /></el-icon>
+                <el-icon @click="actions('zoomIn', { enableTransition: false, zoomRate: 2 })">
+                  <ZoomIn />
+                </el-icon>
+                <el-icon @click="actions('clockwise', { rotateDeg: 180, enableTransition: false })">
+                  <RefreshRight />
+                </el-icon>
+                <el-icon @click="actions('anticlockwise')"><RefreshLeft /></el-icon>
+                <el-icon @click="reset"><Refresh /></el-icon>
+                <el-icon @click="download(activeIndex, images)"><Download /></el-icon>
+              </template>
+              <template #error>
+                <el-skeleton class="load-img" :loading="true" animated>
+                  <template #template>
+                    <el-skeleton-item
+                      variant="image"
+                      :style="{ width: props.imageSize, height: props.imageSize }"
+                    />
+                  </template>
+                </el-skeleton>
+              </template>
+            </el-image>
           </div>
-          <div class="empty-message download-message">
-            <el-tooltip effect="light" content="记笔记" placement="bottom">
+          <div v-if="!props.isPreView" class="empty-message download-message">
+            <el-tooltip
+              v-if="props.chatType == 'text'"
+              effect="light"
+              content="记笔记"
+              placement="bottom"
+            >
               <img
                 class="chat-icon"
                 src="@renderer/assets/chat-icon/note-icon.png"
                 alt=""
-                @click="handleAction('takeNote')"
+                @click="handleAction('takeNote', props.message.textContent)"
               />
             </el-tooltip>
             <el-tooltip effect="light" content="分享" placement="bottom">
@@ -348,57 +468,57 @@ const handleAction = (acticon) => {
 }
 .attachment {
   display: flex;
-  flex-direction: column;
+  // flex-direction: column;
+  flex-wrap: wrap;
+  gap: 10px;
   align-items: flex-end;
-  .attachment-item {
-    margin-bottom: 10px;
-    background: #fff;
-    border-radius: 6px;
-    padding: 6px;
-    overflow: hidden;
-    width: fit-content;
-    max-width: 312px;
-    .attachment-image {
-      width: 300px;
-      height: 200px;
-      border-radius: 6px;
-      display: block;
+  .attach-item {
+    flex-shrink: 0;
+    position: relative;
+    box-sizing: border-box;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    width: 200px;
+    height: 58px;
+    border-radius: 4px;
+    border: 1px solid #efefef;
+    &:hover {
+      background: var(--primary-bg-color);
     }
-    .file-item {
-      box-sizing: border-box;
-      padding: 0 5px;
-      display: flex;
-      align-items: center;
-      gap: 0 10px;
-      height: 40px;
-      width: 100%;
+    .attached-icon {
+      flex-shrink: 0;
+      display: block;
+      margin-right: 4px;
+      width: 36px;
+      height: 36px;
+    }
+    .attached-content {
+      flex: 1;
       overflow: hidden;
-      background-color: #f9f9f9;
-      border-radius: 6px;
-      overflow: hidden;
-      .file-icon {
-        flex-shrink: 0;
-        width: 20px;
-        height: 20px;
-      }
-      .file-name {
-        max-width: 100%;
-        font-size: 14px;
-        color: #8b8b8b;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      .attach-name {
+        margin-bottom: 4px;
         white-space: nowrap;
-        cursor: pointer;
-        &:hover {
-          color: var(--primary-bg-color);
+        text-overflow: ellipsis;
+        overflow: hidden;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--default-font-color);
+      }
+      .attach-type {
+        display: flex;
+        align-items: center;
+        font-size: 10px;
+        color: #909090;
+        line-height: 12px;
+        .file-extension {
+          margin-right: 4px;
+          display: inline-block;
+        }
+        .file-size {
+          display: inline-block;
         }
       }
-      // .down {
-      //   font-size: 18px;
-      //   color: #000000;
-      //   font-size: 18px;
-      //   cursor: pointer;
-      // }
     }
   }
 }
@@ -421,16 +541,31 @@ const handleAction = (acticon) => {
 
       // 用户回复的消息和ChatGPT回复的消息背景颜色做区分
       .message {
-        // background-color: rgb(231, 248, 255);
-        :deep(.vuepress-markdown-body) {
-          background-color: rgb(231, 248, 255);
+        &.message-user {
+          :deep(.v-md-editor-preview[type='user']) {
+            margin-bottom: 10px;
+            width: fit-content;
+            .vuepress-markdown-body {
+              font-size: 14px;
+              color: #fff;
+              background-color: var(--el-color-primary);
+              line-height: 20px;
+              padding: 10px 14px;
+            }
+            // max-width: 100%;
+          }
         }
+        // background-color: rgb(231, 248, 255);
+
         .message-content {
           float: right;
           width: 100%;
           display: flex;
           flex-direction: column;
           align-items: flex-end;
+          .image-user-box {
+            justify-content: flex-end;
+          }
         }
       }
     }
@@ -485,6 +620,19 @@ const handleAction = (acticon) => {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+        .image-user-box {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          justify-content: flex-start;
+          .image-user {
+            flex-shrink: 0;
+            width: 100px;
+            height: 58px;
+            border-radius: 4px;
+          }
+        }
         .reasoningContentText {
           position: relative;
           margin-bottom: 10px;
@@ -520,7 +668,7 @@ const handleAction = (acticon) => {
         width: 100%;
         margin-bottom: 10px;
         .vuepress-markdown-body {
-          font-size: 22px !important;
+          font-size: 22px;
           color: var(--default-font-color);
           font-weight: 600;
           line-height: 30px;
@@ -545,8 +693,8 @@ const handleAction = (acticon) => {
         flex-wrap: wrap;
         gap: 10px;
         .image {
-          width: 246px;
-          height: 246px;
+          width: v-bind('imageSize');
+          height: v-bind('imageSize');
           border-radius: 6px;
         }
       }
@@ -568,6 +716,7 @@ const handleAction = (acticon) => {
   font-size: 14px;
   line-height: 20px;
   color: #909090;
+  margin-bottom: 10px;
   &.empty-message1 {
     margin-top: 0;
   }
@@ -590,6 +739,20 @@ const handleAction = (acticon) => {
     width: 18px;
     height: 18px;
     cursor: pointer;
+  }
+}
+.load-img {
+  width: v-bind('imageSize');
+  height: v-bind('imageSize');
+  border-radius: 6px;
+  &.is-animated .el-skeleton__item {
+    background: linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--el-color-primary) 5%, #ffffff) 25%,
+      var(--el-color-primary-light-9) 37%,
+      color-mix(in srgb, var(--el-color-primary) 5%, #ffffff) 63%
+    );
+    background-size: 400% 100%;
   }
 }
 </style>

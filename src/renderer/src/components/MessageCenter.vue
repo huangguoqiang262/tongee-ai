@@ -23,6 +23,7 @@
                 class="search-input"
                 placeholder="搜索反馈内容"
                 :suffix-icon="searchVal ? '' : Search"
+                @change="tabHandle(1)"
               />
             </div>
             <div class="right-head-box">
@@ -103,8 +104,8 @@
                             height="14"
                           ></rect>
                           <path
-                            d="M11.9546875,2.996875 L7.875,7.8859375 L7.875,10.7296875 C7.875,10.7953125 7.8421875,10.8609375 7.7984375,10.9046875 L6.4859375,11.9765625 C6.34375,12.096875 6.125,11.9875 6.125,11.8015625 L6.125,7.8859375 L2.0453125,2.996875 C1.925,2.8546875 2.0234375,2.6359375 2.209375,2.6359375 L11.7796875,2.6359375 C11.965625,2.6359375 12.075,2.8546875 11.9546875,2.996875 Z"
                             id="路径"
+                            d="M11.9546875,2.996875 L7.875,7.8859375 L7.875,10.7296875 C7.875,10.7953125 7.8421875,10.8609375 7.7984375,10.9046875 L6.4859375,11.9765625 C6.34375,12.096875 6.125,11.9875 6.125,11.8015625 L6.125,7.8859375 L2.0453125,2.996875 C1.925,2.8546875 2.0234375,2.6359375 2.209375,2.6359375 L11.7796875,2.6359375 C11.965625,2.6359375 12.075,2.8546875 11.9546875,2.996875 Z"
                             :fill="fillColor"
                           ></path>
                         </g>
@@ -115,29 +116,39 @@
                 </div>
               </el-tooltip>
 
-              <div class="export-box">导出反馈</div>
+              <div class="export-box" @click="exportFeedback">导出反馈</div>
             </div>
           </div>
-          <div class="list-box">
-            <div v-for="item in list" :key="item" class="list-item">
+          <div v-if="feedList.length" v-infinite-scroll="loadData" class="list-box">
+            <div v-for="item in feedList" :key="item.id" class="list-item">
               <img class="left-icon" src="@renderer/assets/file-icon.png" alt="" />
               <div class="center-box">
-                <div class="title">关于产品分类的建议</div>
-                <div class="desc">建议增加对新型智能医疗器械的分类、当前分类体系不够完善。</div>
-                <div class="author">提交者：张工(研发部)</div>
+                <div class="title">
+                  关于{{ item.type_name }}的{{ item.sug_or_pb == 1 ? '问题' : '建议' }}
+                </div>
+                <div class="desc desc-hide">{{ htmlToText(item.content) }}</div>
+                <div class="author">
+                  提交者：{{ item.username || ''
+                  }}{{ item.user_dept ? '(' + item.dept_name + ')' : '' }}
+                </div>
                 <div class="btns">
-                  <div class="btn">标记已处理</div>
-                  <div class="btn btn1">查看详情</div>
-                  <div class="btn btn2">已处理</div>
+                  <div v-if="item.status == 0" class="btn" @click="markHandle(item)">
+                    标记已处理
+                  </div>
+                  <div v-if="item.status == 1" class="btn btn2">已处理</div>
+                  <div class="btn btn1" @click="showDetail(item)">查看详情</div>
                 </div>
               </div>
-              <div class="time">18:00</div>
+              <div class="time">{{ formatTimeFun(item.createtime) }}</div>
             </div>
+          </div>
+          <div v-else class="empty">
+            <el-empty :image-size="120" description="暂无数据" />
           </div>
         </div>
         <div v-if="activeTab == '2'" class="repository-box">
-          <div class="list-box">
-            <div v-for="item in list" :key="item" class="list-item">
+          <div v-if="fileList.length" v-infinite-scroll="loadData" class="list-box">
+            <div v-for="item in fileList" :key="item.id" class="list-item">
               <img class="left-icon" src="@renderer/assets/file-icon1.png" alt="" />
               <div class="center-box">
                 <div class="title">新增《临床实验报告模板》</div>
@@ -147,29 +158,81 @@
               <div class="time">18:00</div>
             </div>
           </div>
+          <div v-else class="empty">
+            <el-empty :image-size="120" description="暂无数据" />
+          </div>
         </div>
         <div v-if="activeTab == '3'" class="repository-box">
-          <div class="list-box">
-            <div class="list-item">
+          <div v-if="systemMsgList.length" v-infinite-scroll="loadData" class="list-box">
+            <div v-for="item in systemMsgList" :key="item.id" class="list-item">
               <img class="left-icon" src="@renderer/assets/inform-icon.png" alt="" />
               <div class="center-box">
-                <div class="title">系统维护通知</div>
+                <div class="title">{{ item.title }}</div>
                 <div class="desc desc1">
-                  系统将于本周六晚上10点至周日凌晨2点进行维护，期间可能无法访问，请提前做好准备
+                  {{ item.content }}
                 </div>
               </div>
-              <div class="time">18:00</div>
+              <div class="time">{{ formatTimeFun(item.createtime) }}</div>
             </div>
+          </div>
+          <div v-else class="empty">
+            <el-empty :image-size="120" description="暂无数据" />
           </div>
         </div>
       </div>
     </div>
+    <el-dialog
+      v-model="feedbackDetailVisible"
+      :close-on-click-modal="false"
+      align-center
+      :show-close="true"
+      destroy-on-close
+      modal-class="feedback-detail-box-dialog"
+      width="850"
+    >
+      <template #header>
+        <div class="head-left">
+          <img
+            class="dialog-header-del-icon"
+            src="@renderer/assets/repository/fk-icon.png"
+            alt=""
+          />
+          <div class="">反馈详情</div>
+        </div>
+      </template>
+      <div class="detail-box">
+        <Toolbar
+          v-show="false"
+          :default-config="defaultConfig"
+          :editor="editorRef"
+          mode="default"
+        />
+        <div class="title-input">
+          {{ '关于' + deepData.type_name + '的' + (deepData.sug_or_pb == 1 ? '问题' : '建议') }}
+        </div>
+        <Editor
+          v-model="deepData.content"
+          class="editor-content"
+          mode="default"
+          @on-created="handleCreated"
+        />
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, shallowRef, nextTick } from 'vue'
+import { formatTime } from '@renderer/utils/index.js'
+import {
+  get_system_msg,
+  get_file_logs,
+  get_list,
+  export_feedback
+} from '@renderer/api/messageCenter'
+import { feedback_mark } from '@renderer/api/feedback'
+import { convertToPlainText } from '@renderer/utils/convertToPlainText.js'
 let fillColor = 'var(--default-font-color)'
 let searchVal = ref('')
 let tabs = ref([
@@ -186,26 +249,275 @@ let tabs = ref([
     name: '系统通知'
   }
 ])
+let feedbackDetailVisible = ref(false)
+let deepData = ref({})
+let defaultConfig = {}
+let editorRef = shallowRef(null)
+const handleCreated = (editor) => {
+  editorRef.value = editor
+  nextTick(() => {
+    editorRef.value.disable()
+  })
+}
+const formatTimeFun = (time) => {
+  return formatTime(time)
+}
+let pagination = ref({
+  page: 1,
+  page_size: 10,
+  total: 0
+})
+const htmlToText = (html) => {
+  return convertToPlainText(html, { maxLength: 100 })
+}
 let activeTab = ref('1')
 const tabHandle = (id) => {
   activeTab.value = id
+  pagination.value = {
+    page: 1,
+    page_size: 10,
+    total: 0
+  }
+  feedList.value = []
+  fileList.value = []
+  systemMsgList.value = []
+  if (id == '1') {
+    getList()
+  } else if (id == '2') {
+    getFileList()
+  } else if (id == '3') {
+    getSystemMsgList()
+  }
+}
+const exportFeedback = () => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size,
+    search_type: 1,
+    keyword: searchVal.value,
+    start_time: dateValue.value?.[0] || '',
+    end_time: dateValue.value?.[1] || ''
+  }
+  export_feedback(data).then((res) => {
+    if (res.code == 200) {
+      //通过返回export_file_url 链接创建a标签下载
+      let a = document.createElement('a')
+      a.href = res.data.export_file_url
+      a.download = `反馈数据${new Date().getTime()}.xlsx`
+      a.click()
+    }
+  })
+}
+const markHandle = (item) => {
+  feedback_mark({
+    id: item.id
+  }).then((res) => {
+    if (res.code == 200) {
+      item.status = 1
+      // eslint-disable-next-line no-undef
+      ElMessage.primary('标记已处理')
+    }
+  })
+}
+const showDetail = (item) => {
+  deepData.value = item
+  feedbackDetailVisible.value = true
 }
 let dateValue = ref([])
 let datePickerTooltip = ref(null)
 const changeDate = (val) => {
-  console.log(val)
   datePickerTooltip.value.hide()
   if (val && val.length > 0) {
     fillColor = 'var(--el-color-primary)'
   } else {
     fillColor = 'var(--default-font-color)'
   }
+  tabHandle(activeTab.value)
 }
-const list = ref(Array(6))
-onMounted(() => {})
+const loadData = () => {
+  if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
+    return
+  }
+  if (activeTab.value == '1') {
+    getList()
+  } else if (activeTab.value == '2') {
+    getFileList()
+  } else if (activeTab.value == '3') {
+    getSystemMsgList()
+  }
+}
+const feedList = ref([])
+const getList = () => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size,
+    search_type: 1,
+    keyword: searchVal.value,
+    start_time: dateValue.value?.[0] || '',
+    end_time: dateValue.value?.[1] || ''
+  }
+  get_list(data).then((res) => {
+    feedList.value = feedList.value.concat(res.data.data || [])
+    pagination.value.total = res.data.total
+    pagination.value.page = res.data.current_page
+    pagination.value.page_size = res.data.per_page
+  })
+}
+const fileList = ref([])
+const getFileList = () => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size
+  }
+  get_file_logs(data).then((res) => {
+    fileList.value = fileList.value.concat(res.data.data || [])
+    pagination.value.total = res.data.total
+    pagination.value.page = res.data.current_page
+    pagination.value.page_size = res.data.per_page
+  })
+}
+const systemMsgList = ref([])
+const getSystemMsgList = () => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size
+  }
+  get_system_msg(data).then((res) => {
+    systemMsgList.value = systemMsgList.value.concat(res.data.data || [])
+    pagination.value.total = res.data.total
+    pagination.value.page = res.data.current_page
+    pagination.value.page_size = res.data.per_page
+  })
+}
+onMounted(() => {
+  getList()
+})
 </script>
 
 <style scoped lang="scss">
+:deep(.feedback-detail-box-dialog) {
+  .el-dialog {
+    padding: 13px 20px 14px;
+    .el-dialog__header {
+      padding-bottom: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 22px;
+      .head-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        .dialog-header-del-icon {
+          width: 16px;
+          height: 16px;
+        }
+      }
+      .head-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        .close-icon {
+          color: #737475;
+          font-size: 18px;
+          cursor: pointer;
+          transition: all 0.2s linear;
+          &:hover {
+            color: var(--el-color-primary);
+          }
+        }
+        .open-chat {
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          width: 99px;
+          height: 36px;
+          font-size: 14px;
+          color: var(--default-font-color);
+          background: #f9f9f9;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          &:active {
+            background: #e9e9e9;
+          }
+
+          .logo {
+            flex-shrink: 0;
+            display: block;
+            width: 16px;
+            height: 16px;
+          }
+        }
+        .save {
+          flex-shrink: 0;
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+        }
+      }
+    }
+
+    .el-dialog__body {
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 22px;
+      overflow: hidden;
+      height: 660px;
+      background: #f9f9f9;
+      border-radius: 10px;
+      .detail-box {
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        .w-e-toolbar {
+          flex-shrink: 0;
+          background: transparent !important;
+        }
+        .title-input {
+          flex-shrink: 0;
+          width: calc(100% - 10px);
+          padding: 1px 10px;
+          margin: 10px auto 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--default-font-color);
+        }
+        .editor-content {
+          flex: 1;
+          padding: 0 5px;
+          background: transparent !important;
+          overflow: hidden;
+          .w-e-text-container {
+            background: transparent !important;
+            .w-e-text-placeholder {
+              color: #909090;
+            }
+          }
+        }
+      }
+    }
+    .el-dialog__footer {
+      .dialog-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 14px;
+        color: #909090;
+        line-height: 20px;
+      }
+    }
+  }
+}
 .message-center-box {
   box-sizing: border-box;
   padding: 50px 20px 10px;
@@ -255,11 +567,18 @@ onMounted(() => {})
     .content-box {
       flex: 1;
       overflow: hidden;
+      .empty {
+        margin: 30px auto 100px;
+        font-size: 13px;
+        color: #909090;
+        text-align: center;
+        line-height: 20px;
+      }
       .repository-box {
         max-height: 100%;
         width: 100%;
         box-sizing: border-box;
-        padding: 0 20px;
+        padding: 0 0 0 20px;
         background: #f9f9f9;
         border-radius: 12px;
         display: flex;
@@ -268,6 +587,7 @@ onMounted(() => {})
         .head {
           flex-shrink: 0;
           padding-top: 20px;
+          padding-right: 20px;
           margin-bottom: 10px;
           display: flex;
           justify-content: space-between;
@@ -333,6 +653,7 @@ onMounted(() => {})
           }
         }
         .list-box {
+          padding-right: 20px;
           overflow-y: auto;
           &::-webkit-scrollbar {
             width: 4px;
@@ -361,6 +682,7 @@ onMounted(() => {})
             }
             .center-box {
               flex: 1;
+              overflow: hidden;
               .title {
                 margin-bottom: 4px;
                 font-size: 14px;
@@ -372,6 +694,11 @@ onMounted(() => {})
                 font-size: 12px;
                 color: #909090;
                 line-height: 16px;
+                &.desc-hide {
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                }
                 &.desc1 {
                   margin-bottom: 0;
                 }
@@ -409,6 +736,7 @@ onMounted(() => {})
                   &.btn2 {
                     color: #909090;
                     border-color: #efefef;
+                    cursor: default;
                   }
                 }
               }

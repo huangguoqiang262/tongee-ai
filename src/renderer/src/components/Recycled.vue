@@ -4,7 +4,7 @@
       <div class="page-title-box">
         <div class="page-title">回收站</div>
         <div class="right-head-box">
-          <div class="filter-box" :class="{ active: dateValue && dateValue.length > 0 }">
+          <div class="filter-box" @click="refresh">
             <img class="filter-icon" src="@renderer/assets/refresh-icon.png" alt="" />
             刷新
           </div>
@@ -23,57 +23,100 @@
         </div>
       </div>
       <div class="content-box">
-        <div v-if="activeTab == '1'" class="repository-box">
-          <div class="list-box">
-            <el-popover
-              popper-class="Recycled-handle-popover"
-              placement="bottom"
-              trigger="hover"
-              :width="146"
-              :offset="-58"
-              :show-arrow="false"
-            >
-              <template #reference>
-                <div class="list-item">
-                  <img class="left-icon" src="@renderer/assets/feedback-icon.png" alt="" />
+        <div v-infinite-scroll="loadData" class="repository-box">
+          <el-skeleton :loading="loading" animated>
+            <template #template>
+              <div class="list-box">
+                <div v-for="item in 6" :key="item" class="list-item">
+                  <el-skeleton-item
+                    variant="text"
+                    class="left-icon"
+                    src="@renderer/assets/feedback-icon.png"
+                    alt=""
+                  />
                   <div class="center-box">
-                    <div class="title">产品注册申报指南</div>
-                    <div class="desc">张工(研发部)</div>
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 30%; display: block"
+                      class="title"
+                    ></el-skeleton-item>
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 100%; display: block"
+                      class="desc"
+                    ></el-skeleton-item>
                   </div>
-                  <div class="time-box">
-                    <div class="time">2天前删除</div>
-                    <div class="size">2.4MB</div>
+                  <div class="time-box" style="width: 30%">
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 70%; display: block"
+                      class="time"
+                    ></el-skeleton-item>
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 60%; display: block"
+                      class="size"
+                    ></el-skeleton-item>
                   </div>
                 </div>
-              </template>
-              <div class="handle-box">
-                <div class="handle-item">
-                  <img class="icon" src="@renderer/assets/restore-icon.png" alt="" />
-                  一键还原
+              </div>
+            </template>
+            <template #default>
+              <div v-if="activeTab == '1'" class="list-box">
+                <template v-if="list.length">
+                  <div
+                    v-for="item in list"
+                    :key="item.id + activeTab"
+                    class="list-item"
+                    @contextmenu="showContextMenu(item, $event)"
+                  >
+                    <img class="left-icon" src="@renderer/assets/feedback-icon.png" alt="" />
+                    <div class="center-box">
+                      <div class="title">{{ item.title }}</div>
+                      <div class="desc">
+                        {{ item.user_name || ''
+                        }}{{ item.user_dept ? '(' + item.user_dept + ')' : '' }}
+                      </div>
+                    </div>
+                    <div class="time-box">
+                      <div class="time">{{ formatTimeFun(item.delete_time) }}删除</div>
+                      <div class="size">{{ formatFileSize(item.total_space) }}</div>
+                    </div>
+                  </div>
+                </template>
+                <div v-else class="empty">
+                  <el-empty :image-size="120" description="暂无数据" />
                 </div>
-                <div class="handle-item">
-                  <img class="icon" src="@renderer/assets/del-icon.png" alt="" />
-                  永久删除
+              </div>
+              <div v-if="activeTab == '2'" class="list-box">
+                <template v-if="list.length">
+                  <div
+                    v-for="item in list"
+                    :key="item.id + activeTab"
+                    class="list-item"
+                    @contextmenu="showContextMenu(item, $event)"
+                  >
+                    <img class="left-icon" src="@renderer/assets/file-icon1.png" alt="" />
+                    <div class="center-box">
+                      <div class="title">{{ item.title }}</div>
+                      <div class="desc desc1">{{ item.original_path }}</div>
+                      <div class="author">
+                        {{ item.user_name || ''
+                        }}{{ item.user_dept ? '(' + item.user_dept + ')' : '' }}
+                      </div>
+                    </div>
+                    <div class="time-box">
+                      <div class="time">{{ formatTimeFun(item.delete_time) }}删除</div>
+                      <div class="size">{{ formatFileSize(item.file_space) }}</div>
+                    </div>
+                  </div>
+                </template>
+                <div v-else class="empty">
+                  <el-empty :image-size="120" description="暂无数据" />
                 </div>
               </div>
-            </el-popover>
-          </div>
-        </div>
-        <div v-if="activeTab == '2'" class="repository-box">
-          <div class="list-box">
-            <div v-for="item in list" :key="item" class="list-item">
-              <img class="left-icon" src="@renderer/assets/file-icon1.png" alt="" />
-              <div class="center-box">
-                <div class="title">产品技术要求V2.3.pdf</div>
-                <div class="desc desc1">/项目文件/ABC项目/技术文档/产品技术要求</div>
-                <div class="author">张研究员（临床注册部）</div>
-              </div>
-              <div class="time-box">
-                <div class="time">2天前删除</div>
-                <div class="size">2.4MB</div>
-              </div>
-            </div>
-          </div>
+            </template>
+          </el-skeleton>
         </div>
       </div>
     </div>
@@ -92,17 +135,27 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="clearRecycled = false">取消</el-button>
-          <el-button class="confirm-btn" type="primary" @click="clearRecycled = false">
-            确定
-          </el-button>
+          <el-button class="confirm-btn" type="primary" @click="confirmClear"> 确定 </el-button>
         </div>
       </template>
     </el-dialog>
+    <HandleContextMenu
+      :show="contextMenu.show"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      :permission-type="contextMenu.permission_type"
+      :action-sheet="contextMenu.actionSheet"
+      @action="handleContextMenuAction"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { get_know_list, get_file_list, restore, clean_all, clean_one } from '@renderer/api/Recycled'
+import { formatTime } from '@renderer/utils/index.js'
+import restoreIcon from '@renderer/assets/restore-icon.png'
+import delIcon from '@renderer/assets/del-icon.png'
 let tabs = ref([
   {
     id: '1',
@@ -114,16 +167,158 @@ let tabs = ref([
   }
 ])
 let activeTab = ref('1')
+let pagination = ref({
+  page: 1,
+  page_size: 10,
+  total: 0
+})
+const formatTimeFun = (time) => {
+  return formatTime(time)
+}
+let loading = ref(true)
 const tabHandle = (id) => {
   activeTab.value = id
+  pagination.value = {
+    page: 1,
+    page_size: 10,
+    total: 0
+  }
+  list.value = []
+  getList()
 }
-let dateValue = ref([])
-const list = ref(Array(6))
+const list = ref([])
+const activeItem = ref({})
 let clearRecycled = ref(false)
 let beforeClearChange = () => {
   clearRecycled.value = true
 }
-onMounted(() => {})
+// 刷新
+const refresh = () => {
+  pagination.value = {
+    page: 1,
+    page_size: 10,
+    total: 0
+  }
+  list.value = []
+  getList()
+}
+const confirmClear = () => {
+  clean_all().then((res) => {
+    if (res.code == 200) {
+      clearRecycled.value = false
+      // eslint-disable-next-line no-undef
+      ElMessage.success('清空回收站成功')
+      refresh()
+    }
+  })
+}
+const getList = (load = true) => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size
+  }
+  loading.value = load
+  if (activeTab.value == '1') {
+    get_know_list(data)
+      .then((res) => {
+        if (res.code == 200) {
+          list.value = list.value.concat(res.data.data)
+          pagination.value.total = res.data.total
+          pagination.value.page = res.data.current_page
+          pagination.value.page_size = res.data.per_page
+        }
+      })
+      .finally(() => {
+        loading.value = false
+      })
+  } else if (activeTab.value == '2') {
+    get_file_list(data)
+      .then((res) => {
+        if (res.code == 200) {
+          list.value = list.value.concat(res.data.data)
+          pagination.value.total = res.data.total
+          pagination.value.page = res.data.current_page
+          pagination.value.page_size = res.data.per_page
+        }
+      })
+      .finally(() => {
+        loading.value = false
+      })
+  }
+}
+const contextMenu = ref({ show: true, x: 0, y: 0, actionSheet: [] })
+// 右键菜单相关函数
+const showContextMenu = (item, e) => {
+  activeItem.value = item
+  contextMenu.value = {
+    show: true,
+    permission_type: 'cannotView',
+    x: e.clientX,
+    y: e.clientY,
+    actionSheet: [
+      {
+        name: '一键还原',
+        icon: restoreIcon,
+        action: 'restore'
+      },
+      {
+        name: '永久删除',
+        icon: delIcon,
+        action: 'del'
+      }
+    ]
+  }
+}
+const handleContextMenuAction = ({ action }) => {
+  if (action === 'restore') {
+    // 一键还原
+    restore({ ids: [activeItem.value.recycle_id] }).then((res) => {
+      if (res.code == 200) {
+        // eslint-disable-next-line no-undef
+        ElMessage.success('一键还原成功')
+        refresh()
+      }
+    })
+  } else if (action === 'del') {
+    // 永久删除
+    clean_one({ recycle_id: activeItem.value.recycle_id }).then((res) => {
+      if (res.code == 200) {
+        // eslint-disable-next-line no-undef
+        ElMessage.success('永久删除成功')
+        refresh()
+      }
+    })
+  }
+  // contextMenu.value.show = false
+}
+const loadData = () => {
+  if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
+    return
+  }
+  pagination.value.page++
+  getList(false)
+}
+const hideContextMenu = (e) => {
+  if (contextMenu.value.show && !e.target.closest('.context-menu')) {
+    contextMenu.value.show = false
+  }
+}
+const formatFileSize = (kb) => {
+  if (!kb) return '0 KB'
+  if (kb < 1024) {
+    return kb + ' KB'
+  } else if (kb < 1024 * 1024) {
+    return (kb / 1024).toFixed(2) + ' MB'
+  } else if (kb < 1024 * 1024 * 1024) {
+    return (kb / (1024 * 1024)).toFixed(2) + ' GB'
+  } else {
+    return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
+  }
+}
+onMounted(() => {
+  document.addEventListener('click', hideContextMenu)
+  refresh()
+})
 </script>
 
 <style scoped lang="scss">
@@ -249,37 +444,17 @@ onMounted(() => {})
         border-radius: 12px;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
-
-        .head {
-          flex-shrink: 0;
-          padding-top: 20px;
-          margin-bottom: 10px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-
-          .search-box {
-            .search-input {
-              :deep(.el-input__wrapper) {
-                background: #fff;
-                border-radius: 20px;
-                width: 280px;
-                padding-left: 20px;
-                font-size: 14px;
-
-                .el-input__inner {
-                  color: var(--default-font-color);
-                  height: 32px;
-                }
-              }
-            }
-          }
-        }
-
+        overflow-y: auto;
         .list-box {
-          overflow-y: auto;
-
+          // overflow-y: auto;
+          .empty {
+            padding-top: 80px;
+            height: 460px;
+            font-size: 13px;
+            text-align: center;
+            line-height: 20px;
+            color: #909090;
+          }
           &::-webkit-scrollbar {
             width: 4px;
             height: 4px;
@@ -399,13 +574,13 @@ onMounted(() => {})
         align-items: center;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
 
         .dialog-header-del-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
       }
 

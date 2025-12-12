@@ -19,39 +19,97 @@
           <div class="">导入内容</div>
         </div>
         <div class="head-right">
-          <el-input class="search-input" clearable placeholder="搜索"></el-input>
+          <el-input
+            v-model="searchText"
+            class="search-input"
+            clearable
+            placeholder="搜索"
+            @change="refreshList"
+          ></el-input>
           <el-icon class="close-icon" @click="close"><Close /></el-icon>
         </div>
       </template>
       <div class="online-file-box">
         <div class="path-box">
           <div class="history-btns">
-            <el-icon class="icon"><Back /></el-icon>
+            <el-icon
+              class="icon"
+              :style="{
+                cursor: pathList.length > 1 ? 'pointer' : 'not-allowed',
+                color: pathList.length > 1 ? 'var(--default-font-color)' : '#ccc'
+              }"
+              @click="backPath"
+              ><Back
+            /></el-icon>
             <el-icon class="icon"><Right /></el-icon>
             <el-divider direction="vertical" />
           </div>
           <div class="path">
-            <span
-              v-for="(item, index) in pathlist"
+            <div
+              v-for="(item, index) in pathList"
               :key="item.id"
               class="path-item"
-              :class="{ active: index === pathlist.length - 1 }"
-              >{{ item.name }}
-              <el-icon v-if="index !== pathlist.length - 1" class="icon"><ArrowRight /></el-icon>
-            </span>
+              :class="{ active: index === pathList.length - 1 }"
+              @click="pathChange(index)"
+            >
+              <el-icon v-if="index != 0" class="icon"><ArrowRight /></el-icon>
+              {{ item.title }}
+            </div>
           </div>
         </div>
         <div class="file-list">
-          <div v-for="item in props.files" :key="item.id" class="file-item">
-            <el-checkbox v-model="item.checked" class="check" />
-            <div class="item-content">
-              <div class="content-left">
-                <img :src="item.cover" alt="" />
-                <div class="title">{{ item.name }}</div>
-              </div>
-              <div class="type">{{ item.type.toUpperCase() }}</div>
-            </div>
-          </div>
+          <el-skeleton :loading="loading" animated :throttle="{ leading: 500, initVal: true }">
+            <template #template>
+              <el-skeleton-item v-for="i in 6" :key="i" variant="text" style="margin: 10px 0" />
+            </template>
+            <template #default>
+              <template v-if="list.length">
+                <div
+                  v-for="(item, index) in list"
+                  :key="index + '-' + item.id"
+                  class="file-item"
+                  :class="{ active: checkedFiles.length && item.id == checkedFiles[0].id }"
+                  @click="handleCheckChange(item, !item.checked)"
+                >
+                  <el-checkbox
+                    v-if="item.item_type == 1"
+                    v-model="item.checked"
+                    class="check"
+                    @click.stop="() => {}"
+                  />
+                  <div class="item-content">
+                    <div class="content-left">
+                      <img v-if="item.item_type == 1" :src="item.file_icon" alt="" />
+                      <img
+                        v-else-if="item.item_type == 2"
+                        :src="item.picurl || catalogueIcon"
+                        alt=""
+                      />
+                      <img
+                        v-else-if="item.next_type == 2 && !item.is_public"
+                        :src="personageRepositoryIcon"
+                        alt=""
+                      />
+                      <img
+                        v-else-if="item.next_type == 2 && item.is_public"
+                        :src="commonRepositoryIcon"
+                        alt=""
+                      />
+                      <img
+                        v-else-if="item.next_type == 3"
+                        :src="item.picurl || defaultCover"
+                        alt=""
+                      />
+                      <div class="title">
+                        {{ item.title }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <div v-else class="empty">暂无数据</div>
+            </template>
+          </el-skeleton>
         </div>
       </div>
       <template #footer>
@@ -73,42 +131,128 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
+import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
+import defaultCover from '@renderer/assets/repository/default-cover.png'
+import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
+import { get_file_list } from '@renderer/api/index'
 const onlineFileVisible = defineModel({ type: Boolean })
-const props = defineProps({
-  files: {
-    type: Array,
-    default: () => []
-  }
-})
+const list = ref([])
 const emits = defineEmits(['submitImport'])
-let pathlist = ref([
+let pathList = ref([
   {
-    name: '知识库',
-    id: 'base',
-    level: 0
-  },
-  {
-    name: '个人知识库',
-    id: 'personal',
-    level: 1
-  },
-  {
-    name: '公共知识库',
-    id: 'public',
-    level: 1
+    title: '知识库',
+    id: 0,
+    next_type: 1
   }
 ])
+let activePath = computed(() => {
+  return pathList.value[pathList.value.length - 1]
+})
+let loading = ref(true)
+let searchText = ref('')
 // 已选择的文件数量
 const checkedFiles = computed(() => {
-  return props.files.filter((item) => item.checked)
+  return list.value.filter((item) => item.checked)
 })
 const close = () => {
   onlineFileVisible.value = false
 }
-onMounted(() => {
-  console.log(props.list, 666)
-})
+const pathChange = (i) => {
+  pathList.value = removeItemsAfterIndex(pathList.value, i)
+  nextTick(() => {
+    refreshList()
+  })
+}
+const removeItemsAfterIndex = (array, index) => {
+  if (index > -1 && index < array.length) {
+    array.splice(index + 1, array.length - index - 1)
+  }
+  return array
+}
+const handleCheckChange = (item, e) => {
+  if (item.next_type == 1 || item.next_type == 2) {
+    pathList.value.push({
+      ...item
+    })
+    refreshList()
+    return
+  } else if (item.next_type == 3) {
+    pathList.value.push({
+      ...item,
+      know_id: item.id
+    })
+    refreshList()
+    return
+  } else if (item.item_type == 2) {
+    pathList.value.push({
+      ...item,
+      know_id: activePath.value.know_id
+    })
+    refreshList()
+    return
+  }
+  item.checked = e
+}
+const refreshList = () => {
+  loading.value = true
+  list.value = []
+  var data = {
+    keyword: searchText.value
+  }
+  if (activePath.value.next_type == 1) {
+    data.type = 1
+  } else if (activePath.value.next_type == 2) {
+    data.type = 2
+    data.is_public = activePath.value.is_public
+  } else if (activePath.value.next_type == 3) {
+    data.know_id = activePath.value.know_id
+  } else {
+    data.know_id = activePath.value.know_id
+    data.parent_item_id = activePath.value.id
+  }
+  get_file_list(data)
+    .then((res) => {
+      if (res.code == 200) {
+        list.value = res.data || []
+        loading.value = false
+      }
+    })
+    .finally(() => {
+      loading.value = false
+    })
+}
+// 点击返回
+const backPath = () => {
+  if (activePath.value.level == 0) {
+    return
+  }
+  pathList.value.pop()
+  refreshList()
+}
+watch(
+  () => onlineFileVisible.value,
+  (newVal) => {
+    if (newVal) {
+      refreshList()
+    } else {
+      pathList.value = [
+        {
+          title: '知识库',
+          id: 0,
+          level: 0
+        }
+      ]
+      list.value = []
+      searchText.value = ''
+    }
+  },
+  {
+    immediate: true
+  }
+)
+onMounted(() => {})
 // 提交
 const submitImport = () => {
   emits('submitImport', checkedFiles.value)
@@ -128,7 +272,7 @@ const submitImport = () => {
         justify-content: space-between;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
         .head-left {
@@ -136,8 +280,8 @@ const submitImport = () => {
           align-items: center;
           gap: 10px;
           .dialog-header-del-icon {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
           }
         }
         .head-right {
@@ -223,6 +367,12 @@ const submitImport = () => {
             padding: 10px 20px;
             height: 316px;
             overflow-y: auto;
+            .empty {
+              text-align: center;
+              font-size: 13px;
+              line-height: 220px;
+              color: #909090;
+            }
             .file-item {
               overflow: hidden;
               width: 100%;

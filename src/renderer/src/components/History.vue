@@ -4,7 +4,7 @@
       <div class="page-title-box">
         <div class="page-title">历史记录</div>
         <div class="right-head-box">
-          <div class="filter-box">
+          <div class="filter-box" @click="refresh">
             <img class="filter-icon" src="@renderer/assets/refresh-icon.png" alt="" />
             刷新
           </div>
@@ -23,61 +23,99 @@
         </div>
       </div>
       <div class="content-box">
-        <div v-if="activeTab == '1'" class="repository-box">
-          <div class="list-box">
-            <div class="list-item">
-              <img class="left-icon" src="@renderer/assets/answers-icon.png" alt="" />
-              <div class="center-box">
-                <div class="title">医疗器械注册申报需要准备哪些材料？</div>
-                <div class="desc">
-                  医疗器械注册申报需要准备产品技术需求，、临床评价资料、风险管理资料、产品检验报告等核心材料，具体根据产品分类和注册路径有所不同
-                </div>
-                <div class="souce-box">
-                  <img class="icon" src="@renderer/assets/souce-icon.png" alt="" />
-                  来源：《医疗器械注册管理办法》第三章
-                </div>
-              </div>
-              <div class="time-box">
-                <div class="time">2025.9.10</div>
-                <div class="size">
-                  <img
-                    class="icon"
-                    src="@renderer/assets/edit-icon.png"
+        <div class="repository-box">
+          <el-skeleton :loading="loading" animated>
+            <template #template>
+              <div class="list-box">
+                <div v-for="item in 6" :key="item" class="list-item">
+                  <el-skeleton-item
+                    variant="text"
+                    class="left-icon"
+                    src="@renderer/assets/feedback-icon.png"
                     alt=""
-                    @click="beforeRenameChange"
                   />
-                  <img
-                    class="icon"
-                    src="@renderer/assets/del-icon1.png"
-                    alt=""
-                    @click="beforeDelChange"
-                  />
+                  <div class="center-box">
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 40%; display: block"
+                      class="title"
+                    ></el-skeleton-item>
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 100%; display: block"
+                      class="desc"
+                    ></el-skeleton-item>
+                  </div>
+                  <div class="time-box" style="width: 30%">
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 70%; display: block"
+                      class="time"
+                    ></el-skeleton-item>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="activeTab == '2'" class="repository-box">
-          <div class="list-box">
-            <div v-for="item in list" :key="item" class="list-item">
-              <img class="left-icon" src="@renderer/assets/webpage-icon.png" alt="" />
-              <div class="center-box">
-                <div class="title">产品技术要求V2.3.pdf</div>
-                <div class="desc desc1">/项目文件/ABC项目/技术文档/产品技术要求</div>
-              </div>
-              <div class="time-box">
-                <div class="time">2天前删除</div>
-                <div class="size">
-                  <img
-                    class="icon"
-                    src="@renderer/assets/del-icon1.png"
-                    alt=""
-                    @click="beforeDelChange"
-                  />
+            </template>
+            <template #default>
+              <div v-if="activeTab == '1'" v-infinite-scroll="loadData" class="list-box">
+                <div v-for="(item, i) in list" :key="i" class="list-item" @click="openChat(item)">
+                  <img class="left-icon" src="@renderer/assets/answers-icon.png" alt="" />
+                  <div class="center-box">
+                    <div class="title">{{ item.latest_question?.content || item.title }}</div>
+                    <div class="desc">
+                      {{ htmlToText(item.latest_answer?.content || '') }}
+                    </div>
+                    <div v-if="!Array.isArray(item.from_origin)" class="souce-box">
+                      <img class="icon" src="@renderer/assets/souce-icon.png" alt="" />
+                      来源：《{{ item.from_origin.fileName }}》
+                    </div>
+                  </div>
+                  <div class="time-box">
+                    <div class="time">{{ formatTimeFun(item.updatetime) }}</div>
+                    <div class="size">
+                      <img
+                        class="icon"
+                        src="@renderer/assets/edit-icon.png"
+                        alt=""
+                        @click="beforeRenameChange(item)"
+                      />
+                      <img
+                        class="icon"
+                        src="@renderer/assets/del-icon1.png"
+                        alt=""
+                        @click="beforeDelChange(item)"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+              <div v-if="activeTab == '2'" v-infinite-scroll="loadData" class="list-box">
+                <template v-if="list.length">
+                  <div v-for="item in list" :key="item" class="list-item" @click="openWeb(item)">
+                    <img class="left-icon" src="@renderer/assets/webpage-icon.png" alt="" />
+                    <div class="center-box">
+                      <div class="title">{{ item.title }}</div>
+                      <div class="desc desc1">{{ item.web_url }}</div>
+                    </div>
+                    <div class="time-box">
+                      <div class="time">{{ formatTimeFun(item.createtime) }}</div>
+                      <div class="size">
+                        <img
+                          class="icon"
+                          src="@renderer/assets/del-icon1.png"
+                          alt=""
+                          @click="beforeDelChange(item)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <div v-else class="empty">
+                  <el-empty :image-size="120" description="暂无数据" />
+                </div>
+              </div>
+            </template>
+          </el-skeleton>
         </div>
       </div>
     </div>
@@ -93,13 +131,15 @@
         <img class="dialog-header-del-icon" src="@renderer/assets/del-icon.png" alt="" />
         <div class="">确认清空</div>
       </template>
-      <span>您确定要清空所有问答历史记录吗？此操作将永久删除所有项目且不可撤销！</span>
+      <span
+        >您确定要清空所有{{
+          activeTab == '1' ? '问答' : '网页浏览'
+        }}历史记录吗？此操作将永久删除所有项目且不可撤销！</span
+      >
       <template #footer>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="clearHistory = false">取消</el-button>
-          <el-button class="confirm-btn" type="primary" @click="clearHistory = false">
-            确定
-          </el-button>
+          <el-button class="confirm-btn" type="primary" @click="clearChange"> 确定 </el-button>
         </div>
       </template>
     </el-dialog>
@@ -119,9 +159,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="delHistory = false">取消</el-button>
-          <el-button class="confirm-btn" type="primary" @click="delHistory = false">
-            确定
-          </el-button>
+          <el-button class="confirm-btn" type="primary" @click="delHistoryChange"> 确定 </el-button>
         </div>
       </template>
     </el-dialog>
@@ -137,7 +175,13 @@
         <img class="dialog-header-del-icon" src="@renderer/assets/rename-icon.png" alt="" />
         <div class="">重命名记录</div>
       </template>
-      <el-form ref="renameFormRef" :model="renameForm" :rules="renameRules" class="rename-form">
+      <el-form
+        ref="renameFormRef"
+        :model="renameForm"
+        :rules="renameRules"
+        class="rename-form"
+        @submit.prevent
+      >
         <el-form-item prop="renameInput" style="margin-bottom: 0">
           <el-input
             v-model="renameForm.renameInput"
@@ -160,7 +204,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { get_web_log, del_web_log, del_web_log_one } from '@renderer/api/history'
+import { formatTime } from '@renderer/utils/index.js'
+import { convertToPlainText } from '@renderer/utils/convertToPlainText'
+import { chat_lists, del_chat, del_all_chat, modifyChatHistory } from '@renderer/api/chat'
+import { ref, onMounted, inject } from 'vue'
 let tabs = ref([
   {
     id: '1',
@@ -171,42 +219,226 @@ let tabs = ref([
     name: '网页浏览历史'
   }
 ])
+let addNewTab = inject('addNewTab')
+const openWeb = (item) => {
+  addNewTab({
+    title: item.title,
+    url: item.web_url,
+    isInternal: false
+  })
+}
+const openChat = (item) => {
+  if (item.chat_type == 1) {
+    addNewTab({
+      title: item.title,
+      url: 'HomePage',
+      isInternal: true,
+      attrs: {
+        chat_key: item.chat_key
+      }
+    })
+  } else if (item.chat_type == 4) {
+    addNewTab({
+      title: item.title,
+      url: 'ImageProductionChat',
+      isInternal: true,
+      attrs: {
+        chat_key: item.chat_key
+      }
+    })
+  } else if (item.chat_type == 5) {
+    addNewTab({
+      title: item.title,
+      url: 'IntelligentWritingChat',
+      isInternal: true,
+      attrs: {
+        chat_key: item.chat_key
+      }
+    })
+  } else if (item.chat_type == 6) {
+    addNewTab({
+      title: item.title,
+      url: 'ChatPage',
+      isInternal: true,
+      attrs: {
+        chat_key: item.chat_key
+      }
+    })
+  }
+
+}
+let loading = ref(true)
 let activeTab = ref('1')
+let pagination = ref({
+  page: 1,
+  page_size: 10,
+  total: 0
+})
+const formatTimeFun = (time) => {
+  return formatTime(time)
+}
+const htmlToText = (html) => {
+  return convertToPlainText(html, { maxLength: 100 })
+}
+const refresh = () => {
+  pagination.value = {
+    page: 1,
+    page_size: 10,
+    total: 0
+  }
+  list.value = []
+  getList()
+}
 const tabHandle = (id) => {
   activeTab.value = id
+  pagination.value = {
+    page: 1,
+    page_size: 10,
+    total: 0
+  }
+  list.value = []
+  getList()
 }
-const list = ref(Array(6))
+const list = ref([])
 let clearHistory = ref(false)
 let beforeClearChange = () => {
   clearHistory.value = true
 }
+const loadData = () => {
+  if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
+    return
+  }
+  pagination.value.page++
+  getList(false)
+}
+const getList = (load = true) => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size
+  }
+  loading.value = load
+  if (activeTab.value == '1') {
+    chat_lists(data)
+      .then((res) => {
+        if (res.code == 200) {
+          list.value = list.value.concat(res.data.data)
+          pagination.value.total = res.data.total
+          pagination.value.page = res.data.current_page
+          pagination.value.page_size = res.data.per_page
+        }
+      })
+      .finally(() => {
+        loading.value = false
+      })
+  } else if (activeTab.value == '2') {
+    get_web_log(data)
+      .then((res) => {
+        if (res.code == 200) {
+          list.value = list.value.concat(res.data.data)
+          pagination.value.total = res.data.total
+          pagination.value.page = res.data.current_page
+          pagination.value.page_size = res.data.per_page
+        }
+      })
+      .finally(() => {
+        loading.value = false
+      })
+  }
+}
 let delHistory = ref(false)
-let beforeDelChange = () => {
+let delItem = ref({})
+let beforeDelChange = (item) => {
   delHistory.value = true
+  delItem.value = {
+    chat_key: item.chat_key || '',
+    log_id: item.id
+  }
+}
+// 删除单条对话或历史浏览记录
+let delHistoryChange = () => {
+  if (activeTab.value == '1') {
+    del_chat({ chat_key: delItem.value.chat_key }).then((res) => {
+      if (res.code == 200) {
+        delHistory.value = false
+        tabHandle('1')
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('删除成功')
+      }
+    })
+  } else if (activeTab.value == '2') {
+    del_web_log_one({ log_id: delItem.value.log_id }).then((res) => {
+      if (res.code == 200) {
+        delHistory.value = false
+        tabHandle('2')
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('删除成功')
+      }
+    })
+  }
+}
+// 清空所有对话或历史浏览记录
+let clearChange = () => {
+  if (activeTab.value == '1') {
+    del_all_chat().then((res) => {
+      if (res.code == 200) {
+        clearHistory.value = false
+        tabHandle('1')
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('清空成功')
+      }
+    })
+  } else if (activeTab.value == '2') {
+    del_web_log().then((res) => {
+      if (res.code == 200) {
+        clearHistory.value = false
+        tabHandle('2')
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('清空成功')
+      }
+    })
+  }
 }
 let renameHistory = ref(false)
-let beforeRenameChange = () => {
+let renameItem = ref({})
+let beforeRenameChange = (item) => {
+  renameForm.value.renameInput = item.latest_question?.content || ''
+  renameForm.value.chat_words_id = item.latest_question?.id || ''
   renameHistory.value = true
+  renameItem.value = item
 }
 let renameForm = ref({
-  renameInput: ''
+  renameInput: '',
+  chat_words_id: ''
 })
 let renameRules = ref({
   renameInput: [{ required: true, message: '请输入新名称', trigger: 'blur' }]
 })
 let renameFormRef = ref(null)
 const submitRenameForm = (FormRef) => {
-console.log(FormRef);
+  console.log(FormRef)
 
   FormRef.validate((valid) => {
     if (valid) {
-      console.log('表单验证通过')
+      modifyChatHistory({
+        chat_words_id: renameForm.value.chat_words_id,
+        content: renameForm.value.renameInput
+      }).then((res) => {
+        if (res.code == 200) {
+          renameItem.value.latest_question.content = renameForm.value.renameInput
+          renameHistory.value = false
+          // tabHandle('1')
+          // eslint-disable-next-line no-undef
+          ElMessage.primary('修改成功')
+        }
+      })
     } else {
       console.log('表单验证失败')
     }
   })
 }
-onMounted(() => {})
+onMounted(() => {
+  getList()
+})
 </script>
 
 <style scoped lang="scss">
@@ -376,7 +608,14 @@ onMounted(() => {})
               background-color: #909090;
             }
           }
-
+          .empty {
+            padding-top: 80px;
+            height: 425px;
+            font-size: 13px;
+            text-align: center;
+            line-height: 20px;
+            color: #909090;
+          }
           .list-item {
             padding: 20px 0;
             border-bottom: 1px solid #f0f0f0;
@@ -507,13 +746,13 @@ onMounted(() => {})
         align-items: center;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
 
         .dialog-header-del-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
       }
 

@@ -1,5 +1,5 @@
 <template>
-  <div :class="{ focus: focus || fileList.length }" class="message-input" @click="focusChange">
+  <div :class="{ focus: focus || fileList.length }" class="message-input" @click.stop="focusChange">
     <div ref="inputWrapper" class="input-wrapper" @click.stop="focusChange">
       <div
         v-if="fileList.length"
@@ -22,13 +22,15 @@
               alt=""
               @click.stop="clearAttach(index)"
             />
-            <img class="attached-icon" src="@renderer/assets/attached-icon.png" alt="" />
+            <img class="attached-icon" :src="getFileIcon(item)" alt="" />
             <div class="attached-content">
               <div class="attach-name">
-                {{ item.name }}
+                {{ item.title }}
               </div>
               <div class="attach-type">
-                <span class="file-extension">{{ getFileExtension(item.type).toUpperCase() }}</span>
+                <span class="file-extension">{{
+                  item.title?.split('.').pop()?.toUpperCase()
+                }}</span>
                 <!-- <span class="file-size">{{ formatFileSize(item.size) }}</span> -->
               </div>
             </div>
@@ -52,6 +54,9 @@
           placeholder="@知识库或直接提问"
           type="textarea"
           :options="mentionOptions"
+          :whole="true"
+          @whole-remove="handleWholeRemove"
+          @select="handleMentionSelect"
           @focus="focus = true"
           @keydown.enter.prevent="sendMessage"
           @paste="handlePaste"
@@ -65,21 +70,40 @@
             size="small"
             popper-class="message-input-model-select"
             placeholder="选择模型"
+            @change="selectModel"
           >
-            <el-option v-for="item in cities" :key="item.value" :value="item.value">
-              <div class="value-text">{{ item.value }}</div>
-              <div class="value-label">{{ item.label }}</div>
+            <el-option
+              v-for="item in models"
+              :key="item.model_name + '/' + item.provider_key + '/' + item.id"
+              :label="item.model_name"
+              :value="
+                item.model_name + '/' + item.provider_key + '/' + item.id + '/' + item.net_status
+              "
+            >
+              <div class="value-text">{{ item.model_name }}</div>
+              <div class="value-label">{{ item.desc }}</div>
             </el-option>
           </el-select>
-          <div class="line"></div>
-          <div class="networking" :class="{ 'is-network': isNetwork }" @click.stop="networkChange">
-            联网
-            <div class="circle-icon"></div>
-          </div>
+          <template v-if="modelInfo.net_status == 1">
+            <div class="line"></div>
+            <div
+              class="networking"
+              :class="{ 'is-network': modelInfo.isNetwork }"
+              @click.stop="networkChange"
+            >
+              联网
+              <div class="circle-icon"></div>
+            </div>
+          </template>
           <div class="histore-issue-box">
-            <div v-for="(item, index) in historyIssueList" :key="index" class="issue-item">
-              <img class="issue-img" :src="item.icon" alt="" />
-              <div class="issue-text">{{ item.label }}</div>
+            <div
+              v-for="(item, index) in KnowledgeBase"
+              :key="index"
+              class="issue-item"
+              @click.stop="handleKnowledge(item)"
+            >
+              <img class="issue-img" :src="item.picurl || defaultCover" alt="" />
+              <div class="issue-text">{{ item.title }}</div>
             </div>
           </div>
         </div>
@@ -93,7 +117,6 @@
               name="file[]"
               :disabled="isChatting"
               :show-file-list="false"
-              :on-change="handleFileChange"
               :http-request="customUpload"
               :multiple="true"
               accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
@@ -116,33 +139,10 @@
               @click="screenshot"
             />
           </el-tooltip>
-          <!-- <div class="line"></div> -->
-          <!-- <el-button
-            v-if="!isChatting"
-            type="primary"
-            size="large"
-            :disabled="soldOut || isChatting"
-            class="enter-btn"
-            @click="sendMessage"
-          >
-            <img class="btn-icon" src="@renderer/assets/up-icon.png" alt="" />
-          </el-button>
-          <div v-else class="stop-btn-box">
-            <el-tooltip class="item" effect="dark" content="停止回答" placement="top">
-              <el-button
-                type="primary"
-                :disabled="soldOut"
-                class="enter-btn stop-btn"
-                @click="stopChat"
-              >
-                <span class="stop-icon"> </span>
-              </el-button>
-            </el-tooltip>
-          </div> -->
         </div>
       </div>
     </div>
-    <div v-if="!focus" class="menu-box">
+    <div v-if="!focus && !fileList.length" class="menu-box">
       <div
         v-for="(item, index) in menuList"
         :key="index"
@@ -153,13 +153,13 @@
         <div class="text">{{ item.title }}</div>
       </div>
     </div>
-    <div v-if="focus" class="common-issue">
-      <div class="common-issue-title">问问知识库</div>
+    <div v-if="focus || fileList.length" class="common-issue">
+      <div v-show="historyIssueList.length" class="common-issue-title">问问知识库</div>
       <div class="common-issue-content">
         <div v-for="(item, index) in historyIssueList" :key="index" class="common-issue-item">
           <div class="issue-item-left">
-            <img class="issue-img" :src="item.icon" alt="" />
-            <div class="issue-text">{{ item.label }}</div>
+            <img class="issue-img" :src="item.picurl || defaultCover" alt="" />
+            <div class="issue-text">{{ item.title }}</div>
           </div>
           <el-icon class="issue-item-right"><ArrowRight /></el-icon>
         </div>
@@ -175,8 +175,8 @@
   </div>
 </template>
 <script>
-import modelIcon from '@renderer/assets/modelSelected.png'
-import repositoryIcon from '@renderer/assets/repositorySelected.png'
+import defaultCover from '@renderer/assets/repository/default-cover.png'
+import cloneDeep from 'lodash.clonedeep'
 import knowledgeBaseSquareIcon from '@renderer/assets/home/knowledgeBaseSquare-icon.png'
 import documentInterpretationIcon from '@renderer/assets/home/documentInterpretation-icon.png'
 import updateNotificationIcon from '@renderer/assets/home/updateNotification-icon.png'
@@ -184,113 +184,32 @@ import quickAccessIcon from '@renderer/assets/home/quickAccess-icon.png'
 import imageProductionIcon from '@renderer/assets/home/imageProduction-icon.png'
 import IntelligentWritingIcon from '@renderer/assets/home/intelligentWriting-icon.png'
 import { useCheckLogin } from '@renderer/hooks/checkLogin'
+import { useUserStore } from '@renderer/stores/user'
+import { get_user_knows } from '@renderer/api/chat'
+import { get_index_question, commonly_used_knows, get_type_models } from '@renderer/api/repository'
+import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
+import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
+import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
+import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
+import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
+import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 export default {
   name: 'MessageInput',
-  inject: ['addNewTab'],
-  props: {
-    // eslint-disable-next-line vue/prop-name-casing
-    attach_file: {
-      type: Array,
-      default: () => []
-    },
-    models: {
-      type: Array,
-      default: () => []
-    },
-    // eslint-disable-next-line vue/prop-name-casing
-    model_id: {
-      type: [Number, String],
-      default: ''
-    },
-    // eslint-disable-next-line vue/prop-name-casing
-    knowledge_ids: {
-      type: [Number, String],
-      default: ''
-    },
-    sourceKnows: {
-      type: Array,
-      default: () => []
-    },
-    //是否正在对话
-    isChatting: {
-      type: Boolean,
-      default: false
-    }
-  },
-  emits: ['stopChat', 'selectModel', 'selectLibrary', 'uploadedAttachment', 'send'],
+  inject: ['addNewTab', 'replaceActiveTab'],
   data() {
     return {
-      modelTempId: '',
-      knowledge_id: '',
+      isChatting: false,
+      defaultCover,
       message: { text: '', image: '' },
-      showModel: false,
-      showRepository: false,
-      ossUpload: import.meta.env.VITE_BASE_URL + '/intelligence/upload_attach',
-      token: '',
-      firsetType: [
-        {
-          name: '选模型',
-          icon: modelIcon,
-          type: 'model',
-          modelList: []
-        },
-        {
-          name: '知识库',
-          icon: repositoryIcon,
-          type: 'repository',
-          libraryList: []
-        }
-      ],
       loading: false,
       uniacid: 2,
       focus: false,
       modelValue: undefined,
-      cities: [
-        {
-          value: 'DS V3.1-Think',
-          label: 'DeepSeek更快深度推理(最新)'
-        },
-        {
-          value: 'DeepSeek V3.1',
-          label: '多种场景回答更精炼(最新)'
-        },
-        {
-          value: 'DeepSeek',
-          label: 'V3适用多种应用场景'
-        },
-        {
-          value: 'DeepSeek R1',
-          label: '深度思考推理'
-        },
-        {
-          value: 'Hunyuan',
-          label: '适合大部分任务'
-        }
-      ],
-      historyIssueList: [
-        {
-          icon: modelIcon,
-          label: '长安投研【持续更新】近期投资需注意规避的风险'
-        },
-        {
-          icon: modelIcon,
-          label: '长安投研【持续更新】近期投资需注意规避的风险'
-        },
-        {
-          icon: modelIcon,
-          label: '长安投研【持续更新】近期投资需注意规避的风险'
-        }
-      ],
-      mentionOptions: [
-        {
-          value: '知识库',
-          label: '知识库'
-        },
-        {
-          value: '问题',
-          label: '问题'
-        }
-      ],
+      models: [],
+      modelInfo: {},
+      historyIssueList: [],
+      KnowledgeBase: [],
+      mentionOptions: [],
       menuList: [
         {
           url: 'Square',
@@ -334,90 +253,11 @@ export default {
       showPrevBtn: false,
       showNextBtn: false,
       isHoveringAttachBox: false,
-      isNetwork: false
-    }
-  },
-  computed: {
-    modelList() {
-      var list = []
-      this.models.map((item) => {
-        item.models.map((item) => {
-          list.push(item)
-        })
-      })
-      return list
-    }
-  },
-  watch: {
-    models(val) {
-      if (val.length) {
-        this.firsetType[0].modelList = val
-      }
-    },
-    sourceKnows(val) {
-      if (val.length) {
-        this.firsetType[1].libraryList = val
-      } else {
-        this.firsetType[1].libraryList = []
-      }
-      if (this.knowledge_id) {
-        var behalf = [this.knowledge_id.split(',')[0]]
-        this.firsetType[1].libraryList.forEach((item) => {
-          item.knows.map((childrenItem) => {
-            if (behalf.includes(childrenItem.id + '')) {
-              this.firsetType[1].name = childrenItem.title + '...'
-            }
-          })
-        })
-      } else {
-        this.firsetType[1].name = '知识库'
-      }
-    },
-    model_id(val) {
-      this.modelTempId = val
-      this.modelList.forEach((item) => {
-        if (item.id == val) {
-          this.firsetType[0].name = item.title
-        }
-      })
-    },
-    knowledge_ids(val) {
-      this.knowledge_id = val + ''
-      if (val) {
-        var behalf = [val.split(',')[0]]
-        this.firsetType[1].libraryList.forEach((item) => {
-          item.knows.map((childrenItem) => {
-            if (behalf.includes(childrenItem.id + '')) {
-              this.firsetType[1].name = childrenItem.title + '...'
-            }
-          })
-        })
-      } else {
-        this.firsetType[1].name = '知识库'
-      }
+      mentioned: []
     }
   },
   mounted() {
-    this.modelTempId = this.model_id
-    this.modelList.forEach((item) => {
-      if (item.id == this.modelTempId) {
-        this.firsetType[0].name = item.title
-      }
-    })
-    this.knowledge_id = this.knowledge_ids
-    if (this.knowledge_id) {
-      var behalf = [this.knowledge_id.split(',')[0]]
-      this.firsetType[1].libraryList.forEach((item) => {
-        item.knows.map((childrenItem) => {
-          if (behalf.includes(childrenItem.id + '')) {
-            this.firsetType[1].name = childrenItem.title + '...'
-          }
-        })
-      })
-    } else {
-      this.firsetType[1].name = '知识库'
-    }
-    this.setupScreenshotListeners()
+    // this.setupScreenshotListeners()
     this.$watch(
       'fileList',
       () => {
@@ -427,11 +267,112 @@ export default {
       },
       { deep: true }
     )
+    this.getModels()
+    this.getKnows()
+    this.getQuestions()
+    this.getKnowledgeList()
   },
   beforeUnmount() {
     // 移除事件监听
   },
   methods: {
+    handleWholeRemove(e) {
+      // 匹配提及内容并删除
+      var reg = new RegExp('@' + e, 'g')
+      this.message.text = this.message.text.replace(reg, '')
+      this.mentioned = this.mentioned.filter((item) => item.label !== e)
+    },
+    handleKnowledge(item) {
+      this.message.text += '@' + item.title + ' '
+      var obj = {
+        know_key: item.know_key,
+        label: item.title,
+        value: item.title,
+        model_name: item.vector_model?.model_name || '',
+        provider_key: item.vector_model?.provider_key || ''
+      }
+      this.mentioned.push(obj)
+    },
+    handleMentionSelect(item) {
+      this.mentioned.push(item)
+    },
+    // 获取文件图标
+    getFileIcon(item) {
+      // 根据文件扩展名返回不同的图标
+      const ext = item.title?.split('.').pop()?.toLowerCase()
+      const iconMap = {
+        doc: wordIcon,
+        docx: wordIcon,
+        pdf: pdfIcon,
+        xls: excelIcon,
+        xlsx: excelIcon,
+        ppt: pptIcon,
+        pptx: pptIcon,
+        txt: txtIcon,
+        png: imgIcon,
+        jpg: imgIcon,
+        jpeg: imgIcon,
+        gif: imgIcon
+      }
+
+      return iconMap[ext] || wordIcon
+    },
+    getModels() {
+      get_type_models({ model_type: 'reasoning', t: new Date().getTime() }).then((res) => {
+        this.models = res.data
+        if (this.models.length) {
+          this.modelValue =
+            this.models[0].model_name +
+            '/' +
+            this.models[0].provider_key +
+            '/' +
+            this.models[0].id +
+            '/' +
+            this.models[0].net_status
+          this.modelInfo = {
+            model_name: this.models[0].model_name,
+            provider_key: this.models[0].provider_key,
+            model_id: this.models[0].id,
+            net_status: this.models[0].net_status,
+            isNetwork: false
+          }
+          if (this.modelInfo.net_status == 2) {
+            this.modelInfo.isNetwork = false
+          }
+        }
+      })
+    },
+    getQuestions() {
+      get_index_question({ t: new Date().getTime() }).then((res) => {
+        this.historyIssueList = res.data || []
+      })
+    },
+    getKnowledgeList() {
+      commonly_used_knows({ t: new Date().getTime() }).then((res) => {
+        if (res.data.length) {
+          this.KnowledgeBase = res.data || []
+        }
+      })
+    },
+    getKnows() {
+      get_user_knows({ t: new Date().getTime() }).then((res) => {
+        var list = []
+        if (res.data.length) {
+          res.data.map((item) => {
+            item.knows.map((children) => {
+              list.push({
+                value: children.title,
+                know_key: children.know_key,
+                label: children.title,
+                model_name: children.vector_model?.model_name || '',
+                provider_key: children.vector_model?.provider_key || ''
+              })
+            })
+          })
+        }
+        this.mentionOptions = list
+      })
+    },
     closeMenu() {
       this.activeMenu = ''
     },
@@ -450,7 +391,7 @@ export default {
     },
     // 是否联网
     networkChange() {
-      this.isNetwork = !this.isNetwork
+      this.modelInfo.isNetwork = !this.modelInfo.isNetwork
     },
     // 更新滚动按钮显示状态
     updateScrollButtons() {
@@ -538,103 +479,65 @@ export default {
       }
     },
     // 自定义上传逻辑
-    customUpload(options) {
-      console.log(options, 88888)
-      return
-      // const xhr = new XMLHttpRequest()
-      // const formData = new FormData()
-      // formData.append('file[]', options.file)
-      // var otherParams = {
-      //   type: 'file',
-      //   uniacid: this.uniacid
-      // }
-      // // 添加其他参数到formData
-      // for (const key in otherParams) {
-      //   formData.append(key, otherParams[key])
-      // }
-
-      // xhr.open('POST', this.aiFileUpload, true)
-
-      // // 设置请求头
-      // xhr.setRequestHeader('Authorization', this.importHeader.token)
-      // xhr.upload.addEventListener('progress', (event) => {
-      //   if (event.lengthComputable) {
-      //     const percent = (event.loaded / event.total) * 100
-      //     this.handleUploadProgress({ percent }, options.file, this.fileList)
-      //   }
-      // })
-
-      // xhr.addEventListener('load', () => {
-      //   var response = JSON.parse(xhr.response)
-      //   if (xhr.status == 200 && response.code == 200) {
-      //     this.handleUploadSuccess(response, options.file, this.fileList)
-      //   } else {
-      //     this.handleUploadError(response, options.file, this.fileList)
-      //   }
-      // })
-
-      // xhr.addEventListener('error', (err) => {
-      //   this.handleUploadError(err, options.file, this.fileList)
-      // })
-
-      // xhr.send(formData)
-    },
-    handleFileChange(file, fileListArr) {
-      fileListArr.forEach((f) => {
-        if (!f.progress) f.progress = 0
-        if (!f.status) f.status = 'pending'
-        if (!f.serial_key) f.serial_key = ''
-        if (!f.is_zy_success) f.is_zy_success = 0
-      })
-      this.fileList = fileListArr
-    },
-    handleUploadProgress(event, file) {
-      const targetFile = this.fileList.find((f) => f.uid === file.uid)
-      if (targetFile) {
-        targetFile.status = 'uploading'
-        targetFile.progress = Math.floor(event.percent)
-      }
-    },
-    handleUploadSuccess(response, file) {
-      const targetFile = this.fileList.find((f) => f.uid === file.uid)
-      if (targetFile) {
-        targetFile.status = 'success'
-        targetFile.progress = 100
-        targetFile.serial_key = response.data[0]
-      }
-      this.$refs.fileList.scrollTo(0, this.$refs.fileList.scrollHeight)
+    // 自定义上传逻辑
+    customUpload(fileItem) {
+      const userStore = useUserStore()
       // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'primary',
-        message: '上传成功'
+      let loadcontext = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(0, 0, 0, 0.3)',
+        customClass: 'upload-loading'
       })
-    },
+      const formData = new FormData()
+      formData.append('uniacid', userStore.uniacid)
+      formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
+      const xhr = new XMLHttpRequest()
 
-    // 处理上传失败事件
-    handleUploadError(error, file) {
-      const i = this.fileList.findIndex((f) => f.uid === file.uid)
-      // if (targetFile) {
-      //   targetFile.status = "error";
-      //   targetFile.progress = 0;
-      // }
-      if (i !== -1) {
-        this.fileList.splice(i, 1)
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 100
+          fileItem.progress = Math.round(progress)
+        }
       }
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'error',
-        message: error.msg || '上传失败'
-      })
+
+      xhr.onload = () => {
+        loadcontext.close()
+        let response = JSON.parse(xhr.response)
+        if (xhr.status == 200 && response.code == 200) {
+          var uploadedFile = {
+            full_path: response.data[0].url,
+            title: response.data[0].file_name,
+            total_space: response.data[0].file_size
+          }
+          this.fileList.push(uploadedFile)
+        } else {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            message: response.msg || '上传失败',
+            type: 'error'
+          })
+        }
+      }
+
+      xhr.onerror = () => {
+        loadcontext.close()
+      }
+
+      // 实际使用时需要配置正确的上传地址
+      xhr.open('POST', import.meta.env.VITE_API_BASE_URL + '/api/common/upload')
+      xhr.setRequestHeader('Authorization', userStore.token)
+      xhr.send(formData)
     },
-    formatFileSize(bytes) {
-      if (bytes < 1024) {
-        return bytes + ' B'
-      } else if (bytes < 1024 * 1024) {
-        return (bytes / 1024).toFixed(2) + ' KB'
-      } else if (bytes < 1024 * 1024 * 1024) {
-        return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+    formatFileSize(kb) {
+      if (kb < 1024) {
+        return kb + ' KB'
+      } else if (kb < 1024 * 1024) {
+        return (kb / 1024).toFixed(2) + ' MB'
+      } else if (kb < 1024 * 1024 * 1024) {
+        return (kb / (1024 * 1024)).toFixed(2) + ' GB'
       } else {
-        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+        return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
       }
     },
     // 处理图片文件
@@ -645,15 +548,8 @@ export default {
         return
       }
       var tempFile = {
-        uid: Date.now() + '-' + Math.random().toString(36).substring(2, 10),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        status: 'uploading',
-        progress: 0,
-        serial_key: ''
+        file: file
       }
-      this.fileList.push(tempFile)
       this.customUpload(tempFile)
     },
 
@@ -678,28 +574,11 @@ export default {
     },
     // 设置截图事件监听
     setupScreenshotListeners() {
-      // 截图开始事件
-      // window.customApi?.onScreenshotStart(() => {
-      //   console.log('截图开始')
-      // })
-
+      window.customApi?.removeScreenshotOk(this.handleScreenshotAsPaste)
       // 截图确定事件
-      window.customApi?.onScreenshotOk((event, data) => {
-        this.handleScreenshotAsPaste(data)
-      })
-
-      // 截图保存事件
-      // window.customApi?.onScreenshotSave((event, data) => {
-      //   console.log('收到截图保存事件:', data)
-      //   // this.handleScreenshotData(data)
-      // })
-
-      // 截图取消事件
-      // window.customApi?.onScreenshotCancel(() => {
-      //   console.log('截图已取消')
-      // })
+      window.customApi?.onScreenshotOk(this.handleScreenshotAsPaste)
     },
-    handleScreenshotAsPaste(data) {
+    handleScreenshotAsPaste(event, data) {
       try {
         // 处理截图数据并创建文件对象
         let base64String
@@ -769,66 +648,93 @@ export default {
     clearAttach(i) {
       this.fileList.splice(i, 1)
     },
-    beforeUpload() {
-      this.loading = this.$loading({
-        text: '上传中',
-        spinner: 'el-icon-loading',
-        background: 'rgba(0, 0, 0, 0.7)'
-      })
+    selectModel(e) {
+      if (e) {
+        this.modelInfo = {
+          model_name: e.split('/')[0],
+          provider_key: e.split('/')[1],
+          model_id: e.split('/')[2],
+          net_status: e.split('/')[3],
+          isNetwork: false
+        }
+        if (this.modelInfo.net_status == 2) {
+          this.modelInfo.isNetwork = false
+        }
+      }
+    },
+    checkIfSearchingMention(text) {
+      if (!text.includes('@')) return false
+      // 获取最后一个 @ 的位置
+      const lastAtIndex = text.lastIndexOf('@')
+      if (lastAtIndex === -1) return false
+      // 获取 @ 之后到文本结尾的内容
+      const afterAt = text.substring(lastAtIndex + 1)
+      // 如果 @ 后面是空字符串，返回 false
+      if (afterAt.length > 0) return false
+      // 检查 @ 后面是否有空格或换行（如果有，说明提及已结束）
+      const firstCharAfterAt = afterAt[0]
+      if (firstCharAfterAt === ' ' || firstCharAfterAt === '\n') {
+        return false
+      }
+      // 检查 @ 后面的内容是否包含空格（如果包含，说明提及已结束）
+      if (afterAt.includes(' ') || afterAt.includes('\n')) {
+        return false
+      }
       return true
-    },
-    // 暂停会话
-    stopChat() {
-      this.$emit('stopChat')
-    },
-    selectModel(model, provider_appid) {
-      this.$emit('selectModel', model, provider_appid)
-      this.closeModel('model')
-      this.$nextTick(() => {
-        this.$forceUpdate()
-      })
-    },
-    selectLibrary(item) {
-      this.$emit('selectLibrary', item)
-      this.closeModel('repository')
-    },
-    closeModel(type) {
-      if (type == 'model') {
-        this.showModel = false
-      } else if (type == 'repository') {
-        this.showRepository = false
-      }
-    },
-    showPop(type) {
-      if (this.isChatting) {
-        return false
-      }
-      if (!this.$verifyHasToken()) {
-        return false
-      }
-      if (type == 'model') {
-        this.showModel = true
-      } else if (type == 'repository') {
-        this.showRepository = true
-      }
     },
     // ... existing code ...
     sendMessage(event) {
       if (event.type == 'keydown') {
         if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey || event.altKey)) {
           this.message.text += '\n'
+        } else {
+          if (!this.message.text.trim().length) {
+            // eslint-disable-next-line no-undef
+            ElMessage({
+              message: '请输入消息',
+              type: 'warning'
+            })
+            return
+          }
+          if (this.checkIfSearchingMention(this.message.text)) {
+            return
+          }
         }
-      } else {
-        if (!this.message.text) {
-          // eslint-disable-next-line no-undef
-          ElMessage({
-            message: '请输入消息',
-            type: 'warning'
+      }
+      this.handleSendClick()
+    },
+    handleSendClick() {
+      if (this.message.text.trim().length) {
+        // 判断是否是网址
+        var reg =
+          /^(((ht|f)tps?):\/\/)?([^!@#$%^&*?.\s-]([^!@#$%^&*?.\s]{0,63}[^!@#$%^&*?.\s])?\.)+[a-z]{2,6}\/?/
+        if (reg.test(this.message.text)) {
+          this.replaceActiveTab({
+            title: this.message.text,
+            url: this.message.text,
+            isInternal: false
           })
-          return
+          this.message.text = ''
+          this.message.image = ''
+          this.fileList = []
+        } else {
+          var prompt = ''
+          this.replaceActiveTab({
+            title: this.message.text,
+            url: 'HomePage',
+            isInternal: true,
+            attrs: {
+              attach_files: cloneDeep(this.fileList),
+              message_text: this.message.text,
+              knows: cloneDeep(this.mentioned),
+              prompt: prompt,
+              modelInfo: this.modelInfo
+            }
+          })
+          this.message.text = ''
+          this.message.image = ''
+          this.fileList = []
         }
-        this.$emit('send', this.message)
-        this.message = { text: '', image: '' }
       }
     }
   }
@@ -1135,6 +1041,9 @@ export default {
             transition: all 0.3s;
             &:hover {
               color: var(--el-color-primary);
+              .issue-img {
+                background: #fff;
+              }
             }
             .issue-img {
               flex-shrink: 0;
@@ -1187,27 +1096,6 @@ export default {
           background: #ccc;
           margin: 0 12px;
         }
-        .enter-btn {
-          flex-shrink: 0;
-          padding: 8px !important;
-          border-radius: 8px !important;
-          .stop-icon {
-            position: relative;
-            z-index: 1;
-            box-sizing: border-box;
-            display: inline-block;
-            width: 13px;
-            height: 13px;
-            background: red;
-            border-radius: 4px;
-            vertical-align: middle;
-          }
-          .btn-icon {
-            width: 20px;
-            height: 20px;
-            vertical-align: middle;
-          }
-        }
       }
     }
   }
@@ -1246,6 +1134,7 @@ export default {
       color: #737475;
     }
     .common-issue-content {
+      min-height: 80px;
       .common-issue-item {
         margin-bottom: 19px;
         overflow: hidden;

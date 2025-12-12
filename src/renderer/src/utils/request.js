@@ -117,7 +117,7 @@ service.interceptors.response.use(
           duration: 3 * 1000
         })
       }
-      return res
+      return Promise.reject(response.msg || 'Error')
     } else {
       if (res.code == 200) {
         return res
@@ -128,7 +128,7 @@ service.interceptors.response.use(
           duration: 3 * 1000
         })
       }
-      return res
+      return Promise.reject(res.msg || 'Error')
     }
   },
   (error) => {
@@ -144,7 +144,7 @@ service.interceptors.response.use(
       return error
     }
     ElMessage({
-      message: error.msg,
+      message: error.msg || 'Error',
       type: 'error',
       duration: 5 * 1000
     })

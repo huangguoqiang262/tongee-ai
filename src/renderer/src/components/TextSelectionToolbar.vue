@@ -1,20 +1,20 @@
 <template>
   <div v-if="showToolbar" ref="toolbarRef" :style="toolbarStyle" class="text-selection-toolbar">
-    <button class="toolbar-btn" title="翻译" @click="handleTranslate">
-      <i class="el-icon-translate"></i>
+    <button class="toolbar-btn" title="AI解读" @click="handleAI">
+      <img class="btn-icon" src="@renderer/assets/settings/unscramble-icon.png" alt=""/>
+      <span class="btn-text">AI解读</span>
+    </button>
+    <button class="toolbar-btn" title="搜索" @click="handleTranslate">
+      <img class="btn-icon" src="@renderer/assets/settings/translate-icon.png" alt=""/>
       <span class="btn-text">翻译</span>
     </button>
-    <button class="toolbar-btn" title="搜索" @click="handleSearch">
-      <i class="el-icon-search"></i>
-      <span class="btn-text">搜索</span>
+    <button class="toolbar-btn" title="笔记本" @click="handleNotebook">
+      <img class="btn-icon" src="@renderer/assets/settings/notebook-icon.png" alt=""/>
+      <span class="btn-text">笔记本</span>
     </button>
     <button class="toolbar-btn" title="复制" @click="handleCopy">
-      <i class="el-icon-copy-document"></i>
+      <img class="btn-icon" src="@renderer/assets/settings/copy-icon.png" alt=""/>
       <span class="btn-text">复制</span>
-    </button>
-    <button class="toolbar-btn" title="AI分析" @click="handleAI">
-      <i class="el-icon-magic-stick"></i>
-      <span class="btn-text">AI分析</span>
     </button>
   </div>
 </template>
@@ -191,6 +191,51 @@ const handleSelection = debounce(async () => {
       return
     }
 
+    // 新增：检查选中文本的祖先级或父级是否有disabled-tools-chat类
+    const hasDisabledToolsChat = () => {
+      // 检查开始容器的祖先级
+      let currentNode = startContainer
+      while (currentNode) {
+        if (currentNode.nodeType === Node.ELEMENT_NODE) {
+          if (currentNode.classList && currentNode.classList.contains('disabled-tools-chat')) {
+            return true
+          }
+        }
+        currentNode = currentNode.parentElement
+      }
+
+      // 检查结束容器的祖先级
+      currentNode = endContainer
+      while (currentNode) {
+        if (currentNode.nodeType === Node.ELEMENT_NODE) {
+          if (currentNode.classList && currentNode.classList.contains('disabled-tools-chat')) {
+            return true
+          }
+        }
+        currentNode = currentNode.parentElement
+      }
+
+      // 检查选中范围的共同祖先容器
+      const commonAncestor = range.commonAncestorContainer
+      currentNode = commonAncestor
+      while (currentNode) {
+        if (currentNode.nodeType === Node.ELEMENT_NODE) {
+          if (currentNode.classList && currentNode.classList.contains('disabled-tools-chat')) {
+            return true
+          }
+        }
+        currentNode = currentNode.parentElement
+      }
+
+      return false
+    }
+
+    // 如果选中文本的祖先级有disabled-tools-chat类，不显示工具栏
+    if (hasDisabledToolsChat()) {
+      showToolbar.value = false
+      return
+    }
+
     selectedText.value = selection.toString().trim()
 
     // 获取选中文本的位置信息
@@ -204,13 +249,14 @@ const handleSelection = debounce(async () => {
   }
 })
 
+
 // 工具栏按钮事件
 const handleTranslate = () => {
   console.log('翻译文本:', selectedText.value)
 }
 
-const handleSearch = () => {
-  console.log('搜索文本:', selectedText.value)
+const handleNotebook = () => {
+  console.log('笔记本文本:', selectedText.value)
 }
 
 const handleCopy = async () => {
@@ -244,18 +290,19 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .text-selection-toolbar {
-  --toolbar-bg: #2c3e50;
-  --toolbar-btn-bg: #34495e;
-  --toolbar-btn-hover: #4a6278;
+  --toolbar-bg: #fff;
+  --toolbar-btn-bg: #fff;
+  --toolbar-btn-hover: #f8f8f8;
   --spacing: 6px;
 
   position: fixed;
   background: var(--toolbar-bg);
   border-radius: 8px;
-  padding: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  box-shadow: 0px 2px 20px 8px rgba(0,0,0,0.07);
+  border-radius: 8px;
   z-index: 9999;
 
   display: flex;
@@ -265,7 +312,6 @@ onUnmounted(() => {
   overflow-y: hidden;
 
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 /* 滚动条样式优化 */
@@ -313,11 +359,16 @@ onUnmounted(() => {
   background: var(--toolbar-btn-bg);
   border: none;
   border-radius: 6px;
-  color: white;
+  color: var(--default-font-color);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   transition: all 0.2s;
   flex-shrink: 0;
+  .btn-icon {
+    margin-right: 4px;
+    width: 16px;
+    height: 16px;
+  }
 }
 
 /* 空间不足时减小按钮尺寸 */

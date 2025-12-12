@@ -2,37 +2,35 @@
   <div class="department-selector">
     <!-- 左侧选择树 -->
     <div class="left-tree">
-      <div class="hd-label">可选列：{{ leftTreeCount }}</div>
+      <div class="hd-label">可选列：{{ availableCount }}</div>
       <el-tree
+        ref="leftTreeRef"
         style="width: 100%"
         :data="treeData"
         show-checkbox
-        show-line
-        :default-checked-keys="defaultCheckedKeys"
-        node-key="diction_id"
+        node-key="fullKey"
         default-expand-all
         :expand-on-click-node="false"
-        :props="{ class: 'customNodeClass', label: 'name' }"
-        @check="handleCheckChange"
-        ref="leftTreeRef"
+        :props="treeProps"
+        @check="handleLeftTreeCheck"
       >
       </el-tree>
     </div>
 
     <!-- 右侧已选择项显示 -->
-    <div class="right-tree">
-      <div class="hd-label">已选列：{{ rightTreeCount }}</div>
+    <div class="left-tree">
+      <div class="hd-label">已选列：{{ selectedCount }}</div>
       <el-tree
         style="width: 100%"
         :data="selectedTreeData"
-        node-key="diction_id"
+        node-key="fullKey"
         default-expand-all
         :expand-on-click-node="false"
         :props="{ class: 'customNodeClass customNodeClassCopy', label: 'name' }"
       >
         <template #default="{ data }">
           <span class="el-tree-node__label">{{ data.name }}</span>
-          <el-icon class="close-icon" @click="handleRemove(data)">
+          <el-icon class="close-icon" @click="removeItem(data)">
             <Close />
           </el-icon>
         </template>
@@ -43,276 +41,190 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import { Close } from '@element-plus/icons-vue'
-
+const emit = defineEmits(['editTree'])
 const props = defineProps({
-  tree: {
+  treeData: {
     type: Array,
     default: () => []
   }
 })
-
-const emit = defineEmits(['update:selected'])
-
+// 左侧树引用
 const leftTreeRef = ref()
-const treeData = ref(props.tree)
-const selectedNodes = ref([])
 
-// 计算左侧树和右侧树的计数
-const leftTreeCount = computed(() => {
-  return getAllNodesCount(treeData.value)
+// 树配置
+const treeProps = {
+  class: 'customNodeClass',
+  label: 'name',
+  children: 'children'
+}
+
+// 选中的keys - 只包含子级节点
+const checkedKeys = ref([])
+
+// 可用数据
+const treeData = ref(props.treeData)
+// 初始化数据，确保每个节点都有selected字段和fullKey
+const initTreeData = (data) => {
+  return data.map((node) => {
+    const newNode = {
+      ...node,
+      selected: node.selected || false,
+      fullKey: String(node.diction_id) + String(node.parent_diction_id)
+    }
+
+    if (node.children && node.children.length > 0) {
+      newNode.children = initTreeData(node.children)
+    }
+
+    return newNode
+  })
+}
+
+// 计算选中的树数据 - 根据selected字段过滤
+const selectedTreeData = computed(() => {
+  // 从原始数据中过滤出selected为true的节点，保持树形结构
+  const filterTree = (nodes) => {
+    const result = []
+
+    nodes.forEach((node) => {
+      // 如果当前节点被选中，保留整个节点
+      if (node.selected) {
+        const newNode = { ...node }
+        if (node.children && node.children.length > 0) {
+          newNode.children = filterTree(node.children)
+        }
+        result.push(newNode)
+      }
+      // 如果当前节点有子节点且子节点中有被选中的，保留当前节点但过滤子节点
+      else if (node.children && node.children.length > 0) {
+        const filteredChildren = filterTree(node.children)
+        if (filteredChildren.length > 0) {
+          result.push({
+            ...node,
+            children: filteredChildren
+          })
+        }
+      }
+    })
+
+    return result
+  }
+  emit('editTree', treeData.value)
+  return filterTree([...treeData.value])
 })
 
-const rightTreeCount = computed(() => {
-  return getAllNodesCount(selectedTreeData.value)
+// 计算数量 - 只统计用户节点
+const availableCount = computed(() => {
+  return countUserNodes(treeData.value)
 })
 
-// 获取树中所有节点的数量
-const getAllNodesCount = (nodes) => {
+const selectedCount = computed(() => {
+  return checkedKeys.value.length
+})
+
+// 统计用户节点数量
+const countUserNodes = (nodes) => {
   let count = 0
-  const traverse = (nodeList) => {
-    nodeList.forEach(node => {
+  const countNodes = (nodeList) => {
+    nodeList.forEach((node) => {
+      // 只统计用户类型
+      // if (node.type === 'user') {
       count++
+      // }
+      if (node.children && node.children.length > 0) {
+        countNodes(node.children)
+      }
+    })
+  }
+  countNodes(nodes)
+  return count
+}
+
+// 左侧树选中事件
+const handleLeftTreeCheck = (checkedNode, checkInfo) => {
+  // 获取所有选中的节点keys - 只包含子级节点
+  checkedKeys.value = checkInfo.checkedKeys
+
+  // 更新树的selected状态
+  updateSelectedStatus(treeData.value, checkedKeys.value)
+}
+
+// 更新树的selected状态
+const updateSelectedStatus = (nodes, checkedKeys) => {
+  nodes.forEach((node) => {
+    const isSelected = checkedKeys.includes(node.fullKey)
+    node.selected = isSelected
+
+    if (node.children && node.children.length > 0) {
+      updateSelectedStatus(node.children, checkedKeys)
+    }
+  })
+}
+
+// 右侧移除项 - 使用左侧树API
+const removeItem = (data) => {
+  if (leftTreeRef.value) {
+    // 递归取消选中所有子节点
+    const uncheckChildren = (node) => {
+      leftTreeRef.value.setChecked(node.fullKey, false, false)
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child) => uncheckChildren(child))
+      }
+    }
+
+    // 取消选中当前节点及其所有子节点
+    uncheckChildren(data)
+
+    // 获取更新后的选中状态
+    nextTick(() => {
+      const currentCheckedKeys = leftTreeRef.value.getCheckedKeys() || []
+      const halfCheckedKeys = leftTreeRef.value.getHalfCheckedKeys() || []
+
+      // 合并全选和半选状态
+      const allCheckedKeys = [...currentCheckedKeys, ...halfCheckedKeys]
+
+      // 更新checkedKeys
+      checkedKeys.value = allCheckedKeys
+
+      // 更新selected状态
+      updateSelectedStatus(treeData.value, allCheckedKeys)
+    })
+  }
+}
+
+// 获取所有选中的节点keys - 只获取子级节点
+const getSelectedKeys = (nodes) => {
+  const keys = []
+  const traverse = (nodeList) => {
+    nodeList.forEach((node) => {
+      // 如果节点被选中，就加入keys
+      if (node.selected) {
+        keys.push(node.fullKey)
+      }
       if (node.children && node.children.length > 0) {
         traverse(node.children)
       }
     })
   }
   traverse(nodes)
-  return count
+  return keys
 }
 
-// 根据选中的节点生成右侧树数据
-const selectedTreeData = computed(() => {
-  if (selectedNodes.value.length === 0) return []
-
-  // 深拷贝原始树数据
-  const deepClone = (nodes) => {
-    return nodes.map(node => ({
-      ...node,
-      children: node.children ? deepClone(node.children) : []
-    }))
-  }
-
-  const clonedTree = deepClone(treeData.value)
-
-  // 标记选中状态并过滤未选中的节点
-  const markAndFilter = (nodes) => {
-    const result = []
-
-    nodes.forEach(node => {
-      const isSelected = selectedNodes.value.some(selected =>
-        selected.diction_id === node.diction_id
-      )
-
-      if (isSelected) {
-        const newNode = { ...node }
-        if (node.children && node.children.length > 0) {
-          newNode.children = markAndFilter(node.children)
-        }
-        result.push(newNode)
-      } else if (node.children && node.children.length > 0) {
-        // 如果父节点未选中但子节点有选中的，需要保留父节点结构
-        const filteredChildren = markAndFilter(node.children)
-        if (filteredChildren.length > 0) {
-          const newNode = { ...node, children: filteredChildren }
-          result.push(newNode)
-        }
+watch(
+  () => props.treeData,
+  (newData) => {
+    treeData.value = initTreeData(newData)
+    // 初始化checkedKeys - 只包含子级节点
+    checkedKeys.value = getSelectedKeys(treeData.value)
+    // 初始化左侧树的选中状态
+    nextTick(() => {
+      if (leftTreeRef.value) {
+        leftTreeRef.value.setCheckedKeys(checkedKeys.value)
       }
     })
-
-    return result
-  }
-
-  return markAndFilter(clonedTree)
-})
-
-// 获取默认选中的节点keys
-const defaultCheckedKeys = computed(() => {
-  return selectedNodes.value.map(node => node.diction_id)
-})
-
-// 处理左侧树选中变化
-const handleCheckChange = (checkedNodes, checkedData) => {
-  // 获取所有选中的节点（包括半选状态的父节点）
-  const checkedKeys = leftTreeRef.value.getCheckedKeys()
-  const halfCheckedKeys = leftTreeRef.value.getHalfCheckedKeys()
-
-  // 从原始树数据中找出对应的节点，考虑父子关系
-  const findNodesByKeys = (nodes) => {
-    const result = []
-    const traverse = (nodeList, parentFatherId = 0) => {
-      nodeList.forEach(node => {
-        // 构建节点的完整路径标识
-        const nodeWithPath = {
-          ...node,
-          pathFatherId: parentFatherId
-        }
-
-        // 如果节点被选中（完全选中或半选中），则添加到结果中
-        if (checkedKeys.includes(node.diction_id) || halfCheckedKeys.includes(node.diction_id)) {
-          result.push(nodeWithPath)
-        }
-
-        if (node.children && node.children.length > 0) {
-          // 传递当前节点的diction_id作为子节点的father_id
-          traverse(node.children, node.diction_id)
-        }
-      })
-    }
-    traverse(nodes)
-    return result
-  }
-
-  selectedNodes.value = findNodesByKeys(treeData.value)
-
-  // 触发更新事件
-  emit('update:selected', selectedNodes.value)
-}
-
-// 处理右侧树节点移除
-const handleRemove = async (data) => {
-  // 从选中节点列表中移除该节点及其所有子节点
-  const removeNodeAndChildren = (node, parentFatherId = 0) => {
-    // 先移除所有子节点
-    if (node.children && node.children.length > 0) {
-      node.children.forEach(child => removeNodeAndChildren(child, node.diction_id))
-    }
-
-    // 再移除当前节点，根据diction_id和pathFatherId精确匹配
-    selectedNodes.value = selectedNodes.value.filter(
-      selected => !(selected.diction_id === node.diction_id && selected.pathFatherId === parentFatherId)
-    )
-  }
-
-  removeNodeAndChildren(data, data.pathFatherId || 0)
-
-  // 更新左侧树的选中状态
-  await updateLeftTreeSelection()
-
-  // 触发更新事件
-  emit('update:selected', selectedNodes.value)
-}
-
-// 更新左侧树的选中状态
-const updateLeftTreeSelection = async () => {
-  if (!leftTreeRef.value) return
-
-  // 等待DOM更新完成
-  await nextTick()
-
-  // 获取应该完全选中的节点keys
-  const fullyCheckedKeys = selectedNodes.value.map(node => node.diction_id)
-
-  // 获取应该半选的父节点
-  const shouldBeHalfChecked = getHalfCheckedNodes(treeData.value, selectedNodes.value)
-  const halfCheckedKeys = shouldBeHalfChecked.map(node => node.diction_id)
-
-  // 先清除所有选中状态
-  leftTreeRef.value.setCheckedKeys([], false)
-
-  // 设置完全选中状态（不触发check事件避免循环）
-  leftTreeRef.value.setCheckedKeys(fullyCheckedKeys, false)
-
-  // 设置半选状态
-  if (halfCheckedKeys.length > 0) {
-    halfCheckedKeys.forEach(key => {
-      const node = leftTreeRef.value.getNode(key)
-      if (node) {
-        // 设置半选状态，但确保不会触发check事件
-        node.indeterminate = true
-      }
-    })
-  }
-}
-
-// 获取应该半选的父节点
-const getHalfCheckedNodes = (nodes, selectedNodes) => {
-  const result = []
-
-  const traverse = (nodeList, parentFatherId = 0) => {
-    nodeList.forEach(node => {
-      if (node.children && node.children.length > 0) {
-        // 检查当前节点的子节点选中状态（考虑father_id）
-        const childSelectedCount = countSelectedChildren(node, selectedNodes, node.diction_id)
-        const totalChildren = countAllChildren(node)
-
-        // 如果部分子节点被选中，但不是全部，则当前节点应该半选
-        if (childSelectedCount > 0 && childSelectedCount < totalChildren) {
-          result.push(node)
-        }
-
-        traverse(node.children, node.diction_id)
-      }
-    })
-  }
-
-  traverse(nodes)
-  return result
-}
-
-// 计算节点下被选中的子节点数量（考虑father_id）
-const countSelectedChildren = (node, selectedNodes, parentFatherId) => {
-  let count = 0
-
-  const traverse = (currentNode, currentFatherId) => {
-    // 检查当前节点是否被选中（根据diction_id和father_id）
-    const isSelected = selectedNodes.some(selected =>
-      selected.diction_id === currentNode.diction_id && selected.pathFatherId === currentFatherId
-    )
-
-    if (isSelected) {
-      count++
-    }
-
-    if (currentNode.children && currentNode.children.length > 0) {
-      currentNode.children.forEach(child => traverse(child, currentNode.diction_id))
-    }
-  }
-
-  traverse(node, parentFatherId)
-  return count
-}
-
-// 计算节点下所有子节点数量
-const countAllChildren = (node) => {
-  let count = 0
-
-  const traverse = (currentNode) => {
-    count++
-
-    if (currentNode.children && currentNode.children.length > 0) {
-      currentNode.children.forEach(child => traverse(child))
-    }
-  }
-
-  traverse(node)
-  return count
-}
-
-// 设置选中的节点（外部调用）
-const setSelectedNodes = (nodes) => {
-  selectedNodes.value = nodes
-  updateLeftTreeSelection()
-}
-
-// 获取选中的节点（外部调用）
-const getSelectedNodes = () => {
-  return selectedNodes.value
-}
-
-// 监听props.tree的变化
-watch(() => props.tree, (newTree) => {
-  treeData.value = newTree
-  // 重置选中状态
-  selectedNodes.value = []
-}, { immediate: true })
-
-// 暴露方法给父组件
-defineExpose({
-  setSelectedNodes,
-  getSelectedNodes
-})
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped lang="scss">
@@ -323,7 +235,7 @@ defineExpose({
   font-size: 14px;
   color: #333;
 
-  .left-tree, .right-tree {
+  .left-tree {
     padding: 0 40px 0 34px;
     width: 50%;
     height: 100%;
@@ -336,10 +248,6 @@ defineExpose({
       color: #909090;
       line-height: 16px;
     }
-  }
-
-  .right-tree {
-    border-right: none;
   }
 
   .el-tree {
@@ -391,23 +299,19 @@ defineExpose({
 
       .close-icon {
         color: var(--el-color-primary);
-        cursor: pointer;
-        margin-left: 8px;
-
-        &:hover {
-          color: var(--el-color-primary-light-3);
-        }
       }
     }
 
     .el-icon.el-tree-node__expand-icon {
       width: 14px;
       height: 14px;
-      background: url('@renderer/assets/repository/unopened-icon.png') no-repeat center center/14px 14px;
+      background: url('@renderer/assets/repository/unopened-icon.png') no-repeat center center/14px
+        14px;
 
       &.expanded {
         transform: rotate(0deg);
-        background: url('@renderer/assets/repository/opened-icon.png') no-repeat center center/14px 14px;
+        background: url('@renderer/assets/repository/opened-icon.png') no-repeat center center/14px
+          14px;
 
         svg {
           display: none;

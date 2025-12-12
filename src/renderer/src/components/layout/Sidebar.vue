@@ -9,17 +9,11 @@
         </el-tooltip>
       </div>
       <div class="transverse-line"></div>
-      <div class="common-knowledge">
+      <div v-if="knowList.length > 0" class="common-knowledge">
         <img class="menu-icon" src="@renderer/assets/menu/common-knowledge-icon.png" alt="" />
-        <div class="sub-menu">
-          <div class="sub-menu-item">
-            <img class="sub-menu-icon" src="@renderer/assets/menu/management-icon.png" alt="" />
-          </div>
-          <div class="sub-menu-item">
-            <img class="sub-menu-icon" src="@renderer/assets/menu/management-icon.png" alt="" />
-          </div>
-          <div class="sub-menu-item">
-            <img class="sub-menu-icon" src="@renderer/assets/menu/management-icon.png" alt="" />
+        <div v-for="item in knowList" :key="item.id" class="sub-menu">
+          <div class="sub-menu-item" @click="toKnowledge(item)">
+            <img class="sub-menu-icon" :src="item.picurl || defaultCover" alt="" />
           </div>
         </div>
       </div>
@@ -41,7 +35,8 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref, inject, onBeforeMount } from 'vue'
+import { getIndexLeftKnowList } from '@renderer/api/repository'
 import { useCheckLogin } from '@renderer/hooks/checkLogin'
 import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
@@ -49,6 +44,7 @@ import managementIcon from '@renderer/assets/menu/management-icon.png'
 import messageCenterIcon from '@renderer/assets/menu/message-center-icon.png'
 import recycledIcon from '@renderer/assets/menu/recycled-icon.png'
 import historyIcon from '@renderer/assets/menu/history-icon.png'
+import defaultCover from '@renderer/assets/repository/default-cover.png'
 const addNewTab = inject('addNewTab')
 const menuList = ref([
   {
@@ -92,7 +88,28 @@ const handleClick = (item) => {
     isInternal: true
   })
 }
-
+const knowList = ref([])
+const getList = () => {
+  getIndexLeftKnowList().then((res) => {
+    if (res.code == 200) {
+      knowList.value = res.data
+    }
+  })
+}
+onBeforeMount(() => {
+  getList()
+})
+const toKnowledge = (item) => {
+  addNewTab({
+    url: 'RepositoryStore',
+    title: '知识库',
+    icon: repositoryIcon,
+    isInternal: true,
+    attrs: {
+      RepositoryId: item.id
+    }
+  })
+}
 const accountClick = () => {
   if (!useCheckLogin().value) {
     return
@@ -190,6 +207,7 @@ const accountClick = () => {
             margin: 0 auto;
             width: 20px;
             height: 20px;
+            border-radius: 4px;
             cursor: pointer;
           }
         }

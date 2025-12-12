@@ -140,26 +140,58 @@
       </div>
       <div class="page-title-box">
         <div class="page-title">帮助与反馈</div>
-        <div class="export-box" @click="beforeClearChange">我要反馈</div>
+        <div class="export-box" @click="toFeedback">我要反馈</div>
       </div>
-      <div class="content-box" style="border-top: 1px solid #efefef">
+      <div ref="messageListRef" class="content-box assist-content-box" style="border-top: 1px solid #efefef">
         <div class="assist-list">
-          <div class="assist-item">
+          <div
+            v-for="item in questionList"
+            :key="item.id"
+            class="assist-item"
+            @click="handleQuestion(item)"
+          >
             <div class="disc"></div>
-            我创建的知识库如何删除？
-          </div>
-          <div class="assist-item">
-            <div class="disc"></div>
-            我创建的知识库如何删除？
+            {{ item.title }}
           </div>
         </div>
+        <div class="chat-content">
+          <MessageRow
+            v-for="messageItem in activeSession.messages"
+            :key="messageItem.dateline"
+            :message="messageItem"
+            :is-pre-view="true"
+            :is-chatting="isChatting"
+          />
+        </div>
+        <div v-if="feedbackVisible" class="feedback-box">
+          <div class="feedback-hd">
+            <div class="feedback-title">糖源ai在哪些方面需要进一步优化？</div>
+            <el-icon class="close-icon" @click="closeFeedback"><Close /></el-icon>
+          </div>
+          <div class="feedback-item-box">
+            <div
+              v-for="item in feedbackList"
+              :key="item.id"
+              class="feedback-item"
+              @click="handleFeedback(item.title)"
+            >
+              {{ item.title }}
+            </div>
+          </div>
+        </div>
+        <div v-if="resultVisible" class="feedback-result">感谢您对糖源ai的反馈</div>
       </div>
       <div class="quiz-box">
+        <div v-if="isChatting" class="stop-chat-box" @click="stopChat">
+          <img class="stop-icon" src="@renderer/assets/chat-icon/stop-icon.png" alt="" />
+          停止回答
+        </div>
         <el-input
-          v-model="quizContent"
+          v-model="message.text"
           class="quiz-input"
           size="large"
           placeholder="请描述一下你遇到的问题"
+          @keyup.enter="sendMessage"
         />
       </div>
     </div>
@@ -262,15 +294,19 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref, inject, reactive, nextTick } from 'vue'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { edit_user, logout } from '@renderer/api/user'
 import { useUserStore, useToolBarStore } from '@renderer/stores/user'
+import { get_usually_questions } from '@renderer/api/feedback'
+import { SSE } from 'sse.js'
+import { getChatInfo, chat_feedback, feedbackType } from '@renderer/api/chat.js'
 import unscrambleIcon from '@renderer/assets/settings/unscramble-icon.png'
 import translateIcon from '@renderer/assets/settings/translate-icon.png'
 import notebookIcon from '@renderer/assets/settings/notebook-icon.png'
 import copyIcon from '@renderer/assets/settings/copy-icon.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
+import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
 const userStore = useUserStore()
 const userInfo = useUserInfo()
 let memberPrivileges = ref('')
@@ -301,6 +337,8 @@ let activeTab = ref('account')
 
 const tabHandle = () => {
   activeTab.value = 'account'
+  isChatting.value = false
+  evtSource.value?.close()
 }
 // 修改密码
 let passwordVisible = ref(false)
@@ -313,6 +351,16 @@ let passwordForm = ref({
   password: '',
   repeatPassword: ''
 })
+let toFeedback = () => {
+  addNewTab({
+    icon: feedbackIcon,
+    title: '反馈中心',
+    url: 'FeedbackCenter',
+    backgroundColor: 'var(--primary-bg-color)',
+    isInternal: true,
+    attrs: {}
+  })
+}
 let passwordRules = ref({
   password: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
@@ -333,6 +381,337 @@ let passwordRules = ref({
     }
   ]
 })
+let feedbackVisible = ref(false)
+let resultVisible = ref(false)
+let resultTimeout = ref(null)
+const activeSession = ref({
+  title: '',
+  messages: [],
+  chat_key: '',
+  model_id: '',
+  model_name: '',
+  provider_key: '',
+  know_key: '',
+  know_id: '',
+  item_id: '',
+  temperature: 0.7,
+  contextNumber: 5,
+  stream: true,
+  lineNumber: true,
+  prompt: '',
+  generateQuestions: true,
+  isNetwork: false,
+  enableSearch: 2,
+  vector_folder_path: '',
+  know_modelName: '',
+  know_provider_key: ''
+})
+let feedbackList = ref([])
+const getFeedbackType = () => {
+  feedbackType({}).then((res) => {
+    feedbackList.value = res.data || []
+  })
+}
+let questionList = ref([])
+const getQuestions = () => {
+  get_usually_questions({}).then((res) => {
+    if (res.code == 200) {
+      questionList.value = res.data.question_list
+      activeSession.value.know_key = res.data.chat_info?.know_info?.know_key
+      activeSession.value.know_id = res.data.chat_info?.know_info?.know_id
+      activeSession.value.item_id = res.data.chat_info?.know_info?.item_id
+      activeSession.value.vector_folder_path =
+        res.data.chat_info?.know_info?.vector_folder_path || ''
+      activeSession.value.model_id = res.data.chat_info?.model_info?.model_id || ''
+      activeSession.value.model_name = res.data.chat_info?.model_info?.model_name
+      activeSession.value.provider_key = res.data.chat_info?.model_info?.provider_key
+      activeSession.value.know_model_name = res.data.chat_info?.know_vector_model?.model_name || ''
+      activeSession.value.know_provider_key =
+        res.data.chat_info?.know_vector_model?.provider_key || ''
+      createChat()
+    }
+  })
+}
+const closeFeedback = () => {
+  feedbackVisible.value = false
+}
+const showResultMessage = () => {
+  resultTimeout.value && clearTimeout(resultTimeout.value)
+  resultVisible.value = true
+  resultTimeout.value = setTimeout(() => {
+    clearTimeout(resultTimeout.value)
+    resultVisible.value = false
+  }, 2000)
+}
+const handleFeedback = (str) => {
+  chat_feedback({ chat_key: activeSession.value.chat_key, feedback: str }).then(() => {
+    feedbackVisible.value = false
+    showResultMessage()
+  })
+}
+const createChat = () => {
+  var data = {
+    know_id: activeSession.value.know_id,
+    item_id: activeSession.value.item_id,
+    chat_type: 2
+  }
+  getChatInfo(data).then(async (res) => {
+    activeSession.value.title = res.data.title || ''
+    activeSession.value.chat_key = res.data.chat_key
+    activeSession.value.know_key = res.data.know_key
+    activeSession.value.model_id = res.data.model_info?.model_id || ''
+    activeSession.value.model_name = res.data.model_info?.model_name
+    activeSession.value.provider_key = res.data.model_info?.provider_key
+    activeSession.value.isNetwork = res.data.is_network ? true : false
+    activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
+    activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
+    activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
+    activeSession.value.enableSearch = res.data.model_info?.net_status || 2
+    activeSession.value.isNetwork = res.data.is_use_net ? true : false
+    if (activeSession.value.enableSearch == 2) {
+      activeSession.value.isNetwork = false
+    }
+    activeSession.value.messages = []
+  })
+}
+let isChatting = ref(false)
+let evtSource = ref(null)
+let message = ref({
+  text: '',
+  image: []
+})
+const handleQuestion = (item) => {
+  if (isChatting.value) {
+    // eslint-disable-next-line no-undef
+    ElMessage({
+      message: '请先结束当前会话',
+      type: 'warning'
+    })
+    return
+  }
+  message.value.text = item.title
+  sendMessage({ type: 'keydown', key: 'Enter' })
+}
+let messageListRef = ref(null)
+const sendMessage = (e) => {
+  if (e.type == 'keydown') {
+    if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey || e.altKey)) {
+      message.value.text += '\n'
+    } else {
+      if (!message.value.text.trim().length) {
+        // eslint-disable-next-line no-undef
+        ElMessage({
+          message: '请输入消息',
+          type: 'warning'
+        })
+        return
+      }
+      handleSendMessage(message.value)
+      message.value = { text: '', image: '' }
+    }
+  } else {
+    if (!message.value.text.trim().length) {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        message: '请输入消息',
+        type: 'warning'
+      })
+      return
+    }
+    handleSendMessage(message.value)
+    message.value = { text: '', image: '' }
+  }
+}
+const handleSendMessage = async (message) => {
+  if (!useCheckLogin().value) {
+    return
+  }
+  if (!message.text || isChatting.value) {
+    return
+  }
+  // 图片/语音
+  const medias = []
+  if (message.image && message.image.length) {
+    medias.push({ type: 'image', data: message.image })
+  }
+  // 用户的提问
+  const chatMessage = reactive({
+    sessionId: activeSession.value.chat_key,
+    medias,
+    textContent: message.text,
+    type: 'USER',
+    dateline: new Date().toLocaleString(),
+    completion_tokens: 0,
+    total_tokens: 0,
+    prompt_tokens: 0,
+    retrievedDocumentList: [],
+    spread: false,
+    issueContentText: '',
+    attach_file_ids: []
+  })
+  var data = {
+    messageParams: {
+      type: 'USER',
+      content: message.text,
+      sessionId: activeSession.value.chat_key
+    },
+    chatParams: {
+      modelName: activeSession.value.model_name || '',
+      modelPlatform: activeSession.value.provider_key || '',
+      contextNumber: activeSession.value.contextNumber,
+      prompt: activeSession.value.prompt || '',
+      enableSearch: activeSession.value.isNetwork,
+      temperature: activeSession.value.temperature,
+      generateQuestions: activeSession.value.generateQuestions
+    },
+    knowledgeBaseParamsList: [
+      {
+        modelName: activeSession.value.know_model_name || '',
+        modelPlatform: activeSession.value.know_provider_key || '',
+        knowledgeBaseId: activeSession.value.know_key || '',
+        folderPath: activeSession.value.vector_folder_path || ''
+      }
+    ],
+    otherParams: {
+      dingUid: userInfo.value.ding_uid,
+      uniacid: userStore.uniacid,
+      chat_key: activeSession.value.chat_key,
+      attach_file_ids: []
+    },
+    annexParamList: []
+  }
+  evtSource.value = new SSE(import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/basic-chat', {
+    withCredentials: false, // 跨域请求时是否携带cookie凭证 zhaoxin TODO
+    // 禁用自动启动，需要调用stream()方法才能发起请求
+    start: false,
+    payload: JSON.stringify(data),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  isChatting.value = true
+  const responseMessage = reactive({
+    medias: [],
+    type: 'ASSISTANT',
+    textContent: '',
+    sessionId: activeSession.value.chat_key,
+    dateline: new Date().toLocaleString(),
+    completion_tokens: 0,
+    total_tokens: 0,
+    prompt_tokens: 0,
+    reasoningContentText: '',
+    spread: true,
+    issueContentText: '',
+    retrievedDocumentList: [],
+    attach_file_ids: []
+  })
+  evtSource.value.addEventListener('document', async (event) => {
+    const response = JSON.parse(event.data)
+    responseMessage.retrievedDocumentList = response || []
+  })
+  // 添加明确的关闭监听
+  evtSource.value.addEventListener('stop', () => {
+    isChatting.value = false
+    // evtSource.value.close()
+  })
+  evtSource.value.addEventListener('message', async (event) => {
+    const response = JSON.parse(event.data)
+    if (response.contentText || response.reasoningContentText) {
+      if (response.reasoningContentText) {
+        //匹配过滤掉\n、<think>、</think> 用正则|| 替换  排除[^\n\n]
+        function filterText(str) {
+          // 1. 替换标签
+          str = str.replace(/<\/?think>/g, '')
+
+          // 2. 替换单独的 \n（保留 \n\n）
+          str = str.replace(/\n/g, (match, offset, s) => {
+            const prev = s[offset - 1]
+            const next = s[offset + 1]
+            return prev === '\n' || next === '\n' ? '\n' : ''
+          })
+
+          return str
+        }
+        responseMessage.reasoningContentText += filterText(response.reasoningContentText)
+      }
+      responseMessage.textContent += response.contentText
+      // 在textContent中找到 [kno_ ] 的字符并且替换为数字  且添加颜色
+      responseMessage.textContent = responseMessage.textContent.replace(
+        /\[kno_(\d+)\]/g,
+        '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
+      )
+    }
+
+    if (response.finished) {
+      isChatting.value = false
+      evtSource.value.close()
+      // chatMessage.prompt_tokens = response.promptToken
+      // chatMessage.total_tokens = response.promptToken
+      // responseMessage.completion_tokens = response.completionTokens
+      // responseMessage.total_tokens = response.completionTokens
+      responseMessage.issueContentText = response.issueContentText || ''
+    }
+    // 滚动到底部
+    await nextTick(() => {
+      const container = messageListRef.value
+      if (container) {
+        const isAtBottom =
+          container.scrollTop + container.clientHeight >= container.scrollHeight - 80
+        if (isAtBottom) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          })
+        }
+      }
+    })
+  })
+  evtSource.value.addEventListener('error', (error) => {
+    var errData
+    try {
+      errData = error.data
+        ? JSON.parse(error.data)
+        : {
+            message: '系统错误，请稍后再试'
+          }
+    } catch (err) {
+      console.log(err)
+
+      errData = {
+        message: '系统错误，请稍后再试'
+      }
+    }
+    // eslint-disable-next-line no-undef
+    ElMessage({
+      type: 'error',
+      message: errData.message
+    })
+    if (!responseMessage.textContent) {
+      responseMessage.textContent = errData.message
+    }
+    isChatting.value = false
+    evtSource.value?.close()
+  })
+  // 添加明确的关闭监听
+  evtSource.value.addEventListener('abort', () => {
+    if (!responseMessage.textContent) {
+      responseMessage.textContent = '已取消回答'
+    }
+    isChatting.value = false
+  })
+  // 调用stream，发起请求。
+  evtSource.value.stream()
+  // 将两条消息显示在页面中
+  activeSession.value.messages.push(...[chatMessage, responseMessage])
+  await nextTick(() => {
+    messageListRef.value ? messageListRef.value.scrollTo(0, messageListRef.value.scrollHeight) : ''
+  })
+}
+const stopChat = () => {
+  isChatting.value = false
+  evtSource.value?.close()
+}
 const submitpasswordForm = async (formRef) => {
   formRef.validate((valid) => {
     if (valid) {
@@ -374,9 +753,11 @@ const sonClick = (val) => {
     return
   }
   activeTab.value = val
+  if (val == 'assist') {
+    getQuestions()
+    getFeedbackType()
+  }
 }
-// 提问输入
-let quizContent = ref('')
 // 划词操作
 let operateList = ref([
   {
@@ -476,6 +857,80 @@ const manualClick = () => {
     :deep(.content-box) {
       flex: 1;
       overflow: hidden;
+      &.assist-content-box {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        .chat-content {
+          padding: 20px 0;
+          width: 100%;
+          margin: 0 auto;
+        }
+        .feedback-result {
+          padding: 9px 14px;
+          width: 100%;
+          max-width: 770px;
+          margin: 0 auto 10px;
+          font-size: 14px;
+          text-align: center;
+          background: var(--el-color-primary-light-9);
+          color: var(--el-color-primary);
+          border-radius: 8px;
+        }
+        .feedback-box {
+          flex-shrink: 0;
+          padding: 14px 11px;
+          width: 100%;
+          max-width: 770px;
+          margin: 0 auto 9px;
+          background: #f9f9f9;
+          border-radius: 8px;
+          .feedback-hd {
+            margin-bottom: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            .feedback-title {
+              font-size: 14px;
+              color: #737475;
+              line-height: 20px;
+            }
+            .close-icon {
+              cursor: pointer;
+              font-size: 20px;
+              color: #737475;
+              transition: all 0.2s;
+              &:hover {
+                color: var(--el-color-primary);
+              }
+            }
+          }
+          .feedback-item-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            .feedback-item {
+              flex-shrink: 0;
+              padding: 5px 10px;
+              cursor: pointer;
+              transition: all 0.2s;
+              border-radius: 6px;
+              border: 1px solid #e0e0e0;
+              font-size: 14px;
+              color: #737475;
+              line-height: 20px;
+              &:hover {
+                background: var(--el-color-primary-light-9);
+                color: var(--el-color-primary);
+                border-color: var(--el-color-primary);
+              }
+            }
+          }
+        }
+      }
+
       .account-box {
         // width: 808px;
         height: 100px;
@@ -606,13 +1061,13 @@ const manualClick = () => {
         align-items: center;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
 
         .dialog-header-del-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
       }
 
@@ -700,11 +1155,40 @@ const manualClick = () => {
   }
   :deep(.quiz-box) {
     margin-bottom: 30px;
+    position: relative;
+    .stop-chat-box {
+      position: absolute;
+      left: 50%;
+      top: -58px;
+      transform: translateX(-50%);
+      z-index: 1;
+      width: 116px;
+      height: 38px;
+      background: #fff;
+      box-shadow: 0px 2px 18px 2px rgba(0, 0, 0, 0.07);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 20px;
+      cursor: pointer;
+      .stop-icon {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+      }
+      &:active {
+        opacity: 0.6;
+      }
+    }
     .quiz-input,
     .el-input__wrapper {
       height: 58px;
       background-color: #f6f6f6;
-      border-radius: 8px;
+      border-radius: 12px;
       box-shadow: none;
       font-size: 16px;
       &.is-focus,

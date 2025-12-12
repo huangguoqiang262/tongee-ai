@@ -8,77 +8,109 @@
         </div>
       </div>
       <div class="notebook-list">
-        <div
-          v-for="item in notebookLists"
-          :key="item.id"
-          class="item"
-          :class="{ 'active-note': item.id === activeNotebook }"
-          @contextmenu="(e) => showContextMenu(e, item, 'notebook')"
-        >
-          <div class="icon-box">
-            <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
-          </div>
-          <div class="title">
-            <el-input
-              v-if="item.isEdit"
-              v-model="item.title"
-              autofocus
-              class="create-input"
-              placeholder="请输入笔记名称"
-              @keyup.enter="editNoteName(item)"
-              @blur="editNoteName(item)"
-            />
-            <template v-else>{{ item.title }}</template>
-          </div>
-        </div>
+        <el-skeleton animated :loading="bookLoading">
+          <template #template>
+            <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />
+          </template>
+          <template #default>
+            <template v-if="notebookLists.length">
+              <div
+                v-for="item in notebookLists"
+                :key="item.id"
+                class="item"
+                :class="{ 'active-note': item.id === activeNotebook }"
+                @click="bookChange(item)"
+                @contextmenu="(e) => showContextMenu(e, item, 'notebook')"
+              >
+                <div class="icon-box">
+                  <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
+                </div>
+                <div class="title">
+                  <el-input
+                    v-if="item.isEdit"
+                    v-model="item.title"
+                    autofocus
+                    class="create-input"
+                    placeholder="请输入笔记名称"
+                    @keyup.enter="editNoteBookName(item)"
+                    @blur="editNoteBookName(item)"
+                  />
+                  <template v-else>{{ item.title }}</template>
+                </div>
+              </div>
+            </template>
+            <div v-else class="empty">
+              <div class="empty-text">暂无笔记本，快去添加吧</div>
+            </div>
+          </template>
+        </el-skeleton>
       </div>
     </div>
-    <div class="center-box">
+    <div class="center-box" :class="{ 'mr-chat': chatVisible }">
       <div class="center-head">
         <div class="title">工作笔记</div>
         <div class="right-handle-box">
-          <img class="add-icon" src="@renderer/assets/repository/add-icon.png" alt=""
-          @click="beforeAddNote"/>
+          <img
+            class="add-icon"
+            src="@renderer/assets/repository/add-icon.png"
+            alt=""
+            @click="beforeAddNote"
+          />
           <el-input
             v-model="searchValue"
             class="search-input"
             :prefix-icon="Search"
             clearable
             placeholder="搜索笔记"
+            @change="searchChange"
           ></el-input>
-          <div class="open-chat">
+          <div v-if="!chatVisible" class="open-chat" @click="openChat">
             <img class="logo" src="@renderer/assets/logo.png" alt="" />
             问问糖源
           </div>
         </div>
       </div>
       <div class="center-content">
-        <div
-          v-for="item in noteList"
-          :key="item.id"
-          class="note-item"
-          @contextmenu="(e) => showContextMenu(e, item, 'note')"
-        >
-          <div class="title">
-            <el-input
-              v-if="item.isEdit"
-              v-model="item.title"
-              autofocus
-              class="create-input"
-              placeholder="请输入笔记名称"
-              @keyup.enter="editNoteName(item)"
-              @blur="editNoteName(item)"
-            />
-            <template v-else>{{ item.title }}</template>
-          </div>
-          <div class="des">{{ item.des }}</div>
-          <div class="item-bottom">
-            <div class="time">{{ item.time }}</div>
-            <div class="size">{{ item.size }}</div>
-          </div>
-        </div>
+        <el-skeleton animated :loading="noteLoading">
+          <template #template>
+            <el-skeleton-item v-for="i in 16" :key="i" variant="text" style="margin: 10px 0" />
+          </template>
+          <template #default>
+            <template v-if="noteLists.length">
+              <div
+                v-for="item in noteLists"
+                :key="item.id"
+                class="note-item"
+                @contextmenu="(e) => showContextMenu(e, item, 'note')"
+                @click="beforeEditNote(item)"
+              >
+                <div class="title">
+                  <el-input
+                    v-if="item.isEdit"
+                    v-model="item.title"
+                    autofocus
+                    class="create-input"
+                    placeholder="请输入笔记名称"
+                    @keyup.enter="editNoteName(item)"
+                    @blur="editNoteName(item)"
+                  />
+                  <template v-else>{{ item.title }}</template>
+                </div>
+                <div class="des">{{ htmlToText(item.content) || '无任何内容' }}</div>
+                <div class="item-bottom">
+                  <div class="time">{{ formatTimeFun(item.updatetime) }}</div>
+                  <div class="size">{{ formatFileSize(item?.file_space || 0) || '< 0 KB' }}</div>
+                </div>
+              </div>
+            </template>
+            <div v-else class="empty">
+              <div class="empty-text">暂无笔记内容，快去添加吧</div>
+            </div>
+          </template>
+        </el-skeleton>
       </div>
     </div>
+    <ToolChat v-if="chatVisible" @close-chat="chatVisible = false" />
     <HandleContextMenu
       :show="contextMenu.show"
       :x="contextMenu.x"
@@ -128,16 +160,16 @@
         <div class="head-box">
           <img class="logo" src="@renderer/assets/home/large-logo.png" alt="" />
           <div class="author-box">
-            <div class="author">创建人：李白</div>
+            <div class="author">创建人：{{ userInfo.name }}</div>
             <el-divider direction="vertical" />
-            <div class="time-box">更新时间：2025.09.18</div>
+            <div class="time-box">更新时间：{{ formatTimeFun(activeNote.updatetime) }}</div>
           </div>
         </div>
         <div class="long-view-box">
-          <div class="note-title">春天到了</div>
+          <div class="note-title">{{ activeNote.title }}</div>
           <!-- <Toolbar :default-config="defaultConfig" :editor="editorRef" mode="default" /> -->
           <Editor
-            v-model="noteContent"
+            v-model="activeNote.content"
             class="editor-content"
             :default-config="editorConfig"
             mode="default"
@@ -170,7 +202,7 @@
         />
         <div class="title">新建笔记本</div>
       </template>
-      <el-form ref="notebookFormRef" :model="notebookForm" :rules="notebookRules">
+      <el-form ref="notebookFormRef" :model="notebookForm" :rules="notebookRules" @submit.prevent>
         <el-form-item prop="title">
           <el-input
             v-model="notebookForm.title"
@@ -179,7 +211,7 @@
             placeholder="请输入笔记本名称"
           />
         </el-form-item>
-        <el-form-item prop="desc">
+        <!-- <el-form-item prop="desc">
           <el-input
             v-model="notebookForm.desc"
             class="book-input"
@@ -188,7 +220,7 @@
             type="textarea"
             placeholder="请输入笔记本描述"
           />
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -227,12 +259,16 @@
             class="repository-select"
             placeholder="请先选择知识库"
           >
-            <el-option-group v-for="group in options" :key="group.label" :label="group.label">
+            <el-option-group
+              v-for="group in repositoryOptions"
+              :key="group.id"
+              :label="group.title"
+            >
               <el-option
-                v-for="item in group.options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+                v-for="item in group.knows"
+                :key="item.id"
+                :label="item.title"
+                :value="item.id"
               />
             </el-option-group>
           </el-select>
@@ -283,14 +319,12 @@
             class="notebook-select"
             placeholder="选择笔记本"
           >
-            <el-option-group v-for="group in options" :key="group.label" :label="group.label">
-              <el-option
-                v-for="item in group.options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
-            </el-option-group>
+            <el-option
+              v-for="item in notebookLists"
+              :key="item.id"
+              :label="item.title"
+              :value="item.id"
+            />
           </el-select>
         </el-form-item>
       </el-form>
@@ -308,72 +342,114 @@
         </div>
       </template>
     </el-dialog>
-    <NoteDetail
-      v-model="noteDetailVisible"
-      :noteDetail="noteDetail"
-      @save="saveNote"
-    />
+    <NoteDetail v-model="noteDetailVisible" :note-detail="noteDetail" @save="saveNote" />
   </div>
 </template>
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
 import { ref, onMounted, nextTick } from 'vue'
+import { useUserInfo } from '@renderer/hooks/checkLogin'
+import {
+  note_list,
+  note_add,
+  note_edit,
+  notebook_add,
+  notebook_edit,
+  notebook_list,
+  notebook_del,
+  note_del
+} from '@renderer/api/note'
+import { import_note } from '@renderer/api/repository'
+import { get_user_knows } from '@renderer/api/chat'
+import { formatTime } from '@renderer/utils/index.js'
+import { convertToPlainText } from '@renderer/utils/convertToPlainText.js'
 import html2Canvas from 'html2canvas'
 import shareIcon from '@renderer/assets/contextMenu/share-icon.png'
 import repositoryIcon from '@renderer/assets/contextMenu/repository-icon.png'
+import { copyBase64ImageAsNormalImage, downloadBase64Image } from '@renderer/utils/imageCopy.js'
 import moveIcon from '@renderer/assets/contextMenu/move-icon.png'
 import renameIcon from '@renderer/assets/contextMenu/rename-icon.png'
 import deleteIcon from '@renderer/assets/contextMenu/delete-icon.png'
 let notebookVisible = ref(false)
+let chatVisible = ref(false)
+// 打开对话
+const openChat = () => {
+  chatVisible.value = true
+}
 let noteDetailVisible = ref(false)
+const formatTimeFun = (time) => {
+  return formatTime(time)
+}
+const htmlToText = (html) => {
+  return convertToPlainText(html)
+}
+const userInfo = useUserInfo()
 let noteDetail = ref({
   title: '',
-  content: ''
+  content: '',
+  type: 'add'
 })
 const beforeAddNote = () => {
   noteDetail.value = {
     title: '',
-    content: ''
+    content: '',
+    type: 'add'
   }
   noteDetailVisible.value = true
 }
-const saveNote = (data) => {
-  console.log(data);
-
+const beforeEditNote = (item) => {
+  noteDetail.value = {
+    title: item.title,
+    content: item.content,
+    type: 'edit',
+    id: item.id,
+    updatetime: item.updatetime
+  }
+  noteDetailVisible.value = true
+}
+const saveNote = (detail) => {
+  var data = {
+    notebook_id: activeNotebook.value,
+    title: detail.title,
+    content: detail.content
+  }
+  if (detail.type == 'add') {
+    note_add(data).then((res) => {
+      if (res.code == 200) {
+        getNoteList()
+        noteDetailVisible.value = false
+      }
+    })
+  } else {
+    data.note_id = detail.id
+    note_edit(data).then((res) => {
+      if (res.code == 200) {
+        getNoteList()
+        noteDetailVisible.value = false
+      }
+    })
+  }
 }
 let notebookFormRef = ref(null)
-let notebookLists = ref([
-  {
-    id: 1,
-    title: '糖吉医疗',
-    desc: '默认笔记本描述'
-  },
-  {
-    id: 2,
-    title: '糖吉医疗最新文献更新',
-    desc: '默认笔记本描述2'
-  },
-  {
-    id: 3,
-    title: '糖吉医疗最新文献更新',
-    desc: '默认笔记本描述'
-  }
-])
-let activeNotebook = ref(1)
+let notebookLists = ref([])
+let noteLists = ref([])
+let activeNotebook = ref('')
 let notebookForm = ref({
-  title: '',
-  desc: ''
+  title: ''
 })
 let notebookRules = ref({
-  title: [{ required: true, message: '请输入笔记本名称', trigger: 'blur' }],
-  desc: [{ required: true, message: '请输入笔记本描述', trigger: 'blur' }]
+  title: [{ required: true, message: '请输入笔记本名称', trigger: 'blur' }]
 })
 const submitNotebookForm = async (formRef) => {
   formRef.validate((valid) => {
     if (valid) {
-      console.log('表单验证通过')
-      notebookVisible.value = false
+      notebook_add(notebookForm.value).then((res) => {
+        if (res.code == 200) {
+          getBookList()
+          notebookVisible.value = false
+        }
+      })
     } else {
       console.log('表单验证失败')
     }
@@ -392,27 +468,30 @@ let repositoryRules = ref({
   id: [{ required: true, message: '请选择知识库', trigger: 'blur' }],
   title: [{ required: true, message: '请输入知识库标题', trigger: 'blur' }]
 })
-const options = ref([
-  {
-    label: '知识库1',
-    options: [
-      { value: 'repo1', label: '知识库1-1' },
-      { value: 'repo2', label: '知识库1-2' }
-    ]
-  },
-  {
-    label: '知识库2',
-    options: [
-      { value: 'repo3', label: '知识库2-1' },
-      { value: 'repo4', label: '知识库2-2' }
-    ]
-  }
-])
+const repositoryOptions = ref([])
+const getRepositoryList = () => {
+  get_user_knows().then((res) => {
+    if (res.code == 200) {
+      repositoryOptions.value = res.data || []
+    }
+  })
+}
 const submitRepositoryForm = async (formRef) => {
   formRef.validate((valid) => {
     if (valid) {
       console.log('表单验证通过')
-      addRepositoryVisible.value = false
+      import_note({
+        knowledge_id: repositoryForm.value.id,
+        note_ids: [activeNote.value.id],
+        title: repositoryForm.value.title
+      }).then((res) => {
+        if (res.code == 200) {
+          formRef.resetFields()
+          // eslint-disable-next-line no-undef
+          ElMessage.primary('导入成功')
+          addRepositoryVisible.value = false
+        }
+      })
     } else {
       console.log('表单验证失败')
     }
@@ -429,8 +508,19 @@ let moveNoteRules = ref({
 const submitMoveNoteForm = async (formRef) => {
   formRef.validate((valid) => {
     if (valid) {
-      console.log('表单验证通过')
-      moveNoteVisible.value = false
+      var data = {
+        notebook_id: moveNoteForm.value.id,
+        note_id: activeNote.value.id
+      }
+      note_edit(data).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage.primary('移动成功')
+          getNoteList()
+          formRef.resetFields()
+          moveNoteVisible.value = false
+        }
+      })
     } else {
       console.log('表单验证失败')
     }
@@ -438,35 +528,6 @@ const submitMoveNoteForm = async (formRef) => {
 }
 let beforeShareVisible = ref(false)
 let longImageVisible = ref(false)
-let noteContent =
-  ref(`春天是探索自然、感受生命力的好时节，下面这份春游攻略希望能给你带来灵感。我先用一个表格汇总不同类型的春游选择，方便你快速了解：
-春游类型
-推荐地点举例
-核心体验
-🌸 踏青赏花型
-陕西汉中（油菜花海）、辽宁抚顺（梨花）、浙江杭州（桃花、樱花）、河南汝州（综合性花海）
-沉浸于壮观花海，感受春日繁花似锦
-🏞️ 自然山水型
-广东信宜（李花谷、竹海）、辽宁抚顺（国家森林公园）、驻马店嵖岈山
-登山徒步、湖滨漫步，享受清新空气与宁静
-🏘️ 文化寻踪型
-河北邯郸（磁州窑文化与梅文化）、安徽滁州（醉翁文化）、云南石屏（古城与非遗）、河南汝州（汝瓷文化）
-将赏花与探寻历史文化、非遗体验相结合
-🚴 休闲运动型
-北京顺义（骑行、登山）、杭州“三江两岸”（户外探险）
-在运动中感受春天，增加游玩趣味性
-🌿 田园乡村型
-全国各地春季乡村旅游线路
-体验田园慢生活，品尝当地特色美食
-💡 春游实用建议
-规划行程：提前了解目的地的花期（如抚顺梨花4月下旬至5月初最盛）和天气。尽量错峰出行，选择工作日或清晨能提升体验。
-准备装备：舒适的鞋服、雨具、防晒用品、饮用水、适量零食是基础。根据活动类型准备相应装备，如登山杖、骑行护具、相机等。
-注意安全：遵守景区规定，勿到未开发区域探险。看管好小孩和老人。自驾提前查路线，注意路况。
-文明出游：爱护花草树木和文物古迹，不乱丢垃圾。
-💎 总结
-春游的关键在于拥抱自然、放松心情。你可以根据自己的兴趣和时间，从以上推荐中选择合适的目的地。
-希望这些信息能帮助你规划一次愉快的春游。如果你对某个特定地区或者某种特定类型的春游（比如主要是赏花，或者重点是亲子活动）更感兴趣，我可以为你提供更具体的建议。
-`)
 let editorConfig = { placeholder: '请输入内容...' }
 // let defaultConfig = {
 //   excludeKeys: [
@@ -483,73 +544,79 @@ let editorConfig = { placeholder: '请输入内容...' }
 //   ]
 // }
 // let loading = ref(false)
+const bookChange = (item) => {
+  activeNotebook.value = item.id
+  getNoteList()
+}
 let baseUrl = ref('')
 // 分享笔记
 const handleShare = (type) => {
   if (type === 'link') {
     // 链接分享
+    navigator.clipboard.writeText(activeNote.value.file_path).then(() => {
+      // eslint-disable-next-line no-undef
+      ElMessage.primary('复制成功')
+    })
   } else if (type === 'img') {
     // 生成长图
     // 下载长图逻辑
-    html2Canvas(document.querySelector('.long-img-box'), { scale: 3 })
-      .then((canvas) => {
-        baseUrl.value = canvas.toDataURL('image/png')
-        // loading.value = baseUrl.value ? false : true
-      })
-      .catch((err) => {
-        console.log(err)
-
-        // loading.value = true
-      })
     longImageVisible.value = true
+    nextTick(() => {
+      html2Canvas(document.querySelector('.long-img-box'), { scale: 3, allowTaint: true })
+        .then((canvas) => {
+          baseUrl.value = canvas.toDataURL('image/png')
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    })
   }
   beforeShareVisible.value = false
 }
 // 复制长图
-const copyLongImage = () => {
-  // 复制长图逻辑
+const copyLongImage = async () => {
+  // 利用剪切版剪切长图
+  try {
+    await copyBase64ImageAsNormalImage(baseUrl.value)
+    // eslint-disable-next-line no-undef
+    ElMessage.primary('复制成功')
+  } catch (error) {
+    console.log(error)
+  }
 }
 const handleDownloadLongImage = () => {
   // 下载长图逻辑
-  const link = document.createElement('a')
-  link.href = baseUrl.value
-  link.download = '春天到了.png'
-  link.click()
+  downloadBase64Image(baseUrl.value, `预览图${new Date().getTime()}.png`)
 }
-const noteList = ref([
-  {
-    id: 1,
-    title: '医疗器械注册流程笔记',
-    des: '整理了医疗器械注册的全流程，包括所需材料，时间节点和注意事项…',
-    time: '昨天18:09',
-    size: '123KB'
-  },
-  {
-    id: 2,
-    title: '质量管理体系要点',
-    des: '整理了医疗器械注册的全流程，包括所需材料，时间节点和注意事项…',
-    time: '昨天18:09',
-    size: '123KB'
-  },
-  {
-    id: 3,
-    title: '临床评价需求总结',
-    des: '整理了医疗器械注册的全流程，包括所需材料，时间节点和注意事项…',
-    time: '昨天18:09',
-    size: '13KB'
-  }
-])
 const contextMenu = ref({ show: false, x: 0, y: 0, actionSheet: [] })
 const searchValue = ref('')
 const activeNote = ref(null)
+const searchChange = () => {
+  getNoteList()
+}
+// 编辑笔记本名称
+const editNoteBookName = (item) => {
+  if (!item.title.trim()) {
+    getBookList()
+    return
+  }
+  notebook_edit({ notebook_id: item.id, title: item.title }).then(() => {})
+  item.isEdit = false
+}
 // 编辑笔记名称
 const editNoteName = (item) => {
+  if (!item.title.trim()) {
+    getNoteList()
+    return
+  }
+  note_edit({ note_id: item.id, title: item.title }).then(() => {})
   item.isEdit = false
 }
 // 右键菜单相关函数
 const showContextMenu = (e, item, type) => {
   e.preventDefault()
   activeNote.value = item
+  activeNote.value.type = type
   if (type == 'note') {
     contextMenu.value = {
       show: true,
@@ -604,55 +671,148 @@ const showContextMenu = (e, item, type) => {
   }
 }
 const handleContextMenuAction = ({ action }) => {
-  if (action === 'rename') {
-    // 重命名
-    if (activeNote.value) {
-      activeNote.value.isEdit = true
-      nextTick(() => {
-        // 让新生成的input聚焦 且让其内容selected选中
-        const newInput = document.querySelector('.create-input input')
-        var timer = setTimeout(() => {
-          clearTimeout(timer)
-          newInput.focus()
-          newInput.select()
-        }, 100)
-      })
-    }
-  } else if (action === 'share') {
-    // 分享
-    beforeShareVisible.value = true
-  } else if (action === 'addToRepository') {
-    // 添加到知识库
-    addRepositoryVisible.value = true
-  } else if (action === 'moveToNotebook') {
-    // 移动到笔记本
-    moveNoteVisible.value = true
-  } else if (action === 'delete') {
-    // 删除
-    // eslint-disable-next-line no-undef
-    ElMessageBox.confirm('确认删除吗？', '提示', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-      .then(() => {
-        // eslint-disable-next-line no-undef
-        ElMessage({
-          type: 'primary',
-          message: '删除成功'
+  if (activeNote.value.type == 'note') {
+    // 笔记相关操作
+    if (action === 'rename') {
+      // 重命名
+      if (activeNote.value) {
+        activeNote.value.isEdit = true
+        nextTick(() => {
+          // 让新生成的input聚焦 且让其内容selected选中
+          const newInput = document.querySelector('.create-input input')
+          var timer = setTimeout(() => {
+            clearTimeout(timer)
+            newInput.focus()
+            newInput.select()
+          }, 100)
         })
+      }
+    } else if (action === 'share') {
+      // 分享
+      beforeShareVisible.value = true
+    } else if (action === 'addToRepository') {
+      // 添加到知识库
+      getRepositoryList()
+      repositoryForm.value.title = activeNote.value.title
+      addRepositoryVisible.value = true
+    } else if (action === 'moveToNotebook') {
+      // 移动到笔记本
+      moveNoteVisible.value = true
+    } else if (action === 'delete') {
+      // 删除
+      // eslint-disable-next-line no-undef
+      ElMessageBox.confirm('确认删除吗？', '提示', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
       })
-      .catch(() => {})
+        .then(() => {
+          note_del({ note_id: activeNote.value.id }).then((res) => {
+            if (res.code == 200) {
+              // eslint-disable-next-line no-undef
+              ElMessage({
+                type: 'primary',
+                message: '删除成功'
+              })
+              // 刷新笔记列表
+              getNoteList()
+            }
+          })
+        })
+        .catch(() => {})
+    }
+  } else if (activeNote.value.type == 'notebook') {
+    // 笔记本相关操作
+    if (action === 'rename') {
+      // 重命名
+      if (activeNote.value) {
+        activeNote.value.isEdit = true
+        nextTick(() => {
+          // 让新生成的input聚焦 且让其内容selected选中
+          const newInput = document.querySelector('.create-input input')
+          var timer = setTimeout(() => {
+            clearTimeout(timer)
+            newInput.focus()
+            newInput.select()
+          }, 100)
+        })
+      }
+    } else if (action === 'delete') {
+      // 删除
+      // eslint-disable-next-line no-undef
+      ElMessageBox.confirm('确认删除吗？', '提示', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => {
+          notebook_del({ notebook_id: activeNote.value.id }).then((res) => {
+            if (res.code == 200) {
+              // eslint-disable-next-line no-undef
+              ElMessage({
+                type: 'primary',
+                message: '删除成功'
+              })
+              // 刷新笔记本列表
+              getBookList()
+            }
+          })
+        })
+        .catch(() => {})
+    }
   }
   contextMenu.value.show = false
+}
+let noteLoading = ref(true)
+const getNoteList = () => {
+  noteLoading.value = true
+  note_list({ notebook_id: activeNotebook.value, title: searchValue.value })
+    .then((res) => {
+      if (res.code == 200) {
+        noteLists.value = res.data || []
+      }
+    })
+    .finally(() => {
+      noteLoading.value = false
+    })
+}
+let bookLoading = ref(true)
+const getBookList = () => {
+  bookLoading.value = true
+  notebook_list({ title: searchValue.value })
+    .then((res) => {
+      if (res.code == 200) {
+        notebookLists.value = res.data || []
+        activeNotebook.value = notebookLists.value[0]?.id || ''
+        if (activeNotebook.value) {
+          getNoteList()
+        }
+      }
+    })
+    .finally(() => {
+      bookLoading.value = false
+    })
 }
 const hideContextMenu = (e) => {
   if (contextMenu.value.show && !e.target.closest('.context-menu')) {
     contextMenu.value.show = false
   }
 }
+const formatFileSize = (kb) => {
+  if (!kb) return 0
+  if (kb < 1024) {
+    return kb + ' KB'
+  } else if (kb < 1024 * 1024) {
+    return (kb / 1024).toFixed(2) + ' MB'
+  } else if (kb < 1024 * 1024 * 1024) {
+    return (kb / (1024 * 1024)).toFixed(2) + ' GB'
+  } else {
+    return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
+  }
+}
 onMounted(() => {
   document.addEventListener('click', hideContextMenu)
+  getBookList()
 })
 </script>
 
@@ -662,7 +822,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   align-items: flex-start;
-
+  background: var(--primary-bg-color);
   .left-box {
     box-sizing: border-box;
     padding: 20px;
@@ -672,6 +832,7 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: #fff;
     .common-box {
       flex-shrink: 0;
       margin-bottom: 20px;
@@ -717,6 +878,18 @@ onMounted(() => {
     .notebook-list {
       flex: 1;
       overflow-y: auto;
+      .empty {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #909090;
+        line-height: 22px;
+        .empty-text {
+          margin-bottom: 16vh;
+        }
+      }
       &::-webkit-scrollbar {
         width: 4px;
         height: 4px;
@@ -791,7 +964,11 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-
+    background: #fff;
+    border-radius: 0 12px 12px 0;
+    &.mr-chat {
+      margin-right: 10px;
+    }
     .center-head {
       flex-shrink: 0;
       padding-right: 10px;
@@ -871,6 +1048,18 @@ onMounted(() => {
       flex: 1;
       padding-right: 10px;
       overflow-y: auto;
+      .empty {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #909090;
+        line-height: 22px;
+        .empty-text {
+          margin-bottom: 16vh;
+        }
+      }
       &::-webkit-scrollbar {
         width: 4px;
         height: 4px;
@@ -937,13 +1126,13 @@ onMounted(() => {
         align-items: center;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
 
         .dialog-header-del-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
       }
 
@@ -1055,10 +1244,11 @@ onMounted(() => {
             }
           }
           .long-view-box {
-            padding: 20px;
+            padding: 20px 10px;
             background: #fff;
             border-radius: 10px;
             .note-title {
+              padding: 0 10px;
               margin-bottom: 20px;
               font-size: 16px;
               font-weight: 600;
@@ -1078,13 +1268,13 @@ onMounted(() => {
         align-items: center;
         gap: 10px;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
 
         .dialog-header-del-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
         }
       }
 
