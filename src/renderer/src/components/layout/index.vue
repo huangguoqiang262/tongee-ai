@@ -1,6 +1,6 @@
 <template>
   <div class="layout-box">
-    <Sidebar></Sidebar>
+    <Sidebar ref="sidebarRef"></Sidebar>
     <div class="main-container">
       <MainContent ref="mainContentRef"></MainContent>
     </div>
@@ -9,10 +9,11 @@
 </template>
 
 <script setup>
-import { ref, provide } from 'vue'
+import { ref, provide, onMounted, onUnmounted } from 'vue'
+import { on, off } from '@renderer/utils/eventBus'
 // 获取MainContent组件的引用
 const mainContentRef = ref(null)
-
+const sidebarRef = ref(null)
 // 提供全局添加标签的方法
 const addNewTabGlobal = (config = {}) => {
   if (mainContentRef.value && mainContentRef.value.addNewTab) {
@@ -29,10 +30,33 @@ const replaceActiveTab = (config = {}) => {
     console.warn('MainContent组件未加载或replaceActiveTab方法不存在')
   }
 }
+// 提供全局处理标签操作的方法
+const handleTabAction = (action) => {
+  if (mainContentRef.value && mainContentRef.value.handleTabAction) {
+    mainContentRef.value.handleTabAction(action)
+    sidebarRef.value?.refreshData()
+  } else {
+    console.warn('MainContent组件未加载或handleTabAction方法不存在')
+  }
+}
 // 使用provide将方法提供给所有子组件
 provide('addNewTab', addNewTabGlobal)
 // 提供全局替换当前活动标签的方法
 provide('replaceActiveTab', replaceActiveTab)
+// 提供全局处理标签操作的方法
+provide('handleTabAction', handleTabAction)
+const handleLoginSuccess = () => {
+  handleTabAction('close-all')
+}
+onMounted(() => {
+  // 注册登录成功事件监听
+  on('login-success', handleLoginSuccess)
+})
+
+onUnmounted(() => {
+  // 移除事件监听
+  off('login-success', handleLoginSuccess)
+})
 </script>
 
 <style scoped lang="scss">

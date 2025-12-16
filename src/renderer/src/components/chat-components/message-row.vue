@@ -206,6 +206,7 @@ const download = (index, images) => {
           <MarkdownMessage
             :type="props.message.type"
             :message="props.message.textContent"
+            :retrieved-document-list="props.message.retrievedDocumentList"
           ></MarkdownMessage>
           <div v-if="props.direction != 'right'" class="empty-message">
             {{ props.message.dateline }}
@@ -311,6 +312,7 @@ const download = (index, images) => {
             ref="markdownMessage"
             :type="props.message.type"
             :message="props.message.textContent"
+            :retrieved-document-list="props.message.retrievedDocumentList"
           ></MarkdownMessage>
           <div class="image-box">
             <el-image
@@ -542,17 +544,19 @@ const download = (index, images) => {
       // 用户回复的消息和ChatGPT回复的消息背景颜色做区分
       .message {
         &.message-user {
-          :deep(.v-md-editor-preview[type='user']) {
-            margin-bottom: 10px;
-            width: fit-content;
-            .vuepress-markdown-body {
-              font-size: 14px;
-              color: #fff;
-              background-color: var(--el-color-primary);
-              line-height: 20px;
-              padding: 10px 14px;
+          .markdown-container[type='user'] {
+            :deep(.v-md-editor-preview) {
+              margin-bottom: 10px;
+              width: fit-content;
+              .vuepress-markdown-body {
+                font-size: 14px;
+                color: #fff;
+                background-color: var(--el-color-primary);
+                line-height: 20px;
+                padding: 10px 14px;
+              }
+              // max-width: 100%;
             }
-            // max-width: 100%;
           }
         }
         // background-color: rgb(231, 248, 255);
@@ -664,17 +668,23 @@ const download = (index, images) => {
           }
         }
       }
-      :deep(.v-md-editor-preview[type='user']) {
+      .v-md-editor-preview {
         width: 100%;
-        margin-bottom: 10px;
-        .vuepress-markdown-body {
-          font-size: 22px;
-          color: var(--default-font-color);
-          font-weight: 600;
-          line-height: 30px;
-        }
-        // max-width: 100%;
       }
+      .markdown-container[type='user'] {
+        :deep(.v-md-editor-preview) {
+          width: 100%;
+          margin-bottom: 10px;
+          .vuepress-markdown-body {
+            font-size: 22px;
+            color: var(--default-font-color);
+            font-weight: 600;
+            line-height: 30px;
+          }
+          // max-width: 100%;
+        }
+      }
+
       :deep(.vuepress-markdown-body) {
         font-size: 14px;
         line-height: 20px;

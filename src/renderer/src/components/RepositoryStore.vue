@@ -27,19 +27,20 @@
             </div>
           </div>
           <div class="commom-list" :class="{ 'close-box': closeCommonList }">
-            <div
-              v-for="item in commonCreateList"
-              :key="item.id"
-              class="item"
-              :class="{ 'active-repository': activeRepositoryId == item.id }"
-              @click="getRepositoryInfo(item.id)"
-            >
-              <div class="icon-box">
-                <img class="icon" :src="item.picurl || defaultCover" alt="" />
+            <template v-for="(item, index) in commonCreateList" :key="item.id">
+              <div
+                v-show="index < 3 || createCommonExpand"
+                class="item"
+                :class="{ 'active-repository': activeRepositoryId == item.id }"
+                @click="getRepositoryInfo(item.id)"
+              >
+                <div class="icon-box">
+                  <img class="icon" :src="item.picurl || defaultCover" alt="" />
+                </div>
+                <div class="title">{{ item.title }}</div>
+                <div v-if="item.is_prompt == 1" class="dot-dark"></div>
               </div>
-              <div class="title">{{ item.title }}</div>
-              <div v-if="item.is_prompt == 1" class="dot-dark"></div>
-            </div>
+            </template>
             <div v-if="commonCreateList.length > 3" class="expand" @click="commonExpandChange">
               {{ createCommonExpand ? '收起' : '展开' }}
             </div>
@@ -58,19 +59,21 @@
             </div>
           </div>
           <div class="commom-list" :class="{ 'close-box': closeJoinList }">
-            <div
-              v-for="item in commonJoinList"
-              :key="item.id"
-              class="item"
-              :class="{ 'active-repository': activeRepositoryId == item.id }"
-              @click="getRepositoryInfo(item.id)"
-            >
-              <div class="icon-box">
-                <img class="icon" :src="item.picurl || defaultCover" alt="" />
+            <template v-for="(item, index) in commonJoinList" :key="item.id">
+              <div
+                v-show="index < 3 || joinCommonExpand"
+                class="item"
+                :class="{ 'active-repository': activeRepositoryId == item.id }"
+                @click="getRepositoryInfo(item.id)"
+              >
+                <div class="icon-box">
+                  <img class="icon" :src="item.picurl || defaultCover" alt="" />
+                </div>
+                <div class="title">{{ item.title }}</div>
+                <div v-if="item.is_prompt == 1" class="dot-dark"></div>
               </div>
-              <div class="title">{{ item.title }}</div>
-              <div v-if="item.is_prompt == 1" class="dot-dark"></div>
-            </div>
+            </template>
+
             <div v-if="commonJoinList.length > 3" class="expand" @click="joinExpandChange">
               {{ joinCommonExpand ? '收起' : '展开' }}
             </div>
@@ -99,21 +102,25 @@
           </div>
         </div>
         <div class="personage-list" :class="{ 'close-box': closePersonageList }">
-          <div
-            v-for="item in personalCreateList"
-            :key="item.id"
-            class="item"
-            :class="{ 'active-repository': activeRepositoryId == item.id }"
-            @click="getRepositoryInfo(item.id)"
-          >
-            <div class="icon-box">
-              <img class="icon" :src="item.picurl || defaultCover" alt="" />
+          <template v-for="(item, index) in personalCreateList" :key="item.id">
+            <div
+              v-show="index < 3 || personageExpand"
+              class="item"
+              :class="{ 'active-repository': activeRepositoryId == item.id }"
+              @click="getRepositoryInfo(item.id)"
+            >
+              <div class="icon-box">
+                <img class="icon" :src="item.picurl || defaultCover" alt="" />
+              </div>
+              <div class="title">{{ item.title }}</div>
+              <div v-if="item.is_prompt == 1" class="dot-dark"></div>
             </div>
-            <div class="title">{{ item.title }}</div>
-            <div v-if="item.is_prompt == 1" class="dot-dark"></div>
-          </div>
+          </template>
+
           <div class="storage-space-box">
-            <div class="space-box">已使用 30MB/30GB</div>
+            <div class="space-box">
+              已使用 {{ userInfo?.space_use_total || '0MB' }}/{{ userInfo?.space || '0GB' }}
+            </div>
             <div v-if="personalCreateList.length > 3" class="expand" @click="personageExpandChange">
               {{ personageExpand ? '收起' : '展开' }}
             </div>
@@ -451,6 +458,7 @@
                   class="list-item"
                   :class="{ 'active-repository': item.checked }"
                   @contextmenu="(e) => showContextMenu(e, item)"
+                  @click="detailChange(item)"
                 >
                   <el-checkbox
                     v-model="item.checked"
@@ -683,7 +691,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch, nextTick, inject, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch, nextTick, inject, computed } from 'vue'
+import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+import { useUserStore } from '@renderer/stores/user'
 import topIcon from '@renderer/assets/contextMenu/top-icon.png'
 import unstickIcon from '@renderer/assets/contextMenu/unstick-icon.png'
 import editIcon from '@renderer/assets/contextMenu/edit-icon.png'
@@ -732,12 +742,22 @@ import {
   withdraw_join,
   import_note
 } from '@renderer/api/repository'
+import { user_info } from '@renderer/api/user'
 const props = defineProps({
   attrs: {
     type: Object,
     default: () => ({})
   }
 })
+const getUserInfo = () => {
+  const userStore = useUserStore()
+  return user_info({}).then((res) => {
+    if (res.code == 200) {
+      userStore.updateUser(res.data?.user_info)
+    }
+  })
+}
+const userInfo = useUserInfo()
 let repositorySortPopover = ref(null)
 let repositoryNotePopover = ref(null)
 let sortList = ref([
@@ -767,6 +787,19 @@ const squaretabChange = () => {
     title: '知识库广场',
     url: 'Square',
     isInternal: true
+  })
+}
+// 到达详情
+const detailChange = (item) => {
+  addNewTab({
+    icon: item.info?.icon,
+    title: item.title,
+    url: 'DocumentDetail',
+    isInternal: true,
+    attrs: {
+      fileUrl: item.info?.url,
+      fileName: item.title
+    }
   })
 }
 // 公共知识库我的创建
@@ -834,7 +867,10 @@ const getPersonalCreateList = (repositoryId = '') => {
     }
   })
 }
-onMounted(() => {
+onMounted(async () => {
+  if (useCheckLogin) {
+    await getUserInfo()
+  }
   getCommonCreateList(props.attrs.RepositoryId)
   getCommonJoinList(props.attrs.RepositoryId)
   getPersonalCreateList(props.attrs.RepositoryId)
@@ -1653,6 +1689,9 @@ const searchMenuClick = () => {
     searchBoxRef.value.focus()
   })
 }
+onUnmounted(() => {
+  document.removeEventListener('click', hideContextMenu)
+})
 onMounted(() => {
   document.addEventListener('click', hideContextMenu)
 })

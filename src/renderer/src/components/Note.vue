@@ -31,7 +31,7 @@
                     v-model="item.title"
                     autofocus
                     class="create-input"
-                    placeholder="请输入笔记名称"
+                    placeholder="请输入笔记本名称"
                     @keyup.enter="editNoteBookName(item)"
                     @blur="editNoteBookName(item)"
                   />
@@ -110,7 +110,13 @@
         </el-skeleton>
       </div>
     </div>
-    <ToolChat v-if="chatVisible" @close-chat="chatVisible = false" />
+    <div v-if="chatVisible" class="right-box">
+      <ToolChat
+        v-if="chatVisible"
+        :notebook-id="activeNotebook"
+        @close-chat="chatVisible = false"
+      />
+    </div>
     <HandleContextMenu
       :show="contextMenu.show"
       :x="contextMenu.x"
@@ -342,13 +348,18 @@
         </div>
       </template>
     </el-dialog>
-    <NoteDetail v-model="noteDetailVisible" :note-detail="noteDetail" @save="saveNote" />
+    <NoteDetail
+      v-model="noteDetailVisible"
+      :notebook-id="activeNotebook"
+      :note-detail="noteDetail"
+      @save="saveNote"
+    />
   </div>
 </template>
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import {
   note_list,
@@ -360,6 +371,7 @@ import {
   notebook_del,
   note_del
 } from '@renderer/api/note'
+import { on, off } from '@renderer/utils/eventBus'
 import { import_note } from '@renderer/api/repository'
 import { get_user_knows } from '@renderer/api/chat'
 import { formatTime } from '@renderer/utils/index.js'
@@ -375,6 +387,11 @@ let notebookVisible = ref(false)
 let chatVisible = ref(false)
 // 打开对话
 const openChat = () => {
+  if (!activeNotebook.value) {
+    // eslint-disable-next-line no-undef
+    ElMessage.warning('请先选择笔记本')
+    return
+  }
   chatVisible.value = true
 }
 let noteDetailVisible = ref(false)
@@ -391,6 +408,11 @@ let noteDetail = ref({
   type: 'add'
 })
 const beforeAddNote = () => {
+  if (!activeNotebook.value) {
+    // eslint-disable-next-line no-undef
+    ElMessage.warning('请先选择笔记本')
+    return
+  }
   noteDetail.value = {
     title: '',
     content: '',
@@ -457,6 +479,9 @@ const submitNotebookForm = async (formRef) => {
 }
 const addNotebook = () => {
   notebookVisible.value = true
+  nextTick(() => {
+    notebookFormRef?.value.resetFields()
+  })
 }
 let addRepositoryVisible = ref(false)
 let repositoryFormRef = ref(null)
@@ -786,6 +811,8 @@ const getBookList = () => {
         activeNotebook.value = notebookLists.value[0]?.id || ''
         if (activeNotebook.value) {
           getNoteList()
+        } else {
+          noteLoading.value = false
         }
       }
     })
@@ -810,9 +837,30 @@ const formatFileSize = (kb) => {
     return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
   }
 }
+const refreshNoteList = () => {
+  console.log(55555555)
+
+  if (
+    chatVisible.value ||
+    beforeShareVisible.value ||
+    addRepositoryVisible.value ||
+    moveNoteVisible.value ||
+    notebookVisible.value ||
+    noteDetailVisible.value
+  ) {
+    return
+  }
+  getNoteList()
+  hideContextMenu()
+}
+onUnmounted(() => {
+  document.removeEventListener('click', hideContextMenu)
+  off('refresh-note-list', refreshNoteList)
+})
 onMounted(() => {
   document.addEventListener('click', hideContextMenu)
   getBookList()
+  on('refresh-note-list', refreshNoteList)
 })
 </script>
 
@@ -959,6 +1007,7 @@ onMounted(() => {
 
   .center-box {
     flex: 1;
+    min-width: 40%;
     height: 100%;
     padding: 13px 10px 20px 20px;
     display: flex;
@@ -1117,6 +1166,11 @@ onMounted(() => {
         }
       }
     }
+  }
+  .right-box {
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
   }
   :deep(.notebook-dialog) {
     .el-dialog {

@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-page-box">
+  <div class="chat-page-box disabled-tools-chat">
     <img
       class="chat-clear"
       src="@renderer/assets/chat-icon/clear-icon.png"
@@ -277,16 +277,12 @@ const getWordList = () => {
       if (res.data.words_list.data.length) {
         res.data.words_list.data.map((item) => {
           if (item.msg_type == 'ASSISTANT') {
-            item.content = item.content.replace(
-              /\[kno_(\d+)\]/g,
-              '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-            )
             list.push({
               type: 'ASSISTANT',
               textContent: item.content || '已取消回答',
               sessionId: item.chat_key,
               medias: [],
-              dateline: item.create_time,
+              dateline: item.createtime,
               prompt_tokens: item.prompt_tokens,
               completion_tokens: item.completion_tokens,
               total_tokens: item.total_tokens,
@@ -303,7 +299,7 @@ const getWordList = () => {
               textContent: item.content,
               sessionId: item.chat_key,
               medias: [],
-              dateline: item.create_time,
+              dateline: item.createtime,
               prompt_tokens: item.prompt_tokens,
               completion_tokens: item.completion_tokens,
               total_tokens: item.total_tokens,
@@ -360,16 +356,12 @@ const loadData = async () => {
         if (res.data.words_list.data.length) {
           res.data.words_list.data.map((item) => {
             if (item.msg_type == 'ASSISTANT') {
-              item.content = item.content.replace(
-                /\[kno_(\d+)\]/g,
-                '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-              )
               list.push({
                 type: 'ASSISTANT',
                 textContent: item.content || '已取消回答',
                 sessionId: item.chat_key,
                 medias: [],
-                dateline: item.create_time,
+                dateline: item.createtime,
                 prompt_tokens: item.prompt_tokens,
                 completion_tokens: item.completion_tokens,
                 total_tokens: item.total_tokens,
@@ -386,7 +378,7 @@ const loadData = async () => {
                 textContent: item.content,
                 sessionId: item.chat_key,
                 medias: [],
-                dateline: item.create_time,
+                dateline: item.createtime,
                 prompt_tokens: item.prompt_tokens,
                 completion_tokens: item.completion_tokens,
                 total_tokens: item.total_tokens,
@@ -533,7 +525,7 @@ const handleSendMessage = async (message) => {
     medias,
     textContent: message.text,
     type: 'USER',
-    dateline: new Date().toLocaleString(),
+    dateline: new Date().toLocaleString().replace(/\//g, '-'),
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -589,7 +581,7 @@ const handleSendMessage = async (message) => {
     type: 'ASSISTANT',
     textContent: '',
     sessionId: activeSession.value.chat_key,
-    dateline: new Date().toLocaleString(),
+    dateline: new Date().toLocaleString().replace(/\//g, '-'),
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -629,11 +621,6 @@ const handleSendMessage = async (message) => {
         responseMessage.reasoningContentText += filterText(response.reasoningContentText)
       }
       responseMessage.textContent += response.contentText
-      // 在textContent中找到 [kno_ ] 的字符并且替换为数字  且添加颜色
-      responseMessage.textContent = responseMessage.textContent.replace(
-        /\[kno_(\d+)\]/g,
-        '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-      )
     }
 
     if (response.finished) {
@@ -729,6 +716,7 @@ const stopChat = () => {
   flex-direction: column;
   border-radius: 8px;
   overflow: hidden;
+  user-select: text;
   .chat-clear {
     position: absolute;
     top: 20px;

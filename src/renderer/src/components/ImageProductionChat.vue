@@ -195,7 +195,7 @@ const sendMessage = (event = {}) => {
     medias,
     textContent: message.value.text,
     type: 'USER',
-    dateline: new Date().toLocaleString(),
+    dateline: new Date().toLocaleString().replace(/\//g, '-'),
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -214,7 +214,7 @@ const sendMessage = (event = {}) => {
     type: 'ASSISTANT',
     textContent: '',
     sessionId: activeSession.value.chat_key,
-    dateline: new Date().toLocaleString(),
+    dateline: new Date().toLocaleString().replace(/\//g, '-'),
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -396,16 +396,12 @@ const getWordList = () => {
             })
           })
           if (item.msg_type == 'ASSISTANT') {
-            item.content = item.content.replace(
-              /\[kno_(\d+)\]/g,
-              '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-            )
             list.push({
               type: 'ASSISTANT',
               textContent: '',
               sessionId: item.chat_key,
               medias: [{ type: 'image', data: images }],
-              dateline: item.create_time,
+              dateline: item.createtime,
               prompt_tokens: item.prompt_tokens,
               completion_tokens: item.completion_tokens,
               total_tokens: item.total_tokens,
@@ -422,7 +418,7 @@ const getWordList = () => {
               textContent: item.content,
               sessionId: item.chat_key,
               medias: [{ type: 'image', data: images }],
-              dateline: item.create_time,
+              dateline: item.createtime,
               prompt_tokens: item.prompt_tokens,
               completion_tokens: item.completion_tokens,
               total_tokens: item.total_tokens,
@@ -485,16 +481,12 @@ const loadData = async () => {
               })
             })
             if (item.msg_type == 'ASSISTANT') {
-              item.content = item.content.replace(
-                /\[kno_(\d+)\]/g,
-                '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-              )
               list.push({
                 type: 'ASSISTANT',
                 textContent: '',
                 sessionId: item.chat_key,
                 medias: [{ type: 'image', data: images }],
-                dateline: item.create_time,
+                dateline: item.createtime,
                 prompt_tokens: item.prompt_tokens,
                 completion_tokens: item.completion_tokens,
                 total_tokens: item.total_tokens,
@@ -511,7 +503,7 @@ const loadData = async () => {
                 textContent: item.content,
                 sessionId: item.chat_key,
                 medias: [{ type: 'image', data: images }],
-                dateline: item.create_time,
+                dateline: item.createtime,
                 prompt_tokens: item.prompt_tokens,
                 completion_tokens: item.completion_tokens,
                 total_tokens: item.total_tokens,

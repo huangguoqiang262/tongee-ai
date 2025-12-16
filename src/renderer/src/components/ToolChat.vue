@@ -1,6 +1,12 @@
 <template>
-  <div class="chat-page-box">
+  <div class="chat-page-box disabled-tools-chat">
     <div class="chat-head">
+      <img
+        class="chat-clear"
+        src="@renderer/assets/chat-icon/clear-icon.png"
+        alt=""
+        @click="clearChat"
+      />
       <el-icon class="close-icon" @click="closeChat"><Close /></el-icon>
     </div>
     <div
@@ -40,7 +46,7 @@
     <div v-if="resultVisible" class="feedback-result">感谢您对糖源ai的反馈</div>
     <div class="search-box">
       <tool-chat-input
-        v-if="activeSession"
+        v-if="activeSession.model_name"
         key="input"
         :is-active-tab="isActiveTab"
         class="message-input"
@@ -74,6 +80,7 @@
     <PreviewMessage
       v-if="previewVisible"
       ref="previewMessage"
+      style="padding: 0px 20px"
       direction="left"
       :messages="activeSession.messages"
       @close-preview="closePreview"
@@ -81,12 +88,13 @@
   </div>
 </template>
 <script setup>
-import { reactive, ref, onMounted, nextTick } from 'vue'
+import { reactive, ref, onMounted, nextTick, watchEffect } from 'vue'
 import {
   getChatInfo,
   update_chat,
   get_chat_word,
   chat_feedback,
+  delChatOne,
   feedbackType
 } from '@renderer/api/chat.js'
 import { SSE } from 'sse.js'
@@ -95,9 +103,13 @@ import { useUserStore } from '@renderer/stores/user'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
 const props = defineProps({
-  attrs: {
-    type: Object,
-    default: () => ({})
+  notebookId: {
+    type: [Number, String],
+    default: ''
+  },
+  noteId: {
+    type: [Number, String],
+    default: ''
   },
   isActiveTab: {
     type: Boolean,
@@ -105,15 +117,14 @@ const props = defineProps({
   }
 })
 const emits = defineEmits(['closeChat'])
-let chat_key = ref(props.attrs.chat_key || '')
 let feedbackVisible = ref(false)
 let resultVisible = ref(false)
 let resultTimeout = ref(null)
 let markDownText = ref('')
 let previewVisible = ref(false)
 let messageListRef = ref(null)
-let attach_files = ref(props.attrs.attach_files || [])
-let mentionedList = ref(props.attrs.knows || [])
+let attach_files = ref([])
+let mentionedList = ref([])
 const userInfo = useUserInfo()
 const userStore = useUserStore()
 const closeFeedback = () => {
@@ -224,7 +235,7 @@ const handleSendMessage = async (message) => {
     medias,
     textContent: message.text,
     type: 'USER',
-    dateline: new Date().toLocaleString(),
+    dateline: new Date().toLocaleString().replace(/\//g, '-'),
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -255,14 +266,22 @@ const handleSendMessage = async (message) => {
       temperature: activeSession.value.temperature,
       generateQuestions: activeSession.value.generateQuestions
     },
-    knowledgeBaseParamsList: mentionedList.value.map((item) => {
-      return {
-        modelName: item.model_name || '',
-        modelPlatform: item.provider_key || '',
-        knowledgeBaseId: item.know_key || '/',
-        folderPath: '/' + item.know_key || '/'
+    knowledgeBaseParamsList: [
+      ...mentionedList.value.map((item) => {
+        return {
+          modelName: item.model_name || '',
+          modelPlatform: item.provider_key || '',
+          knowledgeBaseId: item.know_key || '/',
+          folderPath: '/' + item.know_key || '/'
+        }
+      }),
+      {
+        modelName: activeSession.value.know_model_name || '',
+        modelPlatform: activeSession.value.know_provider_key || '',
+        knowledgeBaseId: activeSession.value.know_key || '',
+        folderPath: activeSession.value.vector_folder_path || ''
       }
-    }),
+    ],
     otherParams: {
       dingUid: userInfo.value.ding_uid,
       uniacid: userStore.uniacid,
@@ -288,7 +307,7 @@ const handleSendMessage = async (message) => {
     type: 'ASSISTANT',
     textContent: '',
     sessionId: activeSession.value.chat_key,
-    dateline: new Date().toLocaleString(),
+    dateline: new Date().toLocaleString().replace(/\//g, '-'),
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -396,6 +415,10 @@ const handleSendMessage = async (message) => {
   evtSource.value.stream()
   // 将两条消息显示在页面中
   activeSession.value.messages.push(...[chatMessage, responseMessage])
+  if (activeSession.value.title == '默认会话') {
+    activeSession.value.title = chatMessage.textContent
+    updataChat()
+  }
   await nextTick(() => {
     messageListRef.value ? messageListRef.value.scrollTo(0, messageListRef.value.scrollHeight) : ''
   })
@@ -406,7 +429,6 @@ const uploadedAttachment = (files) => {
 const stopChat = () => {
   isChatting.value = false
   evtSource.value?.close()
-
 }
 const lastScrollTop = ref(0)
 const page = ref(1)
@@ -415,6 +437,36 @@ const total = ref(0)
 const isLoading = ref(false)
 const debounceTimer = ref(null)
 const isSwitching = ref(false)
+const clearChat = () => {
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm('确认清空当前会话吗？', '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(() => {
+      delChatOne({ chat_key: activeSession.value.chat_key }).then(async (res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '已清空'
+          })
+          page.value = 1
+          pageSize.value = 10
+          total.value = 0
+          isLoading.value = false
+          debounceTimer.value = null
+          isLoading.value = true
+          isSwitching.value = true
+          await getWordList()
+          isSwitching.value = false
+          isLoading.value = false
+        }
+      })
+    })
+    .catch(() => {})
+}
 const updataChat = () => {
   var data = {
     uniacid: userStore.uniacid,
@@ -463,7 +515,7 @@ const getWordList = () => {
               textContent: item.content || '已取消回答',
               sessionId: item.chat_key,
               medias: [],
-              dateline: item.create_time,
+              dateline: item.createtime,
               prompt_tokens: item.prompt_tokens,
               completion_tokens: item.completion_tokens,
               total_tokens: item.total_tokens,
@@ -480,7 +532,7 @@ const getWordList = () => {
               textContent: item.content,
               sessionId: item.chat_key,
               medias: [],
-              dateline: item.create_time,
+              dateline: item.createtime,
               prompt_tokens: item.prompt_tokens,
               completion_tokens: item.completion_tokens,
               total_tokens: item.total_tokens,
@@ -546,7 +598,7 @@ const loadData = async () => {
                 textContent: item.content || '已取消回答',
                 sessionId: item.chat_key,
                 medias: [],
-                dateline: item.create_time,
+                dateline: item.createtime,
                 prompt_tokens: item.prompt_tokens,
                 completion_tokens: item.completion_tokens,
                 total_tokens: item.total_tokens,
@@ -563,7 +615,7 @@ const loadData = async () => {
                 textContent: item.content,
                 sessionId: item.chat_key,
                 medias: [],
-                dateline: item.create_time,
+                dateline: item.createtime,
                 prompt_tokens: item.prompt_tokens,
                 completion_tokens: item.completion_tokens,
                 total_tokens: item.total_tokens,
@@ -630,50 +682,50 @@ const loadMore = async () => {
     container.scrollTop = container.scrollHeight - oldScrollHeight
   })
 }
-const createChat = () => {
+const throttle = ref(null)
+watchEffect(() => {
   var data = {
-    chat_type: 3,
-    chat_key: chat_key.value || ''
+    notebook_id: props.notebookId,
+    note_id: props.noteId,
+    chat_type: 3
   }
   feedbackVisible.value = false
-  getChatInfo(data).then(async (res) => {
-    activeSession.value.title = res.data.title || ''
-    activeSession.value.chat_key = res.data.chat_key
-    activeSession.value.know_key = res.data.know_key
-    activeSession.value.model_id = res.data.model_info?.model_id || ''
-    activeSession.value.model_name = res.data.model_info?.model_name
-    activeSession.value.provider_key = res.data.model_info?.provider_key
-    activeSession.value.prompt = props.attrs?.prompt || ''
-    activeSession.value.enableSearch = res.data.model_info?.net_status || 2
-    activeSession.value.isNetwork = res.data.is_use_net ? true : false
-    if (activeSession.value.enableSearch == 2) {
-      activeSession.value.isNetwork = false
-    }
-    // activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
-    // activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
-    // activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
-    activeSession.value.messages = []
-    page.value = 1
-    pageSize.value = 10
-    total.value = 0
-    isLoading.value = false
-    debounceTimer.value = null
-    isLoading.value = true
-    isSwitching.value = true
-    // await getWordList()
-    isSwitching.value = false
-    isLoading.value = false
-    if (activeSession.value.title == '默认会话') {
-      activeSession.value.title = props.attrs?.message_text || '文档解读'
-      updataChat()
-    }
-    if (!chat_key.value) {
-      handleSendMessage({ text: props.attrs?.message_text })
-    } else {
-      getWordList()
-    }
-  })
-}
+  if (!data.notebook_id) return
+  // 添加节流，避免频繁请求
+  if (throttle.value) {
+    clearTimeout(throttle.value)
+  }
+  throttle.value = setTimeout(() => {
+    getChatInfo(data).then(async (res) => {
+      activeSession.value.title = res.data.title || ''
+      activeSession.value.chat_key = res.data.chat_key
+      activeSession.value.know_key = res.data.know_key
+      activeSession.value.model_id = res.data.model_info?.model_id || ''
+      activeSession.value.model_name = res.data.model_info?.model_name
+      activeSession.value.provider_key = res.data.model_info?.provider_key
+      activeSession.value.isNetwork = res.data.is_network ? true : false
+      activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
+      activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
+      activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
+      activeSession.value.enableSearch = res.data.model_info?.net_status || 2
+      activeSession.value.isNetwork = res.data.is_use_net ? true : false
+      if (activeSession.value.enableSearch == 2) {
+        activeSession.value.isNetwork = false
+      }
+      activeSession.value.messages = []
+      page.value = 1
+      pageSize.value = 10
+      total.value = 0
+      isLoading.value = false
+      debounceTimer.value = null
+      isLoading.value = true
+      isSwitching.value = true
+      await getWordList()
+      isSwitching.value = false
+      isLoading.value = false
+    })
+  }, 300)
+})
 onMounted(() => {
   get_type_models({ model_type: 'reasoning' }).then((res) => {
     models.value = res.data
@@ -687,14 +739,15 @@ onMounted(() => {
   position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
-  padding: 10px;
+  padding: 10px 20px 10px;
   height: 100%;
-  min-width: 375px;
+  width: 100%;
   background: #fff;
   display: flex;
   flex-direction: column;
   border-radius: 8px;
   overflow: hidden;
+  user-select: text;
   .chat-head {
     // position: absolute;
     // top: 20px;
@@ -705,9 +758,15 @@ onMounted(() => {
     border-radius: 6px;
     display: flex;
     align-items: center;
+    gap: 0 20px;
     justify-content: flex-end;
     font-size: 14px;
     color: var(--default-font-color);
+    .chat-clear {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
     .close-icon {
       color: #737475;
       font-size: 18px;
@@ -720,9 +779,8 @@ onMounted(() => {
   }
   .chat-content {
     flex: 1;
+    width: 100%;
     padding: 20px 0;
-    width: 770px;
-    margin: 0 auto;
     overflow-y: auto;
   }
   .empty-chat {

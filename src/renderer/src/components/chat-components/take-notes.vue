@@ -183,6 +183,7 @@ import {
   notebook_list
 } from '@renderer/api/note'
 import markdownToRichText from '@renderer/utils/markdownToRichText'
+import { emit } from '@renderer/utils/eventBus'
 // import renameIcon from '@renderer/assets/contextMenu/rename-icon.png'
 const onlineNoteVisible = defineModel({ type: Boolean })
 const props = defineProps({
@@ -391,6 +392,7 @@ const createOrRenameNote = (item) => {
       }
     })
   }
+  emit('refresh-note-list')
 }
 const resetChecks = () => {
   noteList.value.map((item) => {

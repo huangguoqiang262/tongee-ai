@@ -10,7 +10,7 @@ export function get_maintenance_plan(data) {
 //修改保养计划
 export function maintenance_edit(data) {
   return request({
-    url: '/api/maintenance/edit',
+    url: '/maintenance/edit',
     method: 'post',
     data
   })

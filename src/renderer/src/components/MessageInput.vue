@@ -172,6 +172,10 @@
     <IntelligentWriting v-if="activeMenu === 'IntelligentWriting'" @close-menu="closeMenu" />
     <QuickAccess v-if="activeMenu === 'QuickAccess'" @close-menu="closeMenu" />
     <ImageProduction v-if="activeMenu === 'ImageProduction'" @close-menu="closeMenu" />
+    <RecommendRepository
+      v-if="activeMenu === 'RecommendRepository'"
+      @close-menu="closeMenu"
+    />
   </div>
 </template>
 <script>
@@ -183,10 +187,11 @@ import updateNotificationIcon from '@renderer/assets/home/updateNotification-ico
 import quickAccessIcon from '@renderer/assets/home/quickAccess-icon.png'
 import imageProductionIcon from '@renderer/assets/home/imageProduction-icon.png'
 import IntelligentWritingIcon from '@renderer/assets/home/intelligentWriting-icon.png'
-import { useCheckLogin } from '@renderer/hooks/checkLogin'
+import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { useUserStore } from '@renderer/stores/user'
 import { get_user_knows } from '@renderer/api/chat'
 import { get_index_question, commonly_used_knows, get_type_models } from '@renderer/api/repository'
+import { user_info } from '@renderer/api/user'
 import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
 import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
@@ -253,10 +258,11 @@ export default {
       showPrevBtn: false,
       showNextBtn: false,
       isHoveringAttachBox: false,
-      mentioned: []
+      mentioned: [],
+      login_show_knows: 0
     }
   },
-  mounted() {
+  async mounted() {
     // this.setupScreenshotListeners()
     this.$watch(
       'fileList',
@@ -267,6 +273,14 @@ export default {
       },
       { deep: true }
     )
+    if (useCheckLogin) {
+      await this.getUserInfo()
+    }
+    const userInfo = useUserInfo()
+    this.login_show_knows = userInfo.value.login_show_knows || 0
+    if (useCheckLogin && this.login_show_knows) {
+      this.activeMenu = 'RecommendRepository'
+    }
     this.getModels()
     this.getKnows()
     this.getQuestions()
@@ -276,6 +290,14 @@ export default {
     // 移除事件监听
   },
   methods: {
+    getUserInfo() {
+      const userStore = useUserStore()
+      return user_info({}).then((res) => {
+        if (res.code == 200) {
+          userStore.updateUser(res.data?.user_info)
+        }
+      })
+    },
     handleWholeRemove(e) {
       // 匹配提及内容并删除
       var reg = new RegExp('@' + e, 'g')
@@ -320,7 +342,7 @@ export default {
     getModels() {
       get_type_models({ model_type: 'reasoning', t: new Date().getTime() }).then((res) => {
         this.models = res.data
-        if (this.models.length) {
+        if (this.models?.length) {
           this.modelValue =
             this.models[0].model_name +
             '/' +
@@ -349,7 +371,7 @@ export default {
     },
     getKnowledgeList() {
       commonly_used_knows({ t: new Date().getTime() }).then((res) => {
-        if (res.data.length) {
+        if (res.data?.length) {
           this.KnowledgeBase = res.data || []
         }
       })
@@ -357,7 +379,7 @@ export default {
     getKnows() {
       get_user_knows({ t: new Date().getTime() }).then((res) => {
         var list = []
-        if (res.data.length) {
+        if (res.data?.length) {
           res.data.map((item) => {
             item.knows.map((children) => {
               list.push({

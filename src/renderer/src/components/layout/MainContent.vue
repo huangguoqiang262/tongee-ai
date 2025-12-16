@@ -40,13 +40,13 @@
       :show="contextMenu.show"
       :x="contextMenu.x"
       :y="contextMenu.y"
-      @action="handleContextMenuAction"
+      @action="handleTabAction"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { add_web_log } from '@renderer/api/history'
 import defaultIcon from '../../assets/logo.png'
 const tabs = ref([])
@@ -155,18 +155,18 @@ const initTabs = () => {
 // 新建标签
 const addNewTab = (config = {}) => {
   var options = Object.assign(
-    // {
-    //   url: 'SearchHome',
-    //   title: '首页',
-    //   icon: defaultIcon,
-    //   isInternal: true
-    // },
     {
-      url: 'Maintain',
-      title: '设备保养',
+      url: 'SearchHome',
+      title: '首页',
       icon: defaultIcon,
       isInternal: true
     },
+    // {
+    //   url: 'Maintain',
+    //   title: '设备保养',
+    //   icon: defaultIcon,
+    //   isInternal: true
+    // },
     config
   )
   const newTab = {
@@ -192,7 +192,8 @@ const addNewTab = (config = {}) => {
     'HomePage',
     'ImageProductionChat',
     'IntelligentWritingChat',
-    'ChatPage'
+    'ChatPage',
+    'DocumentDetail'
   ]
   if (index !== -1 && newTab.isInternal && !whiteList.includes(newTab.url)) {
     tabs.value[index].attrs = newTab.attrs
@@ -677,7 +678,7 @@ const showContextMenu = (e, tab) => {
   }
 }
 
-const handleContextMenuAction = (action) => {
+const handleTabAction = (action) => {
   const tabId = contextMenu.value.tabId
 
   switch (action) {
@@ -735,9 +736,13 @@ onMounted(() => {
 
   document.addEventListener('click', hideContextMenu)
 })
+onUnmounted(() => {
+  document.removeEventListener('click', hideContextMenu)
+})
 defineExpose({
   addNewTab,
-  replaceActiveTab
+  replaceActiveTab,
+  handleTabAction
 })
 </script>
 

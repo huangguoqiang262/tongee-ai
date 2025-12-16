@@ -333,6 +333,7 @@ let appearanceList = ref([
   }
 ])
 const addNewTab = inject('addNewTab')
+const handleTabAction = inject('handleTabAction')
 let activeTab = ref('account')
 
 const tabHandle = () => {
@@ -741,6 +742,7 @@ const quitLogin = () => {
           ElMessage.primary('退出登录成功')
           userStore.reset()
           activeTab.value = 'account'
+          handleTabAction('close-all')
         }
       })
     })

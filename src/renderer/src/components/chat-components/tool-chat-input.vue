@@ -96,7 +96,7 @@
           </template>
         </div>
         <div class="btn-box">
-          <el-tooltip effect="light" content="" placement="top">
+          <!-- <el-tooltip effect="light" content="" placement="top">
             <template #content>
               上传附件（doc、docx、xls、xlsx、pdf、txt、<br />ppt、pptx、jpg、jpeg、png、gif格式）
             </template>
@@ -116,8 +116,8 @@
                 :style="{ cursor: isChatting ? 'not-allowed' : 'pointer' }"
               />
             </el-upload>
-          </el-tooltip>
-          <el-tooltip effect="light" content="" placement="top">
+          </el-tooltip> -->
+          <!-- <el-tooltip effect="light" content="" placement="top">
             <template #content> 快速截图 Alt + J </template>
             <img
               class="attachment-icon screenshot-icon"
@@ -126,7 +126,7 @@
               :style="{ cursor: isChatting ? 'not-allowed' : 'pointer' }"
               @click="screenshot"
             />
-          </el-tooltip>
+          </el-tooltip> -->
           <!-- <div class="line"></div> -->
           <!-- <el-button
             v-if="!isChatting"

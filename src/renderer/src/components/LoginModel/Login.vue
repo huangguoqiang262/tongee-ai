@@ -223,6 +223,7 @@
 <script setup>
 import { ref, reactive, nextTick, onMounted } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
+import { emit } from '@renderer/utils/eventBus'
 import {
   login,
   passlogin,
@@ -231,6 +232,7 @@ import {
   set_new_pass,
   get_login_item
 } from '@renderer/api/user'
+
 let broadcastLists = ref([])
 let loading = ref(true)
 
@@ -361,7 +363,7 @@ const getCode = () => {
 }
 
 const handleClose = () => {
-  emit('close')
+  emits('close')
 }
 
 const handleNext = () => {
@@ -389,6 +391,7 @@ const handleForget = () => {
             const loginData = data
             userStore.updateToken(loginData.token)
             userStore.updateUser(loginData.userInfo)
+            emit('login-success')
             // getUserInfo()
             const timer = setTimeout(() => {
               handleClose()
@@ -414,6 +417,7 @@ const handleLogin = () => {
               userStore.updateToken(loginData.token)
               userStore.updateUser(loginData.userInfo)
               // getUserInfo()
+              emit('login-success')
               const timer = setTimeout(() => {
                 handleClose()
                 clearTimeout(timer)
@@ -442,6 +446,7 @@ const handleLogin = () => {
               } else {
                 localStorage.removeItem('rememberPassword')
               }
+              emit('login-success')
               // getUserInfo()
               const timer = setTimeout(() => {
                 handleClose()
@@ -466,7 +471,7 @@ const handleLogin = () => {
 //   })
 // }
 // 定义事件
-const emit = defineEmits(['close'])
+const emits = defineEmits(['close'])
 
 // 暴露方法给父组件
 defineExpose({

@@ -109,7 +109,7 @@ service.interceptors.response.use(
       if (res.code === 300 || response.status === 401) {
         const userStore = useUserStore()
         userStore.reset()
-        return res
+        // return res
       } else {
         ElMessage({
           message: response.msg || 'Error',
@@ -141,7 +141,7 @@ service.interceptors.response.use(
 
     if (errorCode == 401) {
       userStore.reset()
-      return error
+      return Promise.reject(error)
     }
     ElMessage({
       message: error.msg || 'Error',
@@ -149,7 +149,7 @@ service.interceptors.response.use(
       duration: 5 * 1000
     })
     removePendingRequest(error.config || {})
-    return error
+    return Promise.reject(error)
   }
 )
 

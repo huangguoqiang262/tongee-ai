@@ -151,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { get_know_list, get_file_list, restore, clean_all, clean_one } from '@renderer/api/Recycled'
 import { formatTime } from '@renderer/utils/index.js'
 import restoreIcon from '@renderer/assets/restore-icon.png'
@@ -315,6 +315,9 @@ const formatFileSize = (kb) => {
     return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
   }
 }
+onUnmounted(() => {
+  document.removeEventListener('click', hideContextMenu)
+})
 onMounted(() => {
   document.addEventListener('click', hideContextMenu)
   refresh()

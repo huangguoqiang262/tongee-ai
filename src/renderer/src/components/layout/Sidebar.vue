@@ -1,6 +1,11 @@
 <template>
   <div class="sidebar-box">
-    <img class="logo-img" src="@renderer/assets/default-avatar.png" alt="糖源AI" @click="accountClick()"/>
+    <img
+      class="logo-img"
+      :src="userInfo.avatar || defaultAvatar"
+      alt="糖源AI"
+      @click="accountClick()"
+    />
     <div class="memu-box">
       <div v-for="item in menuList" :key="item.url" class="menu-item" @click="handleClick(item)">
         <el-tooltip effect="light" content="" placement="right">
@@ -37,7 +42,7 @@
 <script setup>
 import { ref, inject, onBeforeMount } from 'vue'
 import { getIndexLeftKnowList } from '@renderer/api/repository'
-import { useCheckLogin } from '@renderer/hooks/checkLogin'
+import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
 import managementIcon from '@renderer/assets/menu/management-icon.png'
@@ -45,6 +50,7 @@ import messageCenterIcon from '@renderer/assets/menu/message-center-icon.png'
 import recycledIcon from '@renderer/assets/menu/recycled-icon.png'
 import historyIcon from '@renderer/assets/menu/history-icon.png'
 import defaultCover from '@renderer/assets/repository/default-cover.png'
+import defaultAvatar from '@renderer/assets/default-avatar.png'
 const addNewTab = inject('addNewTab')
 const menuList = ref([
   {
@@ -80,7 +86,11 @@ const recordMenuList = ref([
     icon: historyIcon
   }
 ])
+const userInfo = useUserInfo()
 const handleClick = (item) => {
+  if (!useCheckLogin().value) {
+    return
+  }
   addNewTab({
     url: item.url,
     title: item.name,
@@ -90,16 +100,26 @@ const handleClick = (item) => {
 }
 const knowList = ref([])
 const getList = () => {
-  getIndexLeftKnowList().then((res) => {
-    if (res.code == 200) {
-      knowList.value = res.data
-    }
-  })
+  getIndexLeftKnowList()
+    .then((res) => {
+      if (res.code == 200) {
+        knowList.value = res.data
+      }
+    })
+    .catch(() => {
+      knowList.value = []
+    })
+}
+const refreshData = () => {
+  getList()
 }
 onBeforeMount(() => {
   getList()
 })
 const toKnowledge = (item) => {
+  if (!useCheckLogin().value) {
+    return
+  }
   addNewTab({
     url: 'RepositoryStore',
     title: '知识库',
@@ -121,6 +141,9 @@ const accountClick = () => {
     isInternal: true
   })
 }
+defineExpose({
+  refreshData
+})
 </script>
 
 <style scoped lang="scss">
@@ -142,6 +165,7 @@ const accountClick = () => {
     width: 32px;
     height: 32px;
     cursor: pointer;
+    border-radius: 6px;
     -webkit-user-drag: none;
     -moz-user-drag: none;
     -ms-user-drag: none;

@@ -154,6 +154,7 @@ const formatFileSize = (kb) => {
           <!-- 如果消息是文本，用markdown展示 -->
           <MarkdownMessage
             :type="props.message.type"
+            :retrieved-document-list="props.message.retrievedDocumentList"
             :message="props.message.textContent"
           ></MarkdownMessage>
           <div v-if="props.direction != 'right'" class="empty-message">
@@ -242,6 +243,7 @@ const formatFileSize = (kb) => {
               ref="markdownMessage"
               :type="props.message.type"
               :message="props.message.textContent"
+              :retrieved-document-list="props.message.retrievedDocumentList"
             ></MarkdownMessage>
             <div class="image-box">
               <el-image
@@ -489,17 +491,19 @@ const formatFileSize = (kb) => {
       // background-color: #fff;
       overflow: hidden;
       &.message-user {
-        :deep(.v-md-editor-preview[type='user']) {
-          margin-bottom: 10px;
-          width: fit-content;
-          .vuepress-markdown-body {
-            font-size: 14px;
-            color: #fff;
-            background-color: var(--el-color-primary);
-            line-height: 20px;
-            padding: 10px 14px;
+        .markdown-container[type='user'] {
+          :deep(.v-md-editor-preview) {
+            margin-bottom: 10px;
+            width: fit-content;
+            .vuepress-markdown-body {
+              font-size: 14px;
+              color: #fff;
+              background-color: var(--el-color-primary);
+              line-height: 20px;
+              padding: 10px 14px;
+            }
+            // max-width: 100%;
           }
-          // max-width: 100%;
         }
       }
       .message-content {
@@ -552,16 +556,21 @@ const formatFileSize = (kb) => {
           }
         }
       }
-      :deep(.v-md-editor-preview[type='user']) {
+      .v-md-editor-preview {
         width: 100%;
-        margin-bottom: 10px;
-        .vuepress-markdown-body {
-          font-size: 22px;
-          color: var(--default-font-color);
-          font-weight: 600;
-          line-height: 30px;
+      }
+      .markdown-container[type='user'] {
+        :deep(.v-md-editor-preview) {
+          width: 100%;
+          margin-bottom: 10px;
+          .vuepress-markdown-body {
+            font-size: 22px;
+            color: var(--default-font-color);
+            font-weight: 600;
+            line-height: 30px;
+          }
+          // max-width: 100%;
         }
-        // max-width: 100%;
       }
       :deep(.vuepress-markdown-body) {
         font-size: 14px;

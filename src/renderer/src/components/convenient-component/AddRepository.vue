@@ -429,6 +429,7 @@ const submitForm = () => {
                 width: 90px;
                 height: 90px;
                 border-radius: 12px;
+                object-fit: cover;
               }
             }
             &:hover {

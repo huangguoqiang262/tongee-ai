@@ -3,29 +3,31 @@
     <!-- 顶部导航栏 -->
     <div class="header-bar">
       <div class="nav-tabs">
-        <button
+        <el-button
           v-for="tab in tabs"
           :key="tab.id"
+          link
           :class="['tab', { active: activeTab === tab.id }]"
           @click="handleTabChange(tab.id)"
         >
           {{ tab.name }}
-        </button>
+        </el-button>
       </div>
+      <div class="hd-right">
+        <div class="search-box">
+          <el-input
+            v-model="searchKeyword"
+            :suffix-icon="Search"
+            type="text"
+            placeholder="搜索设备"
+            class="search-input"
+          />
+        </div>
 
-      <div class="search-box">
-        <input
-          v-model="searchKeyword"
-          type="text"
-          placeholder="搜索设备"
-          class="search-input"
-        />
-        <span class="search-icon">🔍</span>
+        <el-upload class="upload-box" accept=".xls,.xlsx" :http-request="customUpload">
+          <el-button class="upload-btn" type="primary">上传保养计划</el-button>
+        </el-upload>
       </div>
-
-      <button class="upload-btn" @click="handleUpload">
-        上传保养计划
-      </button>
     </div>
 
     <!-- 表格内容 -->
@@ -44,11 +46,7 @@
         </thead>
         <tbody>
           <template v-for="(equipment, eqIndex) in filteredData" :key="equipment.id">
-            <tr
-              v-for="(item, itemIndex) in equipment.item"
-              :key="item.id"
-              :class="{ 'first-row': itemIndex === 0 }"
-            >
+            <tr v-for="(item, itemIndex) in equipment.item" :key="item.id">
               <!-- 序号 -->
               <td v-if="itemIndex === 0" :rowspan="equipment.item.length">
                 {{ getSerialNumber(eqIndex) }}
@@ -72,7 +70,8 @@
               <td v-if="itemIndex === 0" :rowspan="equipment.item.length">
                 <div class="location-list">
                   <span v-for="(loc, idx) in equipment.location" :key="loc.id">
-                    {{ loc.location_name }}<span v-if="idx < equipment.location.length - 1">, </span>
+                    {{ loc.location_name
+                    }}<span v-if="idx < equipment.location.length - 1">, </span>
                   </span>
                 </div>
               </td>
@@ -85,42 +84,27 @@
 
               <!-- 月度列 -->
               <td
-                v-for="month in 12"
-                :key="month"
-                :class="['month-cell', { 'needs-maintenance': getMaintenanceStatus(item, month) === 'needed' }]"
-                @click="handleMonthClick(item, month)"
+                v-for="monthItem in item.plans"
+                :key="monthItem.id"
+                :class="[
+                  'month-cell',
+                  {
+                    'needs-maintenance':
+                      monthItem.need_maintenance === 1 && monthItem.maintenance_status === 0,
+                    'completed-maintenance': monthItem.maintenance_status === 1
+                  }
+                ]"
+                @contextmenu="(e) => showContextMenu(e, monthItem)"
               >
-                <div v-if="getMaintenanceStatus(item, month) === 'needed'" class="status-content">
-                  <span class="needs-label">需要</span>
-                  <div class="checkboxes" v-if="getCurrentMonth() === month && isCurrentYear()">
-                    <label>
-                      <input
-                        type="checkbox"
-                        :checked="getMaintenanceCheckbox(item, month, 'early')"
-                        @click.stop
-                        @change="handleCheckboxChange(item, month, 'early', $event)"
-                      />
-                      提前完成
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        :checked="getMaintenanceCheckbox(item, month, 'completed')"
-                        @click.stop
-                        @change="handleCheckboxChange(item, month, 'completed', $event)"
-                      />
-                      完成
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        :checked="getMaintenanceCheckbox(item, month, 'marked')"
-                        @click.stop
-                        @change="handleCheckboxChange(item, month, 'marked', $event)"
-                      />
-                      标记保养
-                    </label>
-                  </div>
+                <div class="status-content">
+                  <span
+                    v-if="monthItem.need_maintenance === 1 && monthItem.maintenance_status === 0"
+                    class="needs-label"
+                    >需要</span
+                  >
+                  <span v-if="monthItem.maintenance_status === 1" class="completed-label"
+                    >已完成</span
+                  >
                 </div>
               </td>
             </tr>
@@ -128,24 +112,35 @@
         </tbody>
       </table>
     </div>
+    <HandleContextMenu
+      :show="contextMenu.show"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      :action-sheet="contextMenu.actionSheet"
+      @action="handleContextMenuAction"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Search } from '@element-plus/icons-vue'
+import { useUserStore } from '@renderer/stores/user'
+import { useCheckLogin } from '@renderer/hooks/checkLogin'
+import { maintenance_edit } from '@renderer/api/maintain'
+import FinishIcon from '@renderer/assets/contextMenu/finish-icon.png'
+import AheadIcon from '@renderer/assets/contextMenu/ahead-icon.png'
+import SignIcon from '@renderer/assets/contextMenu/sign-icon.png'
 const props = defineProps({
   apiData: {
     type: Array,
     required: true
   }
 })
-
+const emits = defineEmits(['refresh-data'])
 // 状态管理
 const activeTab = ref('all')
 const searchKeyword = ref('')
-const maintenanceStatus = ref({}) // 存储复选框状态
-
 // 标签页配置
 const tabs = [
   { id: 'all', name: '全部' },
@@ -153,9 +148,108 @@ const tabs = [
   { id: 2, name: '研发部' },
   { id: 3, name: '质量部' }
 ]
-
+const actionItem = ref(null)
+const contextMenu = ref({ show: true, x: 0, y: 0, actionSheet: [] })
+//右键菜单相关函数
+const showContextMenu = (e, monthItem) => {
+  if (!useCheckLogin().value) {
+    return
+  }
+  actionItem.value = monthItem
+  if (monthItem.maintenance_status === 1) {
+    return
+  } else if (monthItem.need_maintenance === 1 && monthItem.maintenance_status === 0) {
+    contextMenu.value = {
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      actionSheet: [
+        {
+          name: '完成保养',
+          icon: FinishIcon,
+          action: 'finishMaintenance'
+        }
+      ]
+    }
+  } else if (monthItem.need_maintenance === 0 && monthItem.maintenance_status === 0) {
+    contextMenu.value = {
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      actionSheet: [
+        {
+          name: '提前保养',
+          icon: AheadIcon,
+          action: 'aheadMaintenance'
+        },
+        {
+          name: '标记保养',
+          icon: SignIcon,
+          action: 'signMaintenance'
+        }
+      ]
+    }
+  }
+}
+// 处理右键菜单操作
+const handleContextMenuAction = ({ action }) => {
+  if (action === 'finishMaintenance') {
+    // 完成保养逻辑
+    maintenance_edit({
+      monthly_plans_id: actionItem.value.id,
+      edit_type: 1
+    }).then((res) => {
+      if (res.code == 200) {
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('保养完成')
+        // 刷新数据
+        emits('refresh-data')
+      }
+    })
+  } else if (action === 'aheadMaintenance') {
+    // 提前保养逻辑
+    maintenance_edit({
+      monthly_plans_id: actionItem.value.id,
+      edit_type: 2
+    }).then((res) => {
+      if (res.code == 200) {
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('提前保养成功')
+        // 刷新数据
+        emits('refresh-data')
+      }
+    })
+  } else if (action === 'signMaintenance') {
+    // 标记保养逻辑
+    maintenance_edit({
+      monthly_plans_id: actionItem.value.id,
+      edit_type: 3
+    }).then((res) => {
+      if (res.code == 200) {
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('标记保养成功')
+        // 刷新数据
+        emits('refresh-data')
+      }
+    })
+  }
+  contextMenu.value.show = false
+}
 // 月份标签
-const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+const months = [
+  '1月',
+  '2月',
+  '3月',
+  '4月',
+  '5月',
+  '6月',
+  '7月',
+  '8月',
+  '9月',
+  '10月',
+  '11月',
+  '12月'
+]
 
 // 计算过滤后的数据
 const filteredData = computed(() => {
@@ -163,11 +257,11 @@ const filteredData = computed(() => {
 
   // 根据标签页过滤部门
   if (activeTab.value === 'all') {
-    props.apiData.forEach(dept => {
+    props.apiData.forEach((dept) => {
       equipmentList.push(...dept.equipment)
     })
   } else {
-    const dept = props.apiData.find(d => d.id === activeTab.value)
+    const dept = props.apiData.find((d) => d.id === activeTab.value)
     if (dept) {
       equipmentList = dept.equipment
     }
@@ -176,9 +270,11 @@ const filteredData = computed(() => {
   // 根据关键词搜索
   if (searchKeyword.value.trim()) {
     const keyword = searchKeyword.value.toLowerCase()
-    equipmentList = equipmentList.filter(eq => {
-      return eq.equipment_name.toLowerCase().includes(keyword) ||
-             eq.code.some(c => c.code.toLowerCase().includes(keyword))
+    equipmentList = equipmentList.filter((eq) => {
+      return (
+        eq.equipment_name.toLowerCase().includes(keyword) ||
+        eq.code.some((c) => c.code.toLowerCase().includes(keyword))
+      )
     })
   }
 
@@ -189,176 +285,165 @@ const filteredData = computed(() => {
 const getSerialNumber = (index) => {
   return index + 1
 }
-
-// 获取保养状态
-const getMaintenanceStatus = (item, month) => {
-  const plan = item.plans.find(p => p.month_number === month)
-  if (plan && plan.need_maintenance === 1) {
-    return 'needed'
-  }
-  return 'none'
-}
-
-// 获取当前月份（假设为8月）
-const getCurrentMonth = () => {
-  return 8 // 可以根据实际需求改为 new Date().getMonth() + 1
-}
-
-// 判断是否为当前年份
-const isCurrentYear = () => {
-  // 这里可以根据实际需求判断
-  return true
-}
-
-// 获取复选框状态
-const getMaintenanceCheckbox = (item, month, type) => {
-  const key = `${item.id}_${month}_${type}`
-  return maintenanceStatus.value[key] || false
-}
-
-// 处理复选框变更
-const handleCheckboxChange = (item, month, type, event) => {
-  const key = `${item.id}_${month}_${type}`
-
-  if (type === 'early') {
-    // 如果选择提前完成，取消其他选项
-    maintenanceStatus.value[key] = event.target.checked
-    if (event.target.checked) {
-      maintenanceStatus.value[`${item.id}_${month}_completed`] = false
-      maintenanceStatus.value[`${item.id}_${month}_marked`] = false
-    }
-  } else {
-    maintenanceStatus.value[key] = event.target.checked
-  }
-
-  // 这里可以添加API调用来保存状态
-  console.log('Maintenance status updated:', {
-    itemId: item.id,
-    month,
-    type,
-    checked: event.target.checked
-  })
-}
-
 // 处理标签页切换
 const handleTabChange = (tabId) => {
   activeTab.value = tabId
 }
 
 // 处理上传
-const handleUpload = () => {
-  console.log('Upload maintenance plan')
-  // 这里添加上传逻辑
-}
+// 自定义上传逻辑
+const customUpload = (fileItem) => {
+  const userStore = useUserStore()
+  // eslint-disable-next-line no-undef
+  let loadcontext = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.3)',
+    customClass: 'upload-loading'
+  })
+  const formData = new FormData()
+  formData.append('uniacid', userStore.uniacid)
+  formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
+  const xhr = new XMLHttpRequest()
 
-// 处理月份单元格点击
-const handleMonthClick = (item, month) => {
-  // 可以添加其他交互逻辑
-  console.log('Month clicked:', item.id, month)
-}
+  xhr.upload.onprogress = (event) => {
+    if (event.lengthComputable) {
+      const progress = (event.loaded / event.total) * 100
+      fileItem.progress = Math.round(progress)
+    }
+  }
+  xhr.onload = () => {
+    loadcontext.close()
+    let response = JSON.parse(xhr.response)
+    if (xhr.status == 200 && response.code == 200) {
+      emits('refresh-data', response.data)
+    } else {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        message: response.msg || '上传失败',
+        type: 'error'
+      })
+    }
+  }
 
+  xhr.onerror = () => {
+    loadcontext.close()
+  }
+
+  // 实际使用时需要配置正确的上传地址
+  xhr.open('POST', import.meta.env.VITE_API_BASE_URL + '/api/maintenance/upload')
+  xhr.setRequestHeader('Authorization', userStore.token)
+  xhr.send(formData)
+}
+const hideContextMenu = (e) => {
+  if (contextMenu.value.show && !e.target.closest('.context-menu')) {
+    contextMenu.value.show = false
+  }
+}
+onUnmounted(() => {
+  document.removeEventListener('click', hideContextMenu)
+})
 onMounted(() => {
   console.log('Maintenance plan mounted', props.apiData)
+  document.addEventListener('click', hideContextMenu)
 })
 </script>
 
 <style scoped lang="scss">
 .maintenance-plan {
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* 顶部导航栏 */
 .header-bar {
+  flex-shrink: 0;
   display: flex;
+  gap: 0 20px;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 22px;
 }
 
 .nav-tabs {
+  flex: 1;
+  height: 34px;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 0 3vw;
+  white-space: nowrap;
+  overflow-x: auto;
 }
 
 .tab {
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+  flex: 0 0 auto !important;
+  width: fit-content;
+  min-width: 20px !important;
   font-size: 14px;
-  color: #666;
-  border-radius: 4px;
-  transition: all 0.3s;
+  color: #555555;
 }
-
-.tab:hover {
-  background: #e8e8e8;
-}
-
 .tab.active {
-  background: #1890ff;
-  color: #fff;
+  color: var(--el-color-primary);
+  font-weight: 600;
+  // transform: scale(1.1);
 }
-
-.search-box {
-  position: relative;
+.hd-right {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  flex: 1;
-  max-width: 300px;
-  margin: 0 24px;
+  gap: 20px;
 }
-
-.search-input {
-  width: 100%;
-  padding: 8px 32px 8px 12px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  font-size: 14px;
+.search-box {
+  display: flex;
+  align-items: center;
+  width: 280px;
+  :deep(.search-input) {
+    width: 100%;
+    font-size: 14px;
+    .el-input__wrapper {
+      padding-left: 20px;
+      height: 34px;
+      border-radius: 20px;
+      background: #f9f9f9;
+      box-shadow: none;
+      &.is-focus {
+        box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+      }
+    }
+  }
 }
-
-.search-icon {
-  position: absolute;
-  right: 12px;
-  cursor: pointer;
-}
-
-.upload-btn {
-  padding: 8px 16px;
-  background: #52c41a;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
-}
-
-.upload-btn:hover {
-  background: #73d13d;
+.upload-box {
+  display: flex;
+  align-items: center;
+  .upload-btn {
+    width: 96px;
+    height: 26px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
 }
 
 /* 表格容器 */
 .table-container {
-  overflow-x: auto;
-  padding: 24px;
+  overflow: auto;
+  flex: 1;
 }
 
 .maintenance-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  min-width: 1800px;
+  min-width: 1500px;
 }
 
 .maintenance-table thead {
-  background: #fafafa;
+  background: #fff;
   position: sticky;
-  top: 0;
+  top: 0px;
   z-index: 10;
 }
 
@@ -375,14 +460,6 @@ onMounted(() => {
   text-align: center;
   border: 1px solid #e8e8e8;
   vertical-align: middle;
-}
-
-.maintenance-table tbody tr:hover {
-  background: #f5f5f5;
-}
-
-.maintenance-table .first-row td {
-  border-top: 2px solid #e8e8e8;
 }
 
 .code-list,
@@ -403,7 +480,11 @@ onMounted(() => {
 }
 
 .month-cell.needs-maintenance {
-  background: #fff7e6;
+  background: var(--el-color-danger-light-8);
+}
+
+.month-cell.completed-maintenance {
+  background: var(--el-color-primary-light-8);
 }
 
 .status-content {
@@ -412,9 +493,14 @@ onMounted(() => {
 
 .needs-label {
   display: block;
-  color: #fa8c16;
+  color: var(--el-color-danger);
   font-weight: 500;
   margin-bottom: 4px;
+}
+.completed-label {
+  display: block;
+  color: var(--el-color-primary);
+  font-weight: 500;
 }
 
 .checkboxes {
@@ -434,7 +520,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.checkboxes input[type="checkbox"] {
+.checkboxes input[type='checkbox'] {
   cursor: pointer;
 }
 </style>

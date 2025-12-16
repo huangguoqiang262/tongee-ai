@@ -1,16 +1,15 @@
 <template>
   <div class="maintain">
-    <MaintenancePlan :api-data="apiData" />
+    <MaintenancePlan :api-data="apiData" @refresh-data="getData" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { get_maintenance_plan } from '@renderer/api/maintain'
 const apiData = ref([])
 const getData = () => {
   get_maintenance_plan().then((res) => {
-    console.log(res)
     apiData.value = res.data
   })
 }
@@ -21,6 +20,8 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .maintain {
-  padding: 48px 20px;
+  padding: 48px 120px;
+  height: 100%;
+  width: 100%;
 }
 </style>

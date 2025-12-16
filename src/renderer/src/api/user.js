@@ -73,3 +73,27 @@ export function get_login_item(data) {
     data
   })
 }
+// 登录推荐知识库列表
+export function getLoginKnowList(data) {
+  return request({
+    url: '/intelligence/getLoginKnowList',
+    method: 'post',
+    data
+  })
+}
+// 跳过登录知识库推荐
+export function skipLogin(data) {
+  return request({
+    url: '/user/skipLogin',
+    method: 'post',
+    data
+  })
+}
+// 一键申请加入登录推荐知识库
+export function applyAllLoginShowKnows(data) {
+  return request({
+    url: '/intelligence/applyAllLoginShowKnows',
+    method: 'post',
+    data
+  })
+}
