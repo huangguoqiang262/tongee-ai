@@ -15,7 +15,7 @@
         @click="$emit('tabClick', tab.id)"
         @contextmenu="$emit('contextmenu', $event, tab)"
       >
-        <img :src="tab.favicon" class="tab-favicon" alt="favicon" />
+        <img :src="tab.favicon || defaultIcon" class="tab-favicon" alt="favicon" />
         <span class="tab-title">{{ tab.title }}</span>
         <div class="tab-close" @click="$emit('closeTab', tab.id, $event)">
           <el-icon><Close /></el-icon>
@@ -35,6 +35,7 @@
 </template>
 
 <script setup>
+import defaultIcon from '@renderer/assets/logo.png'
 defineProps({
   tabs: {
     type: Array,

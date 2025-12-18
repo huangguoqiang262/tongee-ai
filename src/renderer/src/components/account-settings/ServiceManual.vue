@@ -1,235 +1,128 @@
 <template>
   <div class="notebook-box">
-    <div class="catalogue" v-if="!catalogueShow" @click="catalogueClick(true)">目录</div>
-    <div class="left-box" v-if="catalogueShow">
+    <div v-if="!catalogueShow" class="catalogue" @click="catalogueClick(true)">目录</div>
+    <div v-if="catalogueShow" class="left-box">
       <div class="common-box">
         <div class="common-box-left">目录</div>
         <div class="square-icon-box" @click="catalogueClick(false)">
           <img class="square-icon" src="@renderer/assets/close-chat-icon.png" alt="" />
         </div>
       </div>
-      <div class="notebook-list">
-        <div class="item active-note">
-          <!-- <div class="icon-box">
-            <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
-          </div> -->
-          <div class="title">更新日志</div>
-        </div>
-        <div v-for="value in 28" :key="value" class="item">
-          <!-- <div class="icon-box">
-            <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
-          </div> -->
-          <div class="title">更新日志</div>
-        </div>
-        <div class="item">
-          <!-- <div class="icon-box">
-            <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
-          </div> -->
-          <div class="title">更新日志</div>
-        </div>
+      <div v-infinite-scroll="loadData" class="notebook-list">
+        <el-skeleton animated :loading="loading">
+          <template #template>
+            <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />
+          </template>
+          <template #default>
+            <template v-if="list.length">
+              <div
+                v-for="value in list"
+                :key="value.id"
+                :class="{ 'active-note': itemId == value.item_id }"
+                class="item"
+                @click="itemChange(value)"
+              >
+                <!-- <div class="icon-box">
+              <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
+            </div> -->
+                <div class="title">{{ value.title }}</div>
+              </div>
+            </template>
+            <div v-else class="empty">
+              <div class="empty-text">暂无数据</div>
+            </div>
+          </template>
+        </el-skeleton>
       </div>
     </div>
     <div class="center-box">
       <div class="center-content">
-        <div v-for="item in noteList" :key="item.id" class="note-item">
-          <div class="title">
-            <template>{{ item.title }}</template>
-          </div>
-          <div class="des">{{ item.des }}</div>
-          <div class="item-bottom">
-            <div class="time">{{ item.time }}</div>
-            <div class="size">{{ item.size }}</div>
-          </div>
-        </div>
+        <v-md-preview :text="html"></v-md-preview>
       </div>
     </div>
-    <div class="answer-box">
-      <div class="chat-box">
-        <div class="chat-list">
-          <div class="chat-item user-char">
-            <div class="item-nr user-item">你好呀</div>
-          </div>
-          <div class="chat-item">
-            <div class="item-nr">你好呀</div>
-          </div>
-        </div>
-        <!-- <div class="no-data">
-          <img src="@renderer/assets/no-icon.png" class="no-img" />
-
-          <div class="no-tips">
-Hi，任何关于这个知识库的问题，尽管提问
-          </div>
-        </div> -->
-      </div>
-
-      <div ref="inputWrapper" class="input-wrapper" @click.stop="focusChange">
-        <div class="input-box">
-          <!-- 按回车键发送，输入框高度三行 -->
-          <el-input
-            ref="messageInputRef"
-            v-model="message.text"
-            :disabled="isChatting"
-            autosize
-            class="input"
-            resize="none"
-            placeholder="@知识库或直接提问"
-            @focus="focus.value = true"
-            :rows="3"
-          >
-          </el-input>
-        </div>
-        <div class="action-box">
-          <div class="action-left">
-            <el-select
-              v-model="modelValue"
-              size="small"
-              popper-class="message-input-model-select"
-              placeholder="选择模型"
-            >
-              <el-option v-for="item in cities" :key="item.value" :value="item.value">
-                <div class="value-text">{{ item.value }}</div>
-                <div class="value-label">{{ item.label }}</div>
-              </el-option>
-            </el-select>
-            <div class="line"></div>
-            <div
-              class="networking"
-              :class="{ 'is-network': isNetwork }"
-              @click.stop="networkChange"
-            >
-              联网
-              <div class="circle-icon"></div>
-            </div>
-            <div class="histore-issue-box">
-              <div v-for="(item, index) in historyIssueList" :key="index" class="issue-item">
-                <img class="issue-img" :src="item.icon" alt="" />
-                <div class="issue-text">{{ item.label }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div v-if="chatVisible" class="right-box">
+      <EnchiridionChat :know-id="knowId" :item-id="itemId" @close-chat="chatVisible = false" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted, nextTick } from 'vue'
-import html2Canvas from 'html2canvas'
-
-const noteList = ref([
-  {
-    id: 1,
-    title: '医疗器械注册流程笔记',
-    des: '整理了医疗器械注册的全流程，包括所需材料，时间节点和注意事项…',
-    time: '昨天18:09',
-    size: '123KB'
-  },
-  {
-    id: 2,
-    title: '质量管理体系要点',
-    des: '整理了医疗器械注册的全流程，包括所需材料，时间节点和注意事项…',
-    time: '昨天18:09',
-    size: '123KB'
-  },
-  {
-    id: 3,
-    title: '临床评价需求总结',
-    des: '整理了医疗器械注册的全流程，包括所需材料，时间节点和注意事项…',
-    time: '昨天18:09',
-    size: '13KB'
-  }
-])
-
-const catalogueShow = ref(false)
-const catalogueClick = (val) => {
-  catalogueShow.value = val
+import { ref, onMounted } from 'vue'
+// import { useUserStore } from '@renderer/stores/user'
+import { get_knowledge_manual } from '@renderer/api/feedback'
+// import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+let chatVisible = ref(false)
+let catalogueShow = ref(true)
+const catalogueClick = (show) => {
+  catalogueShow.value = show
 }
-let message = ref({
-  text: ''
+let itemId = ref('')
+let knowId = ref('')
+let html = ref('')
+const itemChange = (value) => {
+  itemId.value = value.item_id
+  html.value = replaceImgStyle(value.content || '')
+}
+// const userStore = useUserStore()
+// const userInfo = useUserInfo()
+let pagination = ref({
+  page: 1,
+  page_size: 10,
+  total: 0
 })
-// ... existing code ...
-const sendMessage = (event) => {
-  if (event.type == 'keydown') {
-    if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey || event.altKey)) {
-      message.value.text += '\n'
-    }
-  } else {
-    if (!message.value.text) {
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        message: '请输入消息',
-        type: 'warning'
-      })
-      return
-    }
-    this.$emit('send', message.value)
-    message.value = { text: '' }
-  }
-}
-let cities = ref([
-  {
-    value: 'DS V3.1-Think',
-    label: 'DeepSeek更快深度推理(最新)'
-  },
-  {
-    value: 'DeepSeek V3.1',
-    label: '多种场景回答更精炼(最新)'
-  },
-  {
-    value: 'DeepSeek',
-    label: 'V3适用多种应用场景'
-  },
-  {
-    value: 'DeepSeek R1',
-    label: '深度思考推理'
-  },
-  {
-    value: 'Hunyuan',
-    label: '适合大部分任务'
-  }
-])
-
-const isChatting = ref(false)
-// 处理粘贴事件
-const handlePaste = (event) => {
-  if (isChatting.value) {
-    // ElMessage.warning('正在对话中，无法粘贴图片')
+let loading = ref(true)
+let list = ref([])
+const loadData = () => {
+  if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
     return
   }
-
-  const clipboardData = event.clipboardData || window.clipboardData
-  if (!clipboardData) return
-
-  // 检查是否有图片数据
-  const items = clipboardData.items
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i]
-    if (item.type.indexOf('image') !== -1) {
-      // 阻止默认的粘贴行为
-      event.preventDefault()
-
-      const file = item.getAsFile()
-      if (file) {
-        handleImageFile(file)
-      }
-      break
+  pagination.value.page++
+  getList(false)
+}
+const replaceImgStyle = (html) => {
+  const newStyle =
+          "vertical-align: middle;max-width:100%;height:auto !important;";
+  const imgRegex = /<img[^>]*>/gi;
+  return html.replace(imgRegex, (match) => {
+    const styleRegex = /style="([^"]*)"/i;
+    const styleMatch = match.match(styleRegex);
+    if (styleMatch) {
+      // 已有style，替换或添加新样式
+      const oldStyle = styleMatch[1].toLowerCase();
+      const newAttr = `style="${newStyle}${oldStyle}"`;
+      return match.replace(styleRegex, newAttr);
+    } else {
+      // 无style，直接添加新样式
+      return match.replace("<img", `<img style="${newStyle}"`);
     }
+  });
+}
+
+const getList = (load = true) => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size
   }
+  loading.value = load
+  get_knowledge_manual(data)
+    .then((res) => {
+      knowId.value = res.data.know_info?.know_id || ''
+      list.value = list.value.concat(res.data.list.data || [])
+      pagination.value.total = res.data.list.total
+      pagination.value.page = res.data.list.current_page
+      pagination.value.page_size = res.data.list.per_page
+      if (!itemId.value && list.value.length) {
+        itemId.value = list.value[0].item_id
+        html.value = replaceImgStyle(list.value[0].content || '')
+      }
+    })
+    .finally(() => {
+      loading.value = false
+    })
 }
-let focus = ref(false)
-const focusChange = (e) => {
-  if (this.$refs.inputWrapper.contains(e.target) || e.target == this.$refs.inputWrapper) {
-    focus.value = true
-  } else if (!message.text) {
-    focus.value = false
-  }
-}
-let isNetwork = ref(false)
-const networkChange = () => {
-  isNetwork.value = !isNetwork.value
-}
+onMounted(() => {
+  getList()
+})
 </script>
 
 <style scoped lang="scss">
@@ -321,6 +214,18 @@ const networkChange = () => {
           background-color: #909090;
         }
       }
+      .empty {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #909090;
+        line-height: 22px;
+        .empty-text {
+          margin-bottom: 16vh;
+        }
+      }
       .item {
         position: relative;
         margin-bottom: 4px;
@@ -379,363 +284,32 @@ const networkChange = () => {
 
   .center-box {
     flex: 1;
+    min-width: 400px;
     height: 100%;
-    padding: 13px 10px 20px 20px;
+    padding: 20px 0;
+    overflow: hidden;
+    user-select: text;
+    .center-content {
+      height: 100%;
+      padding: 0 20px;
+      overflow-y: auto;
+      margin: 0 auto;
+      max-width: 810px;
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 22px;
+      border-radius: 12px;
+      box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+    }
+  }
+  .right-box {
+    padding: 10px 20px 0;
+    height: 100%;
+    min-width: 375px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-
-    .center-content {
-      flex: 1;
-      padding-right: 10px;
-      overflow-y: auto;
-      width: 100%;
-      max-width: 910px;
-      margin: 0 auto;
-      &::-webkit-scrollbar {
-        width: 4px;
-        height: 4px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        border-radius: 2px;
-        background-color: #dddcdc;
-
-        &:hover {
-          background-color: #909090;
-        }
-      }
-
-      .note-item {
-        padding-top: 8px;
-        padding-bottom: 19px;
-        margin-bottom: 11px;
-        border-bottom: 1px solid #efefef;
-
-        &:last-of-type {
-          border-bottom: none;
-        }
-
-        .title {
-          margin-bottom: 7px;
-          font-size: 16px;
-          color: var(--default-font-color);
-          line-height: 22px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .des {
-          margin-bottom: 11px;
-          font-size: 14px;
-          color: #909090;
-          line-height: 16px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .item-bottom {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 6px;
-          .time,
-          .size {
-            font-size: 12px;
-            color: #909090;
-            line-height: 16px;
-          }
-        }
-      }
-    }
-  }
-
-  .answer-box {
-    width: 412px;
-    height: 100%;
     border-left: 1px solid #efefef;
-    // background: red;
-    position: relative;
-    padding: 20px;
-
-    .chat-box {
-      width: 100%;
-      height: calc(100% - 100px);
-      // background: #f9f9f9;
-      .chat-list {
-        .chat-item {
-          font-family: PingFangSC, PingFang SC;
-          font-weight: 400;
-          font-size: 14px;
-          line-height: 20px;
-          width: 100%;
-          margin-bottom: 30px;
-          .item-nr {
-            max-width: 80%;
-          }
-        }
-        .user-char {
-          display: flex;
-          justify-content: end;
-        }
-        .ai {
-        }
-        .user-item {
-          background: var(--el-color-primary);
-          padding: 10px 14px;
-          border-radius: 8px;
-          font-family: PingFangSC, PingFang SC;
-          font-weight: 400;
-          font-size: 14px;
-          color: #ffffff;
-        }
-      }
-
-      .no-data {
-        width: 100%;
-        position: absolute;
-        top: 50%;
-        text-align: center;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        .no-img {
-          width: 76px;
-          height: 55px;
-          margin-bottom: 13px;
-        }
-        .no-tips {
-          font-family: PingFangSC, PingFang SC;
-          font-weight: 400;
-          font-size: 14px;
-          color: #737475;
-          line-height: 20px;
-        }
-      }
-    }
-
-    .input-wrapper {
-      box-sizing: border-box;
-      padding: 10px 20px;
-      min-height: 76px;
-      max-height: 76px;
-      display: flex;
-      // align-items: center;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-      background: #f9f9f9;
-      border-radius: 16px;
-      border: 1px solid #dfdfdf;
-      transition: min-height 0.3s linear, max-height 0.6s linear;
-      position: absolute;
-      bottom: 30px;
-      width: calc(100% - 40px);
-      .input-box {
-        flex: 1;
-        flex-shrink: 0;
-        box-sizing: border-box;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        .circle-logo {
-          flex-shrink: 0;
-          margin-right: 10px;
-          width: 24px;
-          height: 24px;
-        }
-        .input {
-          .el-input__wrapper {
-            border: none;
-          }
-          :deep(.el-input__wrapper) {
-            padding: 0;
-            min-height: 22px;
-            max-height: 150px;
-            background: transparent;
-            border: none;
-            font-size: 16px;
-            outline: none;
-            box-shadow: none;
-            color: #221815;
-            /* 隐藏滚动条轨道 */
-            &::-webkit-scrollbar {
-              display: none;
-            }
-            /* 对于IE和Edge的旧版浏览器 */
-            -ms-overflow-style: none;
-            &::placeholder {
-              color: #909090;
-              font-size: 16px;
-            }
-          }
-        }
-      }
-      .action-box {
-        gap: 0 60px;
-        overflow: hidden;
-        .action-left {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          overflow: hidden;
-          :deep(.el-select) {
-            flex-shrink: 0;
-            width: fit-content !important;
-            .el-select__wrapper {
-              padding: 4px 6px;
-              box-shadow: none;
-              background: transparent;
-              font-size: 14px !important;
-              .el-select__placeholder {
-                position: relative;
-                transform: none;
-                color: var(--el-color-primary);
-              }
-              &.is-focused {
-                box-shadow: none;
-              }
-              .el-select__caret {
-                color: var(--el-color-primary);
-              }
-              &:hover {
-                background: var(--primary-bg-color);
-              }
-            }
-          }
-          .line {
-            flex-shrink: 0;
-            width: 1px;
-            height: 12px;
-            background: #efefef;
-            margin: 0 3px;
-          }
-          .networking {
-            flex-shrink: 0;
-            width: fit-content;
-            min-height: 28px;
-            padding: 4px 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            gap: 0 4px;
-            font-weight: 500;
-            font-size: 14px;
-            color: #909090;
-            cursor: pointer;
-            transition: all 0.3s;
-            &.is-network {
-              color: var(--el-color-primary);
-              .circle-icon {
-                background: var(--el-color-primary);
-              }
-            }
-            &:hover {
-              background: var(--primary-bg-color);
-            }
-            .circle-icon {
-              flex-shrink: 0;
-              width: 4px;
-              height: 4px;
-              background: #909090;
-              border-radius: 50%;
-            }
-          }
-          .histore-issue-box {
-            margin-left: 30px;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 0 10px;
-            overflow: hidden;
-            .issue-item {
-              overflow: hidden;
-              display: flex;
-              align-items: center;
-              gap: 0 6px;
-              cursor: pointer;
-              color: #555555;
-              transition: all 0.3s;
-              &:hover {
-                color: var(--el-color-primary);
-              }
-              .issue-img {
-                flex-shrink: 0;
-                width: 18px;
-                height: 18px;
-                object-fit: cover;
-              }
-              .issue-text {
-                flex: 1;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                font-size: 14px;
-              }
-            }
-          }
-        }
-        .btn-box {
-          flex-shrink: 0;
-          height: 100%;
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          .upload-box {
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-          }
-          .attachment-icon {
-            flex-shrink: 0;
-            padding: 4px;
-            margin-right: 18px;
-            width: 28px;
-            height: 28px;
-            vertical-align: middle;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.3s;
-            &.screenshot-icon {
-              margin-right: 3px;
-            }
-            &:hover {
-              background: var(--primary-bg-color);
-            }
-          }
-          .line {
-            flex-shrink: 0;
-            width: 1px;
-            height: 16px;
-            background: #ccc;
-            margin: 0 12px;
-          }
-          .enter-btn {
-            flex-shrink: 0;
-            padding: 8px !important;
-            border-radius: 8px !important;
-            .stop-icon {
-              position: relative;
-              z-index: 1;
-              box-sizing: border-box;
-              display: inline-block;
-              width: 13px;
-              height: 13px;
-              background: red;
-              border-radius: 4px;
-              vertical-align: middle;
-            }
-            .btn-icon {
-              width: 20px;
-              height: 20px;
-              vertical-align: middle;
-            }
-          }
-        }
-      }
-    }
   }
 }
 </style>

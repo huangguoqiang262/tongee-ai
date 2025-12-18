@@ -48,7 +48,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { add_web_log } from '@renderer/api/history'
-import defaultIcon from '../../assets/logo.png'
+import defaultIcon from '@renderer/assets/logo.png'
 const tabs = ref([])
 const activeTabId = ref(null)
 const draggingTab = ref(null)

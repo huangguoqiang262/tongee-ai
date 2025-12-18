@@ -433,7 +433,7 @@ const submitImport = () => {
         .is_checked {
           font-size: 14px;
           color: #909090;
-          line-height: 16px;
+          line-height: 18px;
         }
         .dialog-footer {
           flex-shrink: 0;

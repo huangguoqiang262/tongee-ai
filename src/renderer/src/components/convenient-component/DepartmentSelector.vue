@@ -246,7 +246,7 @@ watch(
       margin-bottom: 10px;
       font-size: 14px;
       color: #909090;
-      line-height: 16px;
+      line-height: 18px;
     }
   }
 

@@ -46,6 +46,25 @@
             <div class="label">知识库使用手册</div>
             <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" />
           </div>
+          <div class="handle-item">
+            <div class="label">
+                版本号
+                <span class="versions">{{ appVersion }}</span>
+                <span v-if="isUpdateAvailable" class="new-version">New</span>
+            </div>
+            <el-button
+              class="btn-check-update"
+              size="small"
+              type="info"
+              :loading="getLoading"
+              @click="handleCheckUpdate"
+              >检查并更新</el-button
+            >
+          </div>
+          <div class="handle-item">
+            <div class="label">功能介绍</div>
+            <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" />
+          </div>
           <div class="handle-item" @click="sonClick('assist')">
             <div class="label">帮助与反馈</div>
             <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" />
@@ -142,7 +161,11 @@
         <div class="page-title">帮助与反馈</div>
         <div class="export-box" @click="toFeedback">我要反馈</div>
       </div>
-      <div ref="messageListRef" class="content-box assist-content-box" style="border-top: 1px solid #efefef">
+      <div
+        ref="messageListRef"
+        class="content-box assist-content-box"
+        style="border-top: 1px solid #efefef"
+      >
         <div class="assist-list">
           <div
             v-for="item in questionList"
@@ -309,6 +332,56 @@ import defaultAvatar from '@renderer/assets/default-avatar.png'
 import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
 const userStore = useUserStore()
 const userInfo = useUserInfo()
+let getLoading = ref(false)
+const updateApi = inject('updateApi')
+let isUpdateAvailable = ref(false)
+let appVersion = ref('1.0.0')
+// 获取应用版本
+const getAppVersion = async () => {
+  getLoading.value = true
+  try {
+    const version = await window.customApi?.getAppVersion()
+    appVersion.value = version
+  } catch (error) {
+    console.log(error)
+    appVersion.value = '1.0.0'
+  }
+  getLoading.value = false
+}
+getAppVersion()
+nextTick(() => {
+  isUpdateAvailable.value = compareVersions(appVersion.value, userStore.version || '1.0.0')
+})
+const compareVersions = (version1, version2) => {
+  // 将版本号拆分成数字数组
+  var arr1 = version1.split('.')
+  var arr2 = version2.split('.')
+
+  // 遍历数字数组进行逐段比较
+  for (var i = 0; i < Math.max(arr1.length, arr2.length); i++) {
+    var num1 = parseInt(arr1[i] || 0) // 如果数组长度不够，则将缺失部分补0
+    var num2 = parseInt(arr2[i] || 0)
+
+    if (num1 < num2) {
+      return true // 版本1小于版本2
+    } else if (num1 > num2) {
+      return true // 版本1大于版本2
+    }
+  }
+  return false // 版本1等于版本2
+}
+const handleCheckUpdate = async () => {
+  getLoading.value = true
+  if (updateApi && updateApi.checkForUpdates) {
+    try {
+      await updateApi.checkForUpdates()
+    } catch (err) {
+      console.log(err)
+    }
+  }
+  isUpdateAvailable.value = compareVersions(appVersion.value, userStore.version || '1.0.0')
+  getLoading.value = false
+}
 let memberPrivileges = ref('')
 let toolbarShow = ref(useToolBarStore().toolbarShow)
 // 工具栏选择
@@ -394,7 +467,7 @@ const activeSession = ref({
   provider_key: '',
   know_key: '',
   know_id: '',
-  item_id: '',
+  item_id: 0,
   temperature: 0.7,
   contextNumber: 5,
   stream: true,
@@ -418,17 +491,8 @@ const getQuestions = () => {
   get_usually_questions({}).then((res) => {
     if (res.code == 200) {
       questionList.value = res.data.question_list
-      activeSession.value.know_key = res.data.chat_info?.know_info?.know_key
-      activeSession.value.know_id = res.data.chat_info?.know_info?.know_id
-      activeSession.value.item_id = res.data.chat_info?.know_info?.item_id
-      activeSession.value.vector_folder_path =
-        res.data.chat_info?.know_info?.vector_folder_path || ''
-      activeSession.value.model_id = res.data.chat_info?.model_info?.model_id || ''
-      activeSession.value.model_name = res.data.chat_info?.model_info?.model_name
-      activeSession.value.provider_key = res.data.chat_info?.model_info?.provider_key
-      activeSession.value.know_model_name = res.data.chat_info?.know_vector_model?.model_name || ''
-      activeSession.value.know_provider_key =
-        res.data.chat_info?.know_vector_model?.provider_key || ''
+      activeSession.value.know_key = res.data.know_info?.know_key
+      activeSession.value.know_id = res.data.know_info?.know_id
       createChat()
     }
   })
@@ -1016,6 +1080,26 @@ const manualClick = () => {
             height: 60px;
             border-radius: 8px;
             object-fit: cover;
+          }
+          .versions {
+            margin-left: 5px;
+            color: var(--default-font-color);
+          }
+          .new-version {
+            margin-left: 10px;
+            font-size: 12px;
+            line-height: 1;
+            background-color: #ff4444;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 30px;
+          }
+
+          .btn-check-update {
+            background-color: #e0dede;
+            color: var(--default-font-color);
+            border: none;
+            border-radius: 6px;
           }
           .item-right {
             display: flex;

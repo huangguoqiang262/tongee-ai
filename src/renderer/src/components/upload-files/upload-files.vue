@@ -210,7 +210,7 @@ const initializeUploadList = (fileList) => {
     uploadedCount: 0,
     totalCount: file.children ? file.children.length : 1,
     errorMessage: '',
-    file: file.raw || null,
+    file: file.file || null,
     children: file.children || []
   }))
   uploadList.value.push(...tempList)
@@ -292,6 +292,7 @@ const uploadSingleFile = async (fileItem) => {
     formData.append('uniacid', userStore.uniacid)
     formData.append('knowledge_id', props.knowledgeId)
     formData.append('parent_item_id', props.parentItemId)
+    formData.append('same_name_type', fileItem.same_name_type || 1)
     formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
     const xhr = new XMLHttpRequest()
 
@@ -327,67 +328,90 @@ const uploadSingleFile = async (fileItem) => {
     xhr.send(formData)
   })
 }
-let taskPollingInterval = null
-let isTask = ref(true)
-// 开始任务状态轮询
-const startTaskPolling = (taskId) => {
-  console.log('task_id:', taskId)
+// 修复：改为每个任务独立的轮询管理
+const taskPollingMap = new Map() // 存储每个任务的轮询信息
 
-  // 如果已有轮询，先清除
-  if (taskPollingInterval) {
-    clearInterval(taskPollingInterval)
+// 开始任务状态轮询（修复版本）
+const startTaskPolling = (taskId) => {
+  console.log('开始轮询任务:', taskId)
+
+  // 如果该任务已有轮询，先清除
+  if (taskPollingMap.has(taskId)) {
+    const { interval } = taskPollingMap.get(taskId)
+    clearInterval(interval)
   }
 
-  // 每1秒轮询一次任务状态（加快轮询频率以更快反映进度变化）
-  taskPollingInterval = setInterval(() => {
-    // 无进行任务后停止轮询
-    if (!isTask.value) {
-      if (taskPollingInterval) {
-        clearInterval(taskPollingInterval)
-        taskPollingInterval = null
-      }
-      return
-    }
+  // 创建新的轮询间隔
+  const interval = setInterval(() => {
     getUploadProgress(taskId)
   }, 2000)
+
+  // 存储任务轮询信息
+  taskPollingMap.set(taskId, {
+    interval,
+    isActive: true
+  })
 }
 const closeUploadDialog = () => {
-  if (taskPollingInterval) {
-    clearInterval(taskPollingInterval)
-    taskPollingInterval = null
-  }
+  // 清除所有任务的轮询
+  taskPollingMap.forEach(({ interval }, taskId) => {
+    clearInterval(interval)
+    taskPollingMap.delete(taskId)
+  })
 }
+
 onUnmounted(() => {
-  if (taskPollingInterval) {
-    clearInterval(taskPollingInterval)
-    taskPollingInterval = null
-  }
+  // 清除所有任务的轮询
+  taskPollingMap.forEach(({ interval }, taskId) => {
+    clearInterval(interval)
+    taskPollingMap.delete(taskId)
+  })
 })
-// 获取文件上传进度
-// 获取文件上传进度
+// 获取文件上传进度（修复版本）
 const getUploadProgress = async (taskId) => {
-  task_list({
-    page: 1,
-    page_size: 100,
-    task_id: taskId
-  }).then((res) => {
-    res.data.data.filter((item) => {
-      uploadList.value.forEach((file) => {
-        if (item.task_id == file.task_id) {
-          file.progress = item.progress
-          file.uploadedCount = item.success_files
-          file.status = mapStatus[item.status]
-          file.totalCount = item.total_files
-          if (item.processed_files == item.total_files) {
-            isTask.value = false
+  try {
+    const res = await task_list({
+      page: 1,
+      page_size: 100,
+      task_id: taskId
+    })
+
+    if (res.data.data && res.data.data.length > 0) {
+      res.data.data.forEach((item) => {
+        // 找到对应的上传项
+        const uploadItem = uploadList.value.find(file => file.task_id === item.task_id)
+        if (uploadItem) {
+          // 更新上传项状态
+          uploadItem.progress = item.progress
+          uploadItem.uploadedCount = item.success_files
+          uploadItem.status = mapStatus[item.status]
+          uploadItem.totalCount = item.total_files
+
+          // 检查任务是否完成
+          if (item.processed_files >= item.total_files) {
+            // 任务完成，停止该任务的轮询
+            const taskInfo = taskPollingMap.get(taskId)
+            if (taskInfo) {
+              clearInterval(taskInfo.interval)
+              taskPollingMap.delete(taskId)
+              console.log(`任务 ${taskId} 完成，停止轮询`)
+            }
           }
         }
       })
-    })
-    if (res.data.data.length == 0) {
-      isTask.value = false
+    } else {
+      // 没有找到任务数据，停止该任务的轮询
+      const taskInfo = taskPollingMap.get(taskId)
+      if (taskInfo) {
+        clearInterval(taskInfo.interval)
+        taskPollingMap.delete(taskId)
+        console.log(`任务 ${taskId} 不存在，停止轮询`)
+      }
     }
-  })
+  } catch (error) {
+    console.error('获取任务进度失败:', error)
+    // 发生错误时，继续轮询，不要停止
+  }
 }
 // 上传文件夹（保持错误边界）
 const uploadDirectory = async (directoryItem) => {

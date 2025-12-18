@@ -167,7 +167,7 @@ onUnmounted(() => {
     margin-bottom: 10px;
     font-size: 14px;
     color: var(--default-font-color);
-    line-height: 16px;
+    line-height: 18px;
   }
   .knowledge-popover-content {
     max-height: 300px;

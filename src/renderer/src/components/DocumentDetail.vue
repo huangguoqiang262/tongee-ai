@@ -1,6 +1,6 @@
 <template>
   <div class="document-detail">
-    <FilePreview :file-url="fileUrl" :file-name="fileName" />
+    <FilePreview v-if="fileUrl" :file-url="fileUrl" :file-name="fileName" />
   </div>
 </template>
 
@@ -19,10 +19,9 @@ watchEffect(() => {
   fileName.value = props.attrs.fileName || ''
 })
 </script>
-
 <style scoped lang="scss">
-  .document-detail {
-    width: 100%;
-    height: 100%;
-  }
+.document-detail {
+  width: 100%;
+  height: 100%;
+}
 </style>

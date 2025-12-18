@@ -201,6 +201,12 @@ import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 export default {
   name: 'MessageInput',
   inject: ['addNewTab', 'replaceActiveTab'],
+  props: {
+    isActiveTab: {
+      type: Boolean,
+      default: false
+    }
+  },
   data() {
     return {
       isChatting: false,
@@ -262,8 +268,17 @@ export default {
       login_show_knows: 0
     }
   },
+  watch: {
+    isActiveTab: {
+      handler(newVal) {
+        if (newVal) {
+          this.setupScreenshotListeners()
+        }
+      },
+      immediate: true
+    }
+  },
   async mounted() {
-    // this.setupScreenshotListeners()
     this.$watch(
       'fileList',
       () => {
@@ -285,9 +300,6 @@ export default {
     this.getKnows()
     this.getQuestions()
     this.getKnowledgeList()
-  },
-  beforeUnmount() {
-    // 移除事件监听
   },
   methods: {
     getUserInfo() {
@@ -596,7 +608,6 @@ export default {
     },
     // 设置截图事件监听
     setupScreenshotListeners() {
-      window.customApi?.removeScreenshotOk(this.handleScreenshotAsPaste)
       // 截图确定事件
       window.customApi?.onScreenshotOk(this.handleScreenshotAsPaste)
     },
@@ -626,7 +637,7 @@ export default {
         const blob = new Blob([byteArray], { type: 'image/png' })
 
         // 创建 File 对象
-        const file = new File([blob], `screenshot_${new Date().getTime()}.png`, {
+        const file = new File([blob], `${new Date().getTime()}.png`, {
           type: 'image/png',
           lastModified: new Date().getTime()
         })

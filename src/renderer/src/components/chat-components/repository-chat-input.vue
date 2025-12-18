@@ -466,7 +466,7 @@ export default {
         const blob = new Blob([byteArray], { type: 'image/png' })
 
         // 创建 File 对象
-        const file = new File([blob], `screenshot_${new Date().getTime()}.png`, {
+        const file = new File([blob], `${new Date().getTime()}.png`, {
           type: 'image/png',
           lastModified: new Date().getTime()
         })

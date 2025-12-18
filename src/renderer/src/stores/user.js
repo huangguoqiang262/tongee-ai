@@ -5,6 +5,7 @@ export const useUserStore = defineStore('user', {
     user: {},
     token: '',
     uniacid: 2,
+    version: '1.0.0'
   }),
   persist: {
     enabled: true,

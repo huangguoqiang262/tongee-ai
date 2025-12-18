@@ -50,7 +50,7 @@ function createWindow() {
       webSecurity: false,
       nodeIntegration: false, // 禁用 nodeIntegration
       contextIsolation: true, // 启用上下文隔离
-      preload: join(__dirname, '../preload/index.js'),
+      preload: is.dev ? join(__dirname, '../preload/index.js') : 'preload/index.js',
       sandbox: false,
       webviewTag: true,
       webgl: true,
@@ -59,7 +59,7 @@ function createWindow() {
   })
   global.mainWindow = mainWindow
   // 打开控制台
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
   // // 点击关闭按钮最小化到托盘
   // mainWindow.on('close', (event) => {
   //   // 阻止窗口默认关闭行为

@@ -552,15 +552,24 @@
       @refresh-list="refreshList"
       @before-upload-files="beforeUploadFiles"
     />
-    <el-upload
+    <!-- <el-upload
       v-show="false"
       ref="elUploadRef"
       :auto-upload="false"
+      multiple
       accept=".txt,.png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
       :on-change="handleSelectChange"
     >
       <button ref="uploadBtnRef"></button>
-    </el-upload>
+    </el-upload> -->
+    <input
+      v-show="false"
+      ref="uploadBtnRef"
+      type="file"
+      multiple
+      accept=".txt,.png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+      :onchange="handleSelectChange"
+    />
     <el-dialog
       v-model="importWebVisible"
       draggable
@@ -687,6 +696,35 @@
       import-type="repository"
       @submit-import="submitImport"
     />
+    <el-dialog
+      v-model="conflictVisible"
+      class="custom-transition-dialog"
+      width="460"
+      align-center
+      :close-on-click-modal="false"
+      :show-close="false"
+      transition="dialog-bounce"
+    >
+      <template #header>
+        <el-icon style="font-size: 20px; color: #e6a23c"><WarnTriangleFilled /></el-icon>
+        <span class="title">同名文件</span>
+      </template>
+      <div class="conflict-title">监测到当前位置存在以下同名文件夹，请选择操作</div>
+      <div class="conflict-box">
+        <div v-for="(item, index) in conflictFiles" :key="index" class="conflict-item">
+          <img v-if="item.type == 'directory'" :src="catalogueIcon" class="conflict-icon" alt="" />
+          <img v-else class="conflict-icon" :src="getFileIcon(item)" alt="" />
+          <div class="conflict-name">{{ item?.title || '' }}</div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button class="cancel-btn" @click="retainAll">保留全部</el-button>
+          <el-button class="cancel-btn" type="primary" @click="displace"> 替换 </el-button>
+          <el-button class="cancel-btn" @click="cancelConflict">取消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -717,6 +755,8 @@ import headSquareIcon from '@renderer/assets/repository/head-square-icon.png'
 import defaultCover from '@renderer/assets/repository/default-cover.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
+import { ElIcon } from 'element-plus'
+import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import {
   get_knows,
   create_know,
@@ -791,16 +831,25 @@ const squaretabChange = () => {
 }
 // 到达详情
 const detailChange = (item) => {
-  addNewTab({
-    icon: item.info?.icon,
-    title: item.title,
-    url: 'DocumentDetail',
-    isInternal: true,
-    attrs: {
-      fileUrl: item.info?.url,
-      fileName: item.title
-    }
-  })
+  if (item.item_type == 3) {
+    addNewTab({
+      icon: item.info?.icon,
+      title: item.title,
+      url: item.info?.web_url,
+      isInternal: false
+    })
+  } else {
+    addNewTab({
+      icon: item.info?.icon,
+      title: item.title,
+      url: 'DocumentDetail',
+      isInternal: true,
+      attrs: {
+        fileUrl: item.info?.url,
+        fileName: item.title
+      }
+    })
+  }
 }
 // 公共知识库我的创建
 const commonCreateList = ref([])
@@ -1728,7 +1777,7 @@ const hidePopover = (popoverName) => {
     popoverName.hide()
   }
 }
-let elUploadRef = ref(null) //elinput 组件
+// let elUploadRef = ref(null) //elinput 组件
 let uploadBtnRef = ref(null) //elinput上传按钮触发
 let uploadVisible = ref(false) //自定义上传组件
 const closeUploadDialog = () => {
@@ -1737,11 +1786,11 @@ const closeUploadDialog = () => {
 
 const beforeUploadFiles = (type) => {
   if (type == 'local-file') {
-    elUploadRef.value.clearFiles()
+    uploadBtnRef.value.value = ''
     ReadyUploadList.length = 0
-    uploadBtnRef.value.click()
+    uploadBtnRef.value?.click()
   } else if (type == 'local-folder') {
-    elUploadRef.value.clearFiles()
+    directoryInputRef.value.value = ''
     ReadyUploadList.length = 0
     // openDirectorySelector()
     directoryInputRef.value?.click()
@@ -1780,29 +1829,60 @@ const beforeUploadFiles = (type) => {
   }
 }
 const ReadyUploadList = reactive([])
-const handleSelectChange = (file) => {
-  // 如果是文件夹，使用新的目录树结构
-  if (file.webkitRelativePath) {
-    // 处理文件夹上传
-    file.type = 'directory'
-    file.uploadStatus = 'pending'
-    ReadyUploadList.push(file)
-    uploadVisible.value = true
-  } else {
-    // 处理单个文件
-    file.type = 'file'
-    file.uploadStatus = 'pending'
-    ReadyUploadList.push(file)
-    // ReadyUploadList.push({
-    //   type: 'directory',
-    //   name: directoryTree.name,
-    //   path: directoryTree.path,
-    //   fileCount: directoryTree.fileCount,
-    //   children: directoryTree.children,
-    //   uploadStatus: 'pending'
-    // })
-    uploadVisible.value = true
+const conflictFiles = ref([])
+const tempUploadList = ref([])
+const conflictVisible = ref(false)
+const retainAll = () => {
+  var list = tempUploadList.value.map((item) => {
+    item.same_name_type = 1
+    return item
+  })
+  ReadyUploadList.push(...list)
+  conflictVisible.value = false
+  uploadVisible.value = true
+}
+const displace = () => {
+  var list = tempUploadList.value.map((item) => {
+    item.same_name_type = 0
+    return item
+  })
+  ReadyUploadList.push(...list)
+  conflictVisible.value = false
+  uploadVisible.value = true
+}
+const cancelConflict = () => {
+  conflictVisible.value = false
+}
+const handleSelectChange = (event) => {
+  tempUploadList.value = []
+  conflictFiles.value = []
+  if (event.target.files.length == 0) {
+    return
   }
+  tempUploadList.value = Array.from(event.target.files).map((item) => {
+    return {
+      uploadStatus: 'pending',
+      title: item.name,
+      name: item.name,
+      file: item,
+      type: 'file',
+    }
+  })
+  if (detailFileList.value.length) {
+    detailFileList.value.filter((item) => {
+      tempUploadList.value.filter((readyItem) => {
+        if (readyItem.title == item.title && item.item_type == 1) {
+          conflictFiles.value.push(readyItem)
+        }
+      })
+    })
+    if (conflictFiles.value.length) {
+      conflictVisible.value = true
+      return
+    }
+  }
+  ReadyUploadList.push(tempUploadList.value)
+  uploadVisible.value = true
 }
 // 分析文件夹结构
 // const analyzeFolderStructure = (files) => {
@@ -1836,22 +1916,6 @@ const handleSelectChange = (file) => {
 //   })
 //   return folderTree
 // }
-// // 处理文件
-// const processFiles = (files, isFolder) => {
-//   if (files.length === 0) {
-//     // eslint-disable-next-line no-undef
-//     ElMessage({
-//       message: isFolder ? '选择的文件夹为空或没有文件' : '未选择任何文件',
-//       type: 'error'
-//     })
-//     return
-//   }
-//   if (isFolder) {
-//     // 分析文件夹结构
-//     const folderTree = analyzeFolderStructure(files)
-//     console.log(folderTree)
-//   }
-// }
 const handleDirectorySelect = (event) => {
   let exts = [
     'doc',
@@ -1883,10 +1947,24 @@ const handleDirectorySelect = (event) => {
   let fileItem = {
     type: 'directory',
     name: files[0].webkitRelativePath.split('/')[0],
+    title: files[0].webkitRelativePath.split('/')[0],
     totalCount: files.length,
     size: totalSize,
     children: files,
     uploadStatus: 'pending'
+  }
+  tempUploadList.value = []
+  conflictFiles.value = []
+  if (detailFileList.value.length) {
+    tempUploadList.value.push(fileItem)
+    var flag = detailFileList.value.some(
+      (item) => item.title == fileItem.name && item.item_type == 2
+    )
+    if (flag) {
+      conflictFiles.value = [fileItem]
+      conflictVisible.value = true
+      return
+    }
   }
   ReadyUploadList.length = 0
   // 添加目录树到上传列表
@@ -1896,24 +1974,6 @@ const handleDirectorySelect = (event) => {
   }
   // 显示上传对话框
   uploadVisible.value = true
-  // processFiles(files, true)
-
-  // if (files.length > 0 && files.length <= 10) {
-  //   const directoryName = files[0].webkitRelativePath.split('/')[0]
-  //   // 构造目录信息
-  //   const directoryData = {
-  //     knowledge_id: this.repositoryChecked.id,
-  //     local_dir: directoryName, // 目录名称
-  //     uniacid: this.uniacid
-  //   }
-  //   // 这里可以处理选中的目录和文件
-  // } else {
-  //   // eslint-disable-next-line no-undef
-  //   ElMessage({
-  //     message: '请选择包含文件的目录',
-  //     type: 'warning'
-  //   })
-  // }
 }
 // const openDirectorySelector = async () => {
 //   const directoryPath = await window.customApi.openDirectoryDialog()
@@ -2173,7 +2233,7 @@ const removeItemsAfterIndex = (array, index) => {
             gap: 6px;
             font-size: 14px;
             color: #737475;
-            line-height: 16px;
+            line-height: 18px;
             height: 32px;
             border-radius: 6px;
             cursor: pointer;
@@ -2216,7 +2276,7 @@ const removeItemsAfterIndex = (array, index) => {
               flex: 1;
               font-size: 14px;
               color: var(--default-font-color);
-              line-height: 16px;
+              line-height: 18px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
@@ -2326,7 +2386,7 @@ const removeItemsAfterIndex = (array, index) => {
           gap: 6px;
           font-size: 14px;
           color: #737475;
-          line-height: 16px;
+          line-height: 18px;
           height: 32px;
           border-radius: 6px;
           cursor: pointer;
@@ -2368,7 +2428,7 @@ const removeItemsAfterIndex = (array, index) => {
           .title {
             font-size: 14px;
             color: var(--default-font-color);
-            line-height: 16px;
+            line-height: 18px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -2724,7 +2784,7 @@ const removeItemsAfterIndex = (array, index) => {
               margin-bottom: 8px;
               font-size: 14px;
               color: var(--default-font-color);
-              line-height: 16px;
+              line-height: 18px;
               white-space: nowrap;
               text-overflow: ellipsis;
               overflow: hidden;
@@ -2922,9 +2982,86 @@ const removeItemsAfterIndex = (array, index) => {
       }
     }
   }
+  :deep(.custom-transition-dialog) {
+    &.el-dialog {
+      .el-dialog__header {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--default-font-color);
+        line-height: 22px;
+      }
+
+      .el-dialog__body {
+        font-size: 14px;
+        color: var(--default-font-color);
+        line-height: 22px;
+        .conflict-title {
+          margin-bottom: 16px;
+          font-size: 14px;
+          color: var(--default-font-color);
+        }
+        .conflict-box {
+          max-height: 100px;
+          overflow-y: auto;
+          .conflict-item {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 0 8px;
+            .conflict-icon {
+              width: 12px;
+              height: 12px;
+            }
+            .conflict-name {
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              font-size: 12px;
+            }
+          }
+        }
+      }
+
+      .dialog-footer {
+        .cancel-btn,
+        .confirm-btn {
+          height: 36px;
+          width: 80px;
+          border-radius: 8px;
+          border: none;
+          font-size: 14px;
+        }
+
+        .cancel-btn {
+          background: #efefef;
+          color: var(--default-font-color);
+        }
+      }
+    }
+  }
 }
 </style>
 <style lang="scss">
+.dialog-bounce-enter-active,
+.dialog-bounce-leave-active,
+.dialog-bounce-enter-active .el-dialog,
+.dialog-bounce-leave-active .el-dialog {
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dialog-bounce-enter-from,
+.dialog-bounce-leave-to {
+  opacity: 0;
+}
+
+.dialog-bounce-enter-from .el-dialog,
+.dialog-bounce-leave-to .el-dialog {
+  transform: scale(0.3) translateY(-50px);
+  opacity: 0;
+}
 .abstract-box-popover {
   padding: 20px !important;
   width: 376px !important;
@@ -2932,6 +3069,7 @@ const removeItemsAfterIndex = (array, index) => {
   box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
   border-radius: 16px !important;
   .abstract-box {
+    width: 100%;
     .abstract-title {
       margin-bottom: 14px;
       font-size: 14px;
@@ -2942,7 +3080,7 @@ const removeItemsAfterIndex = (array, index) => {
       margin-bottom: 10px;
       font-size: 14px;
       color: #adadad;
-      line-height: 16px;
+      line-height: 18px;
     }
     .abstract-desc {
       font-size: 14px;

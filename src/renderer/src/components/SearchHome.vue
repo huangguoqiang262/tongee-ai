@@ -4,13 +4,19 @@
       <img class="logo" src="@renderer/assets/home/large-logo.png" alt="" />
     </div>
     <div class="search-box">
-      <MessageInput ref="messageInput" key="input" class="message-input"> </MessageInput>
+      <MessageInput :isActiveTab="props.isActiveTab" ref="messageInput" key="input" class="message-input"> </MessageInput>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+const props = defineProps({
+  isActiveTab: {
+    type: Boolean,
+    default: false
+  }
+})
 const messageInput = ref(null)
 const handleClick = (e) => {
   messageInput.value?.focusChange(e)

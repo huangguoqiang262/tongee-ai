@@ -236,7 +236,7 @@ export default {
     isActiveTab: {
       handler(newVal) {
         if (newVal) {
-          // this.setupScreenshotListeners()
+          this.setupScreenshotListeners()
         }
       },
       immediate: true
@@ -493,7 +493,6 @@ export default {
     },
     // 设置截图事件监听
     setupScreenshotListeners() {
-      window.customApi?.removeScreenshotOk(this.handleScreenshotAsPaste)
       // 截图确定事件
       window.customApi?.onScreenshotOk(this.handleScreenshotAsPaste)
     },
@@ -523,7 +522,7 @@ export default {
         const blob = new Blob([byteArray], { type: 'image/png' })
 
         // 创建 File 对象
-        const file = new File([blob], `screenshot_${new Date().getTime()}.png`, {
+        const file = new File([blob], `${new Date().getTime()}.png`, {
           type: 'image/png',
           lastModified: new Date().getTime()
         })

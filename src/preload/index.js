@@ -20,8 +20,18 @@ const customApi = {
   },
   triggerScreenshot: () => ipcRenderer.send('trigger-screenshot'),
   onScreenshotStart: (callback) => ipcRenderer.on('screenshot-start', callback),
-  onScreenshotOk: (callback) => ipcRenderer.on('screenshot-ok', callback),
-  removeScreenshotOk: () => ipcRenderer.removeAllListeners('screenshot-ok'),
+  _screenshotListener: null,
+  onScreenshotOk: (callback) => {
+    // 先移除旧的监听器
+    if (customApi._screenshotListener) {
+      ipcRenderer.removeListener('screenshot-ok', customApi._screenshotListener)
+    }
+    // 创建新的监听器
+    customApi._screenshotListener = (event, data) => {
+      callback(event, data)
+    }
+    ipcRenderer.on('screenshot-ok', customApi._screenshotListener)
+  },
   onScreenshotSave: (callback) => ipcRenderer.on('screenshot-save', callback),
   onScreenshotCancel: (callback) => ipcRenderer.on('screenshot-cancel', callback),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),

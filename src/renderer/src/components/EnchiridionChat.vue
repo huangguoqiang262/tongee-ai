@@ -1,7 +1,13 @@
 <template>
   <div class="chat-page-box disabled-tools-chat">
-    <div class="chat-back" @click="back">
-      <el-icon><ArrowLeftBold /></el-icon>
+    <div class="chat-head">
+      <img
+        class="chat-clear"
+        src="@renderer/assets/chat-icon/clear-icon.png"
+        alt=""
+        @click="clearChat"
+      />
+      <el-icon class="close-icon" @click="closeChat"><Close /></el-icon>
     </div>
     <div
       v-if="activeSession.messages.length"
@@ -39,7 +45,7 @@
     </div>
     <div v-if="resultVisible" class="feedback-result">感谢您对糖源ai的反馈</div>
     <div class="search-box">
-      <chat-input
+      <tool-chat-input
         v-if="activeSession.model_name"
         key="input"
         :is-active-tab="isActiveTab"
@@ -64,7 +70,7 @@
         @uploaded-attachment="uploadedAttachment"
         @stop-chat="stopChat"
       >
-      </chat-input>
+      </tool-chat-input>
     </div>
     <take-notes
       v-model="onlineNoteVisible"
@@ -74,6 +80,7 @@
     <PreviewMessage
       v-if="previewVisible"
       ref="previewMessage"
+      style="padding: 0px 20px"
       direction="left"
       :messages="activeSession.messages"
       @close-preview="closePreview"
@@ -81,12 +88,13 @@
   </div>
 </template>
 <script setup>
-import { reactive, ref, inject, watch, onMounted, nextTick } from 'vue'
+import { reactive, ref, onMounted, nextTick, watchEffect } from 'vue'
 import {
   getChatInfo,
   update_chat,
   get_chat_word,
   chat_feedback,
+  delChatOne,
   feedbackType
 } from '@renderer/api/chat.js'
 import { SSE } from 'sse.js'
@@ -95,29 +103,28 @@ import { useUserStore } from '@renderer/stores/user'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
 const props = defineProps({
-  attrs: {
-    type: Object,
-    default: () => ({})
+  knowId: {
+    type: [Number, String],
+    default: ''
+  },
+  itemId: {
+    type: [Number, String],
+    default: ''
   },
   isActiveTab: {
     type: Boolean,
     default: false
   }
 })
-watch(() => props.isActiveTab, (newVal) => {
-  if (newVal) {
-    console.log('isActiveTab', newVal)
-  }
-})
-let chat_key = ref(props.attrs.chat_key || '')
+const emits = defineEmits(['closeChat'])
 let feedbackVisible = ref(false)
 let resultVisible = ref(false)
 let resultTimeout = ref(null)
 let markDownText = ref('')
 let previewVisible = ref(false)
 let messageListRef = ref(null)
-let attach_files = ref(props.attrs.attach_files || [])
-let mentionedList = ref(props.attrs.knows || [])
+let attach_files = ref([])
+let mentionedList = ref([])
 const userInfo = useUserInfo()
 const userStore = useUserStore()
 const closeFeedback = () => {
@@ -134,15 +141,15 @@ const showResultMessage = () => {
 const closePreview = () => {
   previewVisible.value = false
 }
-let replaceActiveTab = inject('replaceActiveTab')
+// let replaceActiveTab = inject('replaceActiveTab')
 let isChatting = ref(false)
-let back = () => {
-  replaceActiveTab({
-    title: '首页',
-    url: 'SearchHome',
-    isInternal: true
-  })
-}
+// let back = () => {
+//   replaceActiveTab({
+//     title: '首页',
+//     url: 'SearchHome',
+//     isInternal: true
+//   })
+// }
 const onlineNoteVisible = ref(false)
 const submitImport = () => {
   markDownText.value = ''
@@ -169,6 +176,10 @@ const handleFeedback = (str) => {
     feedbackVisible.value = false
     showResultMessage()
   })
+}
+const closeChat = () => {
+  stopChat()
+  emits('closeChat')
 }
 const models = ref([])
 const activeSession = ref({
@@ -255,14 +266,22 @@ const handleSendMessage = async (message) => {
       temperature: activeSession.value.temperature,
       generateQuestions: activeSession.value.generateQuestions
     },
-    knowledgeBaseParamsList: mentionedList.value.map((item) => {
-      return {
-        modelName: item.model_name || '',
-        modelPlatform: item.provider_key || '',
-        knowledgeBaseId: item.know_key || '/',
-        folderPath: '/' + item.know_key || '/'
+    knowledgeBaseParamsList: [
+      ...mentionedList.value.map((item) => {
+        return {
+          modelName: item.model_name || '',
+          modelPlatform: item.provider_key || '',
+          knowledgeBaseId: item.know_key || '/',
+          folderPath: '/' + item.know_key || '/'
+        }
+      }),
+      {
+        modelName: activeSession.value.know_model_name || '',
+        modelPlatform: activeSession.value.know_provider_key || '',
+        knowledgeBaseId: activeSession.value.know_key || '',
+        folderPath: activeSession.value.vector_folder_path || ''
       }
-    }),
+    ],
     otherParams: {
       dingUid: userInfo.value.ding_uid,
       uniacid: userStore.uniacid,
@@ -323,6 +342,11 @@ const handleSendMessage = async (message) => {
         responseMessage.reasoningContentText += filterText(response.reasoningContentText)
       }
       responseMessage.textContent += response.contentText
+      // 在textContent中找到 [kno_ ] 的字符并且替换为数字  且添加颜色
+      responseMessage.textContent = responseMessage.textContent.replace(
+        /\[kno_(\d+)\]/g,
+        '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
+      )
     }
 
     // if (response.finished) {
@@ -391,6 +415,10 @@ const handleSendMessage = async (message) => {
   evtSource.value.stream()
   // 将两条消息显示在页面中
   activeSession.value.messages.push(...[chatMessage, responseMessage])
+  if (activeSession.value.title == '默认会话') {
+    activeSession.value.title = chatMessage.textContent
+    updataChat()
+  }
   await nextTick(() => {
     messageListRef.value ? messageListRef.value.scrollTo(0, messageListRef.value.scrollHeight) : ''
   })
@@ -409,6 +437,36 @@ const total = ref(0)
 const isLoading = ref(false)
 const debounceTimer = ref(null)
 const isSwitching = ref(false)
+const clearChat = () => {
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm('确认清空当前会话吗？', '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(() => {
+      delChatOne({ chat_key: activeSession.value.chat_key }).then(async (res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '已清空'
+          })
+          page.value = 1
+          pageSize.value = 10
+          total.value = 0
+          isLoading.value = false
+          debounceTimer.value = null
+          isLoading.value = true
+          isSwitching.value = true
+          await getWordList()
+          isSwitching.value = false
+          isLoading.value = false
+        }
+      })
+    })
+    .catch(() => {})
+}
 const updataChat = () => {
   var data = {
     uniacid: userStore.uniacid,
@@ -448,6 +506,10 @@ const getWordList = () => {
       if (res.data.words_list.data.length) {
         res.data.words_list.data.map((item) => {
           if (item.msg_type == 'ASSISTANT') {
+            item.content = item.content.replace(
+              /\[kno_(\d+)\]/g,
+              '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
+            )
             list.push({
               type: 'ASSISTANT',
               textContent: item.content || '已取消回答',
@@ -527,6 +589,10 @@ const loadData = async () => {
         if (res.data.words_list.data.length) {
           res.data.words_list.data.map((item) => {
             if (item.msg_type == 'ASSISTANT') {
+              item.content = item.content.replace(
+                /\[kno_(\d+)\]/g,
+                '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
+              )
               list.push({
                 type: 'ASSISTANT',
                 textContent: item.content || '已取消回答',
@@ -616,56 +682,56 @@ const loadMore = async () => {
     container.scrollTop = container.scrollHeight - oldScrollHeight
   })
 }
-const createChat = () => {
+const throttle = ref(null)
+watchEffect(() => {
   var data = {
-    chat_type: 5,
-    chat_key: chat_key.value || ''
+    know_id: props.knowId,
+    item_id: props.itemId,
+    chat_type: 2
   }
   feedbackVisible.value = false
-  getChatInfo(data).then(async (res) => {
-    activeSession.value.title = res.data.title || ''
-    activeSession.value.chat_key = res.data.chat_key
-    activeSession.value.know_key = res.data.know_key
-    activeSession.value.model_id = res.data.model_info?.model_id || ''
-    activeSession.value.model_name = res.data.model_info?.model_name
-    activeSession.value.provider_key = res.data.model_info?.provider_key
-    activeSession.value.prompt = props.attrs?.prompt || ''
-    activeSession.value.enableSearch = res.data.model_info?.net_status || 2
-    activeSession.value.isNetwork = res.data.is_use_net ? true : false
-    if (activeSession.value.enableSearch == 2) {
-      activeSession.value.isNetwork = false
-    }
-    // activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
-    // activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
-    // activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
-    activeSession.value.messages = []
-    page.value = 1
-    pageSize.value = 10
-    total.value = 0
-    isLoading.value = false
-    debounceTimer.value = null
-    isLoading.value = true
-    isSwitching.value = true
-    // await getWordList()
-    isSwitching.value = false
-    isLoading.value = false
-    if (activeSession.value.title == '默认会话') {
-      activeSession.value.title = props.attrs?.message_text || '文档解读'
-      updataChat()
-    }
-    if (!chat_key.value) {
-      handleSendMessage({ text: props.attrs?.message_text })
-    } else {
-      getWordList()
-    }
-  })
-}
+  if (!data.know_id) return
+  // 添加节流，避免频繁请求
+  if (throttle.value) {
+    clearTimeout(throttle.value)
+  }
+  throttle.value = setTimeout(() => {
+    getChatInfo(data).then(async (res) => {
+      activeSession.value.title = res.data.title || ''
+      activeSession.value.chat_key = res.data.chat_key
+      activeSession.value.know_key = res.data.know_key
+      activeSession.value.model_id = res.data.model_info?.model_id || ''
+      activeSession.value.model_name = res.data.model_info?.model_name
+      activeSession.value.provider_key = res.data.model_info?.provider_key
+      activeSession.value.isNetwork = res.data.is_network ? true : false
+      activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
+      activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
+      activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
+      activeSession.value.enableSearch = res.data.model_info?.net_status || 2
+      activeSession.value.isNetwork = res.data.is_use_net ? true : false
+      if (activeSession.value.enableSearch == 2) {
+        activeSession.value.isNetwork = false
+      }
+      activeSession.value.messages = []
+      page.value = 1
+      pageSize.value = 10
+      total.value = 0
+      isLoading.value = false
+      debounceTimer.value = null
+      isLoading.value = true
+      isSwitching.value = true
+      await getWordList()
+      isSwitching.value = false
+      isLoading.value = false
+    })
+  }, 300)
+})
 onMounted(() => {
   get_type_models({ model_type: 'reasoning' }).then((res) => {
     models.value = res.data
   })
   getFeedbackType()
-  createChat()
+  // createChat()
 })
 </script>
 <style scoped lang="scss">
@@ -673,35 +739,48 @@ onMounted(() => {
   position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
-  padding: 0 20px 20px;
+  padding: 10px 20px 10px;
   height: 100%;
-  min-width: 375px;
+  width: 100%;
   background: #fff;
   display: flex;
   flex-direction: column;
   border-radius: 8px;
   overflow: hidden;
   user-select: text;
-  .chat-back {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 1;
-    width: 30px;
+  .chat-head {
+    // position: absolute;
+    // top: 20px;
+    // left: 20px;
+    // z-index: 1;
+    width: 100%;
     height: 30px;
-    background: #efefef;
     border-radius: 6px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0 20px;
+    justify-content: flex-end;
     font-size: 14px;
     color: var(--default-font-color);
+    .chat-clear {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .close-icon {
+      color: #737475;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s linear;
+      &:hover {
+        color: var(--el-color-primary);
+      }
+    }
   }
   .chat-content {
     flex: 1;
+    width: 100%;
     padding: 20px 0;
-    width: 770px;
-    margin: 0 auto;
     overflow-y: auto;
   }
   .empty-chat {

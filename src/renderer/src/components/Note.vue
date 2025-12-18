@@ -838,8 +838,6 @@ const formatFileSize = (kb) => {
   }
 }
 const refreshNoteList = () => {
-  console.log(55555555)
-
   if (
     chatVisible.value ||
     beforeShareVisible.value ||
@@ -961,7 +959,7 @@ onMounted(() => {
         gap: 6px;
         font-size: 14px;
         color: #737475;
-        line-height: 16px;
+        line-height: 18px;
         height: 36px;
         border-radius: 6px;
         cursor: pointer;
@@ -996,7 +994,7 @@ onMounted(() => {
           flex: 1;
           font-size: 14px;
           color: var(--default-font-color);
-          line-height: 16px;
+          line-height: 18px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -1147,7 +1145,7 @@ onMounted(() => {
           margin-bottom: 11px;
           font-size: 14px;
           color: #909090;
-          line-height: 16px;
+          line-height: 18px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
