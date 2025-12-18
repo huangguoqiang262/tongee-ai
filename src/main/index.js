@@ -50,7 +50,7 @@ function createWindow() {
       webSecurity: false,
       nodeIntegration: false, // 禁用 nodeIntegration
       contextIsolation: true, // 启用上下文隔离
-      preload: is.dev ? join(__dirname, '../preload/index.js') : 'preload/index.js',
+      preload: is.dev ? join(__dirname, '../preload/index.js') :  join(process.resourcesPath, 'preload/index.js'),
       sandbox: false,
       webviewTag: true,
       webgl: true,

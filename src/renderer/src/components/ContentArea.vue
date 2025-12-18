@@ -71,6 +71,7 @@ import IntelligentWritingChat from './IntelligentWritingChat.vue'
 import HomePage from './HomePage.vue'
 import Maintain from './Maintain.vue'
 import DocumentDetail from './DocumentDetail.vue'
+import UpdateLog from './UpdateLog.vue'
 const internalComponents = {
   SearchHome,
   NotFound,
@@ -88,7 +89,8 @@ const internalComponents = {
   IntelligentWritingChat,
   HomePage,
   Maintain,
-  DocumentDetail
+  DocumentDetail,
+  UpdateLog
 }
 const isValidInternalUrl = (url) => {
   return Object.keys(internalComponents).includes(url)

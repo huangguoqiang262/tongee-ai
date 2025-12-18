@@ -61,7 +61,7 @@
               >检查并更新</el-button
             >
           </div>
-          <div class="handle-item">
+          <div class="handle-item" @click="toUploadLog">
             <div class="label">功能介绍</div>
             <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" />
           </div>
@@ -413,6 +413,14 @@ const tabHandle = () => {
   activeTab.value = 'account'
   isChatting.value = false
   evtSource.value?.close()
+}
+const toUploadLog = () => {
+  addNewTab({
+    title: '功能介绍',
+    url: 'UpdateLog',
+    isInternal: true,
+    attrs: {}
+  })
 }
 // 修改密码
 let passwordVisible = ref(false)
