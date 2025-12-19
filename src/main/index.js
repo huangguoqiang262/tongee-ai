@@ -43,14 +43,16 @@ function createWindow() {
         }
       : {}),
     autoHideMenuBar: true,
-    icon: is.dev
-      ? join(__dirname, '../../build/icon.ico')
-      : join(process.resourcesPath, 'build/icon.ico'), // 修改此行
+    icon: join(__dirname, '../../build/icon.ico'),
+    // icon: is.dev
+    //   ? join(__dirname, '../../build/icon.ico')
+    //   : join(process.resourcesPath, 'build/icon.ico'), // 修改此行
     webPreferences: {
       webSecurity: false,
       nodeIntegration: false, // 禁用 nodeIntegration
       contextIsolation: true, // 启用上下文隔离
-      preload: is.dev ? join(__dirname, '../preload/index.js') :  join(process.resourcesPath, 'preload/index.js'),
+      // preload: is.dev ? join(__dirname, '../preload/index.js') :  join(process.resourcesPath, 'preload/index.js'),
+      preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       webviewTag: true,
       webgl: true,
@@ -209,7 +211,7 @@ app.whenReady().then(() => {
 
   autoUpdater.setFeedURL({
     provider: 'generic',
-    url: 'https://souxue-xcx.oss-cn-hangzhou.aliyuncs.com/zishuupdates',
+    url: 'https://tangji.souxue.cc/updates',
     channel: 'latest' // 明确指定更新通道
   })
   autoUpdater.requestHeaders = { insecure: 'true' } // 跳过证书验证

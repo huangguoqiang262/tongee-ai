@@ -13,7 +13,7 @@
       placement="bottom"
       popper-class="knowledge-popover"
     >
-      <div class="knowledge-popover-content">
+      <div class="knowledge-popover-content" @click="toKnowledge(currentDocumentInfo)">
         <div class="knowledge-popover-title">所在段落（{{ currentDocumentInfo?.sort }}）</div>
         <div class="knowledge-popover-content">
           {{ htmlToText(currentDocumentInfo?.documentContent || '') }}
@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
@@ -48,6 +48,7 @@ const props = defineProps({
     default: () => []
   }
 })
+const addNewTab = inject('addNewTab')
 // 获取文件图标
 const getFileIcon = (item) => {
   if (!item || !item.fileName) {
@@ -81,10 +82,12 @@ let triggerElement = ref(null)
 const currentKnowledgeId = ref(null)
 const currentDocumentInfo = ref(null)
 
-// 处理消息内容，将[kno_数字]格式转换为HTML
+// 处理消息内容，将[kno_数字]格式转换为HTML  我还想将[eqm_1]替换为按钮
 const processedMessage = computed(() => {
   return props.message.replace(/\[kno_(\d+)\]/g, (match, id) => {
     return `<span class="knowledge-tag" data-knowledge-id="${id}">${id}</span>`
+  }).replace(/\[eqm_(\d+)\]/g, (match, id) => {
+    return `<span class="equipment-tag" data-equipment-id="${id}">查看</span>`
   })
 })
 
@@ -109,17 +112,43 @@ const showPopover = (knowledgeTag) => {
     currentDocumentInfo.value = getDocumentInfo(knowledgeId)
   }
 }
+const toKnowledge = (item) => {
+  if (!item.fileUrl) {
+    return
+  }
+  addNewTab({
+    title: item.fileName,
+    url: 'DocumentDetail',
+    isInternal: true,
+    attrs: {
+      fileUrl: item.fileUrl,
+      fileName: item.fileName
+    }
+  })
+}
 // 鼠标移入知识库标签事件处理
 const handleKnowledgeHover = (event) => {
   const knowledgeTag = event.target.closest('.knowledge-tag')
   if (!knowledgeTag) return
   showPopover(knowledgeTag)
 }
+// 跳转保养计划页面
+const handleEquipmentClick = (event) => {
+  const equipmentTag = event.target.closest('.equipment-tag')
+  if (!equipmentTag) return
+  addNewTab({
+    title: '设备保养',
+    url: 'Maintain',
+    isInternal: true,
+  })
+}
 // 添加事件监听
 onMounted(() => {
   if (markdownContainer.value) {
     // 监听鼠标移入事件
     markdownContainer.value.addEventListener('mouseenter', handleKnowledgeHover, true)
+    // 监听鼠标移入事件
+    markdownContainer.value.addEventListener('click', handleEquipmentClick, true)
   }
 })
 
@@ -127,6 +156,8 @@ onMounted(() => {
 onUnmounted(() => {
   if (markdownContainer.value) {
     markdownContainer.value.removeEventListener('mouseenter', handleKnowledgeHover, true)
+    // 监听鼠标移入事件
+    markdownContainer.value.addEventListener('click', handleEquipmentClick, true)
   }
 })
 </script>
@@ -138,7 +169,26 @@ onUnmounted(() => {
     line-height: unset;
   }
 }
+:deep(.equipment-tag) {
+  color: var(--el-color-primary);
+  padding: 0px 2px;
+  margin: 0 4px;
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
+  font-size: 12px;
+  border-radius: 4px;
+  background: var(--el-color-primary-light-9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
 
+  &:hover {
+    background: var(--el-color-primary-light-8);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
 // 知识库标签样式
 :deep(.knowledge-tag) {
   color: var(--el-color-primary);

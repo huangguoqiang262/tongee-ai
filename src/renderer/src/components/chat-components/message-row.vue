@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, inject } from 'vue'
 // import { handleCopyMsg } from '@renderer/utils/index'
 import LOGO from '@renderer/assets/logo.png'
 import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
@@ -55,6 +55,7 @@ const props = defineProps({
     default: false
   }
 })
+const addNewTab = inject('addNewTab')
 const emit = defineEmits(['newChat', 'retrievedDocumen', 'lookOver', 'handleAction'])
 const localSpread = ref(props.message.spread || false)
 const markdownMessage = ref(null)
@@ -94,9 +95,49 @@ const newChat = (item) => {
 //   emit('retrievedDocumen', fileId)
 // }
 
-// const lookOver = (file) => {
-//   emit('lookOver', file)
-// }
+const lookOver = (file, type = 1) => {
+  if (type == 1) {
+    addNewTab({
+      title: file.title,
+      url: 'DocumentDetail',
+      isInternal: true,
+      attrs: {
+        fileUrl: file.full_path,
+        fileName: file.title
+      }
+    })
+  } else {
+    addNewTab({
+      title: file.filename,
+      url: 'DocumentDetail',
+      isInternal: true,
+      attrs: {
+        fileUrl: file.url,
+        fileName: file.filename
+      }
+    })
+  }
+}
+const getFileIcon1 = (item) => {
+  // 根据文件扩展名返回不同的图标
+  const ext = item.filename?.split('.').pop()?.toLowerCase()
+  const iconMap = {
+    doc: wordIcon,
+    docx: wordIcon,
+    pdf: pdfIcon,
+    xls: excelIcon,
+    xlsx: excelIcon,
+    ppt: pptIcon,
+    pptx: pptIcon,
+    txt: txtIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon
+  }
+
+  return iconMap[ext] || wordIcon
+}
 // 获取文件图标
 const getFileIcon = (item) => {
   // 根据文件扩展名返回不同的图标
@@ -217,6 +258,7 @@ const download = (index, images) => {
               v-for="(item, index) in props.message.attach_file_ids"
               :key="index"
               class="attach-item"
+              @click="lookOver(item, 1)"
             >
               <img class="attached-icon" :src="getFileIcon(item)" alt="" />
               <div class="attached-content">
@@ -227,7 +269,9 @@ const download = (index, images) => {
                   <span class="file-extension">{{
                     item.title?.split('.').pop()?.toUpperCase()
                   }}</span>
-                  <span class="file-size">{{ formatFileSize(item.total_space) }}</span>
+                  <span v-if="item.total_space" class="file-size">{{
+                    formatFileSize(item.total_space)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -299,7 +343,7 @@ const download = (index, images) => {
           >
           </TextLoading>
           <div
-            v-if="props.message.reasoningContentText && props.message.spread"
+            v-if="props.message.reasoningContentText && localSpread"
             class="reasoningContentText"
           >
             <div class="line"></div>
@@ -314,6 +358,23 @@ const download = (index, images) => {
             :message="props.message.textContent"
             :retrieved-document-list="props.message.retrievedDocumentList"
           ></MarkdownMessage>
+          <!-- 返回附件 -->
+          <div v-if="props.message.file_info.length" class="attachment" style="margin-top: 10px">
+            <div v-for="(item, index) in props.message.file_info" :key="index" class="attach-item" @click="lookOver(item, 2)">
+              <img class="attached-icon" :src="getFileIcon1(item)" alt="" />
+              <div class="attached-content">
+                <div class="attach-name">
+                  {{ item.filename }}
+                </div>
+                <div class="attach-type">
+                  <span class="file-extension">{{
+                    item.filename?.split('.').pop()?.toUpperCase()
+                  }}</span>
+                  <!-- <span class="file-size">{{ formatFileSize(item.total_space) }}</span> -->
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="image-box">
             <el-image
               v-for="(image, index) in images"

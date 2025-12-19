@@ -226,13 +226,15 @@ const handleSendMessage = async (message) => {
     retrievedDocumentList: [],
     spread: false,
     issueContentText: '',
-    attach_file_ids: [...attach_files.value]
+    attach_file_ids: [...attach_files.value],
+    file_info: []
   })
   var tempAttachs = []
   attach_files.value.map((item) => {
     tempAttachs.push({
       fileName: item.title,
-      fileUrl: item.full_path
+      fileUrl: item.full_path,
+      fileSize: item.total_space || 0
     })
   })
   var data = {
@@ -290,11 +292,16 @@ const handleSendMessage = async (message) => {
     spread: true,
     issueContentText: '',
     retrievedDocumentList: [],
-    attach_file_ids: []
+    attach_file_ids: [],
+    file_info: []
   })
   evtSource.value.addEventListener('document', async (event) => {
     const response = JSON.parse(event.data)
     responseMessage.retrievedDocumentList = response || []
+  })
+  evtSource.value.addEventListener('file', async (event) => {
+    const response = JSON.parse(event.data)
+    responseMessage.file_info = response || []
   })
   evtSource.value.addEventListener('message', async (event) => {
     const response = JSON.parse(event.data)
@@ -346,7 +353,7 @@ const handleSendMessage = async (message) => {
   // 添加明确的关闭监听
   evtSource.value.addEventListener('stop', () => {
     isChatting.value = false
-    evtSource.value.close()
+    // evtSource.value.close()
   })
   evtSource.value.addEventListener('error', (error) => {
     var errData
@@ -372,7 +379,6 @@ const handleSendMessage = async (message) => {
       responseMessage.textContent = errData.message
     }
     isChatting.value = false
-    evtSource.value?.close()
   })
   // 添加明确的关闭监听
   evtSource.value.addEventListener('abort', () => {
@@ -452,11 +458,12 @@ const getWordList = () => {
               completion_tokens: item.completion_tokens,
               total_tokens: item.total_tokens,
               char_id: item.id,
-              reasoningContentText: filterText(item.reasoning_content_text || ''),
+              reasoningContentText: filterText(item.thinking_content || ''),
               spread: false,
               issueContentText: item.issue_content_text || '',
               retrievedDocumentList: item.use_file_ids || [],
-              attach_file_ids: item.attach_file_ids || []
+              attach_file_ids: [],
+              file_info: item.file_info || []
             })
           } else {
             list.push({
@@ -472,7 +479,13 @@ const getWordList = () => {
               spread: false,
               issueContentText: item.issue_content_text || '',
               retrievedDocumentList: item.use_file_ids || [],
-              attach_file_ids: item.attach_file_ids || []
+              attach_file_ids:
+                item.attach_file_ids.map((fileItem) => ({
+                  title: fileItem.fileName,
+                  full_path: fileItem.fileUrl,
+                  total_space: fileItem.fileSize || 0
+                })) || [],
+              file_info: item.file_info || []
             })
           }
         })
@@ -531,11 +544,12 @@ const loadData = async () => {
                 completion_tokens: item.completion_tokens,
                 total_tokens: item.total_tokens,
                 char_id: item.id,
-                reasoningContentText: filterText(item.reasoning_content_text || ''),
+                reasoningContentText: filterText(item.thinking_content || ''),
                 issueContentText: item.issue_content_text || '',
                 spread: false,
                 retrievedDocumentList: item.use_file_ids || [],
-                attach_file_ids: item.attach_file_ids || []
+                attach_file_ids: [],
+                file_info: item.file_info || []
               })
             } else {
               list.push({
@@ -551,7 +565,13 @@ const loadData = async () => {
                 spread: false,
                 issueContentText: item.issue_content_text || '',
                 retrievedDocumentList: item.use_file_ids || [],
-                attach_file_ids: item.attach_file_ids || []
+                attach_file_ids:
+                  item.attach_file_ids.map((fileItem) => ({
+                    title: fileItem.fileName,
+                    full_path: fileItem.fileUrl,
+                    total_space: fileItem.fileSize || 0
+                  })) || [],
+                file_info: item.file_info || []
               })
             }
           })

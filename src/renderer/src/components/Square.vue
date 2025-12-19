@@ -94,6 +94,7 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
+import { emit } from '@renderer/utils/eventBus'
 import { ref, onMounted } from 'vue'
 import { know_types, getKnowSquareList, apply_know_join } from '@renderer/api/repository'
 import defaultCover from '@renderer/assets/repository/default-cover.png'
@@ -152,6 +153,7 @@ const joinKnowledge = (item) => {
         // eslint-disable-next-line no-undef
         ElMessage.primary('加入成功')
         item.already_joined = 1
+        emit('refresh-repository')
       } else {
         // eslint-disable-next-line no-undef
         ElMessage.primary('申请已提交')

@@ -66,7 +66,26 @@ const images = computed(() => {
     })
   return list
 })
+const getFileIcon1 = (item) => {
+  // 根据文件扩展名返回不同的图标
+  const ext = item.filename?.split('.').pop()?.toLowerCase()
+  const iconMap = {
+    doc: wordIcon,
+    docx: wordIcon,
+    pdf: pdfIcon,
+    xls: excelIcon,
+    xlsx: excelIcon,
+    ppt: pptIcon,
+    pptx: pptIcon,
+    txt: txtIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon
+  }
 
+  return iconMap[ext] || wordIcon
+}
 // const lookOver = (file) => {
 //   emit('lookOver', file)
 // }
@@ -176,7 +195,9 @@ const formatFileSize = (kb) => {
                   <span class="file-extension">{{
                     item.title?.split('.').pop()?.toUpperCase()
                   }}</span>
-                  <span class="file-size">{{ formatFileSize(item.total_space) }}</span>
+                  <span v-if="item.total_space" class="file-size">{{
+                    formatFileSize(item.total_space)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -230,7 +251,7 @@ const formatFileSize = (kb) => {
             >
             </TextLoading>
             <div
-              v-if="props.message.reasoningContentText && props.message.spread"
+              v-if="props.message.reasoningContentText && localSpread"
               class="reasoningContentText"
             >
               <div class="line"></div>
@@ -245,6 +266,27 @@ const formatFileSize = (kb) => {
               :message="props.message.textContent"
               :retrieved-document-list="props.message.retrievedDocumentList"
             ></MarkdownMessage>
+            <!-- 返回附件 -->
+            <div v-if="props.message.file_info.length" class="attachment" style="margin-top: 10px">
+              <div
+                v-for="(item, index) in props.message.file_info"
+                :key="index"
+                class="attach-item"
+              >
+                <img class="attached-icon" :src="getFileIcon1(item)" alt="" />
+                <div class="attached-content">
+                  <div class="attach-name">
+                    {{ item.filename }}
+                  </div>
+                  <div class="attach-type">
+                    <span class="file-extension">{{
+                      item.filename?.split('.').pop()?.toUpperCase()
+                    }}</span>
+                    <!-- <span class="file-size">{{ formatFileSize(item.total_space) }}</span> -->
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="image-box">
               <el-image
                 v-for="(image, index) in images"

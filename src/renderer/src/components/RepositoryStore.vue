@@ -201,7 +201,7 @@
                 <div class="title">退出知识库</div>
               </div>
             </template>
-            <template v-if="activeRepository.is_public == 0">
+            <template v-else-if="activeRepository.is_public == 0">
               <div class="item" @click="beforeEditRepository">
                 <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
                 <div class="title">资料修改</div>
@@ -286,6 +286,12 @@
           </div>
           <div class="icons">
             <el-popover
+              v-if="
+                (activeRepository.is_public == 1 &&
+                  (activeRepository.user_permission?.is_manager == 1 ||
+                    activeRepository.user_permission?.is_creator == 1)) ||
+                activeRepository.is_public == 0
+              "
               ref="repositoryaddPopover"
               popper-class="custom-repository-popover"
               trigger="click"
@@ -709,7 +715,11 @@
         <el-icon style="font-size: 20px; color: #e6a23c"><WarnTriangleFilled /></el-icon>
         <span class="title">同名文件</span>
       </template>
-      <div class="conflict-title">监测到当前位置存在以下同名文件夹，请选择操作</div>
+      <div class="conflict-title">
+        监测到当前位置存在以下同名文件{{
+          conflictFiles[0]?.type == 'directory' ? '夹' : ''
+        }}，请选择操作
+      </div>
       <div class="conflict-box">
         <div v-for="(item, index) in conflictFiles" :key="index" class="conflict-item">
           <img v-if="item.type == 'directory'" :src="catalogueIcon" class="conflict-icon" alt="" />
@@ -720,7 +730,14 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="retainAll">保留全部</el-button>
-          <el-button class="cancel-btn" type="primary" @click="displace"> 替换 </el-button>
+          <el-button
+            v-if="conflictFiles.length && conflictFiles[0].type != 'directory'"
+            class="cancel-btn"
+            type="primary"
+            @click="displace"
+          >
+            替换
+          </el-button>
           <el-button class="cancel-btn" @click="cancelConflict">取消</el-button>
         </div>
       </template>
@@ -730,6 +747,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, watch, nextTick, inject, computed } from 'vue'
+import { on, off } from '@renderer/utils/eventBus'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { useUserStore } from '@renderer/stores/user'
 import topIcon from '@renderer/assets/contextMenu/top-icon.png'
@@ -916,13 +934,25 @@ const getPersonalCreateList = (repositoryId = '') => {
     }
   })
 }
+const refreshRepository = () => {
+  hideContextMenu()
+  getCommonCreateList()
+  getCommonJoinList()
+  getPersonalCreateList()
+}
+onUnmounted(() => {
+  document.removeEventListener('click', hideContextMenu)
+  off('refresh-repository', refreshRepository)
+})
 onMounted(async () => {
+  document.addEventListener('click', hideContextMenu)
   if (useCheckLogin) {
     await getUserInfo()
   }
   getCommonCreateList(props.attrs.RepositoryId)
   getCommonJoinList(props.attrs.RepositoryId)
   getPersonalCreateList(props.attrs.RepositoryId)
+  on('refresh-repository', refreshRepository)
 })
 watch(
   () => props.attrs.RepositoryId,
@@ -1738,12 +1768,6 @@ const searchMenuClick = () => {
     searchBoxRef.value.focus()
   })
 }
-onUnmounted(() => {
-  document.removeEventListener('click', hideContextMenu)
-})
-onMounted(() => {
-  document.addEventListener('click', hideContextMenu)
-})
 let createCommonExpand = ref(false)
 const commonExpandChange = () => {
   createCommonExpand.value = !createCommonExpand.value
@@ -1865,7 +1889,7 @@ const handleSelectChange = (event) => {
       title: item.name,
       name: item.name,
       file: item,
-      type: 'file',
+      type: 'file'
     }
   })
   if (detailFileList.value.length) {
@@ -1881,7 +1905,8 @@ const handleSelectChange = (event) => {
       return
     }
   }
-  ReadyUploadList.push(tempUploadList.value)
+
+  ReadyUploadList.push(...tempUploadList.value)
   uploadVisible.value = true
 }
 // 分析文件夹结构

@@ -296,7 +296,7 @@
             type="primary"
             @click="submitRepositoryForm(repositoryFormRef)"
           >
-            创建
+            添加
           </el-button>
         </div>
       </template>
@@ -371,7 +371,7 @@ import {
   notebook_del,
   note_del
 } from '@renderer/api/note'
-import { on, off } from '@renderer/utils/eventBus'
+import { on, off, emit } from '@renderer/utils/eventBus'
 import { import_note } from '@renderer/api/repository'
 import { get_user_knows } from '@renderer/api/chat'
 import { formatTime } from '@renderer/utils/index.js'
@@ -495,7 +495,7 @@ let repositoryRules = ref({
 })
 const repositoryOptions = ref([])
 const getRepositoryList = () => {
-  get_user_knows().then((res) => {
+  get_user_knows({ is_power: 1 }).then((res) => {
     if (res.code == 200) {
       repositoryOptions.value = res.data || []
     }
@@ -513,7 +513,8 @@ const submitRepositoryForm = async (formRef) => {
         if (res.code == 200) {
           formRef.resetFields()
           // eslint-disable-next-line no-undef
-          ElMessage.primary('导入成功')
+          ElMessage.primary('添加成功')
+          emit('refresh-repository')
           addRepositoryVisible.value = false
         }
       })
@@ -578,7 +579,7 @@ let baseUrl = ref('')
 const handleShare = (type) => {
   if (type === 'link') {
     // 链接分享
-    navigator.clipboard.writeText(activeNote.value.file_path).then(() => {
+    navigator.clipboard.writeText(activeNote.value.html_path).then(() => {
       // eslint-disable-next-line no-undef
       ElMessage.primary('复制成功')
     })

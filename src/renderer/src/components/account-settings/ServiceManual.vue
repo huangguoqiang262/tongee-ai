@@ -36,6 +36,15 @@
       </div>
     </div>
     <div class="center-box">
+      <div class="center-head">
+        <div class="title"></div>
+        <div class="right-handle-box">
+          <div v-if="!chatVisible" class="open-chat" @click="openChat">
+            <img class="logo" src="@renderer/assets/logo.png" alt="" />
+            问问糖源
+          </div>
+        </div>
+      </div>
       <div class="center-content">
         <v-md-preview :text="html"></v-md-preview>
       </div>
@@ -72,6 +81,15 @@ let pagination = ref({
 })
 let loading = ref(true)
 let list = ref([])
+// 打开对话
+const openChat = () => {
+  if (!knowId.value) {
+    // eslint-disable-next-line no-undef
+    ElMessage.warning('暂无手册可以对话')
+    return
+  }
+  chatVisible.value = true
+}
 const loadData = () => {
   if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
     return
@@ -286,24 +304,102 @@ onMounted(() => {
     flex: 1;
     min-width: 400px;
     height: 100%;
-    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
     overflow: hidden;
-    user-select: text;
+    .center-head {
+      flex-shrink: 0;
+      max-width: 770px;
+      width: 100%;
+      padding-right: 10px;
+      margin: 0 auto 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: #fff;
+
+      .title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--default-font-color);
+        line-height: 22px;
+      }
+
+      .right-handle-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .add-icon {
+          flex-shrink: 0;
+          margin-right: 10px;
+          display: block;
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+        }
+
+        :deep(.search-input) {
+          width: 240px;
+          height: 36px;
+
+          .el-input__wrapper {
+            background-color: #f9f9f9 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 0 0 1px #efefef inset;
+
+            &.is-focus {
+              box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+            }
+          }
+        }
+
+        .open-chat {
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          width: 99px;
+          height: 36px;
+          font-size: 14px;
+          color: var(--default-font-color);
+          background: #f9f9f9;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          &:active {
+            background: #e9e9e9;
+          }
+
+          .logo {
+            flex-shrink: 0;
+            display: block;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+    }
     .center-content {
+      flex: 1;
+      user-select: text;
       height: 100%;
-      padding: 0 20px;
       overflow-y: auto;
       margin: 0 auto;
-      max-width: 810px;
+      max-width: 770px;
       font-size: 14px;
       color: var(--default-font-color);
       line-height: 22px;
       border-radius: 12px;
-      box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+      // box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.1);
     }
   }
   .right-box {
-    padding: 10px 20px 0;
+    padding: 10px 0px 0;
     height: 100%;
     min-width: 375px;
     display: flex;

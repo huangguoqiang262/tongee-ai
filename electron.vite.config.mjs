@@ -13,6 +13,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    publicPath: './',
     server: {
       host: '0.0.0.0' // 暴露到网络
     },

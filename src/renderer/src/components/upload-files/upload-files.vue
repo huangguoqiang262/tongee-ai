@@ -197,13 +197,12 @@ watch(
 
 // 初始化上传列表
 const initializeUploadList = (fileList) => {
-  console.log('初始化上传列表:', fileList)
   var tempList = []
   tempList = fileList.map((file, index) => ({
     uid: file.uid || `file-${Date.now()}-${index}`,
     name: file.name,
-    path: file.path,
-    size: file.size,
+    path: file.path || '',
+    size: file.size || 0,
     type: file.type || 'file',
     status: uploadStatus.PENDING,
     progress: 0,
@@ -216,6 +215,7 @@ const initializeUploadList = (fileList) => {
   uploadList.value.push(...tempList)
   // 开始上传
   startUpload()
+
 }
 
 // 开始上传（添加错误边界）

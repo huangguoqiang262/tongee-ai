@@ -374,7 +374,7 @@ const handleCheckUpdate = async () => {
   getLoading.value = true
   if (updateApi && updateApi.checkForUpdates) {
     try {
-      await updateApi.checkForUpdates()
+      await updateApi.checkForUpdates(true)
     } catch (err) {
       console.log(err)
     }
@@ -718,7 +718,7 @@ const handleSendMessage = async (message) => {
 
     if (response.finished) {
       isChatting.value = false
-      evtSource.value.close()
+      // evtSource.value.close()
       // chatMessage.prompt_tokens = response.promptToken
       // chatMessage.total_tokens = response.promptToken
       // responseMessage.completion_tokens = response.completionTokens
@@ -764,7 +764,6 @@ const handleSendMessage = async (message) => {
       responseMessage.textContent = errData.message
     }
     isChatting.value = false
-    evtSource.value?.close()
   })
   // 添加明确的关闭监听
   evtSource.value.addEventListener('abort', () => {

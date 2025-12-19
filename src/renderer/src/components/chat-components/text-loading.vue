@@ -1,5 +1,5 @@
 <template>
-  <div class="load-box" @click="rotate">
+  <div class="load-box" @click.stop="rotate">
     <div class="text">
       {{ loadingText }}
     </div>

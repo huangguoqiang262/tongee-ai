@@ -91,6 +91,15 @@ const handleClick = (item) => {
   if (!useCheckLogin().value) {
     return
   }
+  if (item.url == 'Management') {
+    addNewTab({
+      url: 'https://tangji.souxue.cc',
+      title: item.name,
+      icon: item.icon,
+      isInternal: false
+    })
+    return
+  }
   addNewTab({
     url: item.url,
     title: item.name,
