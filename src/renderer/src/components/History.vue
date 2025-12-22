@@ -77,13 +77,13 @@
                         class="icon"
                         src="@renderer/assets/edit-icon.png"
                         alt=""
-                        @click="beforeRenameChange(item)"
+                        @click.stop="beforeRenameChange(item)"
                       />
                       <img
                         class="icon"
                         src="@renderer/assets/del-icon1.png"
                         alt=""
-                        @click="beforeDelChange(item)"
+                        @click.stop="beforeDelChange(item)"
                       />
                     </div>
                   </div>
@@ -104,7 +104,7 @@
                           class="icon"
                           src="@renderer/assets/del-icon1.png"
                           alt=""
-                          @click="beforeDelChange(item)"
+                          @click.stop="beforeDelChange(item)"
                         />
                       </div>
                     </div>

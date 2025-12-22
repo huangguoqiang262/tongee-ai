@@ -16,8 +16,8 @@
       @scroll.passive="handleScroll"
     >
       <MessageRow
-        v-for="message in activeSession.messages"
-        :key="message.dateline"
+        v-for="(message, index) in activeSession.messages"
+        :key="message.dateline + index"
         :message="message"
         :is-chatting="isChatting"
         @handle-action="handleAction"
@@ -236,6 +236,7 @@ const handleSendMessage = async (message) => {
     textContent: message.text,
     type: 'USER',
     dateline: new Date().toLocaleString().replace(/\//g, '-'),
+    char_id: '',
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -310,6 +311,7 @@ const handleSendMessage = async (message) => {
     textContent: '',
     sessionId: activeSession.value.chat_key,
     dateline: new Date().toLocaleString().replace(/\//g, '-'),
+    char_id: '',
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -349,11 +351,6 @@ const handleSendMessage = async (message) => {
         responseMessage.reasoningContentText += filterText(response.reasoningContentText)
       }
       responseMessage.textContent += response.contentText
-      // 在textContent中找到 [kno_ ] 的字符并且替换为数字  且添加颜色
-      responseMessage.textContent = responseMessage.textContent.replace(
-        /\[kno_(\d+)\]/g,
-        '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-      )
     }
 
     // if (response.finished) {
@@ -381,8 +378,11 @@ const handleSendMessage = async (message) => {
     })
   })
   // 添加明确的关闭监听
-  evtSource.value.addEventListener('stop', () => {
+  evtSource.value.addEventListener('stop', (event) => {
+    let stopResponse = JSON.parse(event.data)
     isChatting.value = false
+    chatMessage.char_id = stopResponse.startId
+    responseMessage.char_id = stopResponse.endId
     // evtSource.value.close()
   })
   evtSource.value.addEventListener('error', (error) => {
@@ -512,10 +512,6 @@ const getWordList = () => {
       if (res.data.words_list.data.length) {
         res.data.words_list.data.map((item) => {
           if (item.msg_type == 'ASSISTANT') {
-            item.content = item.content.replace(
-              /\[kno_(\d+)\]/g,
-              '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-            )
             list.push({
               type: 'ASSISTANT',
               textContent: item.content || '已取消回答',
@@ -602,10 +598,6 @@ const loadData = async () => {
         if (res.data.words_list.data.length) {
           res.data.words_list.data.map((item) => {
             if (item.msg_type == 'ASSISTANT') {
-              item.content = item.content.replace(
-                /\[kno_(\d+)\]/g,
-                '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-              )
               list.push({
                 type: 'ASSISTANT',
                 textContent: item.content || '已取消回答',
@@ -747,7 +739,11 @@ watchEffect(() => {
   }, 300)
 })
 onMounted(() => {
-  get_type_models({ model_type: 'reasoning' }).then((res) => {
+  get_type_models({
+    model_type: 'reasoning',
+    ding_uid: userInfo.value?.ding_uid,
+    t: new Date().getTime()
+  }).then((res) => {
     models.value = res.data
   })
   getFeedbackType()

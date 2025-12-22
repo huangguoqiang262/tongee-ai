@@ -33,13 +33,22 @@
           </div>
           <div class="handle-item">
             <div class="label">首选大模型</div>
-            <el-select v-model="memberPrivileges" placeholder="请选择" style="width: 160px">
+            <el-select
+              v-model="defaultModel"
+              popper-class="setting-model-select"
+              placeholder="请选择"
+              style="width: 160px"
+              @change="modelChange"
+            >
               <el-option
-                v-for="item in appearanceList"
-                :key="item.action"
-                :label="item.name"
-                :value="item.action"
-              />
+                v-for="item in models"
+                :key="item.id"
+                :label="item.model_name"
+                :value="item.id"
+              >
+                <div class="value-text">{{ item.model_name }}</div>
+                <div class="value-label">{{ item.desc }}</div>
+              </el-option>
             </el-select>
           </div>
           <div class="handle-item" @click="manualClick('manual')">
@@ -48,9 +57,9 @@
           </div>
           <div class="handle-item">
             <div class="label">
-                版本号
-                <span class="versions">{{ appVersion }}</span>
-                <span v-if="isUpdateAvailable" class="new-version">New</span>
+              版本号
+              <span class="versions">{{ appVersion }}</span>
+              <span v-if="isUpdateAvailable" class="new-version">New</span>
             </div>
             <el-button
               class="btn-check-update"
@@ -317,13 +326,14 @@
 </template>
 
 <script setup>
-import { ref, inject, reactive, nextTick } from 'vue'
+import { ref, inject, reactive, nextTick, onMounted } from 'vue'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { edit_user, logout } from '@renderer/api/user'
 import { useUserStore, useToolBarStore } from '@renderer/stores/user'
 import { get_usually_questions } from '@renderer/api/feedback'
 import { SSE } from 'sse.js'
-import { getChatInfo, chat_feedback, feedbackType } from '@renderer/api/chat.js'
+import { get_type_models } from '@renderer/api/repository'
+import { getChatInfo, chat_feedback, feedbackType, set_default_model } from '@renderer/api/chat.js'
 import unscrambleIcon from '@renderer/assets/settings/unscramble-icon.png'
 import translateIcon from '@renderer/assets/settings/translate-icon.png'
 import notebookIcon from '@renderer/assets/settings/notebook-icon.png'
@@ -382,7 +392,7 @@ const handleCheckUpdate = async () => {
   isUpdateAvailable.value = compareVersions(appVersion.value, userStore.version || '1.0.0')
   getLoading.value = false
 }
-let memberPrivileges = ref('')
+// let memberPrivileges = ref('')
 let toolbarShow = ref(useToolBarStore().toolbarShow)
 // 工具栏选择
 let toolbarList = ref([
@@ -399,12 +409,42 @@ const updateToolbarShow = (val) => {
   useToolBarStore().toolbarShow = val
 }
 // 外观选择
-let appearanceList = ref([
-  {
-    name: '跟随系统',
-    action: 'public'
+// let appearanceList = ref([
+//   {
+//     name: '跟随系统',
+//     action: 'public'
+//   }
+// ])
+let models = ref([])
+let defaultModel = ref({})
+onMounted(() => {
+  getModels()
+})
+// 获取模型列表
+const getModels = () => {
+  get_type_models({
+    model_type: 'reasoning',
+    ding_uid: userInfo.value?.ding_uid,
+    t: new Date().getTime()
+  }).then((res) => {
+    models.value = res.data
+    models.value.filter((item) => {
+      if (item.is_default == 1) {
+        defaultModel.value = item.id
+      }
+    })
+  })
+}
+const modelChange = (id) => {
+  if (!id) {
+    return false
   }
-])
+  if (useCheckLogin().value) {
+    set_default_model({ model_id: id }).then(() => {
+      getModels()
+    })
+  }
+}
 const addNewTab = inject('addNewTab')
 const handleTabAction = inject('handleTabAction')
 let activeTab = ref('account')
@@ -615,6 +655,7 @@ const handleSendMessage = async (message) => {
     type: 'USER',
     dateline: new Date().toLocaleString(),
     completion_tokens: 0,
+    char_id: '',
     total_tokens: 0,
     prompt_tokens: 0,
     retrievedDocumentList: [],
@@ -670,6 +711,7 @@ const handleSendMessage = async (message) => {
     textContent: '',
     sessionId: activeSession.value.chat_key,
     dateline: new Date().toLocaleString(),
+    char_id: '',
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -684,9 +726,11 @@ const handleSendMessage = async (message) => {
     responseMessage.retrievedDocumentList = response || []
   })
   // 添加明确的关闭监听
-  evtSource.value.addEventListener('stop', () => {
+  evtSource.value.addEventListener('stop', (event) => {
+    let stopResponse = JSON.parse(event.data)
     isChatting.value = false
-    // evtSource.value.close()
+    chatMessage.char_id = stopResponse.startId
+    responseMessage.char_id = stopResponse.endId
   })
   evtSource.value.addEventListener('message', async (event) => {
     const response = JSON.parse(event.data)
@@ -709,11 +753,6 @@ const handleSendMessage = async (message) => {
         responseMessage.reasoningContentText += filterText(response.reasoningContentText)
       }
       responseMessage.textContent += response.contentText
-      // 在textContent中找到 [kno_ ] 的字符并且替换为数字  且添加颜色
-      responseMessage.textContent = responseMessage.textContent.replace(
-        /\[kno_(\d+)\]/g,
-        '<span style="color: var(--el-color-primary);padding: 0px 2px;margin: 0 4px;display: inline-block;min-width: 18px;text-align: center;font-size: 12px;border-radius:4px;background: var(--el-color-primary-light-9);cursor: pointer;">$1</span>'
-      )
     }
 
     if (response.finished) {
@@ -1383,6 +1422,41 @@ const manualClick = () => {
 }
 </style>
 <style lang="scss">
+.setting-model-select {
+  .el-select-dropdown__list {
+    padding: 10px;
+    .el-select-dropdown__item {
+      border-radius: 4px;
+      height: 64px;
+      padding: 5px 10px;
+      line-height: 27px;
+      color: var(--default-font-color);
+      &.is-hovering {
+        .value-text {
+          color: var(--el-color-primary);
+        }
+      }
+      &.is-selected {
+        .value-text {
+          color: var(--el-color-primary);
+        }
+      }
+      .value-text {
+        font-style: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .value-label {
+        font-style: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #909090;
+      }
+    }
+  }
+}
 .more-position-popover {
   .more-position-box {
     display: flex;

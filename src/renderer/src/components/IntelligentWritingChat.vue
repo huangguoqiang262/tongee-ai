@@ -10,8 +10,8 @@
       @scroll.passive="handleScroll"
     >
       <MessageRow
-        v-for="message in activeSession.messages"
-        :key="message.dateline"
+        v-for="(message, index) in activeSession.messages"
+        :key="message.dateline + index"
         :message="message"
         :is-chatting="isChatting"
         @handle-action="handleAction"
@@ -104,11 +104,14 @@ const props = defineProps({
     default: false
   }
 })
-watch(() => props.isActiveTab, (newVal) => {
-  if (newVal) {
-    console.log('isActiveTab', newVal)
+watch(
+  () => props.isActiveTab,
+  (newVal) => {
+    if (newVal) {
+      console.log('isActiveTab', newVal)
+    }
   }
-})
+)
 let chat_key = ref(props.attrs.chat_key || '')
 let feedbackVisible = ref(false)
 let resultVisible = ref(false)
@@ -225,6 +228,7 @@ const handleSendMessage = async (message) => {
     textContent: message.text,
     type: 'USER',
     dateline: new Date().toLocaleString().replace(/\//g, '-'),
+    char_id: '',
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -291,6 +295,7 @@ const handleSendMessage = async (message) => {
     textContent: '',
     sessionId: activeSession.value.chat_key,
     dateline: new Date().toLocaleString().replace(/\//g, '-'),
+    char_id: '',
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -357,8 +362,11 @@ const handleSendMessage = async (message) => {
     })
   })
   // 添加明确的关闭监听
-  evtSource.value.addEventListener('stop', () => {
+  evtSource.value.addEventListener('stop', (event) => {
+    let stopResponse = JSON.parse(event.data)
     isChatting.value = false
+    chatMessage.char_id = stopResponse.startId
+    responseMessage.char_id = stopResponse.endId
     // evtSource.value.close()
   })
   evtSource.value.addEventListener('error', (error) => {
@@ -681,7 +689,11 @@ const createChat = () => {
   })
 }
 onMounted(() => {
-  get_type_models({ model_type: 'reasoning' }).then((res) => {
+  get_type_models({
+    model_type: 'reasoning',
+    ding_uid: userInfo.value?.ding_uid,
+    t: new Date().getTime()
+  }).then((res) => {
     models.value = res.data
   })
   getFeedbackType()

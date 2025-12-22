@@ -83,6 +83,7 @@
                             placeholder="请输入笔记本名称"
                             @keyup.enter="createOrRename(item)"
                             @blur="createOrRename(item)"
+                            @click.stop=""
                           />
                         </div>
                       </div>
@@ -122,6 +123,7 @@
                             placeholder="请输入笔记名称"
                             @keyup.enter="createOrRenameNote(item)"
                             @blur="createOrRenameNote(item)"
+                            @click.stop=""
                           />
                         </div>
                       </div>

@@ -500,7 +500,11 @@ watchEffect(() => {
   }, 300)
 })
 onMounted(() => {
-  get_type_models({ model_type: 'reasoning' }).then((res) => {
+  get_type_models({
+    model_type: 'reasoning',
+    ding_uid: userInfo.value?.ding_uid,
+    t: new Date().getTime()
+  }).then((res) => {
     models.value = res.data
   })
   getFeedbackType()
@@ -540,6 +544,7 @@ const handleSendMessage = async (message) => {
     textContent: message.text,
     type: 'USER',
     dateline: new Date().toLocaleString().replace(/\//g, '-'),
+    char_id: '',
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -597,6 +602,7 @@ const handleSendMessage = async (message) => {
     textContent: '',
     sessionId: activeSession.value.chat_key,
     dateline: new Date().toLocaleString().replace(/\//g, '-'),
+    char_id: '',
     completion_tokens: 0,
     total_tokens: 0,
     prompt_tokens: 0,
@@ -616,8 +622,11 @@ const handleSendMessage = async (message) => {
     responseMessage.file_info = response || []
   })
   // 添加明确的关闭监听
-  evtSource.value.addEventListener('stop', () => {
+  evtSource.value.addEventListener('stop', (event) => {
+    let stopResponse = JSON.parse(event.data)
     isChatting.value = false
+    chatMessage.char_id = stopResponse.startId
+    responseMessage.char_id = stopResponse.endId
   })
   evtSource.value.addEventListener('message', async (event) => {
     const response = JSON.parse(event.data)

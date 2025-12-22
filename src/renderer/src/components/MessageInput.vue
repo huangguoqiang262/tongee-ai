@@ -172,10 +172,7 @@
     <IntelligentWriting v-if="activeMenu === 'IntelligentWriting'" @close-menu="closeMenu" />
     <QuickAccess v-if="activeMenu === 'QuickAccess'" @close-menu="closeMenu" />
     <ImageProduction v-if="activeMenu === 'ImageProduction'" @close-menu="closeMenu" />
-    <RecommendRepository
-      v-if="activeMenu === 'RecommendRepository'"
-      @close-menu="closeMenu"
-    />
+    <RecommendRepository v-if="activeMenu === 'RecommendRepository'" @close-menu="closeMenu" />
   </div>
 </template>
 <script>
@@ -288,12 +285,12 @@ export default {
       },
       { deep: true }
     )
-    if (useCheckLogin) {
+    if (useCheckLogin().value) {
       await this.getUserInfo()
     }
     const userInfo = useUserInfo()
     this.login_show_knows = userInfo.value.login_show_knows || 0
-    if (useCheckLogin && this.login_show_knows) {
+    if (useCheckLogin().value && this.login_show_knows) {
       this.activeMenu = 'RecommendRepository'
     }
     this.getModels()
@@ -352,7 +349,12 @@ export default {
       return iconMap[ext] || wordIcon
     },
     getModels() {
-      get_type_models({ model_type: 'reasoning', t: new Date().getTime() }).then((res) => {
+      const userInfo = useUserInfo()
+      get_type_models({
+        model_type: 'reasoning',
+        t: new Date().getTime(),
+        ding_uid: userInfo.value?.ding_uid
+      }).then((res) => {
         this.models = res.data
         if (this.models?.length) {
           this.modelValue =

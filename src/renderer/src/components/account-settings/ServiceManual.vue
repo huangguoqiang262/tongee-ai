@@ -1,5 +1,5 @@
 <template>
-  <div class="notebook-box">
+  <div class="manual-box disabled-tools-chat">
     <div v-if="!catalogueShow" class="catalogue" @click="catalogueClick(true)">目录</div>
     <div v-if="catalogueShow" class="left-box">
       <div class="common-box">
@@ -35,7 +35,7 @@
         </el-skeleton>
       </div>
     </div>
-    <div class="center-box">
+    <div class="center-box" :class="{ 'mr-chat': chatVisible }">
       <div class="center-head">
         <div class="title"></div>
         <div class="right-handle-box">
@@ -45,7 +45,7 @@
           </div>
         </div>
       </div>
-      <div class="center-content">
+      <div v-loading="!html" class="center-content">
         <v-md-preview :text="html"></v-md-preview>
       </div>
     </div>
@@ -144,12 +144,13 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.notebook-box {
+.manual-box {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: flex-start;
   position: relative;
+  background: var(--primary-bg-color);
   .catalogue {
     width: 32px;
     height: 64px;
@@ -174,6 +175,7 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: #fff;
     .common-box {
       flex-shrink: 0;
       margin-bottom: 20px;
@@ -302,12 +304,17 @@ onMounted(() => {
 
   .center-box {
     flex: 1;
-    min-width: 400px;
+    min-width: 43%;
     height: 100%;
     display: flex;
     flex-direction: column;
     padding: 20px;
     overflow: hidden;
+    background: #fff;
+    border-radius: 0 12px 12px 0;
+    &.mr-chat {
+      margin-right: 10px;
+    }
     .center-head {
       flex-shrink: 0;
       max-width: 770px;
@@ -399,13 +406,12 @@ onMounted(() => {
     }
   }
   .right-box {
-    padding: 10px 0px 0;
+    flex: 1;
     height: 100%;
-    min-width: 375px;
-    display: flex;
-    flex-direction: column;
     overflow: hidden;
-    border-left: 1px solid #efefef;
+    // display: flex;
+    // flex-direction: column;
+    // border-left: 1px solid #efefef;
   }
 }
 </style>

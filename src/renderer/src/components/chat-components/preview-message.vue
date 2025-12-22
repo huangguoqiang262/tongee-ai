@@ -5,8 +5,8 @@
     </div>
     <div class="chat-content">
       <PreviewMessageRow
-        v-for="message in deepMessages"
-        :key="message.dateline"
+        v-for="(message, index) in deepMessages"
+        :key="message.dateline + index"
         :message="message"
         :direction="props.direction"
         @handle-check="handleCheck"
@@ -15,7 +15,7 @@
     <div class="bottom-action-box">
       <div class="bottom-action">
         <el-button class="cancel-btn" @click="handleLongImage">生成长图</el-button>
-        <el-button class="confirm-btn" type="primary"> 复制链接 </el-button>
+        <el-button class="confirm-btn" type="primary" @click="handleCopyLink"> 复制链接 </el-button>
       </div>
     </div>
     <el-dialog
@@ -69,6 +69,7 @@ import html2Canvas from 'html2canvas'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import { copyBase64ImageAsNormalImage, downloadBase64Image } from '@renderer/utils/imageCopy.js'
 import { ref, watch, computed, nextTick } from 'vue'
+import { getChatHtml } from '@renderer/api/chat'
 let props = defineProps({
   messages: {
     type: Array,
@@ -105,6 +106,20 @@ const longImageVisible = ref(false)
 const shareMessages = computed(() => {
   return deepMessages.value.filter((item) => item.checked)
 })
+const handleCopyLink = () => {
+  if (shareMessages.value.length) {
+    var data = {
+      chat_key: shareMessages.value[0].sessionId,
+      chat_words_ids: shareMessages.value.filter((item) => item.char_id).map((item) => item.char_id)
+    }
+    getChatHtml(data).then(async (res) => {
+      // 复制
+      await window.navigator.clipboard.writeText(res.data.file_path)
+      // eslint-disable-next-line no-undef
+      ElMessage.primary('复制成功')
+    })
+  }
+}
 const handleLongImage = () => {
   if (shareMessages.value.length) {
     longImageVisible.value = true
@@ -112,8 +127,6 @@ const handleLongImage = () => {
     nextTick(() => {
       html2Canvas(document.querySelector('.long-img-box'), { scale: 3, allowTaint: true })
         .then((canvas) => {
-          console.log('shengcheng');
-
           baseUrl.value = canvas.toDataURL('image/png')
           loading.value = baseUrl.value ? false : true
         })

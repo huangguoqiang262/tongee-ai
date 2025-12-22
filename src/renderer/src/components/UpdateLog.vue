@@ -69,9 +69,9 @@ let catalogueShow = ref(true)
 const catalogueClick = (show) => {
   catalogueShow.value = show
 }
-let itemId = ref('')
-let knowId = ref('')
-let html = ref('')
+// let itemId = ref('')
+// let knowId = ref('')
+// let html = ref('')
 const handleClick = (e) => {
   e.preventDefault()
 }

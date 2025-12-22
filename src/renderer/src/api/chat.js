@@ -113,3 +113,21 @@ export function modifyChatHistory(data) {
     data
   })
 }
+
+// 获取对话聊天记录html
+export function getChatHtml(data) {
+  return request({
+    url: '/chat/getChatHtml',
+    method: 'post',
+    data
+  })
+}
+// 设置默认模型
+export function set_default_model(data) {
+  return request({
+    url: '/chat/set_default_model',
+    method: 'post',
+    data
+  })
+}
+

@@ -15,6 +15,7 @@ declare module 'vue' {
     AddRepository: typeof import('./src/components/convenient-component/AddRepository.vue')['default']
     ChatInput: typeof import('./src/components/chat-components/chat-input.vue')['default']
     ChatPage: typeof import('./src/components/ChatPage.vue')['default']
+    CommonChat: typeof import('./src/components/CommonChat.vue')['default']
     ContentArea: typeof import('./src/components/ContentArea.vue')['default']
     ContextMenu: typeof import('./src/components/ContextMenu.vue')['default']
     DepartmentSelector: typeof import('./src/components/convenient-component/DepartmentSelector.vue')['default']
@@ -105,5 +106,6 @@ declare module 'vue' {
   }
   export interface GlobalDirectives {
     vInfiniteScroll: typeof import('element-plus/es')['ElInfiniteScroll']
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
   }
 }

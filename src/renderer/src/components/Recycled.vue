@@ -96,7 +96,13 @@
                     class="list-item"
                     @contextmenu="showContextMenu(item, $event)"
                   >
-                    <img class="left-icon" src="@renderer/assets/file-icon1.png" alt="" />
+                    <img
+                      v-if="item.type == 2"
+                      class="left-icon"
+                      src="@renderer/assets/file-icon1.png"
+                      alt=""
+                    />
+                    <img v-else class="left-icon" src="@renderer/assets/file-icon2.png" alt="" />
                     <div class="center-box">
                       <div class="title">{{ item.title }}</div>
                       <div class="desc desc1">{{ item.original_path }}</div>

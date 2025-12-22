@@ -440,6 +440,7 @@
                     placeholder="请输入文件夹名称"
                     @keyup.enter="createOrRename(item)"
                     @blur="createOrRename(item)"
+                    @click.stop=""
                   />
                 </div>
                 <div class="item-right-bottom">
@@ -481,6 +482,7 @@
                         autofocus
                         class="create-input"
                         placeholder="请输入文件名称"
+                        @click.stop=""
                         @keyup.enter="createOrRename(item)"
                         @blur="createOrRename(item)"
                       />
@@ -946,7 +948,7 @@ onUnmounted(() => {
 })
 onMounted(async () => {
   document.addEventListener('click', hideContextMenu)
-  if (useCheckLogin) {
+  if (useCheckLogin().value) {
     await getUserInfo()
   }
   getCommonCreateList(props.attrs.RepositoryId)

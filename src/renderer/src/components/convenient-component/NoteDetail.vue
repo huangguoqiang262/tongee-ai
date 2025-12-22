@@ -73,6 +73,7 @@
 
 <script setup>
 import cloneDeep from 'lodash.clonedeep'
+import { useUserStore } from '@renderer/stores/user'
 import { formatTime } from '@renderer/utils/index.js'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText.js'
 import { ref, shallowRef, watchEffect, computed } from 'vue'
@@ -89,7 +90,7 @@ const props = defineProps({
 })
 let defaultConfig = {
   excludeKeys: [
-    'group-image',
+    'insertImage',
     'group-video',
     'insertVideo',
     'unFullScreen',
@@ -108,7 +109,27 @@ const close = () => {
   noteVisible.value = false
 }
 let editorRef = shallowRef(null)
-let editorConfig = { placeholder: '请输入内容...' }
+const userStore = useUserStore()
+let editorConfig = {
+  placeholder: '请输入内容...',
+  MENU_CONF: {
+    uploadImage: {
+      server: import.meta.env.VITE_API_BASE_URL + '/api/common/upload',
+      headers: {
+        Authorization: userStore.token,
+        uniacid: userStore.uniacid
+      },
+      fieldName: 'file[]',
+      meta: {
+        uniacid: userStore.uniacid
+      },
+      allowedFileTypes: ['png', 'jpg', 'jpeg', 'gif'],
+      customInsert(res, insertFn) {
+        insertFn(res.data[0].url, res.data[0].file_type || '', res.data[0].url || '')
+      }
+    }
+  }
+}
 const handleCreated = (editor) => {
   editorRef.value = editor
 }

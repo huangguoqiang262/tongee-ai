@@ -1,14 +1,25 @@
 <template>
-  <div class="chat-page-box">
-    <div class="chat-back" @click="back">
-      <el-icon><ArrowLeftBold /></el-icon>
+  <div class="chat-page-box disabled-tools-chat">
+    <div class="chat-head">
+      <img
+        class="chat-clear"
+        src="@renderer/assets/chat-icon/clear-icon.png"
+        alt=""
+        @click="clearChat"
+      />
+      <el-icon class="close-icon" @click="closeChat"><Close /></el-icon>
     </div>
-    <div v-if="showChat" ref="messageListRef" class="chat-content" @scroll.passive="handleScroll">
+    <div
+      v-if="activeSession.messages.length"
+      ref="messageListRef"
+      class="chat-content"
+      @scroll.passive="handleScroll"
+    >
       <MessageRow
-        v-for="(messageItem, index) in activeSession.messages"
-        :key="messageItem.dateline + index"
-        :message="messageItem"
-        chat-type="image"
+        v-for="(message, index) in activeSession.messages"
+        :key="message.dateline + index"
+        :message="message"
+        :hide-attach-files="true"
         :is-chatting="isChatting"
         @handle-action="handleAction"
       />
@@ -35,22 +46,33 @@
     </div>
     <div v-if="resultVisible" class="feedback-result">感谢您对糖源ai的反馈</div>
     <div class="search-box">
-      <el-input
-        v-model="message.text"
-        autosize
-        resize="none"
-        :disabled="isChatting"
+      <chat-input
+        v-if="activeSession.model_name"
+        key="input"
+        :is-active-tab="isActiveTab"
         class="message-input"
-        type="textarea"
-        placeholder="继续输入调整图片内容"
-        @keydown.enter.prevent="sendMessage"
-      ></el-input>
-      <div v-if="isChatting" class="stop-chat-box" @click="stopChat">
-        <img class="stop-icon" src="@renderer/assets/chat-icon/stop-icon.png" alt="" />
-        停止回答
-      </div>
+        :models="models"
+        :model_id="
+          activeSession.model_name +
+          '/' +
+          activeSession.provider_key +
+          '/' +
+          activeSession.model_id +
+          '/' +
+          activeSession.enableSearch
+        "
+        :enable-search="activeSession.enableSearch"
+        :is-network="activeSession.isNetwork"
+        :is-chatting="isChatting"
+        @select-model="selectModel"
+        @network-change="networkChange"
+        @mention-change="handleMentionSelect"
+        @send="handleSendMessage"
+        @uploaded-attachment="uploadedAttachment"
+        @stop-chat="stopChat"
+      >
+      </chat-input>
     </div>
-    <div class="tips">内容由AI生成仅供参考</div>
     <take-notes
       v-model="onlineNoteVisible"
       :mark-down-text="markDownText"
@@ -59,55 +81,86 @@
     <PreviewMessage
       v-if="previewVisible"
       ref="previewMessage"
-      chat-type="image"
+      direction="left"
       :messages="activeSession.messages"
       @close-preview="closePreview"
     />
   </div>
 </template>
 <script setup>
-import { reactive, ref, inject, onMounted, nextTick } from 'vue'
+import { reactive, ref, onMounted, nextTick } from 'vue'
 import {
   getChatInfo,
   update_chat,
   get_chat_word,
+  delChatOne,
   chat_feedback,
   feedbackType
 } from '@renderer/api/chat.js'
-import MessageRow from '@renderer/components/chat-components/message-row.vue'
+import { SSE } from 'sse.js'
+import { get_type_models } from '@renderer/api/repository.js'
 import { useUserStore } from '@renderer/stores/user'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+import MessageRow from '@renderer/components/chat-components/message-row.vue'
 const props = defineProps({
-  attrs: {
-    type: Object,
-    default: () => ({})
+  attachFiles: {
+    type: Array,
+    default: () => []
   },
   isActiveTab: {
     type: Boolean,
     default: false
   }
 })
-let previewVisible = ref(false)
-const closePreview = () => {
-  previewVisible.value = false
-}
-let chat_key = ref(props.attrs.chat_key || '')
+
+let chat_key = ref(props.chat_key || '')
 let feedbackVisible = ref(false)
 let resultVisible = ref(false)
 let resultTimeout = ref(null)
 let markDownText = ref('')
+let previewVisible = ref(false)
 let messageListRef = ref(null)
+let attach_files = ref(props.attachFiles || [])
+let mentionedList = ref([])
 const userInfo = useUserInfo()
 const userStore = useUserStore()
-let replaceActiveTab = inject('replaceActiveTab')
-let isChatting = ref(false)
-let showChat = ref(true)
-let message = ref({
-  text: '',
-  image: []
-})
 const closeFeedback = () => {
   feedbackVisible.value = false
+}
+const emits = defineEmits(['closeChat'])
+const closeChat = () => {
+  stopChat()
+  emits('closeChat')
+}
+const clearChat = () => {
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm('确认清空当前会话吗？', '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(() => {
+      delChatOne({ chat_key: activeSession.value.chat_key }).then(async (res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '已清空'
+          })
+          page.value = 1
+          pageSize.value = 10
+          total.value = 0
+          isLoading.value = false
+          debounceTimer.value = null
+          isLoading.value = true
+          isSwitching.value = true
+          await getWordList()
+          isSwitching.value = false
+          isLoading.value = false
+        }
+      })
+    })
+    .catch(() => {})
 }
 const showResultMessage = () => {
   resultTimeout.value && clearTimeout(resultTimeout.value)
@@ -117,13 +170,10 @@ const showResultMessage = () => {
     resultVisible.value = false
   }, 2000)
 }
-let back = () => {
-  replaceActiveTab({
-    title: '首页',
-    url: 'SearchHome',
-    isInternal: true
-  })
+const closePreview = () => {
+  previewVisible.value = false
 }
+let isChatting = ref(false)
 const onlineNoteVisible = ref(false)
 const submitImport = () => {
   markDownText.value = ''
@@ -132,15 +182,26 @@ const submitImport = () => {
 const handleAction = (action, textContent) => {
   if (action === 'takeNote') {
     markDownText.value = textContent
-    // onlineNoteVisible.value = true
+    onlineNoteVisible.value = true
   } else if (action === 'share') {
     previewVisible.value = true
   } else if (action === 'feedback') {
     feedbackVisible.value = true
   }
 }
-const referenceImgs = ref([])
-const controller = ref(new AbortController())
+let feedbackList = ref([])
+const getFeedbackType = () => {
+  feedbackType({}).then((res) => {
+    feedbackList.value = res.data || []
+  })
+}
+const handleFeedback = (str) => {
+  chat_feedback({ chat_key: activeSession.value.chat_key, feedback: str }).then(() => {
+    feedbackVisible.value = false
+    showResultMessage()
+  })
+}
+const models = ref([])
 const activeSession = ref({
   title: '',
   messages: [],
@@ -156,47 +217,43 @@ const activeSession = ref({
   prompt: '',
   generateQuestions: true,
   isNetwork: false,
+  enableSearch: 2,
   vector_folder_path: '',
   know_modelName: '',
-  know_provider_key: '',
-  image_size: props.attrs.image_size || '512x512',
-  image_style: props.attrs.image_style || '风格不限'
+  know_provider_key: ''
 })
-const sendMessage = (event = {}) => {
-  if (event.key === 'Enter' && (event.shiftKey || event.ctrlKey || event.altKey)) {
-    message.value.text += '\n'
-  } else {
-    if (!message.value.text.trim().length) {
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        message: '请输入消息',
-        type: 'warning'
-      })
-      return
+const networkChange = (isNetwork) => {
+  activeSession.value.isNetwork = !isNetwork
+}
+const evtSource = ref(null)
+const selectModel = (model) => {
+  if (model) {
+    activeSession.value.model_name = model.split('/')[0]
+    activeSession.value.provider_key = model.split('/')[1] || ''
+    activeSession.value.model_id = model.split('/')[2] || ''
+    activeSession.value.enableSearch = model.split('/')[3] || 2
+    if (activeSession.value.enableSearch == 2) {
+      activeSession.value.isNetwork = false
     }
   }
+}
+const handleSendMessage = async (message) => {
   if (!useCheckLogin().value) {
     return
   }
-  if (isChatting.value) {
-    // eslint-disable-next-line no-undef
-    ElMessage({
-      message: '正在回答，请稍后重试',
-      type: 'error'
-    })
+  if (!message.text || isChatting.value) {
     return
   }
-  isChatting.value = true
   // 图片/语音
   const medias = []
-  if (message.value.image && message.value.image.length) {
-    medias.push({ type: 'image', data: message.value.image })
+  if (message.image && message.image.length) {
+    medias.push({ type: 'image', data: message.image })
   }
   // 用户的提问
   const chatMessage = reactive({
     sessionId: activeSession.value.chat_key,
     medias,
-    textContent: message.value.text,
+    textContent: message.text,
     type: 'USER',
     dateline: new Date().toLocaleString().replace(/\//g, '-'),
     char_id: '',
@@ -206,16 +263,65 @@ const sendMessage = (event = {}) => {
     retrievedDocumentList: [],
     spread: false,
     issueContentText: '',
-    attach_file_ids: [],
+    attach_file_ids: [...attach_files.value],
     file_info: []
   })
-  const responseMessage = reactive({
-    medias: [
-      {
-        type: 'image',
-        data: [{}, {}, {}, {}]
+  if (activeSession.value.title == '默认会话') {
+    activeSession.value.title = chatMessage.textContent || '问问糖源'
+    updataChat()
+  }
+  var tempAttachs = []
+  attach_files.value.map((item) => {
+    tempAttachs.push({
+      fileName: item.title,
+      fileUrl: item.full_path,
+      fileSize: item.total_space || 0
+    })
+  })
+  var data = {
+    messageParams: {
+      type: 'USER',
+      content: message.text,
+      sessionId: activeSession.value.chat_key
+    },
+    chatParams: {
+      modelName: activeSession.value.model_name || '',
+      modelPlatform: activeSession.value.provider_key || '',
+      contextNumber: activeSession.value.contextNumber,
+      prompt: activeSession.value.prompt || '',
+      enableSearch: activeSession.value.isNetwork,
+      temperature: activeSession.value.temperature,
+      generateQuestions: activeSession.value.generateQuestions
+    },
+    knowledgeBaseParamsList: mentionedList.value.map((item) => {
+      return {
+        modelName: item.model_name || '',
+        modelPlatform: item.provider_key || '',
+        knowledgeBaseId: item.know_key || '/',
+        folderPath: '/' + item.know_key || '/'
       }
-    ],
+    }),
+    otherParams: {
+      dingUid: userInfo.value.ding_uid,
+      uniacid: userStore.uniacid,
+      chat_key: activeSession.value.chat_key
+    },
+    annexParamList: [...tempAttachs]
+  }
+  evtSource.value = new SSE(import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/basic-chat', {
+    withCredentials: false, // 跨域请求时是否携带cookie凭证 zhaoxin TODO
+    // 禁用自动启动，需要调用stream()方法才能发起请求
+    start: false,
+    payload: JSON.stringify(data),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  isChatting.value = true
+  attach_files.value = []
+  const responseMessage = reactive({
+    medias: [],
     type: 'ASSISTANT',
     textContent: '',
     sessionId: activeSession.value.chat_key,
@@ -231,124 +337,115 @@ const sendMessage = (event = {}) => {
     attach_file_ids: [],
     file_info: []
   })
-  // diagramModelParams: {
-  //     modelName: 'Kwai-Kolors/Kolors',
-  //     modelPlatform: 'siliconflow'
-  //   },
-  //   diagramParams: {
-  //     batch_size: 4,
-  //     prompt: message.value.text,
-  //     num_inference_steps: 20,
-  //     seed: 4999999999,
-  //     guidance_scale: 7.5,
-  //     negative_prompt: activeSession.value.image_style,
-  //     image_size: activeSession.value.image_size,
-  //     model: 'Kwai-Kolors/Kolors'
-  //   },
-  //   callbackUrl:
-  //     import.meta.env.VITE_API_BASE_URL +
-  //     '/api/intelligence/text_to_image_call?uniacid=' +
-  //     userStore.uniacid,
-  //   params: {
-  //     ding_uid: userInfo.value.ding_uid,
-  //     chat_key: activeSession.value.chat_key
-  //   }
-  var data = {
-    diagramModelParams: {
-      // modelName: 'qwen-image-edit-plus',
-      // modelPlatform: 'aliyun'
-    },
-    diagramParams: {
-      n: 4,
-      prompt_extend: true,
-      prompt: message.value.text + '，风格：' + activeSession.value.image_style,
-      // num_inference_steps: 20,
-      seed: 247483647,
-      // guidance_scale: 7.5,
-      negative_prompt: '',
-      image_size: activeSession.value.image_size,
-      // model: 'qwen-image-edit-plus',
-      images: referenceImgs.value[0] ? [referenceImgs.value[0].full_path] : []
-    },
-    callbackUrl:
-      import.meta.env.VITE_API_BASE_URL +
-      '/api/intelligence/text_to_image_call?uniacid=' +
-      userStore.uniacid,
-    params: {
-      ding_uid: userInfo.value.ding_uid,
-      chat_key: activeSession.value.chat_key
-      // attach_file_ids: referenceImgs.value[0] ? [referenceImgs.value[0]] : []
+  evtSource.value.addEventListener('document', async (event) => {
+    const response = JSON.parse(event.data)
+    responseMessage.retrievedDocumentList = response || []
+  })
+  evtSource.value.addEventListener('file', async (event) => {
+    const response = JSON.parse(event.data)
+
+    responseMessage.file_info = response || []
+  })
+  evtSource.value.addEventListener('message', async (event) => {
+    const response = JSON.parse(event.data)
+    if (response.contentText || response.reasoningContentText) {
+      if (response.reasoningContentText) {
+        //匹配过滤掉\n、<think>、</think> 用正则|| 替换  排除[^\n\n]
+        function filterText(str) {
+          // 1. 替换标签
+          str = str.replace(/<\/?think>/g, '')
+
+          // 2. 替换单独的 \n（保留 \n\n）
+          str = str.replace(/\n/g, (match, offset, s) => {
+            const prev = s[offset - 1]
+            const next = s[offset + 1]
+            return prev === '\n' || next === '\n' ? '\n' : ''
+          })
+
+          return str
+        }
+        responseMessage.reasoningContentText += filterText(response.reasoningContentText)
+      }
+      responseMessage.textContent += response.contentText
     }
-  }
-  activeSession.value.messages.push(chatMessage)
-  activeSession.value.messages.push(responseMessage)
-  nextTick(() => {
-    messageListRef.value.scrollTop = messageListRef.value.scrollHeight
-  })
-  referenceImgs.value = []
-  message.value = {
-    text: '',
-    image: []
-  }
-  let apiUrl = import.meta.env.VITE_API_BASE_AI_URL + '/ai/image/test-to-image'
-  fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data),
-    signal: controller.value.signal
-  })
-    .then((res) => {
-      return res.json()
+
+    // if (response.finished) {
+    // isChatting.value = false
+    // chatMessage.prompt_tokens = response.promptToken
+    // chatMessage.total_tokens = response.promptToken
+    // responseMessage.completion_tokens = response.completionTokens
+    // responseMessage.total_tokens = response.completionTokens
+    responseMessage.issueContentText = response.issueContentText || ''
+    // }
+    // 滚动到底部
+    await nextTick(() => {
+      const container = messageListRef.value
+      if (container) {
+        const isAtBottom =
+          container.scrollTop + container.clientHeight >= container.scrollHeight - 80
+        if (isAtBottom) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          })
+        }
+      }
     })
-    .then((res) => {
-      if (res.code == '0000' && res.data) {
-        isChatting.value = false
-        var response = res.data
-        let images = response.map((item) => {
-          return {
-            full_path: item.image
+  })
+  // 添加明确的关闭监听
+  evtSource.value.addEventListener('stop', (event) => {
+    let stopResponse = JSON.parse(event.data)
+    isChatting.value = false
+    chatMessage.char_id = stopResponse.startId
+    responseMessage.char_id = stopResponse.endId
+    // evtSource.value.close()
+  })
+  evtSource.value.addEventListener('error', (error) => {
+    var errData
+    try {
+      errData = error.data
+        ? JSON.parse(error.data)
+        : {
+            message: '系统错误，请稍后再试'
           }
-        })
-        responseMessage.medias = [{ type: 'image', data: images }]
-      } else {
-        isChatting.value = false
-        // eslint-disable-next-line no-undef
-        ElMessage({
-          type: 'error',
-          message: '请求出错，请稍后重试'
-        })
+    } catch (err) {
+      console.log(err)
+
+      errData = {
+        message: '系统错误，请稍后再试'
       }
+    }
+    // eslint-disable-next-line no-undef
+    ElMessage({
+      type: 'error',
+      message: errData.message
     })
-    .catch((err) => {
-      isChatting.value = false
-      if (err.name == 'AbortError') {
-        // eslint-disable-next-line no-undef
-        ElMessage({
-          type: 'info',
-          message: '请求已取消'
-        })
-        return
-      }
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'error',
-        message: '请求出错，请稍后重试'
-      })
-    })
-}
-let feedbackList = ref([])
-const getFeedbackType = () => {
-  feedbackType({}).then((res) => {
-    feedbackList.value = res.data || []
+    if (!responseMessage.textContent) {
+      responseMessage.textContent = errData.message
+    }
+    isChatting.value = false
+  })
+  // 添加明确的关闭监听
+  evtSource.value.addEventListener('abort', () => {
+    if (!responseMessage.textContent) {
+      responseMessage.textContent = '已取消回答'
+    }
+    isChatting.value = false
+  })
+  // 调用stream，发起请求。
+  evtSource.value.stream()
+  // 将两条消息显示在页面中
+  activeSession.value.messages.push(...[chatMessage, responseMessage])
+  await nextTick(() => {
+    messageListRef.value ? messageListRef.value.scrollTo(0, messageListRef.value.scrollHeight) : ''
   })
 }
-const handleFeedback = (str) => {
-  chat_feedback({ chat_key: activeSession.value.chat_key, feedback: str }).then(() => {
-    feedbackVisible.value = false
-    showResultMessage()
-  })
+const uploadedAttachment = (files) => {
+  attach_files.value = files
+}
+const stopChat = () => {
+  isChatting.value = false
+  evtSource.value?.close()
 }
 const lastScrollTop = ref(0)
 const page = ref(1)
@@ -395,18 +492,12 @@ const getWordList = () => {
       pageSize.value = res.data.words_list.per_page
       if (res.data.words_list.data.length) {
         res.data.words_list.data.map((item) => {
-          var images = []
-          item.attach_file_ids.map((image_item) => {
-            images.push({
-              full_path: image_item.image
-            })
-          })
           if (item.msg_type == 'ASSISTANT') {
             list.push({
               type: 'ASSISTANT',
-              textContent: '',
+              textContent: item.content || '已取消回答',
               sessionId: item.chat_key,
-              medias: [{ type: 'image', data: images }],
+              medias: [],
               dateline: item.createtime,
               prompt_tokens: item.prompt_tokens,
               completion_tokens: item.completion_tokens,
@@ -415,15 +506,16 @@ const getWordList = () => {
               reasoningContentText: filterText(item.thinking_content || ''),
               spread: false,
               issueContentText: item.issue_content_text || '',
-              retrievedDocumentList: [],
-              attach_file_ids: []
+              retrievedDocumentList: item.use_file_ids || [],
+              attach_file_ids: [],
+              file_info: item.file_info || []
             })
           } else {
             list.push({
               type: 'USER',
               textContent: item.content,
               sessionId: item.chat_key,
-              medias: [{ type: 'image', data: images }],
+              medias: [],
               dateline: item.createtime,
               prompt_tokens: item.prompt_tokens,
               completion_tokens: item.completion_tokens,
@@ -431,8 +523,14 @@ const getWordList = () => {
               char_id: item.id,
               spread: false,
               issueContentText: item.issue_content_text || '',
-              retrievedDocumentList: [],
-              attach_file_ids: []
+              retrievedDocumentList: item.use_file_ids || [],
+              attach_file_ids:
+                item.attach_file_ids.map((fileItem) => ({
+                  title: fileItem.fileName,
+                  full_path: fileItem.fileUrl,
+                  total_space: fileItem.fileSize || 0
+                })) || [],
+              file_info: item.file_info || []
             })
           }
         })
@@ -480,18 +578,12 @@ const loadData = async () => {
         pageSize.value = res.data.words_list.per_page
         if (res.data.words_list.data.length) {
           res.data.words_list.data.map((item) => {
-            var images = []
-            item.attach_file_ids.map((image_item) => {
-              images.push({
-                full_path: image_item.image
-              })
-            })
             if (item.msg_type == 'ASSISTANT') {
               list.push({
                 type: 'ASSISTANT',
-                textContent: '',
+                textContent: item.content || '已取消回答',
                 sessionId: item.chat_key,
-                medias: [{ type: 'image', data: images }],
+                medias: [],
                 dateline: item.createtime,
                 prompt_tokens: item.prompt_tokens,
                 completion_tokens: item.completion_tokens,
@@ -500,15 +592,16 @@ const loadData = async () => {
                 reasoningContentText: filterText(item.thinking_content || ''),
                 issueContentText: item.issue_content_text || '',
                 spread: false,
-                retrievedDocumentList: [],
-                attach_file_ids: []
+                retrievedDocumentList: item.use_file_ids || [],
+                attach_file_ids: [],
+                file_info: item.file_info || []
               })
             } else {
               list.push({
                 type: 'USER',
                 textContent: item.content,
                 sessionId: item.chat_key,
-                medias: [{ type: 'image', data: images }],
+                medias: [],
                 dateline: item.createtime,
                 prompt_tokens: item.prompt_tokens,
                 completion_tokens: item.completion_tokens,
@@ -516,8 +609,14 @@ const loadData = async () => {
                 char_id: item.id,
                 spread: false,
                 issueContentText: item.issue_content_text || '',
-                retrievedDocumentList: [],
-                attach_file_ids: []
+                retrievedDocumentList: item.use_file_ids || [],
+                attach_file_ids:
+                  item.attach_file_ids.map((fileItem) => ({
+                    title: fileItem.fileName,
+                    full_path: fileItem.fileUrl,
+                    total_space: fileItem.fileSize || 0
+                  })) || [],
+                file_info: item.file_info || []
               })
             }
           })
@@ -545,6 +644,10 @@ const handleScroll = (event) => {
   if (scrollTop < topThreshold && !isLoading.value && isScrollingUp) {
     debounceLoadMore()
   }
+}
+const handleMentionSelect = (Mentions) => {
+  console.log(Mentions, '@')
+  mentionedList.value = Mentions
 }
 // 防抖函数
 const debounceLoadMore = () => {
@@ -574,7 +677,7 @@ const loadMore = async () => {
 }
 const createChat = () => {
   var data = {
-    chat_type: 4,
+    chat_type: 6,
     chat_key: chat_key.value || ''
   }
   feedbackVisible.value = false
@@ -585,7 +688,11 @@ const createChat = () => {
     activeSession.value.model_id = res.data.model_info?.model_id || ''
     activeSession.value.model_name = res.data.model_info?.model_name
     activeSession.value.provider_key = res.data.model_info?.provider_key
-    activeSession.value.isNetwork = res.data.is_network ? true : false
+    activeSession.value.enableSearch = res.data.model_info?.net_status || 2
+    activeSession.value.isNetwork = res.data.is_use_net ? true : false
+    if (activeSession.value.enableSearch == 2) {
+      activeSession.value.isNetwork = false
+    }
     // activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
     // activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
     // activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
@@ -600,40 +707,27 @@ const createChat = () => {
     // await getWordList()
     isSwitching.value = false
     isLoading.value = false
-    if (activeSession.value.title == '默认会话') {
-      activeSession.value.title = props.attrs?.message_text || '图像生成'
-      updataChat()
-    }
-    message.value.image = props.attrs.attach_files || []
-    referenceImgs.value = props.attrs.attach_files || []
-    if (!chat_key.value) {
-      message.value.text = props.attrs?.message_text
-      sendMessage()
-    } else {
-      getWordList()
-    }
+    getWordList()
   })
 }
 onMounted(() => {
+  get_type_models({
+    model_type: 'reasoning',
+    ding_uid: userInfo.value?.ding_uid,
+    t: new Date().getTime()
+  }).then((res) => {
+    models.value = res.data
+  })
   getFeedbackType()
   createChat()
 })
-const stopChat = () => {
-  isChatting.value = false
-  controller.value?.close()
-}
 </script>
 <style scoped lang="scss">
-.tips {
-  font-size: 12px;
-  color: #909090;
-  text-align: center;
-}
 .chat-page-box {
   position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
-  padding: 0 20px 20px;
+  padding: 10px 20px 20px;
   height: 100%;
   min-width: 375px;
   background: #fff;
@@ -641,6 +735,36 @@ const stopChat = () => {
   flex-direction: column;
   border-radius: 8px;
   overflow: hidden;
+  user-select: text;
+  .chat-head {
+    // position: absolute;
+    // top: 20px;
+    // left: 20px;
+    // z-index: 1;
+    width: 100%;
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0 20px;
+    justify-content: flex-end;
+    font-size: 14px;
+    color: var(--default-font-color);
+    .chat-clear {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .close-icon {
+      color: #737475;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s linear;
+      &:hover {
+        color: var(--el-color-primary);
+      }
+    }
+  }
   .chat-back {
     position: absolute;
     top: 20px;
@@ -743,49 +867,11 @@ const stopChat = () => {
     }
   }
   .search-box {
-    position: relative;
     width: 100%;
-    .stop-chat-box {
-      position: absolute;
-      left: 50%;
-      top: -58px;
-      transform: translateX(-50%);
-      z-index: 1;
-      width: 116px;
-      height: 38px;
-      background: #fff;
-      box-shadow: 0px 2px 18px 2px rgba(0, 0, 0, 0.07);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      font-size: 14px;
-      color: var(--default-font-color);
-      line-height: 20px;
-      cursor: pointer;
-      .stop-icon {
-        flex-shrink: 0;
-        width: 14px;
-        height: 14px;
-      }
-      &:active {
-        opacity: 0.6;
-      }
-    }
-    :deep(.message-input) {
-      display: block;
+    .message-input {
       width: 100%;
       max-width: 770px;
-      margin: 0 auto 10px;
-      .el-textarea__inner {
-        padding: 20px 18px;
-        min-height: 58px;
-        font-size: 16px;
-        max-height: 150px;
-        background: #f6f6f6;
-        border-radius: 12px;
-      }
+      margin: 0 auto;
     }
   }
 }

@@ -53,6 +53,10 @@ const props = defineProps({
   showUser: {
     type: Boolean,
     default: false
+  },
+  hideAttachFiles: {
+    type: Boolean,
+    default: false
   }
 })
 const addNewTab = inject('addNewTab')
@@ -160,6 +164,9 @@ const getFileIcon = (item) => {
   return iconMap[ext] || wordIcon
 }
 const handleAction = (acticon, textContent) => {
+  if (props.isChatting) {
+    return
+  }
   emit('handleAction', acticon, textContent)
 }
 // const exportToMd = (msg) => {
@@ -253,7 +260,7 @@ const download = (index, images) => {
             {{ props.message.dateline }}
           </div>
           <!-- 附件 -->
-          <div class="attachment">
+          <div v-if="!hideAttachFiles" class="attachment">
             <div
               v-for="(item, index) in props.message.attach_file_ids"
               :key="index"
@@ -360,7 +367,12 @@ const download = (index, images) => {
           ></MarkdownMessage>
           <!-- 返回附件 -->
           <div v-if="props.message.file_info.length" class="attachment" style="margin-top: 10px">
-            <div v-for="(item, index) in props.message.file_info" :key="index" class="attach-item" @click="lookOver(item, 2)">
+            <div
+              v-for="(item, index) in props.message.file_info"
+              :key="index"
+              class="attach-item"
+              @click="lookOver(item, 2)"
+            >
               <img class="attached-icon" :src="getFileIcon1(item)" alt="" />
               <div class="attached-content">
                 <div class="attach-name">
@@ -414,7 +426,11 @@ const download = (index, images) => {
               </template>
             </el-image>
           </div>
-          <div v-if="!props.isPreView" class="empty-message download-message">
+          <div
+            v-if="!props.isPreView"
+            class="empty-message download-message"
+            :class="{ 'not-allowed': props.isChatting }"
+          >
             <el-tooltip
               v-if="props.chatType == 'text'"
               effect="light"
@@ -428,7 +444,12 @@ const download = (index, images) => {
                 @click="handleAction('takeNote', props.message.textContent)"
               />
             </el-tooltip>
-            <el-tooltip effect="light" content="分享" placement="bottom">
+            <el-tooltip
+              v-if="props.chatType == 'text'"
+              effect="light"
+              content="分享"
+              placement="bottom"
+            >
               <img
                 class="chat-icon"
                 src="@renderer/assets/chat-icon/share-icon.png"
@@ -799,6 +820,12 @@ const download = (index, images) => {
     gap: 20px;
     width: 100%;
     border-bottom: 1px solid #e5e5e5;
+    &.not-allowed {
+      .chat-icon {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
     .chat-icon {
       width: 16px;
       height: 16px;

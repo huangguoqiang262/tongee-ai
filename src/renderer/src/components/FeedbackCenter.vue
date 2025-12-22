@@ -96,6 +96,7 @@
 
 <script setup>
 import { ref, shallowRef, onMounted, watchEffect } from 'vue'
+import { useUserStore } from '@renderer/stores/user'
 import {
   feedback_type_tree,
   feedback_doc_type,
@@ -128,7 +129,7 @@ let tabs = ref([
 let feedbackForm = ref(null)
 let defaultConfig = {
   excludeKeys: [
-    'group-image',
+    'insertImage',
     'group-video',
     'insertVideo',
     'unFullScreen',
@@ -159,7 +160,27 @@ const tabHandle = (id) => {
   feedbackData.value.sug_or_pb = id
 }
 let editorRef = shallowRef(null)
-let editorConfig = { placeholder: '请输入内容...' }
+const userStore = useUserStore()
+let editorConfig = {
+  placeholder: '请输入内容...',
+  MENU_CONF: {
+    uploadImage: {
+      server: import.meta.env.VITE_API_BASE_URL + '/api/common/upload',
+      headers: {
+        Authorization: userStore.token,
+        uniacid: userStore.uniacid
+      },
+      fieldName: 'file[]',
+      meta: {
+        uniacid: userStore.uniacid
+      },
+      allowedFileTypes: ['png', 'jpg', 'jpeg', 'gif'],
+      customInsert(res, insertFn) {
+        insertFn(res.data[0].url, res.data[0].file_type || '', res.data[0].url || '')
+      }
+    }
+  }
+}
 let isEmpty = (rule, value, callback) => {
   // 匹配<p><br></p>
   let reg = /^<p><br><\/p>$/
