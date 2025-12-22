@@ -26,9 +26,9 @@ function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 1260, // 初始宽度
-    height: 870, // 初始高度
+    height: 800, // 初始高度
     minWidth: 1260, // 最小宽度
-    minHeight: 870, // 最小高度
+    minHeight: 800, // 最小高度
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
@@ -79,6 +79,59 @@ function createWindow() {
   //   // shell.openExternal(details.url)
   //   return { action: 'deny' }
   // })
+//   app.on('web-contents-created', (event, contents) => {
+//   // 1. 区分是主窗口内部的链接打开，还是 webview 内部的
+//   // 我们只处理主窗口（或者你指定的窗口）发出的请求
+//   // 注意：这里通过判断 contents 的 openerId 是否存在，或者关联的窗口类型
+
+//   contents.setWindowOpenHandler(({ url, referrer, frameName }) => {
+    
+//     console.log('主进程拦截到 window.open:', url);
+
+//     // --- 第一步：判断是否为下载链接 ---
+//     // 你可以根据 url 后缀、或者是否包含特定参数来判断
+//     const isDownload = url.endsWith('.pdf') || 
+//                        url.endsWith('.zip') || 
+//                        url.includes('/api/download') ||
+//                        url.includes('download=true');
+
+//     if (isDownload) {
+//       // 🔽 下载逻辑：使用系统默认下载行为或 shell 打开
+//       // 方案 A (推荐): 使用 shell 打开，让系统或浏览器处理下载
+//       shell.openExternal(url);
+      
+//       // 方案 B: 如果你想在 Electron 内部触发下载管理器，可以使用：
+//       // contents.downloadURL(url); 
+      
+//       // 🔴 务必返回 deny，阻止 Electron 创建新窗口
+//       return { action: 'deny' };
+//     }
+
+//     // --- 第二步：非下载链接，在内部处理 ---
+
+//     // 方案 A: 在当前 mainWindow 里跳转 (模拟 _self)
+//     // mainWindow.loadURL(url);
+    
+//     // 方案 B (推荐): 在当前窗口打开新标签页 (如果你的 UI 支持标签页)
+//     // 通过 IPC 发送给渲染进程，让渲染进程创建一个新的 BrowserView 或 iframe Tab
+//     // mainWindow.webContents.send('open-new-tab', url);
+
+//     // 方案 C: 创建一个严格限制的子窗口 (类似弹窗)
+//     // return {
+//     //   action: 'allow',
+//     //   overrideBrowserWindowOptions: {
+//     //     width: 800,
+//     //     height: 600,
+//     //     parent: mainWindow, // 模态化
+//     //     modal: true
+//     //   }
+//     // };
+
+//     // 🔴 这里演示：阻止默认创建，由主进程控制在当前窗口打开
+//     shell.openExternal(url); // 或者 mainWindow.loadURL(url)
+//     return { action: 'deny' };
+//   });
+// });
   mainWindow.webContents.on('did-attach-webview', (event, wc) => {
     wc.setWindowOpenHandler((details) => {
       mainWindow.webContents.send('webview-new-window', wc.id, details)

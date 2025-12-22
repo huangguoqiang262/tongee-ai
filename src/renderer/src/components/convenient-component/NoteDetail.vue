@@ -123,7 +123,7 @@ let editorConfig = {
       meta: {
         uniacid: userStore.uniacid
       },
-      allowedFileTypes: ['png', 'jpg', 'jpeg', 'gif'],
+      allowedFileTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'],
       customInsert(res, insertFn) {
         insertFn(res.data[0].url, res.data[0].file_type || '', res.data[0].url || '')
       }

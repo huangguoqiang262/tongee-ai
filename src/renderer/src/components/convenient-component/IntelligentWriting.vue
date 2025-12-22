@@ -629,7 +629,7 @@ const formatFileSize = (kb) => {
   transform: translate(-50%, -50%);
   width: 65vw;
   min-width: 1060px;
-  height: 726px;
+  height: 686px;
   background: #ffffff;
   box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
   border-radius: 16px;
