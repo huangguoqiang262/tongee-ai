@@ -1182,11 +1182,13 @@ const beforeDeleteRepository = () => {
             type: 'primary',
             message: '删除成功'
           })
-          activeRepository.value = {}
-          activeRepositoryId.value = ''
           if (activeRepository.value.is_public == 1) {
+            activeRepositoryId.value = ''
+            activeRepository.value = {}
             getCommonCreateList()
           } else {
+            activeRepositoryId.value = ''
+            activeRepository.value = {}
             getPersonalCreateList()
           }
         }
@@ -1210,12 +1212,14 @@ const beforeQuitRepository = () => {
             type: 'primary',
             message: '退出成功'
           })
-          activeRepository.value = {}
-          activeRepositoryId.value = ''
           if (activeRepository.value.is_public == 1) {
             getCommonCreateList()
+            activeRepository.value = {}
+            activeRepositoryId.value = ''
           } else {
             getPersonalCreateList()
+            activeRepository.value = {}
+            activeRepositoryId.value = ''
           }
         }
       })
