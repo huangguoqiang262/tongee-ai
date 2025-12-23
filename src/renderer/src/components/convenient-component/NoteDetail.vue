@@ -95,7 +95,7 @@ let defaultConfig = {
     'insertVideo',
     'unFullScreen',
     'fullScreen',
-    'insertLink',
+    'viewLink',
     'todo',
     'codeBlock',
     'emotion',
@@ -145,8 +145,6 @@ watchEffect(() => {
   if (deepData.value.type === 'add') {
     noteTitle.value = '新增笔记'
   } else {
-    console.log(deepData.value)
-
     noteTitle.value = '编辑笔记'
   }
 })

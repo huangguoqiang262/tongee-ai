@@ -649,6 +649,7 @@ const createChat = () => {
     activeSession.value.provider_key = res.data.model_info?.provider_key
     activeSession.value.enableSearch = res.data.model_info?.net_status || 2
     activeSession.value.isNetwork = res.data.is_use_net ? true : false
+    mentionedList.value = props.attrs?.knows || []
     if (activeSession.value.enableSearch == 2) {
       activeSession.value.isNetwork = false
     }
@@ -667,7 +668,7 @@ const createChat = () => {
     isSwitching.value = false
     isLoading.value = false
     if (activeSession.value.title == '默认会话') {
-      activeSession.value.title = props.attrs?.message_text || '文档解读'
+      activeSession.value.title = props.attrs?.message_text || '问问糖源'
       updataChat()
     }
     if (!chat_key.value) {

@@ -48,14 +48,32 @@ provide('handleTabAction', handleTabAction)
 const handleLoginSuccess = () => {
   handleTabAction('close-all')
 }
+const handleMainWindowNewWindow = (event) => {
+  const details = event.detail
+  console.log('新窗口请求:', details)
+
+  // 根据details中的URL打开新tab
+  if (details.url) {
+    // 调用你的打开新tab的方法
+    addNewTabGlobal({
+      url: details.url,
+      title: details.title || '',
+      icon: details.icon || '',
+      isInternal: false
+    })
+  }
+}
 onMounted(() => {
   // 注册登录成功事件监听
   on('login-success', handleLoginSuccess)
+  window.addEventListener('main-window-new-window', handleMainWindowNewWindow)
+
 })
 
 onUnmounted(() => {
   // 移除事件监听
   off('login-success', handleLoginSuccess)
+  window.removeEventListener('main-window-new-window', handleMainWindowNewWindow)
 })
 </script>
 

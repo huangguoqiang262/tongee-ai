@@ -555,6 +555,13 @@
       v-model="uploadVisible"
       :ready-upload-list="ReadyUploadList"
       :knowledge-id="activeRepositoryId"
+      :knowledge-path="
+        activeRepository.title + (pathList.length > 1 ? '/' : '') +
+        pathList
+          .filter((item) => item.id)
+          .map((item) => item.name)
+          .join('/')
+      "
       :parent-item-id="parentItemId"
       @close="closeUploadDialog"
       @refresh-list="refreshList"

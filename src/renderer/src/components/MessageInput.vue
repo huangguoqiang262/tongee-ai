@@ -156,10 +156,15 @@
     <div v-if="focus || fileList.length" class="common-issue">
       <div v-show="historyIssueList.length" class="common-issue-title">问问知识库</div>
       <div class="common-issue-content">
-        <div v-for="(item, index) in historyIssueList" :key="index" class="common-issue-item">
+        <div
+          v-for="(item, index) in historyIssueList"
+          :key="index"
+          class="common-issue-item"
+          @click="handleToHome(item)"
+        >
           <div class="issue-item-left">
             <img class="issue-img" :src="item.picurl || defaultCover" alt="" />
-            <div class="issue-text">{{ item.title }}</div>
+            <div class="issue-text">{{ item.know_title }}&nbsp; {{ item.title }}</div>
           </div>
           <el-icon class="issue-item-right"><ArrowRight /></el-icon>
         </div>
@@ -323,6 +328,31 @@ export default {
         provider_key: item.vector_model?.provider_key || ''
       }
       this.mentioned.push(obj)
+    },
+    handleToHome(item) {
+      if (!useCheckLogin().value) {
+        return
+      }
+      var knows = {
+        know_key: item.know_key,
+        label: item.know_title,
+        value: item.know_title,
+        model_name: item.know_vector_model?.model_name || '',
+        provider_key: item.know_vector_model?.provider_key || ''
+      }
+      var prompt = ''
+      this.replaceActiveTab({
+        title: item.title,
+        url: 'HomePage',
+        isInternal: true,
+        attrs: {
+          attach_files: [],
+          message_text: item.title,
+          knows: [knows],
+          prompt: prompt,
+          modelInfo: this.modelInfo
+        }
+      })
     },
     handleMentionSelect(item) {
       this.mentioned.push(item)
@@ -517,6 +547,9 @@ export default {
     // 自定义上传逻辑
     // 自定义上传逻辑
     customUpload(fileItem) {
+      if (!useCheckLogin().value) {
+        return
+      }
       const userStore = useUserStore()
       // eslint-disable-next-line no-undef
       let loadcontext = ElLoading.service({
@@ -614,6 +647,9 @@ export default {
       window.customApi?.onScreenshotOk(this.handleScreenshotAsPaste)
     },
     handleScreenshotAsPaste(event, data) {
+      if (!useCheckLogin().value) {
+        return
+      }
       try {
         // 处理截图数据并创建文件对象
         let base64String
@@ -739,6 +775,9 @@ export default {
       this.handleSendClick()
     },
     handleSendClick() {
+      if (!useCheckLogin().value) {
+        return
+      }
       if (this.message.text.trim().length) {
         // 判断是否是网址
         var reg =

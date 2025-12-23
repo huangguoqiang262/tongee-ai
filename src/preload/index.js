@@ -3,6 +3,14 @@ import { electronAPI } from '@electron-toolkit/preload'
 const fs = require('fs')
 const path = require('path')
 const mime = require('mime-types')
+ipcRenderer.on('main-window-new-window', (e, details) => {
+  // 发送自定义事件到页面
+  window.dispatchEvent(
+    new CustomEvent('main-window-new-window', {
+      detail: details
+    })
+  )
+})
 ipcRenderer.on('webview-new-window', (e, webContentsId, details) => {
   const webview = document.getElementById('webview')
   webview.dispatchEvent(

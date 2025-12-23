@@ -44,11 +44,12 @@ defineEmits(['goBack', 'goForward', 'reload', 'stop', 'navigate'])
 
 <style scoped lang="scss">
 .toolbar {
+  width: calc(100% - 10px);
   display: flex;
   align-items: center;
   padding: 12px;
-  background: var(--primary-bg-color);
-  border-bottom: 1px solid var(--primary-bg-color);
+  background: #fff;
+  border-radius: 8px 8px 0px 0px;
 }
 
 .nav-buttons {
@@ -64,19 +65,21 @@ defineEmits(['goBack', 'goForward', 'reload', 'stop', 'navigate'])
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #34495e;
+  background: transparent;
   border: none;
-  color: #ecf0f1;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--default-font-color);
   cursor: pointer;
-  transition: background 0.2s;
+  // transition: background 0.2s;
 }
 
-.nav-btn:hover {
-  background: #4a6278;
-}
+// .nav-btn:hover {
+//   // background: #ccc;
+// }
 
 .nav-btn:disabled {
-  opacity: 0.5;
+  color: #ccc;
   cursor: not-allowed;
 }
 

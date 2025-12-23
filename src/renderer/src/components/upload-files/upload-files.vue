@@ -18,7 +18,12 @@
         <div class="">上传文件</div>
       </template>
       <div class="file-list">
-        <div v-for="item in uploadList" :key="item.uid" class="file-item">
+        <div
+          v-for="(item, index) in uploadList"
+          :key="item.uid"
+          class="file-item"
+          :class="{ err: item.status === 'error' }"
+        >
           <img class="icon" :src="getFileIcon(item)" alt="" />
           <div class="file-item-right">
             <div class="right-top">
@@ -29,21 +34,29 @@
               </div>
             </div>
             <div class="right-center">
-              <span v-if="item.size">{{ formatFileSize(item.size) }}</span>
-              <span v-if="item.size">·</span>
-              <span>上传至：糖源ai知识库</span>
+              <div class="right-center-label">
+                <span v-if="item.size" class="file-size">{{ formatFileSize(item.size) }}</span>
+                <span v-if="item.size" class="file-size">·</span>
+                <span class="file-path">上传至：{{ props.knowledgePath }}</span>
+              </div>
+              <img
+                class="delete-icon"
+                src="@renderer/assets/del-icon1.png"
+                alt=""
+                @click="delErrItem(index)"
+              />
             </div>
             <div class="right-bottom">
               <div class="progress">
                 <div class="bar" :style="{ width: item.progress + '%' }"></div>
               </div>
             </div>
-            <div v-if="item.status === 'success'" class="right-bottom">
+            <!-- <div v-if="item.status === 'success'" class="right-bottom">
               <div class="success-text">上传成功</div>
             </div>
             <div v-else-if="item.status === 'error'" class="right-bottom">
               <div class="error-text">上传失败: {{ item.errorMessage }}</div>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>
@@ -172,6 +185,10 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  knowledgePath: {
+    type: String,
+    default: '糖源ai知识库'
+  },
   knowledgeId: {
     type: [String, Number],
     default: ''
@@ -194,7 +211,18 @@ watch(
   },
   { deep: true }
 )
-
+watch(
+  () => props.knowledgeId,
+  () => {
+    uploadList.value = []
+  }
+)
+watch(
+  () => props.parentItemId,
+  () => {
+    uploadList.value = []
+  }
+)
 // 初始化上传列表
 const initializeUploadList = (fileList) => {
   var tempList = []
@@ -215,7 +243,6 @@ const initializeUploadList = (fileList) => {
   uploadList.value.push(...tempList)
   // 开始上传
   startUpload()
-
 }
 
 // 开始上传（添加错误边界）
@@ -311,15 +338,18 @@ const uploadSingleFile = async (fileItem) => {
         fileItem.progress = 100
         fileItem.uploadedCount = 1
         // 刷新知识库详情列表
+        clearSuccessUploadItems()
         emits('refreshList')
         resolve()
       } else {
         reject(new Error(response.code || xhr.status))
+        clearSuccessUploadItems()
       }
     }
 
     xhr.onerror = () => {
       reject(new Error('网络错误'))
+      clearSuccessUploadItems()
     }
 
     // 实际使用时需要配置正确的上传地址
@@ -328,13 +358,15 @@ const uploadSingleFile = async (fileItem) => {
     xhr.send(formData)
   })
 }
+const delErrItem = (index) => {
+  uploadList.value.splice(index, 1)
+  clearSuccessUploadItems()
+}
 // 修复：改为每个任务独立的轮询管理
 const taskPollingMap = new Map() // 存储每个任务的轮询信息
 
 // 开始任务状态轮询（修复版本）
 const startTaskPolling = (taskId) => {
-  console.log('开始轮询任务:', taskId)
-
   // 如果该任务已有轮询，先清除
   if (taskPollingMap.has(taskId)) {
     const { interval } = taskPollingMap.get(taskId)
@@ -359,7 +391,12 @@ const closeUploadDialog = () => {
     taskPollingMap.delete(taskId)
   })
 }
-
+const clearSuccessUploadItems = () => {
+  uploadList.value = uploadList.value.filter((item) => item.status !== uploadStatus.SUCCESS)
+  if (uploadList.value.length == 0) {
+    uploadVisible.value = false
+  }
+}
 onUnmounted(() => {
   // 清除所有任务的轮询
   taskPollingMap.forEach(({ interval }, taskId) => {
@@ -379,7 +416,7 @@ const getUploadProgress = async (taskId) => {
     if (res.data.data && res.data.data.length > 0) {
       res.data.data.forEach((item) => {
         // 找到对应的上传项
-        const uploadItem = uploadList.value.find(file => file.task_id === item.task_id)
+        const uploadItem = uploadList.value.find((file) => file.task_id === item.task_id)
         if (uploadItem) {
           // 更新上传项状态
           uploadItem.progress = item.progress
@@ -408,6 +445,7 @@ const getUploadProgress = async (taskId) => {
         console.log(`任务 ${taskId} 不存在，停止轮询`)
       }
     }
+    clearSuccessUploadItems()
   } catch (error) {
     console.error('获取任务进度失败:', error)
     // 发生错误时，继续轮询，不要停止
@@ -613,7 +651,19 @@ const formatFileSize = (bytes) => {
           font-size: 14px;
           color: var(--default-font-color);
           line-height: 22px;
-
+          &.err {
+            &:hover {
+              background: #f9f9f9;
+              border-radius: 4px;
+              .delete-icon {
+                display: block !important;
+              }
+            }
+          }
+          &:hover {
+            background: #f9f9f9;
+            border-radius: 4px;
+          }
           .icon {
             flex-shrink: 0;
             display: block;
@@ -670,12 +720,35 @@ const formatFileSize = (bytes) => {
               margin-bottom: 10px;
               display: flex;
               align-items: center;
-              gap: 2px;
-
-              span {
-                font-size: 12px;
-                color: #909090;
-                line-height: 16px;
+              gap: 5px;
+              overflow: hidden;
+              .right-center-label {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                overflow: hidden;
+                span {
+                  font-size: 12px;
+                  color: #909090;
+                  line-height: 16px;
+                }
+                .file-size {
+                  flex-shrink: 0;
+                }
+                .file-path {
+                  flex: 1;
+                  white-space: nowrap;
+                  text-overflow: ellipsis;
+                  overflow: hidden;
+                }
+              }
+              .delete-icon {
+                display: none;
+                flex-shrink: 0;
+                width: 14px;
+                height: 14px;
+                cursor: pointer;
               }
             }
 

@@ -36,6 +36,7 @@
 
 <script setup>
 import defaultIcon from '@renderer/assets/logo.png'
+import { ref, onMounted } from 'vue'
 defineProps({
   tabs: {
     type: Array,
@@ -50,15 +51,25 @@ defineProps({
     default: () => ({ show: false, left: 0, width: 0 })
   }
 })
-
+const isMac = ref(false)
+onMounted(() => {
+  // 使用 Electron 的 process.platform 进行更精确的检测
+  if (window.process && window.process.platform) {
+    isMac.value = window.process.platform === 'darwin'
+  } else {
+    // 备用方案：使用 navigator.platform
+    isMac.value = navigator.platform.toLowerCase().includes('mac')
+  }
+})
 defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'contextmenu', 'closeTab', 'newTab'])
 </script>
 
 <style scoped lang="scss">
 .tabs-container-box {
-  width: calc(100% - 128px);
+  width: calc(100% - 10px);
   padding: 10px 0;
-  padding-right: 100px;
+  padding-right: v-bind('isMac ? "0" : "200px"');
+  padding-left: v-bind('isMac ? "200px" : "0"');
   display: flex;
   app-region: drag;
   -webkit-app-region: drag;

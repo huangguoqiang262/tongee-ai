@@ -1,7 +1,10 @@
 <template>
   <div
     class="content-area"
-    :style="{ backgroundColor: props.activeTab?.backgroundColor || '#fff' }"
+    :style="{
+      backgroundColor: props.activeTab?.backgroundColor || '#fff',
+      borderRadius: activeTab?.isInternal ? '12px' : '0px 0px 12px 12px'
+    }"
   >
     <div v-if="!tabs.length" class="empty-state">
       <i class="fas fa-window-maximize"></i>
@@ -13,7 +16,7 @@
         <component :is="internalComponents['NotFound']" />
       </div>
 
-      <div v-else-if="activeTab.isInternal" class="internal-page">
+      <div v-show="activeTab.isInternal" class="internal-page">
         <template v-for="tab in tabs" :key="tab.id">
           <component
             :is="internalComponents[tab.url]"
@@ -25,7 +28,7 @@
       </div>
       <div v-show="!activeTab.isInternal" class="webview-container">
         <!-- 加载状态覆盖层 -->
-        <div v-if="activeTab.loading" class="loading-overlay">
+        <div v-show="activeTab.loading" class="loading-overlay">
           <div class="loading-spinner"></div>
           <p>加载中... {{ activeTab.progress }}%</p>
         </div>
