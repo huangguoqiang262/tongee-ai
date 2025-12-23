@@ -67,7 +67,6 @@ onMounted(() => {
   // 注册登录成功事件监听
   on('login-success', handleLoginSuccess)
   window.addEventListener('main-window-new-window', handleMainWindowNewWindow)
-
 })
 
 onUnmounted(() => {
