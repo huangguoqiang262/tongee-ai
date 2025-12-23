@@ -69,7 +69,6 @@ defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'contextmenu', 'clo
   width: calc(100% - 10px);
   padding: 10px 0;
   padding-right: v-bind('isMac ? "0" : "200px"');
-  padding-left: v-bind('isMac ? "200px" : "0"');
   display: flex;
   app-region: drag;
   -webkit-app-region: drag;

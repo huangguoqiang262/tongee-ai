@@ -155,6 +155,11 @@ const joinKnowledge = (item) => {
         // eslint-disable-next-line no-undef
         ElMessage.primary('加入成功')
         item.already_joined = 1
+        var joinList = list.value.filter((item) => !item.already_joined)
+        if (joinList.length == 0) {
+          emits('closeMenu')
+          getUserInfo()
+        }
       } else {
         // eslint-disable-next-line no-undef
         ElMessage.primary('申请已提交')
