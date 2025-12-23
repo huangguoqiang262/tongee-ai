@@ -55,10 +55,10 @@
     <webview v-else-if="isPdf" :src="fileUrl" class="file-preview-iframe"></webview>
 
     <!-- 文本预览（txt） -->
-    <pre v-else-if="isTxt" class="file-preview-txt">
-正在加载文本内容...
-    </pre>
+    <!-- <pre  class="file-preview-txt">
 
+    </pre> -->
+    <webview v-else-if="isTxt" :src="fileUrl" class="file-preview-iframe"></webview>
     <!-- Office 文档在线预览（需要公网可访问的URL） -->
     <webview v-else-if="isOffice" :src="officePreviewUrl" class="file-preview-iframe"></webview>
     <!-- 网页 -->
@@ -266,6 +266,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   position: relative;
+  background: #fff;
 }
 
 /* 图片预览容器 */

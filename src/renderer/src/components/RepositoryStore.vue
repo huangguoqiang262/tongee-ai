@@ -556,7 +556,8 @@
       :ready-upload-list="ReadyUploadList"
       :knowledge-id="activeRepositoryId"
       :knowledge-path="
-        activeRepository.title + (pathList.length > 1 ? '/' : '') +
+        activeRepository.title +
+        (pathList.length > 1 ? '/' : '') +
         pathList
           .filter((item) => item.id)
           .map((item) => item.name)
@@ -855,6 +856,21 @@ const squaretabChange = () => {
     url: 'Square',
     isInternal: true
   })
+}
+const downloadFile = (url, fileName) => {
+  const x = new XMLHttpRequest()
+  x.open('GET', url, true)
+  x.responseType = 'blob'
+  x.onload = () => {
+    const url = window.URL.createObjectURL(x.response)
+    const a = document.createElement('a')
+    a.href = url
+    a.target = '_blank'
+    a.download = fileName
+    a.click()
+    a.remove()
+  }
+  x.send()
 }
 // 到达详情
 const detailChange = (item) => {
@@ -1687,6 +1703,10 @@ const handleContextMenuAction = ({ action }) => {
     // 设置权限
   } else if (action === 'export') {
     // 导出
+    downloadFile(
+      activeFiles.value[0]?.info.url,
+      `${activeFiles.value[0]?.info.title.split('.')[0] || '文件'}-${new Date().getTime()}.${activeFiles.value[0]?.info.title.split('.').pop()}`
+    )
   } else if (action === 'delete') {
     let tempFiles = JSON.parse(JSON.stringify(activeFiles.value))
     // 删除

@@ -151,6 +151,7 @@
 <script setup>
 import { Buffer } from 'buffer'
 import { create_folder_task, task_list } from '@renderer/api/uploadRepository'
+import { user_info } from '@renderer/api/user'
 import { useUserStore } from '@renderer/stores/user'
 import cloneDeep from 'lodash.clonedeep'
 import { ref, watch, onUnmounted } from 'vue'
@@ -170,6 +171,14 @@ const uploadStatus = {
   UPLOADING: 'uploading', // 上传中
   SUCCESS: 'success', // 上传成功
   ERROR: 'error' // 上传失败
+}
+const getUserInfo = () => {
+  const userStore = useUserStore()
+  return user_info({}).then((res) => {
+    if (res.code == 200) {
+      userStore.updateUser(res.data?.user_info)
+    }
+  })
 }
 let mapStatus = {
   0: uploadStatus.PENDING,
@@ -396,6 +405,7 @@ const clearSuccessUploadItems = () => {
   if (uploadList.value.length == 0) {
     uploadVisible.value = false
   }
+  getUserInfo()
 }
 onUnmounted(() => {
   // 清除所有任务的轮询

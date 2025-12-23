@@ -139,7 +139,7 @@ export default {
     },
     // 是否联网
     enableSearch: {
-      type: Number,
+      type: [Number, String],
       default: 2
     }
   },

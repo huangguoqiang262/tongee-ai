@@ -813,6 +813,8 @@ const getBookList = () => {
         if (activeNotebook.value) {
           getNoteList()
         } else {
+          activeNotebook.value = ''
+          noteLists.value = []
           noteLoading.value = false
         }
       }
