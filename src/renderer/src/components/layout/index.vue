@@ -4,7 +4,7 @@
     <div class="main-container">
       <MainContent ref="mainContentRef"></MainContent>
     </div>
-    <TextSelectionToolbar />
+    <!-- <TextSelectionToolbar /> -->
   </div>
 </template>
 

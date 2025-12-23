@@ -27,10 +27,10 @@
             </el-select> -->
             <theme-picker></theme-picker>
           </div>
-          <div class="handle-item" @click="sonClick('paddle')">
+          <!-- <div class="handle-item" @click="sonClick('paddle')">
             <div class="label">ai划词工具栏</div>
             <img class="icon" src="@renderer/assets/repository/down-icon.png" alt="" />
-          </div>
+          </div> -->
           <div class="handle-item">
             <div class="label">首选大模型</div>
             <el-select
