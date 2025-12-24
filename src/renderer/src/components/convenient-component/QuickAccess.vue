@@ -15,7 +15,12 @@
           </template>
           <template #default>
             <template v-if="list.length">
-              <div v-for="(item, index) in list" :key="item.id" class="list-item">
+              <div
+                v-for="(item, index) in list"
+                :key="item.id"
+                class="list-item"
+                @click="handleClick(item)"
+              >
                 <img
                   class="del-icon"
                   src="@renderer/assets/clear-icon1.png"
@@ -35,9 +40,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { lists_access, del_access } from '@renderer/api/index'
+import { useCheckLogin } from '@renderer/hooks/checkLogin'
 import defaultCover from '@renderer/assets/repository/default-cover.png'
+import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
+const addNewTab = inject('addNewTab')
 const emits = defineEmits(['closeMenu'])
 const handleClose = () => {
   emits('closeMenu')
@@ -67,6 +75,20 @@ const getList = (load = true) => {
     .finally(() => {
       loading.value = false
     })
+}
+const handleClick = (item) => {
+  if (!useCheckLogin().value) {
+    return
+  }
+  addNewTab({
+    url: 'RepositoryStore',
+    title: '知识库',
+    icon: repositoryIcon,
+    isInternal: true,
+    attrs: {
+      RepositoryId: item.know_id
+    }
+  })
 }
 const delItem = (item, index) => {
   // eslint-disable-next-line no-undef

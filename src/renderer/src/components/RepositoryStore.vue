@@ -1092,7 +1092,6 @@ const detailFileList = ref([])
 const activeRepository = ref({})
 // 导入笔记
 const submitImport = (ids) => {
-  console.log(ids)
   import_note({
     knowledge_id: activeRepositoryId.value,
     note_ids: ids
