@@ -130,4 +130,11 @@ export function set_default_model(data) {
     data
   })
 }
-
+// 文生图保存
+export function text_to_image_call(data) {
+  return request({
+    url: '/intelligence/text_to_image_call?uniacid=2',
+    method: 'post',
+    data
+  })
+}

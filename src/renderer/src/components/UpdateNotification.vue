@@ -109,7 +109,7 @@
             <p class="ready-tip">安装完成后应用将自动重启</p>
           </div>
           <div class="ready-actions">
-            <el-button type="success" size="large" class="install-btn" @click="quitAndInstall">
+            <el-button type="primary" size="large" class="install-btn" @click="quitAndInstall">
               <el-icon><RefreshRight /></el-icon>
               立即重启并安装
             </el-button>
@@ -202,8 +202,8 @@ const checkForUpdates = async (silent = false) => {
 
   try {
     const result = await window.customApi.checkForUpdates()
-    if (result && result.version) {
-      updateInfo.value = result
+    if (result && result.versionInfo) {
+      updateInfo.value = result.versionInfo
       updateStatus.value = 'available'
       userStore.version = updateInfo.value?.version || userStore.version
       if (!silent) {
@@ -211,7 +211,8 @@ const checkForUpdates = async (silent = false) => {
       }
     } else {
       updateStatus.value = 'not-available'
-      if (!silent) {
+      let lastCheck = localStorage.getItem('lastUpdateCheck')
+      if (!silent && lastCheck) {
         showUpdate.value = true
         // 获取当前版本显示
         if (window.customApi?.getAppVersion) {
@@ -293,13 +294,13 @@ const quitAndInstall = async () => {
 
 // 更新状态监听
 const handleUpdateStatus = (event, status) => {
-  console.log('更新状态:', status)
+  console.log('更新状态:', status);
 
-  switch (status.type) {
-    case 'download-progress':
+  switch (status.stage) {
+    case 'downloading':
       downloadProgress.value = Math.round(status.percent || 0)
       break
-    case 'update-downloaded':
+    case 'downloaded':
       updateStatus.value = 'ready'
       isDownloading.value = false
       isReadyToInstall.value = true
@@ -321,9 +322,9 @@ const remindLater = () => {
   // 设置2小时后再次提醒
   setTimeout(
     () => {
-      checkForUpdates(true) // 静默检查
+      checkForUpdates()
     },
-    2 * 60 * 60 * 1000
+    60 * 60 * 1000
   )
 }
 
@@ -378,7 +379,7 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 99;
   animation: fadeIn 0.3s ease-out;
 }
 

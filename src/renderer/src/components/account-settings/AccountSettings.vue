@@ -384,7 +384,7 @@ const handleCheckUpdate = async () => {
   getLoading.value = true
   if (updateApi && updateApi.checkForUpdates) {
     try {
-      await updateApi.checkForUpdates(true)
+      await updateApi.checkForUpdates()
     } catch (err) {
       console.log(err)
     }

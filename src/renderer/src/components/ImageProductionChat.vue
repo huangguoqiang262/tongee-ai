@@ -72,7 +72,8 @@ import {
   update_chat,
   get_chat_word,
   chat_feedback,
-  feedbackType
+  feedbackType,
+  text_to_image_call
 } from '@renderer/api/chat.js'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
 import { useUserStore } from '@renderer/stores/user'
@@ -132,7 +133,7 @@ const submitImport = () => {
 const handleAction = (action, textContent) => {
   if (action === 'takeNote') {
     markDownText.value = textContent
-    // onlineNoteVisible.value = true
+    onlineNoteVisible.value = true
   } else if (action === 'share') {
     previewVisible.value = true
   } else if (action === 'feedback') {
@@ -270,10 +271,6 @@ const sendMessage = (event = {}) => {
       // model: 'qwen-image-edit-plus',
       images: referenceImgs.value[0] ? [referenceImgs.value[0].full_path] : []
     },
-    callbackUrl:
-      import.meta.env.VITE_API_BASE_URL +
-      '/api/intelligence/text_to_image_call?uniacid=' +
-      userStore.uniacid,
     params: {
       ding_uid: userInfo.value.ding_uid,
       chat_key: activeSession.value.chat_key
@@ -285,7 +282,6 @@ const sendMessage = (event = {}) => {
   nextTick(() => {
     messageListRef.value.scrollTop = messageListRef.value.scrollHeight
   })
-  referenceImgs.value = []
   message.value = {
     text: '',
     image: []
@@ -302,7 +298,7 @@ const sendMessage = (event = {}) => {
     .then((res) => {
       return res.json()
     })
-    .then((res) => {
+    .then(async (res) => {
       if (res.code == '0000' && res.data) {
         isChatting.value = false
         var response = res.data
@@ -312,6 +308,21 @@ const sendMessage = (event = {}) => {
           }
         })
         responseMessage.medias = [{ type: 'image', data: images }]
+        try {
+          var saveRes = await text_to_image_call({
+            ding_uid: userInfo.value.ding_uid,
+            chat_key: activeSession.value.chat_key,
+            USER: chatMessage.textContent,
+            USERImage: referenceImgs.value[0] ? [referenceImgs.value[0].full_path] : [],
+            AI: response
+          })
+          referenceImgs.value = []
+          chatMessage.char_id = saveRes.data.user_msg_id
+          responseMessage.char_id = saveRes.data.ai_msg_id
+        } catch (error) {
+          console.log(error)
+          referenceImgs.value = []
+        }
       } else {
         isChatting.value = false
         // eslint-disable-next-line no-undef

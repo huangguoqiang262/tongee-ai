@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息行渲染界面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .message-row {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-row.right {
+            align-items: flex-end;
+        }
+
+        .message-row.left {
+            align-items: flex-start;
+        }
+
+        .row {
+            display: flex;
+            align-items: flex-start;
+            max-width: 80%;
+        }
+
+        .avatar-wrapper {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .avatar {
+            width: 18px;
+            height: 18px;
+            margin-right: 5px;
+            border-radius: 4px;
+            background: #409eff;
+        }
+
+        .message {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            max-width: 100%;
+        }
+
+        .message-user {
+            background: #e3f2fd;
+        }
+
+        .message-content {
+            line-height: 1.5;
+        }
+
+        .empty-message {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        .attachment {
+            margin-top: 10px;
+        }
+
+        .attach-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
+        .attached-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+        }
+
+        .attached-content {
+            flex: 1;
+        }
+
+        .attach-name {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .attach-type {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .file-extension {
+            margin-right: 8px;
+        }
+
+        .image-user-box, .image-box {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .image-user, .image {
+            width: 200px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .load-img {
+            width: 200px;
+            height: 150px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+
+        .reasoningContentText {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #409eff;
+        }
+
+        .reasoning-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .download-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .chat-icon {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .chat-icon:hover {
+            opacity: 1;
+        }
+
+        .question-box {
+            margin-top: 10px;
+        }
+
+        .question-item {
+            margin: 5px 0;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .question-item:hover {
+            background: #f5f5f5;
+        }
+
+        .not-allowed {
+            cursor: not-allowed !important;
+            opacity: 0.5;
+        }
+
+        /* Markdown 样式简化 */
+        .markdown-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .markdown-content p {
+            margin: 8px 0;
+        }
+
+        .markdown-content code {
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .markdown-content pre {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .markdown-content blockquote {
+            border-left: 3px solid #ddd;
+            margin: 10px 0;
+            padding-left: 10px;
+            color: #666;
+        }
+
+        .markdown-content ul, .markdown-content ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .markdown-content li {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 用户消息示例 -->
+        <div class="message-row right">
+            <div class="row">
+                <div class="message message-user">
+                    <div class="message-content">
+                        <div class="markdown-content">
+                            <p>你好，我想了解一些关于产品功能的信息。</p>
+                        </div>
+                        <div class="empty-message">2024-01-15 14:30:25</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI消息示例 -->
+        <div class="message-row left">
+            <div class="row">
+                <div class="avatar-wrapper">
+                    <div class="avatar"></div>
+                    <span>糖源AI</span>
+                </div>
+                <div class="message">
+                    <div class="message-content">
+                        <div class="markdown-content">
+                            <p>您好！很高兴为您服务。我们的产品主要功能包括：</p>
+                            <ul>
+                                <li>智能对话</li>
+                                <li>文档处理</li>
+                                <li>图像生成</li>
+                                <li>数据分析</li>
+                            </ul>
+                            <p>请问您对哪个功能比较感兴趣？</p>
+                        </div>
+
+                        <!-- 附件示例 -->
+                        <div class="attachment">
+                            <div class="attach-item">
+                                <img class="attached-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjNDA5RUZGIi8+Cjx0ZXh0IHg9IjEyIiB5PSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iMTIiPkQ8L3RleHQ+Cjwvc3ZnPgo=" alt="文档图标">
+                                <div class="attached-content">
+                                    <div class="attach-name">产品功能介绍文档.pdf</div>
+                                    <div class="attach-type">
+                                        <span class="file-extension">PDF</span>
+                                        <span class="file-size">2.5 MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 图片示例 -->
+                        <div class="image-box">
+                            <div class="image" style="background: #e0e0e0; display: flex; align-items: center; justify-content: center; color: #999;">
+                                产品示意图
+                            </div>
+                        </div>
+
+                        <div class="empty-message download-message">
+                            <img class="chat-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjciIGZpbGw9IiM2NjYiLz4KPC9zdmc+" alt="笔记">
+                            <img class="chat-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjNjY2Ii8+Cjwvc3ZnPg==" alt="分享">
+                            <img class="chat-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBvbHlnb24gcG9pbnRzPSI4LDIgMTQsMTQgMiwxNCIgZmlsbD0iIzY2NiIvPgo8L3N2Zz4=" alt="反馈">
+                        </div>
+
+                        <!-- 问题建议示例 -->
+                        <div class="question-box">
+                            <div class="question-item">能详细介绍一下智能对话功能吗？</div>
+                            <div class="question-item">文档处理支持哪些格式？</div>
+                            <div class="question-item">图像生成的质量如何？</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        const mockData = {
+            messages: [
+                {
+                    type: 'USER',
+                    textContent: '你好，我想了解一些关于产品功能的信息。',
+                    dateline: '2024-01-15 14:30:25',
+                    direction: 'right'
+                },
+                {
+                    type: 'AI',
+                    textContent: '您好！很高兴为您服务。我们的产品主要功能包括：\n\n* 智能对话\n* 文档处理\n* 图像生成\n* 数据分析\n\n请问您对哪个功能比较感兴趣？',
+                    reasoningContentText: '用户询问产品功能，需要提供清晰的功能列表和友好的交互引导。',
+                    file_info: [
+                        {
+                            filename: '产品功能介绍文档.pdf',
+                            total_space: 2560
+                        }
+                    ],
+                    issueContentText: '能详细介绍一下智能对话功能吗？&&文档处理支持哪些格式？&&图像生成的质量如何？'
+                }
+            ]
+        };
+
+        // 简单的Markdown解析
+        function parseMarkdown(text) {
+            if (!text) return '';
+
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\* (.*?)(?=\n|$)/g, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>')
+                .replace(/^(.+)$/m, '<p>$1</p>');
+        }
+
+        // 渲染消息
+        function renderMessages() {
+            const app = document.getElementById('app');
+            app.innerHTML = '';
+
+            mockData.messages.forEach(message => {
+                const messageRow = document.createElement('div');
+                messageRow.className = `message-row ${message.direction || 'left'}`;
+
+                if (message.type === 'USER') {
+                    messageRow.innerHTML = `
+                        <div class="row">
+                            <div class="message message-user">
+                                <div class="message-content">
+                                    <div class="markdown-content">${parseMarkdown(message.textContent)}</div>
+                                    <div class="empty-message">${message.dateline || ''}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    messageRow.innerHTML = `
+                        <div class="row">
+                            <div class="avatar-wrapper">
+                                <div class="avatar"></div>
+                                <span>糖源AI</span>
+                            </div>
+                            <div class="message">
+                                <div class="message-content">
+                                    ${message.reasoningContentText ? `
+                                        <div class="reasoningContentText">
+                                            <div class="reasoning-content">${message.reasoningContentText}</div>
+                                        </div>
+                                    ` : ''}
+
+                                    <div class="markdown-content">${parseMarkdown(message.textContent)}</div>
+
+                                    ${message.file_info && message.file_info.length ? `
+                                        <div class="attachment">
+                                            ${message.file_info.map(file => `
+                                                <div class="attach-item">
+                                                    <img class="attached-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjNDA5RUZGIi8+Cjx0ZXh0IHg9IjEyIiB5PSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iMTIiPkQ8L3RleHQ+Cjwvc3ZnPgo=" alt="文档图标">
+                                                    <div class="attached-content">
+                                                        <div class="attach-name">${file.filename}</div>
+                                                        <div class="attach-type">
+                                                            <span class="file-extension">${(file.filename?.split('.').pop() || 'FILE').toUpperCase()}</span>
+                                                            ${file.total_space ? `<span class="file-size">${formatFileSize(file.total_space)}</span>` : ''}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+
+                                    <div class="empty-message download-message">
+                                        <img class="chat-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjciIGZpbGw9IiM2NjYiLz4KPC9zdmc+" alt="笔记">
+                                        <img class="chat-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjNjY2Ii8+Cjwvc3ZnPg==" alt="分享">
+                                        <img class="chat-icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBvbHlnb24gcG9pbnRzPSI4LDIgMTQsMTQgMiwxNCIgZmlsbD0iIzY2NiIvPgo8L3N2Zz4=" alt="反馈">
+                                    </div>
+
+                                    ${message.issueContentText ? `
+                                        <div class="question-box">
+                                            ${message.issueContentText.split('&&').map(question => `
+                                                <div class="question-item">${question}</div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                app.appendChild(messageRow);
+            });
+        }
+
+        // 文件大小格式化
+        function formatFileSize(kb) {
+            if (!kb) return '0 KB';
+            if (kb < 1024) {
+                return kb + ' KB';
+            } else if (kb < 1024 * 1024) {
+                return (kb / 1024).toFixed(2) + ' MB';
+            } else {
+                return (kb / (1024 * 1024)).toFixed(2) + ' GB';
+            }
+        }
+
+        // 初始化渲染
+        document.addEventListener('DOMContentLoaded', renderMessages);
+    </script>
+</body>
+</html>

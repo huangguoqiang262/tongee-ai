@@ -163,11 +163,19 @@ const getFileIcon = (item) => {
 
   return iconMap[ext] || wordIcon
 }
-const handleAction = (acticon, textContent) => {
+const handleAction = (acticon, message) => {
   if (props.isChatting) {
     return
   }
-  emit('handleAction', acticon, textContent)
+  var content = ''
+  if (props.chatType == 'text') {
+    content = message.textContent
+  } else {
+    content = images.value
+      .map((item) => `<p><img src="${item.full_path}" alt="${item.title}" /></p>`)
+      .join('\n')
+  }
+  emit('handleAction', acticon, content)
 }
 // const exportToMd = (msg) => {
 //   if (!msg.textContent?.trim()) {
@@ -432,7 +440,7 @@ const download = (index, images) => {
             :class="{ 'not-allowed': props.isChatting }"
           >
             <el-tooltip
-              v-if="props.chatType == 'text'"
+              v-if="props.message.char_id"
               effect="light"
               content="记笔记"
               placement="bottom"
@@ -441,11 +449,11 @@ const download = (index, images) => {
                 class="chat-icon"
                 src="@renderer/assets/chat-icon/note-icon.png"
                 alt=""
-                @click="handleAction('takeNote', props.message.textContent)"
+                @click="handleAction('takeNote', props.message)"
               />
             </el-tooltip>
             <el-tooltip
-              v-if="props.chatType == 'text'"
+              v-if="props.message.char_id"
               effect="light"
               content="分享"
               placement="bottom"
