@@ -209,14 +209,24 @@ const refresh = () => {
   getList()
 }
 const confirmClear = () => {
-  clean_all().then((res) => {
-    if (res.code == 200) {
-      clearRecycled.value = false
-      // eslint-disable-next-line no-undef
-      ElMessage.primary('清空回收站成功')
-      refresh()
-    }
+  // eslint-disable-next-line no-undef
+  let loadingInstance = ElLoading.service({
+    lock: true,
+    text: '清空回收站中...',
+    background: 'rgba(0, 0, 0, 0.3)'
   })
+  clean_all()
+    .then((res) => {
+      if (res.code == 200) {
+        clearRecycled.value = false
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('清空回收站成功')
+        refresh()
+      }
+    })
+    .finally(() => {
+      loadingInstance.close()
+    })
 }
 const getList = (load = true) => {
   var data = {

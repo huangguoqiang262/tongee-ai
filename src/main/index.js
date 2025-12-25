@@ -44,14 +44,10 @@ function createWindow() {
       : {}),
     autoHideMenuBar: true,
     icon: join(__dirname, '../../build/icon.ico'),
-    // icon: is.dev
-    //   ? join(__dirname, '../../build/icon.ico')
-    //   : join(process.resourcesPath, 'build/icon.ico'), // 修改此行
     webPreferences: {
       webSecurity: false,
       nodeIntegration: false, // 禁用 nodeIntegration
       contextIsolation: true, // 启用上下文隔离
-      // preload: is.dev ? join(__dirname, '../preload/index.js') :  join(process.resourcesPath, 'preload/index.js'),
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       webviewTag: true,
@@ -158,11 +154,10 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.tongee.ai')
   // 创建系统托盘
   if (!tray) {
-    // const iconPath = is.dev
-    //     ? join(__dirname, '../../build/icon.png')
-    //     : join(process.resourcesPath, 'build/icon.png'), // 修改此行
-    const iconPath = join(__dirname, '../../build/icon.png')
-    tray = new Tray(iconPath)
+    const iconPath = is.dev
+        ? join(__dirname, '../../build/icon.png')
+        : join(process.resourcesPath, 'build/icon.png'), // 修改此行
+      tray = new Tray(iconPath)
     const contextMenu = Menu.buildFromTemplate([
       {
         label: '显示窗口',
