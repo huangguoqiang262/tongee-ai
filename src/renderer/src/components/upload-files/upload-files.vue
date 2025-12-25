@@ -328,7 +328,7 @@ const uploadSingleFile = async (fileItem) => {
     formData.append('uniacid', userStore.uniacid)
     formData.append('knowledge_id', props.knowledgeId)
     formData.append('parent_item_id', props.parentItemId)
-    formData.append('same_name_type', fileItem.same_name_type || 1)
+    formData.append('same_name_type', fileItem.same_name_type)
     formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
     const xhr = new XMLHttpRequest()
 
