@@ -43,7 +43,7 @@ appImage:
 npmRebuild: false
 publish:
   provider: generic
-  url: https://tangji.souxue.cc/updates
+  url: http://192.168.31.181/updates
   channel: 'latest'
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

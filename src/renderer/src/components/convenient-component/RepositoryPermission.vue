@@ -86,7 +86,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="repositoryVisible = false">取消</el-button>
-          <el-button class="confirm-btn" type="primary" @click="submitForm"> 添加 </el-button>
+          <el-button class="confirm-btn" type="primary" @click="submitForm"> 确定 </el-button>
         </div>
       </template>
     </el-dialog>
@@ -152,6 +152,7 @@ const updataTree = (e) => {
 }
 
 const affirmTissue = () => {
+  treeData.value = tempTreeData.value
   selectedOrgan.value = findSelectedNodes(
     tempTreeData.value.length ? tempTreeData.value : treeData.value
   )
@@ -212,11 +213,11 @@ const submitForm = () => {
       organs: JSON.stringify(selectedOrgan.value)
     }
 
-    if (selectedOrgan.value.length == 0) {
-      // eslint-disable-next-line no-undef
-      ElMessage.error('请选择组织')
-      return
-    }
+    // if (selectedOrgan.value.length == 0) {
+    //   // eslint-disable-next-line no-undef
+    //   ElMessage.error('请选择组织')
+    //   return
+    // }
     emit('setPermission', data)
   } else if (permissionType.value == 1) {
     let data = {

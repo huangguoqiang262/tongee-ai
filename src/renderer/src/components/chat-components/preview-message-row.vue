@@ -608,7 +608,7 @@ const formatFileSize = (kb) => {
           .vuepress-markdown-body {
             font-size: 22px;
             color: var(--default-font-color);
-            font-weight: 600;
+            font-weight: 600 !important;
             line-height: 30px;
           }
           // max-width: 100%;

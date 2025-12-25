@@ -210,7 +210,7 @@ app.whenReady().then(() => {
 
   autoUpdater.setFeedURL({
     provider: 'generic',
-    url: 'https://tangji.souxue.cc/updates',
+    url: 'http://192.168.31.181/updates',
     channel: 'latest' // 明确指定更新通道
   })
   autoUpdater.requestHeaders = { insecure: 'true' } // 跳过证书验证

@@ -179,14 +179,19 @@ const userStore = useUserStore()
 // 响应式数据
 const showUpdate = ref(false)
 const updateStatus = ref('idle') // idle, checking, available, downloading, ready, not-available, error
-const updateInfo = ref(null)
+const updateInfo = ref({
+  version: '',
+  releaseDate: '',
+  releaseNotes: ''
+})
 const downloadProgress = ref(0)
 const isDownloading = ref(false)
 const isReadyToInstall = ref(false)
 const errorMessage = ref('')
 const currentVersion = ref('')
+const checkTimeout = ref(null)
 
-// 检查更新
+// 检查更新 - 事件驱动版本
 const checkForUpdates = async (silent = false) => {
   if (!window.customApi?.checkForUpdates) {
     if (!silent) {
@@ -195,31 +200,36 @@ const checkForUpdates = async (silent = false) => {
     return
   }
 
+  // 重置状态
+  resetUpdateState()
   updateStatus.value = 'checking'
+
   if (!silent) {
     showUpdate.value = true
   }
 
   try {
-    const result = await window.customApi.checkForUpdates()
-    if (result && result.versionInfo) {
-      updateInfo.value = result.versionInfo
-      updateStatus.value = 'available'
-      userStore.version = updateInfo.value?.version || userStore.version
-      if (!silent) {
-        showUpdate.value = true
-      }
-    } else {
-      updateStatus.value = 'not-available'
-      let lastCheck = localStorage.getItem('lastUpdateCheck')
-      if (!silent && lastCheck) {
-        showUpdate.value = true
-        // 获取当前版本显示
-        if (window.customApi?.getAppVersion) {
-          currentVersion.value = await window.customApi.getAppVersion()
+    // 清除之前的超时
+    if (checkTimeout.value) {
+      clearTimeout(checkTimeout.value)
+    }
+
+    // 触发检查更新
+    await window.customApi.checkForUpdates()
+    console.log('已触发更新检查，等待状态通知...')
+
+    // 设置检查超时（15秒）
+    checkTimeout.value = setTimeout(() => {
+      if (updateStatus.value === 'checking') {
+        console.log('更新检查超时，设置为无更新状态')
+        updateStatus.value = 'not-available'
+        if (!silent) {
+          showUpdate.value = true
+          // 获取当前版本显示
+          getCurrentVersion()
         }
       }
-    }
+    }, 5000)
   } catch (error) {
     console.error('检查更新失败:', error)
     updateStatus.value = 'error'
@@ -292,37 +302,89 @@ const quitAndInstall = async () => {
   }
 }
 
-// 更新状态监听
+// 更新状态监听 - 核心事件处理
 const handleUpdateStatus = (event, status) => {
-  console.log('更新状态:', status);
+  console.log('收到更新状态:', status)
+
+  // 清除超时定时器
+  if (checkTimeout.value) {
+    clearTimeout(checkTimeout.value)
+    checkTimeout.value = null
+  }
 
   switch (status.stage) {
+    case 'available':
+      // 有可用更新
+      updateStatus.value = 'available'
+      updateInfo.value = {
+        version: status.version || '',
+        releaseDate: status.releaseDate || '',
+        releaseNotes: status.releaseNotes || '新版本包含性能优化和功能改进'
+      }
+      userStore.version = status.version || userStore.version
+      ElMessage.info(`发现新版本 ${status.version}`)
+      break
+
     case 'downloading':
+      // 下载进度更新
+      updateStatus.value = 'downloading'
       downloadProgress.value = Math.round(status.percent || 0)
       break
+
     case 'downloaded':
+      // 下载完成
       updateStatus.value = 'ready'
       isDownloading.value = false
       isReadyToInstall.value = true
       downloadProgress.value = 100
       ElMessage.success('更新下载完成，准备安装')
       break
+
     case 'error':
+      // 错误处理
       updateStatus.value = 'error'
       errorMessage.value = status.error || '更新过程中出现错误'
       isDownloading.value = false
+      ElMessage.error('更新失败: ' + (status.error || '未知错误'))
       break
+
+    default:
+      console.warn('未知的更新状态:', status.stage)
   }
 }
 
-// 其他方法
+// 辅助函数
+const getCurrentVersion = async () => {
+  if (window.customApi?.getAppVersion) {
+    try {
+      currentVersion.value = await window.customApi.getAppVersion()
+    } catch (error) {
+      console.error('获取当前版本失败:', error)
+      currentVersion.value = '未知'
+    }
+  }
+}
+
+const resetUpdateState = () => {
+  updateInfo.value = {
+    version: '',
+    releaseDate: '',
+    releaseNotes: ''
+  }
+  downloadProgress.value = 0
+  isDownloading.value = false
+  isReadyToInstall.value = false
+  errorMessage.value = ''
+}
+
+// 用户交互方法
 const remindLater = () => {
   showUpdate.value = false
   updateStatus.value = 'idle'
   // 设置2小时后再次提醒
   setTimeout(
     () => {
-      checkForUpdates()
+      checkForUpdates(true) // 静默检查
     },
     60 * 60 * 1000
   )
@@ -337,13 +399,23 @@ const installLater = () => {
 const closeUpdate = () => {
   showUpdate.value = false
   updateStatus.value = 'idle'
-  isDownloading.value = false
-  isReadyToInstall.value = false
-  downloadProgress.value = 0
+  resetUpdateState()
 }
 
 const retryCheck = () => {
   checkForUpdates()
+}
+
+// 自动检查更新（应用启动时）
+const autoCheckUpdates = () => {
+  // 检查上次检查时间，避免频繁检查
+  const lastCheck = localStorage.getItem('lastUpdateCheck')
+  const now = Date.now()
+
+  if (!lastCheck || now - parseInt(lastCheck) > 60 * 60 * 1000) {
+    // 1小时检查一次
+    checkForUpdates() // 静默检查
+  }
 }
 
 // 生命周期
@@ -352,10 +424,16 @@ onMounted(() => {
   if (window.customApi?.onUpdateStatus) {
     window.customApi.onUpdateStatus(handleUpdateStatus)
   }
+
+  // 应用启动时自动检查更新
+  autoCheckUpdates()
 })
 
 onUnmounted(() => {
   // 清理工作
+  if (checkTimeout.value) {
+    clearTimeout(checkTimeout.value)
+  }
   isDownloading.value = false
   isReadyToInstall.value = false
 })

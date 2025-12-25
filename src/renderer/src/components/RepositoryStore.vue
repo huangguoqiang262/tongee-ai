@@ -233,7 +233,7 @@
                   <div class="vertical-line"></div>
                   <div class="num">{{ activeRepository.content_count }}个内容</div>
                 </div>
-                <div class="management-box">
+                <div class="management-box" @click.stop="">
                   <MultiAvatar
                     :avatars="activeRepository.manager_avatars"
                     :size="18"
@@ -1198,9 +1198,15 @@ const beforeDeleteRepository = () => {
             message: '删除成功'
           })
           if (activeRepository.value.is_public == 1) {
+            if (activeRepository.value?.user_permission?.is_creator) {
+              getCommonCreateList()
+            } else if (!activeRepository.value?.user_permission?.is_creator) {
+              getCommonJoinList()
+            } else {
+              getCommonCreateList()
+            }
             activeRepositoryId.value = ''
             activeRepository.value = {}
-            getCommonCreateList()
           } else {
             activeRepositoryId.value = ''
             activeRepository.value = {}
@@ -1228,7 +1234,13 @@ const beforeQuitRepository = () => {
             message: '退出成功'
           })
           if (activeRepository.value.is_public == 1) {
-            getCommonCreateList()
+            if (activeRepository.value?.user_permission?.is_creator) {
+              getCommonCreateList()
+            } else if (!activeRepository.value?.user_permission?.is_creator) {
+              getCommonJoinList()
+            } else {
+              getCommonCreateList()
+            }
             activeRepository.value = {}
             activeRepositoryId.value = ''
           } else {

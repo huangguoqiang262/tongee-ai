@@ -462,7 +462,7 @@ const download = (index, images) => {
                 class="chat-icon"
                 src="@renderer/assets/chat-icon/share-icon.png"
                 alt=""
-                @click="handleAction('share')"
+                @click="handleAction('share', props.message)"
               />
             </el-tooltip>
             <el-tooltip effect="light" content="反馈" placement="bottom">
@@ -470,7 +470,7 @@ const download = (index, images) => {
                 class="chat-icon"
                 src="@renderer/assets/chat-icon/feedback-icon.png"
                 alt=""
-                @click="handleAction('feedback')"
+                @click="handleAction('feedback', props.message)"
               />
             </el-tooltip>
           </div>
@@ -768,7 +768,7 @@ const download = (index, images) => {
           .vuepress-markdown-body {
             font-size: 22px;
             color: var(--default-font-color);
-            font-weight: 600;
+            font-weight: 600 !important;
             line-height: 30px;
           }
           // max-width: 100%;
