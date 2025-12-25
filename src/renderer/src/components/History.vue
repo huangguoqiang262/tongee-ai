@@ -58,35 +58,40 @@
             </template>
             <template #default>
               <div v-if="activeTab == '1'" v-infinite-scroll="loadData" class="list-box">
-                <div v-for="(item, i) in list" :key="i" class="list-item" @click="openChat(item)">
-                  <img class="left-icon" src="@renderer/assets/answers-icon.png" alt="" />
-                  <div class="center-box">
-                    <div class="title">{{ item.latest_question?.content || item.title }}</div>
-                    <div class="desc">
-                      {{ htmlToText(item.latest_answer?.content || '') }}
+                <template v-if="list.length">
+                  <div v-for="(item, i) in list" :key="i" class="list-item" @click="openChat(item)">
+                    <img class="left-icon" src="@renderer/assets/answers-icon.png" alt="" />
+                    <div class="center-box">
+                      <div class="title">{{ item.latest_question?.content || item.title }}</div>
+                      <div class="desc">
+                        {{ htmlToText(item.latest_answer?.content || '') }}
+                      </div>
+                      <div v-if="!Array.isArray(item.from_origin)" class="souce-box">
+                        <img class="icon" src="@renderer/assets/souce-icon.png" alt="" />
+                        来源：《{{ item.from_origin.fileName }}》
+                      </div>
                     </div>
-                    <div v-if="!Array.isArray(item.from_origin)" class="souce-box">
-                      <img class="icon" src="@renderer/assets/souce-icon.png" alt="" />
-                      来源：《{{ item.from_origin.fileName }}》
+                    <div class="time-box">
+                      <div class="time">{{ formatTimeFun(item.updatetime) }}</div>
+                      <div class="size">
+                        <img
+                          class="icon"
+                          src="@renderer/assets/edit-icon.png"
+                          alt=""
+                          @click.stop="beforeRenameChange(item)"
+                        />
+                        <img
+                          class="icon"
+                          src="@renderer/assets/del-icon1.png"
+                          alt=""
+                          @click.stop="beforeDelChange(item)"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div class="time-box">
-                    <div class="time">{{ formatTimeFun(item.updatetime) }}</div>
-                    <div class="size">
-                      <img
-                        class="icon"
-                        src="@renderer/assets/edit-icon.png"
-                        alt=""
-                        @click.stop="beforeRenameChange(item)"
-                      />
-                      <img
-                        class="icon"
-                        src="@renderer/assets/del-icon1.png"
-                        alt=""
-                        @click.stop="beforeDelChange(item)"
-                      />
-                    </div>
-                  </div>
+                </template>
+                <div v-else class="empty">
+                  <el-empty :image-size="120" description="暂无数据" />
                 </div>
               </div>
               <div v-if="activeTab == '2'" v-infinite-scroll="loadData" class="list-box">
@@ -265,7 +270,6 @@ const openChat = (item) => {
       }
     })
   }
-
 }
 let loading = ref(true)
 let activeTab = ref('1')
