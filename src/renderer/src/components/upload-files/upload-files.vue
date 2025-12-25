@@ -247,7 +247,9 @@ const initializeUploadList = (fileList) => {
     totalCount: file.children ? file.children.length : 1,
     errorMessage: '',
     file: file.file || null,
-    children: file.children || []
+    children: file.children || [],
+    same_name_type: file.same_name_type,
+
   }))
   uploadList.value.push(...tempList)
   // 开始上传
