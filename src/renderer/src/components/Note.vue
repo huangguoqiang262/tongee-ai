@@ -497,6 +497,10 @@ const submitNotebookForm = async (formRef) => {
 const addNotebook = () => {
   notebookVisible.value = true
   nextTick(() => {
+    repositoryForm.value = {
+      id: '',
+      title: ''
+    }
     notebookFormRef?.value.resetFields()
   })
 }
