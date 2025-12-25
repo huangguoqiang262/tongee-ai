@@ -819,7 +819,7 @@ const props = defineProps({
 })
 const getUserInfo = () => {
   const userStore = useUserStore()
-  return user_info({}).then((res) => {
+  return user_info({t: Date.now()}).then((res) => {
     if (res.code == 200) {
       userStore.updateUser(res.data?.user_info)
     }
@@ -1154,6 +1154,7 @@ const refreshList = () => {
     if (res.code == 200) {
       activeRepository.value = res.data
       detailFileList.value = res.data.items
+      getUserInfo()
       // if (activeRepository.value.is_public == 1) {
       //   getRepositoryPermission()
       //   getUnreadApplyNumber()
@@ -1232,6 +1233,7 @@ const beforeDeleteRepository = () => {
             activeRepository.value = {}
             getPersonalCreateList()
           }
+          getUserInfo()
         }
       })
     })
