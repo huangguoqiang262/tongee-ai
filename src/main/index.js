@@ -158,10 +158,11 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.tongee.ai')
   // 创建系统托盘
   if (!tray) {
-    const iconPath = is.dev
-        ? join(__dirname, '../../build/icon.png')
-        : join(process.resourcesPath, 'build/icon.png'), // 修改此行
-      tray = new Tray(iconPath)
+    // const iconPath = is.dev
+    //     ? join(__dirname, '../../build/icon.png')
+    //     : join(process.resourcesPath, 'build/icon.png'), // 修改此行
+    const iconPath = join(__dirname, '../../build/icon.png')
+    tray = new Tray(iconPath)
     const contextMenu = Menu.buildFromTemplate([
       {
         label: '显示窗口',
