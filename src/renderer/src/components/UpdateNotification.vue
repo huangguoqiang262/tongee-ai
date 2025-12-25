@@ -337,7 +337,7 @@ const handleUpdateStatus = (event, status) => {
       isDownloading.value = false
       isReadyToInstall.value = true
       downloadProgress.value = 100
-      ElMessage.success('更新下载完成，准备安装')
+      ElMessage.primary('更新下载完成，准备安装')
       break
 
     case 'error':

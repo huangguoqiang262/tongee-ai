@@ -213,7 +213,7 @@ const confirmClear = () => {
     if (res.code == 200) {
       clearRecycled.value = false
       // eslint-disable-next-line no-undef
-      ElMessage.success('清空回收站成功')
+      ElMessage.primary('清空回收站成功')
       refresh()
     }
   })
@@ -281,7 +281,7 @@ const handleContextMenuAction = ({ action }) => {
     restore({ ids: [activeItem.value.recycle_id] }).then((res) => {
       if (res.code == 200) {
         // eslint-disable-next-line no-undef
-        ElMessage.success('一键还原成功')
+        ElMessage.primary('一键还原成功')
         refresh()
       }
     })
@@ -290,7 +290,7 @@ const handleContextMenuAction = ({ action }) => {
     clean_one({ recycle_id: activeItem.value.recycle_id }).then((res) => {
       if (res.code == 200) {
         // eslint-disable-next-line no-undef
-        ElMessage.success('永久删除成功')
+        ElMessage.primary('永久删除成功')
         refresh()
       }
     })
