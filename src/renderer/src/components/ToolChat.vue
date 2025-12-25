@@ -2,10 +2,17 @@
   <div class="chat-page-box disabled-tools-chat">
     <div class="chat-head">
       <img
+        v-if="activeSession.messages.length"
         class="chat-clear"
         src="@renderer/assets/chat-icon/clear-icon.png"
         alt=""
         @click="clearChat"
+      />
+      <img
+        v-else
+        class="chat-clear"
+        src="@renderer/assets/chat-icon/disabled-clear-icon.png"
+        alt=""
       />
       <el-icon class="close-icon" @click="closeChat"><Close /></el-icon>
     </div>
@@ -116,7 +123,7 @@ const props = defineProps({
     default: false
   }
 })
-const emits = defineEmits(['closeChat'])
+const emits = defineEmits(['closeChat', 'submitImport'])
 let feedbackVisible = ref(false)
 let resultVisible = ref(false)
 let resultTimeout = ref(null)
@@ -154,6 +161,7 @@ const onlineNoteVisible = ref(false)
 const submitImport = () => {
   markDownText.value = ''
   onlineNoteVisible.value = false
+  emits('submitImport')
 }
 const handleAction = (action, textContent) => {
   if (action === 'takeNote') {

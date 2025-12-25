@@ -64,6 +64,7 @@
             :notebook-id="notebookId"
             :note-id="noteDetail.id"
             @close-chat="chatVisible = false"
+            @submit-import="submitImport"
           />
         </div>
       </div>
@@ -104,7 +105,7 @@ let defaultConfig = {
 }
 let chatVisible = ref(false)
 let noteTitle = ref('新增笔记')
-const emits = defineEmits(['save'])
+const emits = defineEmits(['save', 'submitImport'])
 const close = () => {
   noteVisible.value = false
 }
@@ -162,6 +163,10 @@ let isEmpty = (value, callback) => {
 // 打开聊天窗口
 const openChat = () => {
   chatVisible.value = true
+}
+// 提交导入的笔记
+const submitImport = () => {
+  emits('submitImport')
 }
 // 提交
 const submitNote = () => {

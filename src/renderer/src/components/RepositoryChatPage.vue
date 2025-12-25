@@ -1,10 +1,17 @@
 <template>
   <div class="chat-page-box disabled-tools-chat">
     <img
+      v-if="activeSession.messages.length"
       class="chat-clear"
       src="@renderer/assets/chat-icon/clear-icon.png"
       alt=""
       @click="clearChat"
+    />
+    <img
+      v-else
+      class="chat-clear"
+      src="@renderer/assets/chat-icon/disabled-clear-icon.png"
+      alt=""
     />
     <div
       v-if="activeSession.messages.length"

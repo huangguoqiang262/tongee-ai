@@ -492,6 +492,7 @@ const uploadDirectory = async (directoryItem) => {
     })
     .finally(() => {
       loadcontext.close()
+      directoryItem.status = uploadStatus.ERROR
     })
   return
   // 错误边界

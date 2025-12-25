@@ -1115,14 +1115,15 @@ export default {
             transition: all 0.3s;
             &:hover {
               color: var(--el-color-primary);
-              .issue-img {
-                background: #fff;
-              }
+              // .issue-img {
+              //   background: #fff;
+              // }
             }
             .issue-img {
               flex-shrink: 0;
               width: 18px;
               height: 18px;
+              border-radius: 4px;
               object-fit: cover;
             }
             .issue-text {
@@ -1231,6 +1232,7 @@ export default {
             flex-shrink: 0;
             width: 18px;
             height: 18px;
+            border-radius: 4px;
             object-fit: cover;
           }
           .issue-text {

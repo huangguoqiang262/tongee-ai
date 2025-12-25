@@ -328,6 +328,7 @@
             <el-option
               v-for="item in notebookLists"
               :key="item.id"
+              :disabled="item.id === activeNotebook"
               :label="item.title"
               :value="item.id"
             />
@@ -353,6 +354,7 @@
       :notebook-id="activeNotebook"
       :note-detail="noteDetail"
       @save="saveNote"
+      @submit-import="submitImport"
     />
   </div>
 </template>
@@ -369,7 +371,8 @@ import {
   notebook_edit,
   notebook_list,
   notebook_del,
-  note_del
+  note_del,
+  get_note_info
 } from '@renderer/api/note'
 import { on, off, emit } from '@renderer/utils/eventBus'
 import { import_note } from '@renderer/api/repository'
@@ -422,13 +425,23 @@ const beforeAddNote = () => {
 }
 const beforeEditNote = (item) => {
   noteDetail.value = {
-    title: item.title,
-    content: item.content,
-    type: 'edit',
-    id: item.id,
-    updatetime: item.updatetime
+    id: item.id
   }
-  noteDetailVisible.value = true
+  getInfo()
+}
+const submitImport = () => {
+  getInfo()
+}
+const getInfo = () => {
+  get_note_info({ note_id: noteDetail.value.id }).then((res) => {
+    if (res.code == 200) {
+      noteDetail.value = {
+        ...res.data,
+        type: 'edit'
+      }
+      noteDetailVisible.value = true
+    }
+  })
 }
 const saveNote = (detail) => {
   var data = {
@@ -441,6 +454,8 @@ const saveNote = (detail) => {
       if (res.code == 200) {
         getNoteList()
         noteDetailVisible.value = false
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('添加成功')
       }
     })
   } else {
@@ -449,6 +464,8 @@ const saveNote = (detail) => {
       if (res.code == 200) {
         getNoteList()
         noteDetailVisible.value = false
+        // eslint-disable-next-line no-undef
+        ElMessage.primary('编辑成功')
       }
     })
   }

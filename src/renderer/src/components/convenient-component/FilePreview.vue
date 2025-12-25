@@ -55,10 +55,9 @@
     <webview v-else-if="isPdf" :src="fileUrl" class="file-preview-iframe"></webview>
 
     <!-- 文本预览（txt） -->
-    <!-- <pre  class="file-preview-txt">
-
-    </pre> -->
-    <webview v-else-if="isTxt" :src="fileUrl" class="file-preview-iframe"></webview>
+    <div v-else-if="isTxt" class="file-preview-iframe">
+      <v-md-preview :text="txtContent"></v-md-preview>
+    </div>
     <!-- Office 文档在线预览（需要公网可访问的URL） -->
     <webview v-else-if="isOffice" :src="officePreviewUrl" class="file-preview-iframe"></webview>
     <!-- 网页 -->
@@ -72,7 +71,7 @@
 </template>
 
 <script setup>
-import { computed, ref, reactive, onMounted, onUnmounted } from 'vue'
+import { computed, ref, reactive, onMounted, watch, onUnmounted } from 'vue'
 
 const props = defineProps({
   fileUrl: {
@@ -102,8 +101,24 @@ const ext = computed(() => {
 const isImage = computed(() => ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext.value))
 
 const isPdf = computed(() => ext.value === 'pdf')
-
+const getTxt = () => {
+  fetch(props.fileUrl)
+    .then((response) => response.text())
+    .then((text) => {
+      txtContent.value = text
+    })
+}
 const isTxt = computed(() => ext.value === 'txt')
+const txtContent = ref('')
+watch(
+  () => props.fileUrl,
+  () => {
+    if (isTxt.value) {
+      getTxt()
+    }
+  },
+  { immediate: true }
+)
 
 const isOffice = computed(() => ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext.value))
 const isWebUrl = computed(() => props.fileUrl.startsWith('http'))

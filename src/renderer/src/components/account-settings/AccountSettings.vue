@@ -357,11 +357,11 @@ const getAppVersion = async () => {
     appVersion.value = '1.0.0'
   }
   getLoading.value = false
+  nextTick(() => {
+    isUpdateAvailable.value = compareVersions(appVersion.value, userStore.version || '1.0.0')
+  })
 }
-getAppVersion()
-nextTick(() => {
-  isUpdateAvailable.value = compareVersions(appVersion.value, userStore.version || '1.0.0')
-})
+
 const compareVersions = (version1, version2) => {
   // 将版本号拆分成数字数组
   var arr1 = version1.split('.')
@@ -371,7 +371,6 @@ const compareVersions = (version1, version2) => {
   for (var i = 0; i < Math.max(arr1.length, arr2.length); i++) {
     var num1 = parseInt(arr1[i] || 0) // 如果数组长度不够，则将缺失部分补0
     var num2 = parseInt(arr2[i] || 0)
-
     if (num1 < num2) {
       return true // 版本1小于版本2
     } else if (num1 > num2) {
@@ -418,6 +417,7 @@ const updateToolbarShow = (val) => {
 let models = ref([])
 let defaultModel = ref({})
 onMounted(() => {
+  getAppVersion()
   getModels()
 })
 // 获取模型列表

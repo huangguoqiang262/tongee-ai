@@ -64,3 +64,11 @@ export function note_del(data) {
     data
   })
 }
+// 笔记详情
+export function get_note_info(data) {
+  return request({
+    url: '/note/get_note_info',
+    method: 'post',
+    data
+  })
+}

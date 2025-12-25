@@ -141,6 +141,7 @@
           <template #reference>
             <div class="handle">
               <img class="more-icon" src="@renderer/assets/repository/more-icon.png" alt="" />
+              <div v-if="unreadApplyNumber > 0" class="dot-dark"></div>
             </div>
           </template>
           <div class="common-handle-box" @click="hidePopover(repositoryPopover)">
@@ -783,7 +784,6 @@ import headSquareIcon from '@renderer/assets/repository/head-square-icon.png'
 import defaultCover from '@renderer/assets/repository/default-cover.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
-import { ElIcon } from 'element-plus'
 import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import {
   get_knows,
@@ -874,23 +874,31 @@ const downloadFile = (url, fileName) => {
 }
 // 到达详情
 const detailChange = (item) => {
-  if (item.item_type == 3) {
-    addNewTab({
-      icon: item.info?.icon,
-      title: item.title,
-      url: item.info?.web_url,
-      isInternal: false
-    })
+  if (item.permission_type == 1 || item.permission_type == 2) {
+    if (item.item_type == 3) {
+      addNewTab({
+        icon: item.info?.icon,
+        title: item.title,
+        url: item.info?.web_url,
+        isInternal: false
+      })
+    } else {
+      addNewTab({
+        icon: item.info?.icon,
+        title: item.title,
+        url: 'DocumentDetail',
+        isInternal: true,
+        attrs: {
+          fileUrl: item.info?.url,
+          fileName: item.title
+        }
+      })
+    }
   } else {
-    addNewTab({
-      icon: item.info?.icon,
-      title: item.title,
-      url: 'DocumentDetail',
-      isInternal: true,
-      attrs: {
-        fileUrl: item.info?.url,
-        fileName: item.title
-      }
+    // eslint-disable-next-line no-undef
+    ElMessage({
+      message: '您没有权限查看',
+      type: 'warning'
     })
   }
 }
@@ -1043,8 +1051,12 @@ const submitRepository = (repository) => {
             message: '修改成功'
           })
           getRepositoryInfo(activeRepository.value.id)
-          getCommonCreateList()
           closeAddRepositoryDialog()
+          if (activeRepository.value?.user_permission.is_creator == 1) {
+            getCommonCreateList()
+          } else {
+            getCommonJoinList()
+          }
         }
       })
     }
@@ -1167,7 +1179,15 @@ const beforeAddRepository = (type) => {
 const beforeEditRepository = () => {
   repositoryType.value = activeRepository.value.is_public == 1 ? 'common' : 'personage'
   submitRepositoryType.value = 'update'
-  addRepositoryVisible.value = true
+  if (activeRepository.value.is_public == 1) {
+    if (activeRepository.value?.user_permission.is_creator == 1) {
+      addRepositoryVisible.value = true
+    } else if (activeRepository.value?.user_permission.is_manager == 1) {
+      addRepositoryVisible.value = true
+    }
+  } else {
+    addRepositoryVisible.value = true
+  }
 }
 // 添加快捷访问
 const addQuickAccess = () => {
@@ -1643,19 +1663,21 @@ const showContextMenu = (e, item) => {
       }
     }
   } else if (item.permission_type === 1) {
-    item.checked = true
-    contextMenu.value = {
-      show: true,
-      permission_type: 'cannotView',
-      x: e.clientX,
-      y: e.clientY,
-      actionSheet: [
-        {
-          name: '导出',
-          icon: exportIcon,
-          action: 'export'
-        }
-      ]
+    if (item.item_type == 1) {
+      item.checked = true
+      contextMenu.value = {
+        show: true,
+        permission_type: 'cannotView',
+        x: e.clientX,
+        y: e.clientY,
+        actionSheet: [
+          {
+            name: '导出',
+            icon: exportIcon,
+            action: 'export'
+          }
+        ]
+      }
     }
   }
 }
@@ -2311,17 +2333,17 @@ const removeItemsAfterIndex = (array, index) => {
             &:hover {
               background: #f6f6f6;
 
-              .icon-box {
-                background: #fff;
-              }
+              // .icon-box {
+              //   background: #fff;
+              // }
             }
 
             &.active-repository {
               background: var(--el-color-primary-light-9);
 
-              .icon-box {
-                background: #fff;
-              }
+              // .icon-box {
+              //   background: #fff;
+              // }
             }
 
             .icon-box {
@@ -2331,13 +2353,13 @@ const removeItemsAfterIndex = (array, index) => {
               display: flex;
               align-items: center;
               justify-content: center;
-              border-radius: 2px;
+              border-radius: 4px;
               transition: all 0.2s;
-
+              overflow: hidden;
               .icon {
                 display: block;
-                width: 13px;
-                height: 13px;
+                width: 18px;
+                height: 18px;
               }
             }
 
@@ -2464,17 +2486,17 @@ const removeItemsAfterIndex = (array, index) => {
           &:hover {
             background: #f6f6f6;
 
-            .icon-box {
-              background: #fff;
-            }
+            // .icon-box {
+            //   background: #fff;
+            // }
           }
 
           &.active-repository {
             background: var(--el-color-primary-light-9);
 
-            .icon-box {
-              background: #fff;
-            }
+            // .icon-box {
+            //   background: #fff;
+            // }
           }
 
           .icon-box {
@@ -2484,13 +2506,13 @@ const removeItemsAfterIndex = (array, index) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 2px;
+            border-radius: 4px;
             transition: all 0.2s;
-
+            overflow: hidden;
             .icon {
               display: block;
-              width: 13px;
-              height: 13px;
+              width: 18px;
+              height: 18px;
             }
           }
 
@@ -2563,6 +2585,7 @@ const removeItemsAfterIndex = (array, index) => {
       border-bottom: 1px solid #efefef;
 
       .handle {
+        position: relative;
         margin-left: auto;
         display: flex;
         align-items: center;
@@ -2580,6 +2603,15 @@ const removeItemsAfterIndex = (array, index) => {
           display: block;
           width: 18px;
           height: 18px;
+        }
+        .dot-dark {
+          position: absolute;
+          top: 2px;
+          right: -2px;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: #ff5151;
         }
       }
 
