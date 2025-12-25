@@ -34,7 +34,7 @@ nsis:
 mac:
   category: public.app-category.utilities
   artifactName: ${name}-${version}-setup.${ext}
-  icon: build/icon.icns
+  icon: build/icons/icon.icns
   target:
     - target: 'default'
       arch: 'x64'
