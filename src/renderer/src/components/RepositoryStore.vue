@@ -1,17 +1,16 @@
 <template>
   <div class="repository-box" @click="resetChecks"
-    @dragenter="handleDragEnter">
-    <div
-      v-show="showDragOverlay"
-      @drag="handleDrag"
     @dragenter="handleDragEnter"
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
+    @drop="handleDrop">
+   <div
+      v-show="showDragOverlay"
       class="drag-overlay"
     >
       <div class="drag-overlay-content">
-        <div class="drag-icon">📁</div>
         <div class="drag-text">拖拽文件到这里</div>
+        <div class="drag-type">支持.doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式</div>
       </div>
     </div>
     <div class="left-box">
@@ -833,38 +832,47 @@ const props = defineProps({
 })
 // 拖拽相关数据
 const showDragOverlay = ref(false)
+
 // 拖拽事件处理
 const handleDragEnter = (event) => {
   event.preventDefault()
   event.stopPropagation()
-  if (!showDragOverlay.value) {
-    showDragOverlay.value = true
-  }
+  showDragOverlay.value = true
 }
-const handleDrag = (event) => {
-  event.preventDefault()
-  event.stopPropagation()
-  console.log('handleDrag');
 
-}
 const handleDragOver = (event) => {
   event.preventDefault()
   event.stopPropagation()
 }
+
 const handleDragLeave = (event) => {
-  console.log('handleDragLeave');
-  event.stopPropagation()
   event.preventDefault()
-  showDragOverlay.value = false
+  event.stopPropagation()
+  // 只有当拖拽离开整个容器时才隐藏遮罩
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    showDragOverlay.value = false
+  }
 }
-// 处理拖拽的文件
-const handleDroppedFiles = (files) => {
+
+const handleDrop = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  showDragOverlay.value = false
+
+  const files = event.dataTransfer.files
+  if (!files || !files.length) return
+
   if (!activeRepositoryId.value) {
-    // eslint-disable-next-line no-undef
     ElMessage.warning('请先选择知识库')
     return
   }
+console.log(files,99999)
+  // 处理拖拽的文件
+  // handleDroppedFiles(files)
+}
 
+// 处理拖拽的文件
+const handleDroppedFiles = (files) => {
   const validFiles = Array.from(files).filter(file => {
     const allowedTypes = [
       '.txt', '.png', '.jpg', '.jpeg', '.gif',
@@ -876,7 +884,6 @@ const handleDroppedFiles = (files) => {
   })
 
   if (validFiles.length === 0) {
-    // eslint-disable-next-line no-undef
     ElMessage.warning('不支持的文件类型')
     return
   }
@@ -889,9 +896,10 @@ const handleDroppedFiles = (files) => {
     type: file.type,
     status: 'ready'
   }))
+
   // 打开上传对话框
-  ReadyUploadList.value = uploadList
-  uploadVisible.value = true
+  // ReadyUploadList.value = uploadList
+  // uploadVisible.value = true
 }
 const getUserInfo = () => {
   const userStore = useUserStore()
@@ -2283,33 +2291,29 @@ const removeItemsAfterIndex = (array, index) => {
   display: flex;
   align-items: flex-end;
   .drag-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    position: absolute;
+    inset: 6px;
+    background: rgba(249, 249, 249, 0.96);
     z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
-
+    border: 1px solid #efefef;
+    border-radius: 12px;
     .drag-overlay-content {
-      background: white;
-      border-radius: 16px;
       padding: 40px;
       text-align: center;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-
-      .drag-icon {
-        font-size: 48px;
-        margin-bottom: 16px;
-      }
-
       .drag-text {
-        font-size: 18px;
-        color: #333;
-        font-weight: 500;
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 24px;
+        color: var(--default-font-color);
+        line-height: 32px;
+      }
+      .drag-type {
+        font-size: 16px;
+        color: #909090;
+        line-height: 22px;
       }
     }
   }
