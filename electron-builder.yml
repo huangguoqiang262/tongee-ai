@@ -36,7 +36,7 @@ mac:
   artifactName: ${name}-${version}-setup.${ext}
   icon: build/icon.icns
   target:
-    - target: 'dmg'
+    - target: 'default'
       arch: 'x64'
 appImage:
   artifactName: ${name}-${version}.${ext}
