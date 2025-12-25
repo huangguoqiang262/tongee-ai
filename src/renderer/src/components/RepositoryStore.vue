@@ -819,7 +819,7 @@ const props = defineProps({
 })
 const getUserInfo = () => {
   const userStore = useUserStore()
-  return user_info({t: Date.now()}).then((res) => {
+  return user_info({ t: Date.now() }).then((res) => {
     if (res.code == 200) {
       userStore.updateUser(res.data?.user_info)
     }
@@ -1752,18 +1752,28 @@ const handleContextMenuAction = ({ action }) => {
       type: 'warning'
     })
       .then(() => {
+        // eslint-disable-next-line no-undef
+        let loadingInstance = ElLoading.service({
+          lock: true,
+          text: '清空回收站中...',
+          background: 'rgba(0, 0, 0, 0.3)'
+        })
         delItem({
           item_ids: tempFiles.map((item) => item.id)
-        }).then((res) => {
-          if (res.code == 200) {
-            // eslint-disable-next-line no-undef
-            ElMessage({
-              type: 'primary',
-              message: '删除成功'
-            })
-            refreshList()
-          }
         })
+          .then((res) => {
+            if (res.code == 200) {
+              // eslint-disable-next-line no-undef
+              ElMessage({
+                type: 'primary',
+                message: '删除成功'
+              })
+              refreshList()
+            }
+          })
+          .finally(() => {
+            loadingInstance.close()
+          })
       })
       .catch(() => {})
   } else if (action === 'canView') {
