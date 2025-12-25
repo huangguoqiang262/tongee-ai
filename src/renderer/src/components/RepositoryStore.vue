@@ -1,5 +1,19 @@
 <template>
-  <div class="repository-box" @click="resetChecks">
+  <div class="repository-box" @click="resetChecks"
+    @dragenter="handleDragEnter">
+    <div
+      v-show="showDragOverlay"
+      @drag="handleDrag"
+    @dragenter="handleDragEnter"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+      class="drag-overlay"
+    >
+      <div class="drag-overlay-content">
+        <div class="drag-icon">📁</div>
+        <div class="drag-text">拖拽文件到这里</div>
+      </div>
+    </div>
     <div class="left-box">
       <div class="common-repository-box">
         <div class="common-box">
@@ -817,6 +831,68 @@ const props = defineProps({
     default: () => ({})
   }
 })
+// 拖拽相关数据
+const showDragOverlay = ref(false)
+// 拖拽事件处理
+const handleDragEnter = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  if (!showDragOverlay.value) {
+    showDragOverlay.value = true
+  }
+}
+const handleDrag = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  console.log('handleDrag');
+
+}
+const handleDragOver = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+}
+const handleDragLeave = (event) => {
+  console.log('handleDragLeave');
+  event.stopPropagation()
+  event.preventDefault()
+  showDragOverlay.value = false
+}
+// 处理拖拽的文件
+const handleDroppedFiles = (files) => {
+  if (!activeRepositoryId.value) {
+    // eslint-disable-next-line no-undef
+    ElMessage.warning('请先选择知识库')
+    return
+  }
+
+  const validFiles = Array.from(files).filter(file => {
+    const allowedTypes = [
+      '.txt', '.png', '.jpg', '.jpeg', '.gif',
+      '.pdf', '.doc', '.docx', '.xls', '.xlsx',
+      '.ppt', '.pptx'
+    ]
+    const fileExt = '.' + file.name.split('.').pop().toLowerCase()
+    return allowedTypes.includes(fileExt)
+  })
+
+  if (validFiles.length === 0) {
+    // eslint-disable-next-line no-undef
+    ElMessage.warning('不支持的文件类型')
+    return
+  }
+
+  // 准备上传文件列表
+  const uploadList = validFiles.map(file => ({
+    file: file,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    status: 'ready'
+  }))
+  // 打开上传对话框
+  ReadyUploadList.value = uploadList
+  uploadVisible.value = true
+}
 const getUserInfo = () => {
   const userStore = useUserStore()
   return user_info({ t: Date.now() }).then((res) => {
@@ -2206,6 +2282,37 @@ const removeItemsAfterIndex = (array, index) => {
   overflow: hidden;
   display: flex;
   align-items: flex-end;
+  .drag-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .drag-overlay-content {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+      .drag-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+
+      .drag-text {
+        font-size: 18px;
+        color: #333;
+        font-weight: 500;
+      }
+    }
+  }
   .left-box {
     flex-shrink: 0;
     box-sizing: border-box;

@@ -23,6 +23,7 @@ export const initScreenshoots = () => {
   screenshots.on('ok', (e, buffer, bounds) => {
     // 发送截图数据到渲染进程
     if (global.mainWindow) {
+      global.mainWindow.focus()
       global.mainWindow.webContents.send('screenshot-ok', {
         buffer: buffer.toString('base64'),
         bounds: bounds
