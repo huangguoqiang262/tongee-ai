@@ -29,27 +29,47 @@ const customApi = {
   triggerScreenshot: () => ipcRenderer.send('trigger-screenshot'),
   onScreenshotStart: (callback) => ipcRenderer.on('screenshot-start', callback),
   _screenshotListener: null,
+  _lastScreenshotData: null, // 用于去重
+  _lastScreenshotTime: 0,
   onScreenshotOk: (callback) => {
     // 先移除旧的监听器
     if (customApi._screenshotListener) {
       ipcRenderer.removeListener('screenshot-ok', customApi._screenshotListener)
     }
-    // 创建新的监听器
+    // 创建新的监听器（带去重机制）
     customApi._screenshotListener = (event, data) => {
+      // 去重：如果数据相同且时间间隔很短（500ms内），认为是重复触发，只处理一次
+      const now = Date.now()
+      const dataStr = JSON.stringify(data)
+      if (
+        customApi._lastScreenshotData === dataStr &&
+        now - customApi._lastScreenshotTime < 500
+      ) {
+        console.log('检测到重复的截图事件，已忽略')
+        return
+      }
+      customApi._lastScreenshotData = dataStr
+      customApi._lastScreenshotTime = now
       callback(event, data)
     }
     ipcRenderer.on('screenshot-ok', customApi._screenshotListener)
   },
   // 直接触发截图事件的函数（用于Mac平台，当IPC失败时）
+  // 注意：这个函数只应该在没有IPC成功时使用，避免重复触发
   _triggerScreenshotEvent: (channel, data) => {
     try {
-      // 触发已注册的监听器
+      // 只触发已注册的监听器，不触发IPC事件（避免与IPC重复）
+      // 监听器内部已经有去重机制
       if (channel === 'screenshot-ok' && customApi._screenshotListener) {
         customApi._screenshotListener(null, data)
+        return true
       }
-      // 触发IPC事件（让所有监听该channel的监听器都能收到）
-      ipcRenderer.emit(channel, null, data)
-      return true
+      // 对于其他事件，触发IPC事件（因为这些事件可能没有专门的监听器）
+      if (channel !== 'screenshot-ok') {
+        ipcRenderer.emit(channel, null, data)
+        return true
+      }
+      return false
     } catch (error) {
       console.error('触发截图事件失败:', error)
       return false
