@@ -1,5 +1,4 @@
 import { app, globalShortcut, ipcMain } from 'electron'
-import { app, globalShortcut, ipcMain } from 'electron'
 import Screenshots from 'electron-screenshots'
 
 // 辅助函数：确保窗口获得焦点并发送消息（Mac平台特殊处理）
