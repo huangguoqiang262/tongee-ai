@@ -1,13 +1,12 @@
 <template>
-  <div class="repository-box" @click="resetChecks"
-    @dragenter="handleDragEnter">
+  <div class="repository-box" @click="resetChecks" @dragenter="handleDragEnter">
     <div
       v-show="showDragOverlay"
-      @drag="handleDrag"
-    @dragenter="handleDragEnter"
-    @dragover="handleDragOver"
-    @dragleave="handleDragLeave"
       class="drag-overlay"
+      @drag="handleDrag"
+      @dragenter="handleDragEnter"
+      @dragover="handleDragOver"
+      @dragleave="handleDragLeave"
     >
       <div class="drag-overlay-content">
         <div class="drag-icon">📁</div>
@@ -844,8 +843,7 @@ const handleDragEnter = (event) => {
 const handleDrag = (event) => {
   event.preventDefault()
   event.stopPropagation()
-  console.log(event.dataTransfer.files);
-
+  console.log(event.dataTransfer.files)
 }
 const handleDragOver = (event) => {
   event.preventDefault()
@@ -863,16 +861,29 @@ const handleDroppedFiles = (files) => {
     ElMessage.warning('请先选择知识库')
     return
   }
-  if (activeRepository.value.is_public == 1 && activeRepository.user_permission?.is_manager != 1 && activeRepository.user_permission?.is_creator != 1) {
+  if (
+    activeRepository.value.is_public == 1 &&
+    activeRepository.value.user_permission?.is_manager != 1 &&
+    activeRepository.value.user_permission?.is_creator != 1
+  ) {
     // eslint-disable-next-line no-undef
     ElMessage.warning('当前知识库没有权限上传文件')
     return
   }
-  const validFiles = Array.from(files).filter(file => {
+  const validFiles = Array.from(files).filter((file) => {
     const allowedTypes = [
-      '.txt', '.png', '.jpg', '.jpeg', '.gif',
-      '.pdf', '.doc', '.docx', '.xls', '.xlsx',
-      '.ppt', '.pptx'
+      '.txt',
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.pdf',
+      '.doc',
+      '.docx',
+      '.xls',
+      '.xlsx',
+      '.ppt',
+      '.pptx'
     ]
     const fileExt = '.' + file.name.split('.').pop().toLowerCase()
     return allowedTypes.includes(fileExt)
