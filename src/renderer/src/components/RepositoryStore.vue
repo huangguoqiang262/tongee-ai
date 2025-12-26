@@ -844,7 +844,7 @@ const handleDragEnter = (event) => {
 const handleDrag = (event) => {
   event.preventDefault()
   event.stopPropagation()
-  console.log('handleDrag');
+  console.log(event.dataTransfer.files);
 
 }
 const handleDragOver = (event) => {
@@ -852,7 +852,6 @@ const handleDragOver = (event) => {
   event.stopPropagation()
 }
 const handleDragLeave = (event) => {
-  console.log('handleDragLeave');
   event.stopPropagation()
   event.preventDefault()
   showDragOverlay.value = false
@@ -864,7 +863,11 @@ const handleDroppedFiles = (files) => {
     ElMessage.warning('请先选择知识库')
     return
   }
-
+  if (activeRepository.value.is_public == 1 && activeRepository.user_permission?.is_manager != 1 && activeRepository.user_permission?.is_creator != 1) {
+    // eslint-disable-next-line no-undef
+    ElMessage.warning('当前知识库没有权限上传文件')
+    return
+  }
   const validFiles = Array.from(files).filter(file => {
     const allowedTypes = [
       '.txt', '.png', '.jpg', '.jpeg', '.gif',
@@ -880,17 +883,31 @@ const handleDroppedFiles = (files) => {
     ElMessage.warning('不支持的文件类型')
     return
   }
-
+  tempUploadList.value = []
+  conflictFiles.value = []
   // 准备上传文件列表
-  const uploadList = validFiles.map(file => ({
+  tempUploadList.value = validFiles.map((file) => ({
     file: file,
+    title: file.name,
     name: file.name,
-    size: file.size,
-    type: file.type,
-    status: 'ready'
+    type: 'file',
+    uploadStatus: 'pending'
   }))
+  if (detailFileList.value.length) {
+    detailFileList.value.filter((item) => {
+      tempUploadList.value.filter((readyItem) => {
+        if (readyItem.title == item.title && item.item_type == 1) {
+          conflictFiles.value.push(readyItem)
+        }
+      })
+    })
+    if (conflictFiles.value.length) {
+      conflictVisible.value = true
+      return
+    }
+  }
   // 打开上传对话框
-  ReadyUploadList.value = uploadList
+  ReadyUploadList.push(...tempUploadList.value)
   uploadVisible.value = true
 }
 const getUserInfo = () => {
