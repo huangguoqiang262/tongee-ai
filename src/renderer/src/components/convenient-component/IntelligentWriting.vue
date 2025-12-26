@@ -617,6 +617,9 @@ const formatFileSize = (kb) => {
     return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
   }
 }
+defineExpose({
+  uploadSingleFile
+})
 </script>
 
 <style scoped lang="scss">

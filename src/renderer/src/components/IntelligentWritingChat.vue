@@ -1,5 +1,17 @@
 <template>
-  <div class="chat-page-box disabled-tools-chat">
+  <div class="chat-page-box disabled-tools-chat"
+  @dragenter="handleDragEnter"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop">
+    <div v-show="showDragOverlay" class="drag-overlay">
+      <div class="drag-overlay-content">
+        <div class="drag-text">拖拽文件到这里</div>
+        <div class="drag-type">
+          支持.doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
+        </div>
+      </div>
+    </div>
     <div class="chat-back" @click="back">
       <el-icon><ArrowLeftBold /></el-icon>
     </div>
@@ -42,6 +54,7 @@
       <chat-input
         v-if="activeSession.model_name"
         key="input"
+        ref="chatInputRef"
         :is-active-tab="isActiveTab"
         class="message-input"
         :models="models"
@@ -125,6 +138,48 @@ const userInfo = useUserInfo()
 const userStore = useUserStore()
 const closeFeedback = () => {
   feedbackVisible.value = false
+}
+let chatInputRef = ref(null)
+// 拖拽相关数据
+const showDragOverlay = ref(false)
+
+// 拖拽事件处理
+const handleDragEnter = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  showDragOverlay.value = true
+}
+
+const handleDragOver = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+}
+
+const handleDragLeave = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  // 只有当拖拽离开整个容器时才隐藏遮罩
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    showDragOverlay.value = false
+  }
+}
+
+const handleDrop = (event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  showDragOverlay.value = false
+
+  const files = event.dataTransfer.files
+  if (!files || !files.length) return
+  if (chatInputRef.value) {
+    for (const file of files) {
+      var tempFile = {
+        file: file
+      }
+      // 调用上传文件的方法
+      chatInputRef.value.customUpload(tempFile)
+    }
+  }
 }
 const showResultMessage = () => {
   resultTimeout.value && clearTimeout(resultTimeout.value)
@@ -714,6 +769,33 @@ onMounted(() => {
   border-radius: 8px;
   overflow: hidden;
   user-select: text;
+  .drag-overlay {
+    position: absolute;
+    inset: 6px;
+    background: rgba(249, 249, 249, 0.96);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #efefef;
+    border-radius: 12px;
+    .drag-overlay-content {
+      padding: 40px;
+      text-align: center;
+      .drag-text {
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 24px;
+        color: var(--default-font-color);
+        line-height: 32px;
+      }
+      .drag-type {
+        font-size: 16px;
+        color: #909090;
+        line-height: 22px;
+      }
+    }
+  }
   .chat-back {
     position: absolute;
     top: 20px;

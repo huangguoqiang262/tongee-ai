@@ -1,16 +1,18 @@
 <template>
-  <div class="repository-box" @click="resetChecks" @dragenter="handleDragEnter"
+  <div
+    class="repository-box"
+    @click="resetChecks"
+    @dragenter="handleDragEnter"
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
     @drop="handleDrop"
->
-    <div
-      v-show="showDragOverlay"
-      class="drag-overlay"
-    >
+  >
+    <div v-show="showDragOverlay" class="drag-overlay">
       <div class="drag-overlay-content">
         <div class="drag-text">拖拽文件到这里</div>
-        <div class="drag-type">支持.doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式</div>
+        <div class="drag-type">
+          支持.doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
+        </div>
       </div>
     </div>
 
@@ -439,7 +441,7 @@
             <div
               v-if="item.item_type == 2"
               class="list-item"
-              :class="{ 'active-repository': item.checked }"
+              :class="{ 'active-repository': item.checked, is_top: item.is_top }"
               @contextmenu="(e) => showContextMenu(e, item)"
               @click="dirChange(item)"
             >
@@ -478,7 +480,7 @@
               <template #reference>
                 <div
                   class="list-item"
-                  :class="{ 'active-repository': item.checked }"
+                  :class="{ 'active-repository': item.checked, is_top: item.is_top }"
                   @contextmenu="(e) => showContextMenu(e, item)"
                   @click="detailChange(item)"
                 >
@@ -2493,7 +2495,6 @@ const removeItemsAfterIndex = (array, index) => {
               //   background: #fff;
               // }
             }
-
             &.active-repository {
               background: var(--el-color-primary-light-9);
 
@@ -3012,7 +3013,9 @@ const removeItemsAfterIndex = (array, index) => {
               display: block;
             }
           }
-
+          &.is_top {
+            background: #f6f6f6;
+          }
           &.active-repository {
             background: var(--el-color-primary-light-9);
 

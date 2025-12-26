@@ -45,7 +45,6 @@
         />
         <!-- 按回车键发送，输入框高度三行 -->
         <el-mention
-          ref="messageInputRef"
           v-model="message.text"
           :disabled="isChatting"
           autosize
@@ -172,9 +171,14 @@
     </div>
     <DocumentInterpretation
       v-if="activeMenu === 'DocumentInterpretation'"
+      ref="documentInterpretationRef"
       @close-menu="closeMenu"
     />
-    <IntelligentWriting v-if="activeMenu === 'IntelligentWriting'" @close-menu="closeMenu" />
+    <IntelligentWriting
+      v-if="activeMenu === 'IntelligentWriting'"
+      ref="intelligentWritingRef"
+      @close-menu="closeMenu"
+    />
     <QuickAccess v-if="activeMenu === 'QuickAccess'" @close-menu="closeMenu" />
     <ImageProduction v-if="activeMenu === 'ImageProduction'" @close-menu="closeMenu" />
     <RecommendRepository v-if="activeMenu === 'RecommendRepository'" @close-menu="closeMenu" />
@@ -211,6 +215,7 @@ export default {
   },
   data() {
     return {
+      showDragOverlay: false,
       isChatting: false,
       defaultCover,
       message: { text: '', image: '' },
@@ -548,6 +553,13 @@ export default {
     // 自定义上传逻辑
     customUpload(fileItem) {
       if (!useCheckLogin().value) {
+        return
+      }
+      if (this.activeMenu === 'IntelligentWriting') {
+        this.$refs.intelligentWritingRef.uploadSingleFile(fileItem)
+        return
+      } else if (this.activeMenu === 'DocumentInterpretation') {
+        this.$refs.documentInterpretationRef.uploadSingleFile(fileItem)
         return
       }
       const userStore = useUserStore()
