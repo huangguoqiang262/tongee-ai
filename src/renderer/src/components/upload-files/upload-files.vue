@@ -162,6 +162,7 @@ import pdfIcon from '@renderer/assets/file-icons/pdf-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 let repositoryuploadPopover = ref(null)
 let uploadVisible = defineModel({ type: Boolean })
 // let waitUploadList = ref([])
@@ -494,7 +495,6 @@ const uploadDirectory = async (directoryItem) => {
     })
     .finally(() => {
       loadcontext.close()
-      directoryItem.status = uploadStatus.ERROR
     })
   return
   // 错误边界
@@ -560,6 +560,7 @@ const getFileIcon = (item) => {
     pdf: pdfIcon,
     xls: excelIcon,
     xlsx: excelIcon,
+    csv: csvIcon,
     ppt: pptIcon,
     pptx: pptIcon,
     txt: txtIcon,

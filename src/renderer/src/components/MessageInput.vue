@@ -109,7 +109,7 @@
         <div class="btn-box">
           <el-tooltip effect="light" content="" placement="top">
             <template #content>
-              上传附件（doc、docx、xls、xlsx、pdf、txt、<br />ppt、pptx、jpg、jpeg、png、gif格式）
+              上传附件（doc、docx、xls、xlsx、csv、pdf、txt、<br />ppt、pptx、jpg、jpeg、png、gif格式）
             </template>
             <el-upload
               class="upload-box"
@@ -118,7 +118,7 @@
               :show-file-list="false"
               :http-request="customUpload"
               :multiple="true"
-              accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
+              accept=".doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
             >
               <img
                 class="attachment-icon"
@@ -187,6 +187,7 @@
 <script>
 import defaultCover from '@renderer/assets/repository/default-cover.png'
 import cloneDeep from 'lodash.clonedeep'
+import updateIcon from '@renderer/assets/menu/update-icon.png'
 import knowledgeBaseSquareIcon from '@renderer/assets/home/knowledgeBaseSquare-icon.png'
 import documentInterpretationIcon from '@renderer/assets/home/documentInterpretation-icon.png'
 import updateNotificationIcon from '@renderer/assets/home/updateNotification-icon.png'
@@ -204,6 +205,7 @@ import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
 export default {
   name: 'MessageInput',
   inject: ['addNewTab', 'replaceActiveTab'],
@@ -373,6 +375,7 @@ export default {
         xls: excelIcon,
         xlsx: excelIcon,
         ppt: pptIcon,
+        csv: csvIcon,
         pptx: pptIcon,
         txt: txtIcon,
         png: imgIcon,
@@ -452,6 +455,18 @@ export default {
         this.activeMenu = item.url
         // 打开新标签页
         if (item.isLink) {
+          if (item.url == 'MessageCenter') {
+            this.addNewTab({
+              icon: updateIcon,
+              url: item.url,
+              title: item.title,
+              isInternal: true,
+              attrs: {
+                activeTab: '2'
+              }
+            })
+            return
+          }
           this.addNewTab({
             url: item.url,
             title: item.title,
@@ -646,6 +661,7 @@ export default {
         'text/plain': 'txt',
         'application/vnd.ms-excel': 'xls',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+        'text/csv': 'csv',
         'application/vnd.ms-powerpoint': 'ppt',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
         'application/msword': 'doc',

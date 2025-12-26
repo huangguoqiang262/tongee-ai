@@ -43,7 +43,7 @@ const autoCheckForUpdates = () => {
   // 如果从未检查过或超过24小时，则检查更新
   if (!lastCheck || now - parseInt(lastCheck) > oneDay) {
     if (updateNotificationRef.value) {
-      updateNotificationRef.value.checkForUpdates() // 静默检查
+      updateNotificationRef.value.checkForUpdates(true) // 静默检查
     }
     localStorage.setItem('lastUpdateCheck', now.toString())
   }

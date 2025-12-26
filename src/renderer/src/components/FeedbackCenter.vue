@@ -284,7 +284,7 @@ onMounted(() => {
     overflow: hidden;
 
     .square {
-      width: 67%;
+      width: 78%;
       max-width: 910px;
       height: 100%;
       margin: 0 auto;
@@ -294,7 +294,7 @@ onMounted(() => {
 
       .page-title-box {
         flex-shrink: 0;
-        margin-bottom: 40px;
+        margin-bottom: 30px;
         display: flex;
         align-items: center;
         justify-content: space-between;

@@ -206,6 +206,8 @@ const checkForUpdates = async (silent = false) => {
 
   if (!silent) {
     showUpdate.value = true
+  } else if (updateStatus.value !== 'checking' || updateStatus.value !== 'not-available') {
+    showUpdate.value = true
   }
 
   try {

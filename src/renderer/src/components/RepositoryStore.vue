@@ -11,7 +11,7 @@
       <div class="drag-overlay-content">
         <div class="drag-text">拖拽文件到这里</div>
         <div class="drag-type">
-          支持.doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
+          支持.doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
         </div>
       </div>
     </div>
@@ -795,6 +795,7 @@ import pptIcon from '@renderer/assets/file-icons/ppt-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
 import headSquareIcon from '@renderer/assets/repository/head-square-icon.png'
 import defaultCover from '@renderer/assets/repository/default-cover.png'
@@ -1156,6 +1157,8 @@ const submitRepository = (repository) => {
             type: 'primary',
             message: '创建成功'
           })
+          activeRepositoryId.value = res.data.insert_id
+          getRepositoryInfo(activeRepositoryId.value)
           getCommonCreateList()
           closeAddRepositoryDialog()
         }
@@ -1189,6 +1192,8 @@ const submitRepository = (repository) => {
             type: 'primary',
             message: '创建成功'
           })
+          activeRepositoryId.value = res.data.insert_id
+          getRepositoryInfo(activeRepositoryId.value)
           getPersonalCreateList()
           closeAddRepositoryDialog()
         }
@@ -1225,7 +1230,8 @@ const activeRepository = ref({})
 const submitImport = (ids) => {
   import_note({
     knowledge_id: activeRepositoryId.value,
-    note_ids: ids
+    note_ids: ids,
+    item_id: parentItemId.value || 0
   }).then((res) => {
     if (res.code == 200) {
       // eslint-disable-next-line no-undef
@@ -1874,7 +1880,7 @@ const handleContextMenuAction = ({ action }) => {
         // eslint-disable-next-line no-undef
         let loadingInstance = ElLoading.service({
           lock: true,
-          text: '清空回收站中...',
+          text: '删除中...',
           background: 'rgba(0, 0, 0, 0.3)'
         })
         delItem({
@@ -2251,6 +2257,7 @@ const getFileIcon = (item) => {
     pdf: pdfIcon,
     xls: excelIcon,
     xlsx: excelIcon,
+    csv: csvIcon,
     ppt: pptIcon,
     pptx: pptIcon,
     txt: txtIcon,

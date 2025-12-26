@@ -17,8 +17,10 @@
       >
         <img :src="tab.favicon || defaultIcon" class="tab-favicon" alt="favicon" />
         <span class="tab-title">{{ tab.title }}</span>
-        <div class="tab-close" @click="$emit('closeTab', tab.id, $event)">
-          <el-icon><Close /></el-icon>
+        <div class="tab-close-box">
+          <div class="tab-close" @click="$emit('closeTab', tab.id, $event)">
+            <el-icon><Close /></el-icon>
+          </div>
         </div>
         <div class="tab-loading" :style="{ width: tab.loading ? tab.progress + '%' : '0%' }"></div>
       </div>
@@ -107,10 +109,16 @@ defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'contextmenu', 'clo
 
 .tab.active {
   background: #fff;
+  .tab-close-box {
+    visibility: visible;
+  }
 }
 
 .tab:hover:not(.active) {
   background: #fff;
+  .tab-close-box {
+    visibility: visible;
+  }
 }
 
 .tab-favicon {
@@ -128,7 +136,10 @@ defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'contextmenu', 'clo
   white-space: nowrap;
   font-size: 13px;
 }
-
+.tab-close-box {
+  flex-shrink: 0;
+  visibility: hidden;
+}
 .tab-close {
   width: 18px;
   height: 18px;

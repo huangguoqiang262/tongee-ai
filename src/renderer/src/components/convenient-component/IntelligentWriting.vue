@@ -220,7 +220,7 @@
       :show-file-list="false"
       :auto-upload="false"
       :on-change="handleSelectChange"
-      accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
+      accept=".doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
     >
       <img
         class="document-icon"
@@ -229,7 +229,7 @@
       />
       <div class="tip-title">将文档拖动至此或选择文档</div>
       <div class="tip-format">
-        支持.doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式 (每个30MB以内)
+        支持.doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
       </div>
       <div class="btn-box">
         <div class="repository-btn" @click.stop="beforeUploadFiles('repository')">
@@ -265,6 +265,7 @@ import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
 let theme_value = ref('')
 const statistics = ref({})
 const getStatistics = () => {
@@ -594,6 +595,7 @@ const getFileIcon = (item) => {
     pdf: pdfIcon,
     xls: excelIcon,
     xlsx: excelIcon,
+    csv: csvIcon,
     ppt: pptIcon,
     pptx: pptIcon,
     txt: txtIcon,

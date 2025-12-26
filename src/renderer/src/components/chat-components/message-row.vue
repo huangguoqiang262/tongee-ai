@@ -8,6 +8,7 @@ import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
 const props = defineProps({
   //是否正在对话
   isChatting: {
@@ -131,6 +132,7 @@ const getFileIcon1 = (item) => {
     pdf: pdfIcon,
     xls: excelIcon,
     xlsx: excelIcon,
+    csv: csvIcon,
     ppt: pptIcon,
     pptx: pptIcon,
     txt: txtIcon,

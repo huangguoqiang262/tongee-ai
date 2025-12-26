@@ -408,6 +408,7 @@ export default {
         'image/gif': 'gif',
         'application/pdf': 'pdf',
         'text/plain': 'txt',
+        'text/csv': 'csv',
         'application/vnd.ms-excel': 'xls',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
         'application/vnd.ms-powerpoint': 'ppt',

@@ -497,8 +497,7 @@ const submitNotebookForm = async (formRef) => {
 const addNotebook = () => {
   notebookVisible.value = true
   nextTick(() => {
-    repositoryForm.value = {
-      id: '',
+    notebookForm.value = {
       title: ''
     }
     notebookFormRef?.value.resetFields()
@@ -740,11 +739,24 @@ const handleContextMenuAction = ({ action }) => {
     } else if (action === 'addToRepository') {
       // 添加到知识库
       getRepositoryList()
+      // 初始化知识库表单
+      repositoryForm.value = {
+        id: '',
+        title: ''
+      }
       repositoryForm.value.title = activeNote.value.title
       addRepositoryVisible.value = true
+      nextTick(() => {
+        repositoryFormRef?.value.resetFields()
+      })
     } else if (action === 'moveToNotebook') {
       // 移动到笔记本
+      moveNoteForm.value.id = ''
+      moveNoteForm.value.note_id = ''
       moveNoteVisible.value = true
+      nextTick(() => {
+        moveNoteFormRef.value.resetFields()
+      })
     } else if (action === 'delete') {
       // 删除
       // eslint-disable-next-line no-undef
@@ -830,13 +842,15 @@ const getBookList = () => {
     .then((res) => {
       if (res.code == 200) {
         notebookLists.value = res.data || []
-        activeNotebook.value = notebookLists.value[0]?.id || ''
-        if (activeNotebook.value) {
-          getNoteList()
-        } else {
-          activeNotebook.value = ''
-          noteLists.value = []
-          noteLoading.value = false
+        if (!activeNotebook.value || !notebookLists.value.length) {
+          activeNotebook.value = notebookLists.value[0]?.id || ''
+          if (activeNotebook.value) {
+            getNoteList()
+          } else {
+            activeNotebook.value = ''
+            noteLists.value = []
+            noteLoading.value = false
+          }
         }
       }
     })

@@ -1,14 +1,16 @@
 <template>
-  <div class="chat-page-box disabled-tools-chat"
-  @dragenter="handleDragEnter"
+  <div
+    class="chat-page-box disabled-tools-chat"
+    @dragenter="handleDragEnter"
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
-    @drop="handleDrop">
+    @drop="handleDrop"
+  >
     <div v-show="showDragOverlay" class="drag-overlay">
       <div class="drag-overlay-content">
         <div class="drag-text">拖拽文件到这里</div>
         <div class="drag-type">
-          支持.doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
+          支持.doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
         </div>
       </div>
     </div>

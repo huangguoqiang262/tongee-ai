@@ -229,7 +229,7 @@
       />
       <div class="tip-title">将文档拖动至此或选择文档</div>
       <div class="tip-format">
-        支持.doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式 (每个30MB以内)
+        支持.doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
       </div>
       <div class="btn-box">
         <!-- <div class="repository-btn" @click.stop="beforeUploadFiles('repository')">

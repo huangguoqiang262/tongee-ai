@@ -48,7 +48,11 @@ import noteIcon from '@renderer/assets/menu/note-icon.png'
 import managementIcon from '@renderer/assets/menu/management-icon.png'
 import messageCenterIcon from '@renderer/assets/menu/message-center-icon.png'
 import recycledIcon from '@renderer/assets/menu/recycled-icon.png'
+import recycleDarkIcon from '@renderer/assets/menu/recycled-dark-icon.png'
+import messageCenterDarkIcon from '@renderer/assets/menu/message-center-dark-icon.png'
 import historyIcon from '@renderer/assets/menu/history-icon.png'
+import historyDarkIcon from '@renderer/assets/menu/history-dark-icon.png'
+
 import defaultCover from '@renderer/assets/repository/default-cover.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 const addNewTab = inject('addNewTab')
@@ -97,6 +101,30 @@ const handleClick = (item) => {
       title: item.name,
       icon: item.icon,
       isInternal: false
+    })
+    return
+  } else if (item.url == 'MessageCenter') {
+    addNewTab({
+      url: 'MessageCenter',
+      title: '消息中心',
+      icon: messageCenterDarkIcon,
+      isInternal: true
+    })
+    return
+  } else if (item.url == 'History'){
+    addNewTab({
+      url: 'History',
+      title: '历史记录',
+      icon: historyDarkIcon,
+      isInternal: true
+    })
+    return
+  } else if (item.url == 'Recycled'){
+    addNewTab({
+      url: 'Recycled',
+      title: '回收站',
+      icon: recycleDarkIcon,
+      isInternal: true
     })
     return
   }

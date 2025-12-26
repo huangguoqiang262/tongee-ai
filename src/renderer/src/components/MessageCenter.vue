@@ -223,7 +223,7 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted, shallowRef, nextTick } from 'vue'
+import { ref, onMounted, watchEffect, shallowRef, nextTick } from 'vue'
 import { formatTime } from '@renderer/utils/index.js'
 import {
   get_system_msg,
@@ -234,6 +234,12 @@ import {
 import { feedback_mark } from '@renderer/api/feedback'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText.js'
 let fillColor = 'var(--default-font-color)'
+const props = defineProps({
+  attrs: {
+    type: Object,
+    default: () => {}
+  }
+})
 let searchVal = ref('')
 let tabs = ref([
   {
@@ -391,6 +397,12 @@ const getSystemMsgList = () => {
 }
 onMounted(() => {
   getList()
+})
+watchEffect(() => {
+  activeTab.value = props.attrs.activeTab || '1'
+  nextTick(() => {
+    tabHandle(activeTab.value)
+  })
 })
 </script>
 

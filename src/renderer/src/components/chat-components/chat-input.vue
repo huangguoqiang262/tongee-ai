@@ -107,7 +107,7 @@
               :show-file-list="false"
               :http-request="customUpload"
               :multiple="true"
-              accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
+              accept=".doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
             >
               <img
                 class="attachment-icon"
@@ -165,6 +165,7 @@ import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
 export default {
   name: 'MessageChatInput',
   inject: ['addNewTab'],
@@ -266,6 +267,7 @@ export default {
         pdf: pdfIcon,
         xls: excelIcon,
         xlsx: excelIcon,
+        csv: csvIcon,
         ppt: pptIcon,
         pptx: pptIcon,
         txt: txtIcon,
@@ -482,6 +484,7 @@ export default {
         'image/gif': 'gif',
         'application/pdf': 'pdf',
         'text/plain': 'txt',
+        'text/csv': 'csv',
         'application/vnd.ms-excel': 'xls',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
         'application/vnd.ms-powerpoint': 'ppt',
