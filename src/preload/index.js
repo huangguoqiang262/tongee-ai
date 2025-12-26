@@ -40,6 +40,21 @@ const customApi = {
     }
     ipcRenderer.on('screenshot-ok', customApi._screenshotListener)
   },
+  // 直接触发截图事件的函数（用于Mac平台，当IPC失败时）
+  _triggerScreenshotEvent: (channel, data) => {
+    try {
+      // 触发已注册的监听器
+      if (channel === 'screenshot-ok' && customApi._screenshotListener) {
+        customApi._screenshotListener(null, data)
+      }
+      // 触发IPC事件（让所有监听该channel的监听器都能收到）
+      ipcRenderer.emit(channel, null, data)
+      return true
+    } catch (error) {
+      console.error('触发截图事件失败:', error)
+      return false
+    }
+  },
   onScreenshotSave: (callback) => ipcRenderer.on('screenshot-save', callback),
   onScreenshotCancel: (callback) => ipcRenderer.on('screenshot-cancel', callback),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
