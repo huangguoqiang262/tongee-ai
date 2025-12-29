@@ -1,4 +1,4 @@
-import { app, globalShortcut, ipcMain } from 'electron'
+import { globalShortcut, ipcMain } from 'electron'
 import Screenshots from 'electron-screenshots'
 
 // 辅助函数：确保窗口获得焦点并发送消息（Mac平台特殊处理）
@@ -146,54 +146,28 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
     }
   }
 
-  // 恢复窗口焦点（Mac上需要更激进的策略）
+  // 恢复窗口焦点（Mac上使用更温和的策略，避免隐藏其他应用）
   const restoreFocus = (callback) => {
     if (process.platform === 'darwin') {
-      console.log('[截图] 开始恢复窗口焦点...')
+      console.log('[截图] 开始恢复窗口状态...')
 
-      // Mac上先激活应用
-      app.show()
-
-      // 确保窗口可见
+      // Mac上：只确保窗口可见，不强制激活应用或聚焦窗口
+      // 这样可以避免隐藏其他应用
       if (!global.mainWindow.isVisible()) {
-        global.mainWindow.show()
+        // 只在窗口不可见时才显示，使用showInactive避免激活应用
+        global.mainWindow.showInactive()
+        console.log('[截图] 窗口已显示（非激活状态）')
+      } else {
+        console.log('[截图] 窗口已可见')
       }
 
-      // 聚焦窗口（不使用moveTop，避免隐藏其他应用）
-      global.mainWindow.focus()
-
-      // 等待窗口真正获得焦点
-      const checkFocus = (attempts = 0) => {
-        const isFocused = global.mainWindow.isFocused()
-        const isVisible = global.mainWindow.isVisible()
-
-        console.log(`[截图] 检查焦点 (${attempts + 1}/15): focused=${isFocused}, visible=${isVisible}`)
-
-        if (isFocused && isVisible) {
-          // 窗口已获得焦点，再等待一小段时间确保稳定
-          console.log('[截图] 窗口已获得焦点，等待稳定...')
-          setTimeout(() => {
-            callback()
-          }, 300) // 增加等待时间到300ms
-        } else if (attempts < 15) {
-          // 继续尝试（增加尝试次数）
-          setTimeout(() => {
-            global.mainWindow.focus()
-            // 不使用moveTop，避免隐藏其他应用
-            // 强制激活应用
-            app.show()
-            checkFocus(attempts + 1)
-          }, 150) // 增加间隔时间
-        } else {
-          // 超时，直接执行
-          console.warn('[截图] 窗口焦点恢复超时，强制执行')
-          callback()
-        }
-      }
-
-      checkFocus()
+      // 不调用app.show()和focus()，避免隐藏其他应用
+      // 直接执行回调，因为JS方法不依赖窗口焦点
+      setTimeout(() => {
+        callback()
+      }, 200) // 短暂延迟确保窗口状态稳定
     } else {
-      // 非Mac平台
+      // 非Mac平台：正常处理
       if (!global.mainWindow.isVisible()) {
         global.mainWindow.show()
       }
