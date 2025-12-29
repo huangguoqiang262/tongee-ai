@@ -82,7 +82,7 @@ function createWindow() {
   })
   // 添加快捷键监听
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.alt && input.key === 'j') {
+    if ((process.platform === 'darwin' ? input.meta : input.alt) && input.key === 'j') {
       event.preventDefault()
       // 触发截图
       mainWindow.webContents.send('trigger-screenshot')

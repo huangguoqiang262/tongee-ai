@@ -118,7 +118,7 @@
             </el-upload>
           </el-tooltip>
           <el-tooltip effect="light" content="" placement="top">
-            <template #content> 快速截图 Alt + J </template>
+            <template #content> {{ screenshotShortcutText }} </template>
             <img
               class="attachment-icon screenshot-icon"
               src="@renderer/assets/home/screenshot-icon.png"
@@ -223,6 +223,13 @@ export default {
       isHoveringAttachBox: false,
       mentioned: [],
       allowable: false
+    }
+  },
+  computed: {
+    screenshotShortcutText() {
+      // 检测是否为macOS系统
+      const isMac = window.electron.process.platform === 'darwin'
+      return isMac ? '快速截图 Option + J' : '快速截图 Alt + J'
     }
   },
   watch: {

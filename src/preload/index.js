@@ -41,10 +41,7 @@ const customApi = {
       // 去重：如果数据相同且时间间隔很短（500ms内），认为是重复触发，只处理一次
       const now = Date.now()
       const dataStr = JSON.stringify(data)
-      if (
-        customApi._lastScreenshotData === dataStr &&
-        now - customApi._lastScreenshotTime < 500
-      ) {
+      if (customApi._lastScreenshotData === dataStr && now - customApi._lastScreenshotTime < 500) {
         console.log('检测到重复的截图事件，已忽略')
         return
       }

@@ -52,7 +52,10 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
 
       if (channel === 'screenshot-ok' && data !== null) {
         // 使用preload中暴露的_triggerScreenshotEvent函数
-        const dataStr = JSON.stringify(data).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')
+        const dataStr = JSON.stringify(data)
+          .replace(/\\/g, '\\\\')
+          .replace(/`/g, '\\`')
+          .replace(/\$/g, '\\$')
         script = `
           (function() {
             try {
@@ -82,7 +85,10 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
           })();
         `
       } else if (channel === 'screenshot-save' && data !== null) {
-        const dataStr = JSON.stringify(data).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')
+        const dataStr = JSON.stringify(data)
+          .replace(/\\/g, '\\\\')
+          .replace(/`/g, '\\`')
+          .replace(/\$/g, '\\$')
         script = `
           (function() {
             try {
@@ -115,7 +121,8 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
       }
 
       if (script) {
-        global.mainWindow.webContents.executeJavaScript(script)
+        global.mainWindow.webContents
+          .executeJavaScript(script)
           .then((result) => {
             console.log(`[截图] JS执行成功: ${channel}`, result)
           })
@@ -190,7 +197,7 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
   // 在Mac上，需要延迟以确保截图窗口完全关闭
   // 当截图区域超过应用窗口时，需要更长的延迟
   if (process.platform === 'darwin') {
-    const finalDelay = delay || 800 // 增加默认延迟到800ms
+    const finalDelay = delay || 400 // 增加默认延迟到400ms
     console.log(`[截图] Mac平台，延迟 ${finalDelay}ms 后发送消息`)
     setTimeout(() => sendMessage(), finalDelay)
   } else {
@@ -207,30 +214,52 @@ export const initScreenshoots = () => {
       // 确保主窗口可见
       global.mainWindow.show()
 
-      dialog.showMessageBox(global.mainWindow, {
-        type: 'warning',
-        title: '需要屏幕录制权限',
-        message: '需要屏幕录制权限',
-        detail: '要截取其他应用的内容（如VSCode、微信等），请在"系统设置" -> "隐私与安全性" -> "屏幕录制"中授权此应用。\n\n授权后请重新启动应用。',
-        buttons: ['知道了', '打开系统设置'],
-        defaultId: 0,
-        cancelId: 0,
-        modal: true
-      }).then((result) => {
-        if (result.response === 1) {
-          // 打开系统设置到屏幕录制权限页面
-          shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture')
-        }
-      }).catch((err) => {
-        console.error('显示屏幕录制权限对话框失败:', err)
-      })
+      dialog
+        .showMessageBox(global.mainWindow, {
+          type: 'warning',
+          title: '需要屏幕录制权限',
+          message: '需要屏幕录制权限',
+          detail:
+            '要截取其他应用的内容（如VSCode、微信等），请在"系统设置" -> "隐私与安全性" -> "屏幕录制"中授权此应用。\n\n授权后请重新启动应用。',
+          buttons: ['知道了', '打开系统设置'],
+          defaultId: 0,
+          cancelId: 0,
+          modal: true
+        })
+        .then((result) => {
+          if (result.response === 1) {
+            // 打开系统设置到屏幕录制权限页面
+            shell.openExternal(
+              'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture'
+            )
+          }
+        })
+        .catch((err) => {
+          console.error('显示屏幕录制权限对话框失败:', err)
+        })
+    }
+  }
+  const debounce = (func, delay) => {
+    let timeoutId
+    return (...args) => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      timeoutId = setTimeout(() => {
+        func.apply(this, args)
+      }, delay)
     }
   }
 
+  const resetCapturingState = () => {
+    screenshots.isCapturing = false
+  }
+  // 改为防抖函数
+  const debounceResetCapturingState = debounce(resetCapturingState, 1000)
   ipcMain.on('trigger-screenshot', () => {
     // 防止重复截图
     if (screenshots.isCapturing) {
-      console.log('[截图] 截图已在进行中，忽略新的截图请求')
+      debounceResetCapturingState()
       return
     }
 
@@ -238,7 +267,7 @@ export const initScreenshoots = () => {
     if (process.platform === 'darwin') {
       // 检查屏幕录制权限
       const hasPermission = systemPreferences.getMediaAccessStatus('screen') === 'granted'
-      
+
       if (!hasPermission) {
         // 没有权限时显示提示对话框
         showScreenRecordingPermissionDialog()
@@ -268,10 +297,10 @@ export const initScreenshoots = () => {
   })
 
   // 注册截图快捷键
-  globalShortcut.register('Alt+J', () => {
+  globalShortcut.register(process.platform === 'darwin' ? 'Option+J' : 'Alt+J', () => {
     // 防止重复截图
     if (screenshots.isCapturing) {
-      console.log('[截图] 截图已在进行中，忽略新的截图请求')
+      debounceResetCapturingState()
       return
     }
 
@@ -279,7 +308,7 @@ export const initScreenshoots = () => {
     if (process.platform === 'darwin') {
       // 检查屏幕录制权限
       const hasPermission = systemPreferences.getMediaAccessStatus('screen') === 'granted'
-      
+
       if (!hasPermission) {
         // 没有权限时显示提示对话框
         showScreenRecordingPermissionDialog()
@@ -299,45 +328,47 @@ export const initScreenshoots = () => {
 
   // 点击确定按钮回调事件
   screenshots.on('ok', (e, buffer, bounds) => {
-    console.log('[截图] 收到截图确定事件')
-
     // 防止重复截图
     if (screenshots.isCapturing) {
       screenshots.isCapturing = false
 
       // 发送截图数据到渲染进程
       // 在Mac上截取应用外内容时，需要更长的延迟来确保窗口恢复焦点
-      ensureFocusAndSend('screenshot-ok', {
-        buffer: buffer.toString('base64'),
-        bounds: bounds
-      }, process.platform === 'darwin' ? 800 : 150)
+      ensureFocusAndSend(
+        'screenshot-ok',
+        {
+          buffer: buffer.toString('base64'),
+          bounds: bounds
+        },
+        process.platform === 'darwin' ? 400 : 150
+      )
     } else {
-      console.log('[截图] 忽略重复的截图事件')
+      debounceResetCapturingState()
     }
   })
 
   // 点击保存按钮回调事件
   screenshots.on('save', (e, buffer, bounds) => {
-    console.log('[截图] 收到截图保存事件')
-
     // 防止重复截图
     if (screenshots.isCapturing) {
       screenshots.isCapturing = false
 
       // 发送截图数据到渲染进程
-      ensureFocusAndSend('screenshot-save', {
-        buffer: buffer.toString('base64'),
-        bounds: bounds
-      }, process.platform === 'darwin' ? 800 : 150)
+      ensureFocusAndSend(
+        'screenshot-save',
+        {
+          buffer: buffer.toString('base64'),
+          bounds: bounds
+        },
+        process.platform === 'darwin' ? 400 : 150
+      )
     } else {
-      console.log('[截图] 忽略重复的截图事件')
+      debounceResetCapturingState()
     }
   })
 
   // 截图取消事件
   screenshots.on('cancel', () => {
-    console.log('[截图] 收到截图取消事件')
-
     // 重置截图状态
     screenshots.isCapturing = false
 
@@ -345,14 +376,14 @@ export const initScreenshoots = () => {
     ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
   })
 
-  // esc取消
-  globalShortcut.register('esc', () => {
-    if (screenshots.$win?.isFocused()) {
-      screenshots.endCapture()
-      // 重置截图状态
-      screenshots.isCapturing = false
-      // 发送取消事件到渲染进程
-      ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
-    }
-  })
+  // // esc取消
+  // globalShortcut.register('esc', () => {
+  //   if (screenshots.$win?.isFocused()) {
+  //     screenshots.endCapture()
+  //     // 重置截图状态
+  //     screenshots.isCapturing = false
+  //     // 发送取消事件到渲染进程
+  //     ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
+  //   }
+  // })
 }
