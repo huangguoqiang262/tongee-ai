@@ -1,4 +1,4 @@
-import { globalShortcut, ipcMain, dialog, shell } from 'electron'
+import { globalShortcut, ipcMain, dialog, shell, systemPreferences } from 'electron'
 import Screenshots from 'electron-screenshots'
 
 // 辅助函数：确保窗口获得焦点并发送消息（Mac平台特殊处理）
@@ -206,7 +206,7 @@ export const initScreenshoots = () => {
     if (process.platform === 'darwin' && global.mainWindow && !global.mainWindow.isDestroyed()) {
       // 确保主窗口可见
       global.mainWindow.show()
-      
+
       dialog.showMessageBox(global.mainWindow, {
         type: 'warning',
         title: '需要屏幕录制权限',
@@ -233,10 +233,22 @@ export const initScreenshoots = () => {
       console.log('[截图] 截图已在进行中，忽略新的截图请求')
       return
     }
-    
+
+    // Mac系统检查屏幕录制权限
+    if (process.platform === 'darwin') {
+      // 检查屏幕录制权限
+      const hasPermission = systemPreferences.getMediaAccessStatus('screen') === 'granted'
+      
+      if (!hasPermission) {
+        // 没有权限时显示提示对话框
+        showScreenRecordingPermissionDialog()
+        return // 不继续截图
+      }
+    }
+
     // 设置截图状态
     screenshots.isCapturing = true
-    
+
     // 触发截图功能
     screenshots.startCapture()
     if (global.mainWindow) {
@@ -262,10 +274,22 @@ export const initScreenshoots = () => {
       console.log('[截图] 截图已在进行中，忽略新的截图请求')
       return
     }
-    
+
+    // Mac系统检查屏幕录制权限
+    if (process.platform === 'darwin') {
+      // 检查屏幕录制权限
+      const hasPermission = systemPreferences.getMediaAccessStatus('screen') === 'granted'
+      
+      if (!hasPermission) {
+        // 没有权限时显示提示对话框
+        showScreenRecordingPermissionDialog()
+        return // 不继续截图
+      }
+    }
+
     // 设置截图状态
     screenshots.isCapturing = true
-    
+
     screenshots.startCapture()
     // 发送截图开始事件到渲染进程
     if (global.mainWindow) {
@@ -276,11 +300,11 @@ export const initScreenshoots = () => {
   // 点击确定按钮回调事件
   screenshots.on('ok', (e, buffer, bounds) => {
     console.log('[截图] 收到截图确定事件')
-    
+
     // 防止重复截图
     if (screenshots.isCapturing) {
       screenshots.isCapturing = false
-      
+
       // 发送截图数据到渲染进程
       // 在Mac上截取应用外内容时，需要更长的延迟来确保窗口恢复焦点
       ensureFocusAndSend('screenshot-ok', {
@@ -295,11 +319,11 @@ export const initScreenshoots = () => {
   // 点击保存按钮回调事件
   screenshots.on('save', (e, buffer, bounds) => {
     console.log('[截图] 收到截图保存事件')
-    
+
     // 防止重复截图
     if (screenshots.isCapturing) {
       screenshots.isCapturing = false
-      
+
       // 发送截图数据到渲染进程
       ensureFocusAndSend('screenshot-save', {
         buffer: buffer.toString('base64'),
@@ -313,10 +337,10 @@ export const initScreenshoots = () => {
   // 截图取消事件
   screenshots.on('cancel', () => {
     console.log('[截图] 收到截图取消事件')
-    
+
     // 重置截图状态
     screenshots.isCapturing = false
-    
+
     // 发送取消事件到渲染进程
     ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
   })
