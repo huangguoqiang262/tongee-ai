@@ -235,7 +235,6 @@ import {
 
 let broadcastLists = ref([])
 let loading = ref(true)
-
 onMounted(() => {
   get_login_item({}).then((res) => {
     if (res.code == 200) {

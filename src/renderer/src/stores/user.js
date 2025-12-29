@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { showLoginModel } from '@renderer/components/LoginModel'
 // 监听theme变化 然后更改主题
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -21,6 +22,7 @@ export const useUserStore = defineStore('user', {
     reset() {
       this.user = {}
       this.token = ''
+      showLoginModel()
     }
   }
 })

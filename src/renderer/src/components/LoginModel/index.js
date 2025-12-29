@@ -7,7 +7,6 @@ export function showLoginModel() {
   if (currentInstance) {
     return
   }
-
   // 创建div容器
   const container = document.createElement('div')
   document.body.appendChild(container)
