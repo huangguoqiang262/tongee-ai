@@ -4,10 +4,32 @@ import Screenshots from 'electron-screenshots'
 // 辅助函数：确保窗口获得焦点并发送消息（Mac平台特殊处理）
 const ensureFocusAndSend = (channel, data = null, delay = 0) => {
   if (!global.mainWindow || global.mainWindow.isDestroyed()) {
+    console.error('主窗口不存在或已销毁')
     return
   }
 
-  // 使用executeJavaScript直接调用监听器（Mac上唯一可靠的方法）
+  // IPC发送方法（作为备选）
+  const sendViaIPC = () => {
+    try {
+      if (global.mainWindow.webContents.isDestroyed()) {
+        return false
+      }
+      if (data !== null) {
+        global.mainWindow.webContents.send(channel, data)
+        console.log(`IPC发送成功: ${channel}`)
+        return true
+      } else {
+        global.mainWindow.webContents.send(channel)
+        console.log(`IPC发送成功: ${channel}`)
+        return true
+      }
+    } catch (error) {
+      console.error('IPC发送失败:', error)
+      return false
+    }
+  }
+
+  // 使用executeJavaScript直接调用监听器（Mac上最可靠的方法）
   const sendViaJS = (retryCount = 0) => {
     try {
       if (global.mainWindow.webContents.isDestroyed()) {
@@ -16,11 +38,10 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
       }
 
       // 检查webContents是否准备好
-      if (!global.mainWindow.webContents.isLoading() && global.mainWindow.webContents.getURL()) {
-        // webContents已准备好，可以执行JS
-      } else {
+      const url = global.mainWindow.webContents.getURL()
+      if (!url || url === 'about:blank') {
         console.log('webContents未准备好，等待...')
-        if (retryCount < 5) {
+        if (retryCount < 10) {
           setTimeout(() => sendViaJS(retryCount + 1), 200)
           return false
         }
@@ -35,23 +56,27 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
         script = `
           (function() {
             try {
-              console.log('开始执行截图回调JS');
+              console.log('[截图] 开始执行截图回调JS');
               // 方法1: 使用preload暴露的专用函数（最可靠）
               if (window.customApi && window.customApi._triggerScreenshotEvent) {
-                console.log('使用_triggerScreenshotEvent');
-                window.customApi._triggerScreenshotEvent('${channel}', ${dataStr});
-                return true;
+                console.log('[截图] 使用_triggerScreenshotEvent');
+                const result = window.customApi._triggerScreenshotEvent('${channel}', ${dataStr});
+                if (result) {
+                  console.log('[截图] _triggerScreenshotEvent执行成功');
+                  return true;
+                }
               }
               // 方法2: 直接调用已注册的监听器
               if (window.customApi && window.customApi._screenshotListener) {
-                console.log('直接调用_screenshotListener');
+                console.log('[截图] 直接调用_screenshotListener');
                 window.customApi._screenshotListener(null, ${dataStr});
+                console.log('[截图] _screenshotListener执行成功');
                 return true;
               }
-              console.warn('未找到截图监听器');
+              console.warn('[截图] 未找到截图监听器');
               return false;
             } catch(e) {
-              console.error('执行截图回调失败:', e);
+              console.error('[截图] 执行截图回调失败:', e);
               return false;
             }
           })();
@@ -92,22 +117,30 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
       if (script) {
         global.mainWindow.webContents.executeJavaScript(script)
           .then((result) => {
-            console.log(`JS执行成功: ${channel}`, result)
+            console.log(`[截图] JS执行成功: ${channel}`, result)
           })
           .catch((err) => {
-            console.error('executeJavaScript执行失败:', err)
+            console.error('[截图] executeJavaScript执行失败:', err)
             // 如果失败且还有重试次数，则重试
-            if (retryCount < 3) {
+            if (retryCount < 5) {
+              console.log(`[截图] 重试JS执行 (${retryCount + 1}/5)`)
               setTimeout(() => sendViaJS(retryCount + 1), 300)
+            } else {
+              console.error('[截图] JS执行失败，尝试使用IPC方法')
+              // JS方法失败，尝试IPC方法
+              sendViaIPC()
             }
           })
         return true
       }
       return false
     } catch (error) {
-      console.error('JS发送失败:', error)
-      if (retryCount < 3) {
+      console.error('[截图] JS发送失败:', error)
+      if (retryCount < 5) {
         setTimeout(() => sendViaJS(retryCount + 1), 300)
+      } else {
+        // JS方法失败，尝试IPC方法
+        sendViaIPC()
       }
       return false
     }
@@ -116,6 +149,8 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
   // 恢复窗口焦点（Mac上需要更激进的策略）
   const restoreFocus = (callback) => {
     if (process.platform === 'darwin') {
+      console.log('[截图] 开始恢复窗口焦点...')
+
       // Mac上先激活应用
       app.show()
 
@@ -130,21 +165,29 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
 
       // 等待窗口真正获得焦点
       const checkFocus = (attempts = 0) => {
-        if (global.mainWindow.isFocused() && global.mainWindow.isVisible()) {
+        const isFocused = global.mainWindow.isFocused()
+        const isVisible = global.mainWindow.isVisible()
+
+        console.log(`[截图] 检查焦点 (${attempts + 1}/15): focused=${isFocused}, visible=${isVisible}`)
+
+        if (isFocused && isVisible) {
           // 窗口已获得焦点，再等待一小段时间确保稳定
+          console.log('[截图] 窗口已获得焦点，等待稳定...')
           setTimeout(() => {
             callback()
-          }, 200)
-        } else if (attempts < 10) {
-          // 继续尝试
+          }, 300) // 增加等待时间到300ms
+        } else if (attempts < 15) {
+          // 继续尝试（增加尝试次数）
           setTimeout(() => {
             global.mainWindow.focus()
             global.mainWindow.moveTop()
+            // 强制激活应用
+            app.show()
             checkFocus(attempts + 1)
-          }, 100)
+          }, 150) // 增加间隔时间
         } else {
           // 超时，直接执行
-          console.warn('窗口焦点恢复超时，强制执行')
+          console.warn('[截图] 窗口焦点恢复超时，强制执行')
           callback()
         }
       }
@@ -162,11 +205,29 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
 
   // 主发送函数
   const sendMessage = () => {
+    console.log(`[截图] 开始发送消息: ${channel}`)
+
     if (process.platform === 'darwin') {
-      // Mac上：完全依赖JS方法，等待窗口恢复焦点后再执行
+      // Mac上：先恢复焦点，然后同时使用IPC和JS方法（双重保障）
       restoreFocus(() => {
-        // 窗口已恢复焦点，执行JS方法
-        sendViaJS()
+        console.log('[截图] 窗口焦点已恢复，开始发送消息')
+
+        // 先尝试IPC（可能在某些情况下工作）
+        const ipcResult = sendViaIPC()
+
+        // 无论IPC是否成功，都使用JS方法作为主要保障
+        // 延迟执行JS方法，让IPC先尝试
+        setTimeout(() => {
+          sendViaJS()
+        }, 100)
+
+        // 如果IPC失败，再延迟一段时间后重试JS方法
+        if (!ipcResult) {
+          setTimeout(() => {
+            console.log('[截图] IPC失败，重试JS方法')
+            sendViaJS()
+          }, 500)
+        }
       })
     } else {
       // 非Mac平台：先尝试IPC，失败则使用JS
@@ -188,7 +249,9 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
   // 在Mac上，需要延迟以确保截图窗口完全关闭
   // 当截图区域超过应用窗口时，需要更长的延迟
   if (process.platform === 'darwin') {
-    setTimeout(() => sendMessage(), delay || 600)
+    const finalDelay = delay || 800 // 增加默认延迟到800ms
+    console.log(`[截图] Mac平台，延迟 ${finalDelay}ms 后发送消息`)
+    setTimeout(() => sendMessage(), finalDelay)
   } else {
     sendMessage()
   }
@@ -216,27 +279,30 @@ export const initScreenshoots = () => {
 
   // 点击确定按钮回调事件
   screenshots.on('ok', (e, buffer, bounds) => {
+    console.log('[截图] 收到截图确定事件')
     // 发送截图数据到渲染进程
     // 在Mac上截取应用外内容时，需要更长的延迟来确保窗口恢复焦点
     ensureFocusAndSend('screenshot-ok', {
       buffer: buffer.toString('base64'),
       bounds: bounds
-    }, process.platform === 'darwin' ? 600 : 150)
+    }, process.platform === 'darwin' ? 800 : 150)
   })
 
   // 点击保存按钮回调事件
   screenshots.on('save', (e, buffer, bounds) => {
+    console.log('[截图] 收到截图保存事件')
     // 发送截图数据到渲染进程
     ensureFocusAndSend('screenshot-save', {
       buffer: buffer.toString('base64'),
       bounds: bounds
-    }, process.platform === 'darwin' ? 600 : 150)
+    }, process.platform === 'darwin' ? 800 : 150)
   })
 
   // 截图取消事件
   screenshots.on('cancel', () => {
+    console.log('[截图] 收到截图取消事件')
     // 发送取消事件到渲染进程
-    ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 300 : 100)
+    ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
   })
 
   // esc取消
@@ -244,7 +310,7 @@ export const initScreenshoots = () => {
     if (screenshots.$win?.isFocused()) {
       screenshots.endCapture()
       // 发送取消事件到渲染进程
-      ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 300 : 100)
+      ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
     }
   })
 }
