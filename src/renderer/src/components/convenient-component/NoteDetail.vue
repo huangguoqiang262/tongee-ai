@@ -85,7 +85,7 @@ const props = defineProps({
     default: () => ({})
   },
   notebookId: {
-    type: [Number, String],
+    type: [String, Number],
     default: ''
   }
 })

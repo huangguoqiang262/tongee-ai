@@ -490,7 +490,7 @@
                     size="large"
                     @click.stop="contextMenu.show = false"
                   />
-                  <img class="cover-img cover-file-img" :src="item.info.icon" alt="" />
+                  <img class="cover-img cover-file-img" :src="item.info?.icon" alt="" />
                   <div class="item-right">
                     <div v-if="!item.isCreated" class="title">{{ item.title }}</div>
                     <div v-else class="title">
@@ -556,6 +556,7 @@
       <RepositoryChatPage
         :know-id="activeRepository.id"
         :item-id="parentItemId"
+        :selecte-file-id-list="selecteFileIdList"
         :repository-name="activeRepository.title"
         :questions="activeRepository.questions"
       />
@@ -1244,6 +1245,17 @@ const submitImport = (ids) => {
     }
   })
 }
+const selecteFileIdList = computed(() => {
+  return detailFileList.value
+    .filter((item) => item.checked && item.item_type != 2)
+    .map((item) => {
+      return {
+        fileId: item.info.file_key,
+        fileName: item.info.title,
+        fileUrl: item.info.url
+      }
+    })
+})
 const getRepositoryInfo = (id) => {
   activeRepositoryId.value = id
   pathList.value = [
@@ -1939,7 +1951,9 @@ const handleContextMenuAction = ({ action }) => {
 }
 const resetChecks = () => {
   detailFileList.value.map((item) => {
-    item.checked = false
+    if (item.item_type == 2) {
+      item.checked = false
+    }
   })
 }
 const hideContextMenu = (e) => {

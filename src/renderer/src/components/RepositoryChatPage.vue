@@ -125,6 +125,10 @@ let props = defineProps({
     type: [Number, String],
     default: ''
   },
+  selecteFileIdList: {
+    type: Array,
+    default: () => []
+  },
   repositoryName: {
     type: String,
     default: '糖源医疗'
@@ -182,6 +186,7 @@ const getFeedbackType = () => {
   })
 }
 const models = ref([])
+const selecteFileList = ref([])
 const activeSession = ref({
   title: '',
   messages: [],
@@ -464,6 +469,9 @@ const loadMore = async () => {
 }
 const throttle = ref(null)
 watchEffect(() => {
+  selecteFileList.value = props.selecteFileIdList
+})
+watchEffect(() => {
   var data = {
     know_id: props.knowId,
     item_id: props.itemId,
@@ -581,7 +589,8 @@ const handleSendMessage = async (message) => {
         modelName: activeSession.value.know_model_name || '',
         modelPlatform: activeSession.value.know_provider_key || '',
         knowledgeBaseId: activeSession.value.know_key || '',
-        folderPath: activeSession.value.vector_folder_path || ''
+        folderPath: activeSession.value.vector_folder_path || '',
+        selecteFileIdList: selecteFileList.value
       }
     ],
     otherParams: {

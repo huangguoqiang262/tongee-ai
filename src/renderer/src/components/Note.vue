@@ -81,9 +81,11 @@
                 v-for="item in noteLists"
                 :key="item.id"
                 class="note-item"
+                :class="{ 'active-note': item.checked }"
                 @contextmenu="(e) => showContextMenu(e, item, 'note')"
                 @click="beforeEditNote(item)"
               >
+                <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
                 <div class="title">
                   <el-input
                     v-if="item.isEdit"
@@ -113,6 +115,7 @@
     <div v-if="chatVisible" class="right-box">
       <ToolChat
         v-if="chatVisible"
+        :selecte-file-id-list="selecteFileIdList"
         :notebook-id="activeNotebook"
         @close-chat="chatVisible = false"
       />
@@ -361,7 +364,7 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import {
   note_list,
@@ -479,6 +482,17 @@ let notebookForm = ref({
 })
 let notebookRules = ref({
   title: [{ required: true, message: '请输入笔记本名称', trigger: 'blur' }]
+})
+const selecteFileIdList = computed(() => {
+  return noteLists.value
+    .filter((item) => item.checked)
+    .map((item) => {
+      return {
+        fileId: item.file_key,
+        fileName: item.title,
+        fileUrl: item.file_path
+      }
+    })
 })
 const submitNotebookForm = async (formRef) => {
   formRef.validate((valid) => {
@@ -1160,15 +1174,31 @@ onMounted(() => {
       }
 
       .note-item {
+        position: relative;
         padding-top: 8px;
         padding-bottom: 19px;
         margin-bottom: 11px;
         border-bottom: 1px solid #efefef;
-
+        .checkbox {
+          height: fit-content;
+          position: absolute;
+          top: 12px;
+          right: 0px;
+          display: none;
+        }
+        &.active-note {
+          .checkbox {
+            display: block;
+          }
+        }
         &:last-of-type {
           border-bottom: none;
         }
-
+        &:hover {
+          .checkbox {
+            display: block;
+          }
+        }
         .title {
           margin-bottom: 7px;
           font-size: 16px;
