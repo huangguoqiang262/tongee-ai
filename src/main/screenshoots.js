@@ -254,18 +254,6 @@ export const initScreenshoots = () => {
   // 点击确定按钮回调事件
   screenshots.on('ok', (e, buffer, bounds) => {
     console.log('[截图] 收到截图确定事件')
-
-    // Mac上：如果窗口被激活，立即隐藏窗口避免遮挡其他应用
-    if (process.platform === 'darwin' && global.mainWindow && !global.mainWindow.isDestroyed()) {
-      // 延迟一小段时间后隐藏窗口，让用户看到截图结果
-      setTimeout(() => {
-        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
-          global.mainWindow.hide()
-          console.log('[截图] Mac平台：已隐藏窗口，避免遮挡其他应用')
-        }
-      }, 100)
-    }
-
     // 发送截图数据到渲染进程
     // 在Mac上截取应用外内容时，需要更长的延迟来确保窗口恢复焦点
     ensureFocusAndSend('screenshot-ok', {
@@ -277,17 +265,6 @@ export const initScreenshoots = () => {
   // 点击保存按钮回调事件
   screenshots.on('save', (e, buffer, bounds) => {
     console.log('[截图] 收到截图保存事件')
-
-    // Mac上：如果窗口被激活，立即隐藏窗口避免遮挡其他应用
-    if (process.platform === 'darwin' && global.mainWindow && !global.mainWindow.isDestroyed()) {
-      setTimeout(() => {
-        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
-          global.mainWindow.hide()
-          console.log('[截图] Mac平台：已隐藏窗口，避免遮挡其他应用')
-        }
-      }, 100)
-    }
-
     // 发送截图数据到渲染进程
     ensureFocusAndSend('screenshot-save', {
       buffer: buffer.toString('base64'),
@@ -298,17 +275,6 @@ export const initScreenshoots = () => {
   // 截图取消事件
   screenshots.on('cancel', () => {
     console.log('[截图] 收到截图取消事件')
-
-    // Mac上：如果窗口被激活，立即隐藏窗口避免遮挡其他应用
-    if (process.platform === 'darwin' && global.mainWindow && !global.mainWindow.isDestroyed()) {
-      setTimeout(() => {
-        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
-          global.mainWindow.hide()
-          console.log('[截图] Mac平台：已隐藏窗口，避免遮挡其他应用')
-        }
-      }, 100)
-    }
-
     // 发送取消事件到渲染进程
     ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
   })
