@@ -159,9 +159,8 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
         global.mainWindow.show()
       }
 
-      // 聚焦窗口
+      // 聚焦窗口（不使用moveTop，避免隐藏其他应用）
       global.mainWindow.focus()
-      global.mainWindow.moveTop()
 
       // 等待窗口真正获得焦点
       const checkFocus = (attempts = 0) => {
@@ -180,7 +179,7 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
           // 继续尝试（增加尝试次数）
           setTimeout(() => {
             global.mainWindow.focus()
-            global.mainWindow.moveTop()
+            // 不使用moveTop，避免隐藏其他应用
             // 强制激活应用
             app.show()
             checkFocus(attempts + 1)

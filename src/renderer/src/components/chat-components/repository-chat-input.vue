@@ -448,22 +448,27 @@ export default {
 
         // 检查 data.buffer 的类型
         if (typeof data.buffer === 'string' && data.buffer.includes(',')) {
-          // 如果是逗号分隔的数字字符串，转换为 base64
+          // 如果是逗号分隔的数字字符串，转换为 base64（分批处理避免栈溢出）
           const byteArray = new Uint8Array(data.buffer.split(',').map(Number))
-          const binaryString = String.fromCharCode(...byteArray)
+          // 分批处理，避免栈溢出
+          const chunkSize = 8192
+          let binaryString = ''
+          for (let i = 0; i < byteArray.length; i += chunkSize) {
+            const chunk = byteArray.slice(i, i + chunkSize)
+            binaryString += String.fromCharCode.apply(null, chunk)
+          }
           base64String = btoa(binaryString)
         } else {
           // 如果是正常的 base64 字符串
           base64String = data.buffer
         }
 
-        // 将 base64 转换为 Blob
+        // 将 base64 转换为 Blob（优化大图处理）
         const byteCharacters = atob(base64String)
-        const byteNumbers = new Array(byteCharacters.length)
+        const byteArray = new Uint8Array(byteCharacters.length)
         for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i)
+          byteArray[i] = byteCharacters.charCodeAt(i)
         }
-        const byteArray = new Uint8Array(byteNumbers)
         const blob = new Blob([byteArray], { type: 'image/png' })
 
         // 创建 File 对象
