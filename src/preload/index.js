@@ -82,6 +82,7 @@ const customApi = {
   downloadUpdate: () => ipcRenderer.invoke('download-update'),
   quitAndInstall: () => ipcRenderer.invoke('quit-install'),
   openDirectoryDialog: () => ipcRenderer.invoke('open-directory-dialog'),
+  checkScreenRecordingPermission: () => ipcRenderer.invoke('check-screen-recording-permission'),
   // ... existing code ...
   // ... existing code ...
   readDir: (dirPath, maxDepth = 10) => {

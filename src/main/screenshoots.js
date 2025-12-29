@@ -1,4 +1,4 @@
-import { globalShortcut, ipcMain } from 'electron'
+import { globalShortcut, ipcMain, dialog, shell } from 'electron'
 import Screenshots from 'electron-screenshots'
 
 // 辅助函数：确保窗口获得焦点并发送消息（Mac平台特殊处理）
@@ -146,62 +146,30 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
     }
   }
 
-  // 恢复窗口焦点（Mac上使用更温和的策略，避免隐藏其他应用）
-  const restoreFocus = (callback) => {
-    if (process.platform === 'darwin') {
-      console.log('[截图] 开始恢复窗口状态...')
-
-      // Mac上：只确保窗口可见，不强制激活应用或聚焦窗口
-      // 这样可以避免隐藏其他应用
-      if (!global.mainWindow.isVisible()) {
-        // 只在窗口不可见时才显示，使用showInactive避免激活应用
-        global.mainWindow.showInactive()
-        console.log('[截图] 窗口已显示（非激活状态）')
-      } else {
-        console.log('[截图] 窗口已可见')
-      }
-
-      // 不调用app.show()和focus()，避免隐藏其他应用
-      // 直接执行回调，因为JS方法不依赖窗口焦点
-      setTimeout(() => {
-        callback()
-      }, 200) // 短暂延迟确保窗口状态稳定
-    } else {
-      // 非Mac平台：正常处理
-      if (!global.mainWindow.isVisible()) {
-        global.mainWindow.show()
-      }
-      global.mainWindow.focus()
-      callback()
-    }
-  }
-
   // 主发送函数
   const sendMessage = () => {
     console.log(`[截图] 开始发送消息: ${channel}`)
 
     if (process.platform === 'darwin') {
-      // Mac上：先恢复焦点，然后同时使用IPC和JS方法（双重保障）
-      restoreFocus(() => {
-        console.log('[截图] 窗口焦点已恢复，开始发送消息')
+      // Mac上：完全不操作窗口，直接发送消息（避免隐藏其他应用）
+      console.log('[截图] Mac平台：直接发送消息，不操作窗口')
 
-        // 先尝试IPC（可能在某些情况下工作）
-        const ipcResult = sendViaIPC()
+      // 先尝试IPC（可能在某些情况下工作）
+      const ipcResult = sendViaIPC()
 
-        // 无论IPC是否成功，都使用JS方法作为主要保障
-        // 延迟执行JS方法，让IPC先尝试
+      // 无论IPC是否成功，都使用JS方法作为主要保障
+      // 延迟执行JS方法，让IPC先尝试
+      setTimeout(() => {
+        sendViaJS()
+      }, 100)
+
+      // 如果IPC失败，再延迟一段时间后重试JS方法
+      if (!ipcResult) {
         setTimeout(() => {
+          console.log('[截图] IPC失败，重试JS方法')
           sendViaJS()
-        }, 100)
-
-        // 如果IPC失败，再延迟一段时间后重试JS方法
-        if (!ipcResult) {
-          setTimeout(() => {
-            console.log('[截图] IPC失败，重试JS方法')
-            sendViaJS()
-          }, 500)
-        }
-      })
+        }, 500)
+      }
     } else {
       // 非Mac平台：先尝试IPC，失败则使用JS
       try {
@@ -233,12 +201,45 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
 export const initScreenshoots = () => {
   const screenshots = new Screenshots({ quality: 80 })
 
+  // Mac上提示屏幕录制权限（Mac无法直接检测权限，只能提示用户）
+  const showScreenRecordingPermissionDialog = () => {
+    if (process.platform === 'darwin' && global.mainWindow && !global.mainWindow.isDestroyed()) {
+      dialog.showMessageBox(global.mainWindow, {
+        type: 'warning',
+        title: '需要屏幕录制权限',
+        message: '需要屏幕录制权限',
+        detail: '要截取其他应用的内容（如VSCode、微信等），请在"系统设置" -> "隐私与安全性" -> "屏幕录制"中授权此应用。\n\n授权后请重新启动应用。',
+        buttons: ['知道了', '打开系统设置'],
+        defaultId: 0,
+        cancelId: 0
+      }).then((result) => {
+        if (result.response === 1) {
+          // 打开系统设置到屏幕录制权限页面
+          shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture')
+        }
+      }).catch(() => {
+        // 忽略错误
+      })
+    }
+  }
+
   ipcMain.on('trigger-screenshot', () => {
     // 触发截图功能
     screenshots.startCapture()
     if (global.mainWindow) {
       global.mainWindow.webContents.send('screenshot-start')
     }
+  })
+
+  // 添加IPC处理，用于检查权限（由渲染进程调用）
+  ipcMain.handle('check-screen-recording-permission', () => {
+    if (process.platform === 'darwin') {
+      // Mac上无法直接检测屏幕录制权限
+      // 但可以提示用户如何授权
+      showScreenRecordingPermissionDialog()
+      return { hasPermission: false, platform: 'darwin' }
+    }
+    return { hasPermission: true, platform: 'other' }
   })
 
   // 注册截图快捷键
@@ -253,6 +254,18 @@ export const initScreenshoots = () => {
   // 点击确定按钮回调事件
   screenshots.on('ok', (e, buffer, bounds) => {
     console.log('[截图] 收到截图确定事件')
+
+    // Mac上：如果窗口被激活，立即隐藏窗口避免遮挡其他应用
+    if (process.platform === 'darwin' && global.mainWindow && !global.mainWindow.isDestroyed()) {
+      // 延迟一小段时间后隐藏窗口，让用户看到截图结果
+      setTimeout(() => {
+        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
+          global.mainWindow.hide()
+          console.log('[截图] Mac平台：已隐藏窗口，避免遮挡其他应用')
+        }
+      }, 100)
+    }
+
     // 发送截图数据到渲染进程
     // 在Mac上截取应用外内容时，需要更长的延迟来确保窗口恢复焦点
     ensureFocusAndSend('screenshot-ok', {
@@ -264,6 +277,17 @@ export const initScreenshoots = () => {
   // 点击保存按钮回调事件
   screenshots.on('save', (e, buffer, bounds) => {
     console.log('[截图] 收到截图保存事件')
+
+    // Mac上：如果窗口被激活，立即隐藏窗口避免遮挡其他应用
+    if (process.platform === 'darwin' && global.mainWindow && !global.mainWindow.isDestroyed()) {
+      setTimeout(() => {
+        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
+          global.mainWindow.hide()
+          console.log('[截图] Mac平台：已隐藏窗口，避免遮挡其他应用')
+        }
+      }, 100)
+    }
+
     // 发送截图数据到渲染进程
     ensureFocusAndSend('screenshot-save', {
       buffer: buffer.toString('base64'),
@@ -274,6 +298,17 @@ export const initScreenshoots = () => {
   // 截图取消事件
   screenshots.on('cancel', () => {
     console.log('[截图] 收到截图取消事件')
+
+    // Mac上：如果窗口被激活，立即隐藏窗口避免遮挡其他应用
+    if (process.platform === 'darwin' && global.mainWindow && !global.mainWindow.isDestroyed()) {
+      setTimeout(() => {
+        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
+          global.mainWindow.hide()
+          console.log('[截图] Mac平台：已隐藏窗口，避免遮挡其他应用')
+        }
+      }, 100)
+    }
+
     // 发送取消事件到渲染进程
     ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
   })
