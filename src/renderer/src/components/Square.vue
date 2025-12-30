@@ -400,6 +400,7 @@ onMounted(() => {
                 cursor: pointer;
                 &.is_join {
                   background: #ccc;
+                  border-color: #ccc;
                   color: #fff;
                 }
                 &:active {

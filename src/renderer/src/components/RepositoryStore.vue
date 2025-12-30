@@ -1108,15 +1108,6 @@ onMounted(async () => {
   getPersonalCreateList(props.attrs.RepositoryId)
   on('refresh-repository', refreshRepository)
 })
-watch(
-  () => props.attrs.RepositoryId,
-  (newVal) => {
-    if (newVal) {
-      activeRepositoryId.value = newVal
-      getRepositoryInfo(activeRepositoryId.value)
-    }
-  }
-)
 const repositoryPermission = ref({})
 // 获取知识库权限
 const getRepositoryPermission = () => {
@@ -2337,6 +2328,18 @@ const removeItemsAfterIndex = (array, index) => {
   }
   return array
 }
+watch(
+  () => props.attrs.randomId,
+  (newVal) => {
+    if (newVal) {
+      activeRepositoryId.value = newVal.split('-')[0]
+      getRepositoryInfo(activeRepositoryId.value)
+    }
+  },
+  {
+    immediate: true
+  }
+)
 </script>
 
 <style scoped lang="scss">

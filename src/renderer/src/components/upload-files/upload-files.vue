@@ -100,7 +100,7 @@
                   />
                   <div class="title">目录文件夹</div>
                 </div> -->
-              <el-popover
+              <!-- <el-popover
                 ref="repositoryuploadPopover"
                 popper-class="custom-repository-popover"
                 trigger="hover"
@@ -139,7 +139,7 @@
               <div class="item" @click="beforeUploadFiles('import-web')">
                 <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
                 <div class="title">导入网页</div>
-              </div>
+              </div> -->
             </div>
           </el-popover>
         </div>

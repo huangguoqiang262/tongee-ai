@@ -239,7 +239,8 @@ const openChat = (item) => {
       url: 'HomePage',
       isInternal: true,
       attrs: {
-        chat_key: item.chat_key
+        chat_key: item.chat_key,
+        backClose: true
       }
     })
   } else if (item.chat_type == 4) {
@@ -248,7 +249,8 @@ const openChat = (item) => {
       url: 'ImageProductionChat',
       isInternal: true,
       attrs: {
-        chat_key: item.chat_key
+        chat_key: item.chat_key,
+        backClose: true
       }
     })
   } else if (item.chat_type == 5) {
@@ -257,7 +259,8 @@ const openChat = (item) => {
       url: 'IntelligentWritingChat',
       isInternal: true,
       attrs: {
-        chat_key: item.chat_key
+        chat_key: item.chat_key,
+        backClose: true
       }
     })
   } else if (item.chat_type == 6) {
@@ -266,7 +269,8 @@ const openChat = (item) => {
       url: 'ChatPage',
       isInternal: true,
       attrs: {
-        chat_key: item.chat_key
+        chat_key: item.chat_key,
+        backClose: true
       }
     })
   }

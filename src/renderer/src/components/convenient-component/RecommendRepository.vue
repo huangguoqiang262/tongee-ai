@@ -344,6 +344,7 @@ onMounted(() => {
             &.is_join {
               background: #ccc;
               color: #fff;
+              border-color: #ccc;
             }
             &:active {
               opacity: 0.7;

@@ -109,6 +109,7 @@ defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'contextmenu', 'clo
 
 .tab.active {
   background: #fff;
+  padding-right: 5px;
   .tab-close-box {
     visibility: visible;
   }
@@ -116,6 +117,7 @@ defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'contextmenu', 'clo
 
 .tab:hover:not(.active) {
   background: #fff;
+  padding-right: 5px;
   .tab-close-box {
     visibility: visible;
   }
@@ -147,7 +149,6 @@ defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'contextmenu', 'clo
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 4px;
   flex-shrink: 0;
   font-size: 12px;
   transition: background 0.2s;

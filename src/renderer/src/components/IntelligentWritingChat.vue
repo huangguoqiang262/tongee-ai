@@ -195,8 +195,13 @@ const closePreview = () => {
   previewVisible.value = false
 }
 let replaceActiveTab = inject('replaceActiveTab')
+let handleTabAction = inject('handleTabAction')
 let isChatting = ref(false)
 let back = () => {
+  if (props.attrs.backClose) {
+    handleTabAction('close-active')
+    return
+  }
   replaceActiveTab({
     title: '首页',
     url: 'SearchHome',

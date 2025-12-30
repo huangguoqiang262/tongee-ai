@@ -101,6 +101,7 @@ let messageListRef = ref(null)
 const userInfo = useUserInfo()
 const userStore = useUserStore()
 let replaceActiveTab = inject('replaceActiveTab')
+let handleTabAction = inject('handleTabAction')
 let isChatting = ref(false)
 let showChat = ref(true)
 let message = ref({
@@ -119,6 +120,10 @@ const showResultMessage = () => {
   }, 2000)
 }
 let back = () => {
+  if (props.attrs.backClose) {
+    handleTabAction('close-active')
+    return
+  }
   replaceActiveTab({
     title: '首页',
     url: 'SearchHome',

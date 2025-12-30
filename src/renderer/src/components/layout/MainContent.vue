@@ -698,6 +698,9 @@ const handleTabAction = (action) => {
     case 'close':
       closeTab(tabId)
       break
+    case 'close-active':
+      closeActiveTab()
+      break
     case 'close-others':
       tabs.value = tabs.value.filter((tab) => tab.id === tabId)
       break
@@ -714,7 +717,9 @@ const handleTabAction = (action) => {
 
   contextMenu.value.show = false
 }
-
+const closeActiveTab = () => {
+  closeTab(activeTab.value.id)
+}
 // 点击其他地方隐藏右键菜单
 const hideContextMenu = (e) => {
   if (contextMenu.value.show && !e.target.closest('.context-menu')) {

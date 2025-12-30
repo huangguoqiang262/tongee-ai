@@ -115,6 +115,7 @@ let editorConfig = {
   placeholder: '请输入内容...',
   MENU_CONF: {
     uploadImage: {
+      maxFileSize: 30 * 1024 * 1024,
       server: import.meta.env.VITE_API_BASE_URL + '/api/common/upload',
       headers: {
         Authorization: userStore.token,

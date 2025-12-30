@@ -27,7 +27,7 @@
                   alt=""
                   @click.stop="delItem(item, index)"
                 />
-                <img class="icon" :src="item.picUrl || defaultCover" alt="" />
+                <img class="icon" :src="item.picurl || defaultCover" alt="" />
                 <div class="name">{{ item.title }}</div>
               </div>
             </template>
@@ -86,7 +86,8 @@ const handleClick = (item) => {
     icon: repositoryIcon,
     isInternal: true,
     attrs: {
-      RepositoryId: item.know_id
+      RepositoryId: item.know_id,
+      randomId: item.know_id + '-' + Math.random().toString(36).substring(2)
     }
   })
 }
