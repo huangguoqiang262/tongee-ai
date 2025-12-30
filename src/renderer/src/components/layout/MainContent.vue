@@ -541,9 +541,27 @@ const goForward = () => {
   // 更新导航按钮状态
   updateNavigationButtons()
 }
-const reload = () => {
-  if (!activeTab.value || activeTab.value.isInternal) return
+const reload = (tabId = '') => {
+  if (tabId) {
+    const tab = tabs.value.find((t) => t.id === tabId)
+    // const tabIndex = tabs.value.findIndex((t) => t.id === tabId)
+    if (tab) {
+      if (!tab.isInternal) {
+        if (activeWebview.value) {
+          activeWebview.value.reload()
+        }
+      } else {
+        // tabs.value.splice(tabIndex, 1, {
+        //   ...tab,
+        //   loading: false,
+        //   progress: 0
+        // })
 
+      }
+      return
+    }
+  }
+  if (!activeTab.value || activeTab.value.isInternal) return
   if (activeWebview.value) {
     // 使用webview的原生reload方法
     activeWebview.value.reload()
@@ -686,7 +704,7 @@ const handleTabAction = (action) => {
       addNewTab()
       break
     case 'reload':
-      reload()
+      reload(tabId)
       break
     case 'duplicate': {
       const tabToDuplicate = tabs.value.find((tab) => tab.id === tabId)

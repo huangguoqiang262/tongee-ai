@@ -210,6 +210,13 @@
         <div class="title-input">
           {{ '关于' + deepData.type_name + '的' + (deepData.sug_or_pb == 1 ? '问题' : '建议') }}
         </div>
+        <div class="type-box">
+          <div class="status" :class="{ 'status-err': deepData.sug_or_pb == 1 }">
+            {{ deepData.sug_or_pb == 1 ? '问题' : '建议' }}
+          </div>
+          <div class="doc-type">文档类别：{{ deepData.doc_type_name || '' }}</div>
+          <div class="feekback-type">反馈分类：{{ deepData.type_name || '' }}</div>
+        </div>
         <Editor
           v-model="deepData.content"
           class="editor-content"
@@ -503,6 +510,32 @@ watchEffect(() => {
           font-size: 16px;
           font-weight: 600;
           color: var(--default-font-color);
+        }
+        .type-box {
+          padding: 10px;
+          display: flex;
+          gap: 10px 30px;
+          flex-wrap: wrap;
+          .doc-type,
+          .feekback-type {
+            font-size: 14px;
+            color: var(--default-font-color);
+          }
+        }
+        .status {
+          margin-bottom: 10px;
+          width: 48px;
+          height: 22px;
+          background: var(--el-color-primary-light-9);
+          border-radius: 2px;
+          line-height: 22px;
+          font-size: 14px;
+          text-align: center;
+          color: var(--el-color-primary);
+        }
+        .status-err {
+          background: var(--el-color-danger-light-9);
+          color: var(--el-color-danger);
         }
         .editor-content {
           flex: 1;

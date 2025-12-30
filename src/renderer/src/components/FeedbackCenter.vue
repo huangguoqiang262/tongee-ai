@@ -11,6 +11,9 @@
             :key="tab.id"
             class="tab-item"
             :class="{ 'active-tab': tab.id == feedbackData.sug_or_pb }"
+            :style="{
+              cursor: activeHistoryItem?.id ? 'not-allowed' : 'pointer'
+            }"
             @click="tabHandle(tab.id)"
           >
             <img class="icon" :src="tab.icon" alt="" />
@@ -30,7 +33,12 @@
             class="feedback-form"
           >
             <el-form-item label="文档类别" prop="doc_type">
-              <el-select v-model="feedbackData.doc_type" size="large" placeholder="请选择文档类别">
+              <el-select
+                v-model="feedbackData.doc_type"
+                :disabled="activeHistoryItem?.id"
+                size="large"
+                placeholder="请选择文档类别"
+              >
                 <el-option
                   v-for="value in docTypeList"
                   :key="value.id"
@@ -41,7 +49,12 @@
             </el-form-item>
             <!-- 反馈分类 -->
             <el-form-item label="反馈分类" prop="type">
-              <el-select v-model="feedbackData.type" size="large" placeholder="请选择反馈分类">
+              <el-select
+                v-model="feedbackData.type"
+                size="large"
+                :disabled="activeHistoryItem?.id"
+                placeholder="请选择反馈分类"
+              >
                 <el-option-group v-for="group in typeTreeList" :key="group.id" :label="group.name">
                   <el-option
                     v-for="item in group.children"
@@ -63,10 +76,14 @@
                   @on-created="handleCreated"
                 />
                 <div class="footer-btns">
-                  <!-- <el-button class="cancel-btn">取消</el-button> -->
-                  <el-button class="confirm-btn" type="primary" @click="submitFeedback"
+                  <el-button
+                    v-if="!activeHistoryItem?.id"
+                    class="confirm-btn"
+                    type="primary"
+                    @click="submitFeedback"
                     >提交反馈</el-button
                   >
+                  <el-button v-else class="cancel-btn" @click="resetFeedback">重置</el-button>
                 </div>
               </div>
             </el-form-item>
@@ -78,11 +95,17 @@
       <div class="history-hd">反馈历史</div>
       <div v-infinite-scroll="loadData" class="list-box">
         <template v-if="historyList.length">
-          <div v-for="item in historyList" :key="item.id" class="hisrory-item">
+          <div
+            v-for="item in historyList"
+            :key="item.id"
+            class="hisrory-item"
+            :class="{ 'active-history-item': item.id == activeHistoryItem?.id }"
+            @click="handleHistoryItemClick(item)"
+          >
             <div class="status" :class="{ 'status-err': item.sug_or_pb == 1 }">
               {{ item.sug_or_pb == 1 ? '问题' : '建议' }}
             </div>
-            <div class="title" v-html="item.content"></div>
+            <div class="title">{{ getText(item.content) }}</div>
             <div class="time">{{ item.createtime }}</div>
           </div>
         </template>
@@ -95,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted, watchEffect } from 'vue'
+import { ref, shallowRef, onMounted, watchEffect, nextTick } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
 import {
   feedback_type_tree,
@@ -103,6 +126,7 @@ import {
   feedback_add,
   feedback_get_list
 } from '@renderer/api/feedback'
+import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import problemIcon from '@renderer/assets/feedback/problem-icon.png'
 import suggestionIcon from '@renderer/assets/feedback/suggestion-icon.png'
 let props = defineProps({
@@ -141,6 +165,7 @@ let defaultConfig = {
     'group-indent'
   ]
 }
+let activeHistoryItem = ref({})
 let feedbackData = ref({
   content: '',
   type: '',
@@ -157,6 +182,9 @@ watchEffect(() => {
   feedbackData.value.know_id = props.attrs.knowId
 })
 const tabHandle = (id) => {
+  if (activeHistoryItem.value?.id) {
+    return
+  }
   feedbackData.value.sug_or_pb = id
 }
 let editorRef = shallowRef(null)
@@ -259,6 +287,33 @@ const getHistoryList = () => {
     pagination.value.page = res.data.current_page
     pagination.value.page_size = res.data.per_page
   })
+}
+const handleHistoryItemClick = (item) => {
+  activeHistoryItem.value = item
+  feedbackData.value = {
+    content: item.content || '',
+    type: item.type,
+    doc_type: item.doc_type,
+    sug_or_pb: item.sug_or_pb,
+    know_id: item.know_id
+  }
+  nextTick(() => {
+    editorRef.value.disable()
+  })
+}
+const resetFeedback = () => {
+  feedbackForm.value.resetFields()
+  activeHistoryItem.value = {}
+  feedbackData.value = {
+    content: '',
+    type: '',
+    doc_type: '',
+    sug_or_pb: '2',
+    know_id: props.attrs.knowId || ''
+  }
+}
+const getText = (content) => {
+  return convertToPlainText(content, { maxLength: 100 })
 }
 onMounted(() => {
   getDocTypeList()
@@ -431,6 +486,9 @@ onMounted(() => {
             .cancel-btn {
               background: #efefef;
               color: var(--default-font-color);
+              &:hover {
+                background: #d8d8d8;
+              }
             }
           }
         }
@@ -488,7 +546,18 @@ onMounted(() => {
         margin-bottom: 10px;
         padding: 14px 10px;
         background: #f9f9f9;
+        border: 1px solid #f9f9f9;
         border-radius: 4px;
+        transition: all 0.2s linear;
+        cursor: pointer;
+        &.active-history-item {
+          background: var(--el-color-primary-light-9);
+          border-color: var(--el-color-primary);
+        }
+        &:hover {
+          background: var(--el-color-primary-light-9);
+          border-color: var(--el-color-primary);
+        }
         * {
           margin: 0;
         }
