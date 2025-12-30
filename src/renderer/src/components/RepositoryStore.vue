@@ -296,7 +296,9 @@
               :class="{ active: index === pathList.length - 1 }"
               @click="pathChange(index)"
             >
-              <el-icon v-if="index !== 0" class="icon"><ArrowRight /></el-icon>
+              <el-icon v-if="index !== 0" class="icon">
+                <ArrowRight />
+              </el-icon>
               {{ item.name }}
             </div>
             <!-- </div> -->
@@ -409,7 +411,9 @@
                   @click="sortMenuClick(item)"
                 >
                   <div class="title">{{ item.label }}</div>
-                  <el-icon class="check-icon"><Check /></el-icon>
+                  <el-icon class="check-icon">
+                    <Check />
+                  </el-icon>
                 </div>
               </div>
             </el-popover>
@@ -740,7 +744,9 @@
       transition="dialog-bounce"
     >
       <template #header>
-        <el-icon style="font-size: 20px; color: #e6a23c"><WarnTriangleFilled /></el-icon>
+        <el-icon style="font-size: 20px; color: #e6a23c">
+          <WarnTriangleFilled />
+        </el-icon>
         <span class="title">同名文件</span>
       </template>
       <div class="conflict-title">
@@ -913,6 +919,7 @@ const handleDroppedFiles = (files) => {
   }
   tempUploadList.value = []
   conflictFiles.value = []
+
   // 准备上传文件列表
   tempUploadList.value = validFiles.map((file) => ({
     file: file,
@@ -922,12 +929,13 @@ const handleDroppedFiles = (files) => {
     uploadStatus: 'pending'
   }))
   if (detailFileList.value.length) {
-    detailFileList.value.filter((item) => {
-      tempUploadList.value.filter((readyItem) => {
-        if (readyItem.title == item.title && item.item_type == 1) {
-          conflictFiles.value.push(readyItem)
-        }
-      })
+    tempUploadList.value.filter((readyItem) => {
+      var flag = detailFileList.value.some(
+        (item) => item.title == readyItem.name && item.item_type == 1
+      )
+      if (flag) {
+        conflictFiles.value.push(readyItem)
+      }
     })
     if (conflictFiles.value.length) {
       conflictVisible.value = true
@@ -956,7 +964,7 @@ let sortList = ref([
   },
   {
     label: '大小',
-    value: 'total_space '
+    value: 'total_space'
   },
   {
     label: '名称',
@@ -1049,6 +1057,14 @@ const getCommonCreateList = (repositoryId = '') => {
       activeRepositoryId.value = personalCreateList.value[0].id
       repositoryType.value = 'personage'
       getRepositoryInfo(activeRepositoryId.value)
+    } else if (
+      !activeRepositoryId.value &&
+      !personalCreateList.value.length &&
+      commonJoinList.value.length
+    ) {
+      activeRepositoryId.value = commonJoinList.value[0].id
+      repositoryType.value = 'common'
+      getRepositoryInfo(activeRepositoryId.value)
     }
   })
 }
@@ -1064,6 +1080,27 @@ const getCommonJoinList = (repositoryId = '') => {
         repositoryType.value = 'common'
         getRepositoryInfo(activeRepositoryId.value)
       }
+    }
+    if (!activeRepositoryId.value && commonJoinList.value.length) {
+      activeRepositoryId.value = commonJoinList.value[0].id
+      repositoryType.value = 'personage'
+      getRepositoryInfo(activeRepositoryId.value)
+    } else if (
+      !activeRepositoryId.value &&
+      !commonJoinList.value.length &&
+      commonCreateList.value.length
+    ) {
+      activeRepositoryId.value = commonCreateList.value[0].id
+      repositoryType.value = 'common'
+      getRepositoryInfo(activeRepositoryId.value)
+    } else if (
+      !activeRepositoryId.value &&
+      !commonCreateList.value.length &&
+      personalCreateList.value.length
+    ) {
+      activeRepositoryId.value = personalCreateList.value[0].id
+      repositoryType.value = 'common'
+      getRepositoryInfo(activeRepositoryId.value)
     }
   })
 }
@@ -1083,6 +1120,14 @@ const getPersonalCreateList = (repositoryId = '') => {
       commonCreateList.value.length
     ) {
       activeRepositoryId.value = commonCreateList.value[0].id
+      repositoryType.value = 'common'
+      getRepositoryInfo(activeRepositoryId.value)
+    } else if (
+      !activeRepositoryId.value &&
+      !commonCreateList.value.length &&
+      commonJoinList.value.length
+    ) {
+      activeRepositoryId.value = commonJoinList.value[0].id
       repositoryType.value = 'common'
       getRepositoryInfo(activeRepositoryId.value)
     }
@@ -1632,6 +1677,7 @@ const submitWebForm = (FormRef) => {
             })
             refreshList()
             importWebVisible.value = false
+            webForm.value.urls = ''
           }
         })
         .finally(() => {
@@ -2028,6 +2074,7 @@ const beforeUploadFiles = (type) => {
     directoryInputRef.value?.click()
   } else if (type == 'import-web') {
     importWebVisible.value = true
+    webForm.value.urls = ''
   } else if (type == 'createFolder') {
     detailFileList.value.unshift({
       item_type: 2,
@@ -2066,7 +2113,7 @@ const tempUploadList = ref([])
 const conflictVisible = ref(false)
 const retainAll = () => {
   var list = tempUploadList.value.map((item) => {
-    item.same_name_type = 1
+    item.same_name_type = 0
     return item
   })
   ReadyUploadList.push(...list)
@@ -2075,7 +2122,7 @@ const retainAll = () => {
 }
 const displace = () => {
   var list = tempUploadList.value.map((item) => {
-    item.same_name_type = 0
+    item.same_name_type = 1
     return item
   })
   ReadyUploadList.push(...list)
@@ -2349,6 +2396,7 @@ watch(
   overflow: hidden;
   display: flex;
   align-items: flex-end;
+
   .drag-overlay {
     position: absolute;
     inset: 6px;
@@ -2359,9 +2407,11 @@ watch(
     justify-content: center;
     border: 1px solid #efefef;
     border-radius: 12px;
+
     .drag-overlay-content {
       padding: 40px;
       text-align: center;
+
       .drag-text {
         margin-bottom: 20px;
         font-weight: 600;
@@ -2369,6 +2419,7 @@ watch(
         color: var(--default-font-color);
         line-height: 32px;
       }
+
       .drag-type {
         font-size: 16px;
         color: #909090;
@@ -2376,6 +2427,7 @@ watch(
       }
     }
   }
+
   .left-box {
     flex-shrink: 0;
     box-sizing: border-box;
@@ -2519,6 +2571,7 @@ watch(
               //   background: #fff;
               // }
             }
+
             &.active-repository {
               background: var(--el-color-primary-light-9);
 
@@ -2537,6 +2590,7 @@ watch(
               border-radius: 4px;
               transition: all 0.2s;
               overflow: hidden;
+
               .icon {
                 display: block;
                 width: 18px;
@@ -2690,6 +2744,7 @@ watch(
             border-radius: 4px;
             transition: all 0.2s;
             overflow: hidden;
+
             .icon {
               display: block;
               width: 18px;
@@ -2785,6 +2840,7 @@ watch(
           width: 18px;
           height: 18px;
         }
+
         .dot-dark {
           position: absolute;
           top: 2px;
@@ -2912,6 +2968,7 @@ watch(
           display: flex;
           align-items: center;
           overflow: hidden;
+
           .path-item {
             display: inline-flex;
             align-items: center;
@@ -2922,18 +2979,22 @@ watch(
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
+
             .icon {
               flex-shrink: 0;
               line-height: 50px;
               color: #909090;
               margin: 0 2px;
             }
+
             &:first-of-type {
               flex-shrink: 0;
             }
+
             &:last-of-type {
               flex-shrink: 0;
             }
+
             &.active {
               color: var(--default-font-color);
             }
@@ -2984,6 +3045,7 @@ watch(
           cursor: pointer;
         }
       }
+
       .empty {
         flex: 1;
         display: flex;
@@ -2992,13 +3054,16 @@ watch(
         font-size: 13px;
         color: #909090;
         line-height: 22px;
+
         .empty-text {
           margin-bottom: 16vh;
         }
       }
+
       .list-box {
         flex: 1;
         overflow: auto;
+
         &::-webkit-scrollbar {
           width: 4px;
           height: 4px;
@@ -3037,9 +3102,11 @@ watch(
               display: block;
             }
           }
+
           &.is_top {
             background: #f6f6f6;
           }
+
           &.active-repository {
             background: var(--el-color-primary-light-9);
 
@@ -3093,12 +3160,14 @@ watch(
               color: #909090;
               line-height: 12px;
               overflow: hidden;
+
               .size-or-num-box {
                 flex: 1;
                 display: flex;
                 align-items: center;
                 gap: 10px;
                 overflow: hidden;
+
                 .size {
                   flex-shrink: 0;
                   font-size: 10px;
@@ -3119,11 +3188,13 @@ watch(
                   color: #909090;
                   line-height: 12px;
                 }
+
                 .tags {
                   flex: 1;
                   overflow: hidden;
                   white-space: nowrap;
                   text-overflow: ellipsis;
+
                   .tag {
                     margin-right: 10px;
                     display: inline-flex;
@@ -3132,9 +3203,11 @@ watch(
                     font-size: 10px;
                     color: #909090;
                     line-height: 12px;
+
                     &:nth-last-of-type(1) {
                       margin-right: 0;
                     }
+
                     .icon {
                       vertical-align: middle;
                       width: 10px;
@@ -3142,6 +3215,7 @@ watch(
                     }
                   }
                 }
+
                 .type-box {
                   display: flex;
                   align-items: center;
@@ -3150,6 +3224,7 @@ watch(
                   color: #909090;
                   line-height: 12px;
                   overflow: hidden;
+
                   .web-url {
                     display: block;
                     max-width: calc(100% - 20px);
@@ -3157,6 +3232,7 @@ watch(
                     text-overflow: ellipsis;
                     overflow: hidden;
                   }
+
                   .icon {
                     display: block;
                     width: 10px;
@@ -3177,11 +3253,13 @@ watch(
       }
     }
   }
+
   .right-box {
     flex: 1;
     height: 100%;
     overflow: hidden;
   }
+
   :deep(.import-web-dialog) {
     .el-dialog {
       .el-dialog__header {
@@ -3203,36 +3281,44 @@ watch(
         font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
+
         .el-input-tag {
           background: #f9f9f9;
           border-radius: 8px;
           box-shadow: none;
           margin-top: 4px;
           margin-bottom: 18px;
+
           &.is-focused {
             box-shadow: 0 0 0 1px var(--el-color-primary) inset;
           }
         }
+
         .el-tag {
           border-radius: 12px;
         }
+
         .hased-tag-box {
           padding-bottom: 16px;
+
           .hased-label {
             margin-bottom: 10px;
             font-size: 14px;
             color: #909090;
             line-height: 20px;
           }
+
           .hased-list {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+
             .el-tag {
               cursor: pointer;
             }
           }
         }
+
         .rename-input {
           .el-textarea__inner {
             background: #f9f9f9;
@@ -3266,6 +3352,7 @@ watch(
       }
     }
   }
+
   :deep(.custom-transition-dialog) {
     &.el-dialog {
       .el-dialog__header {
@@ -3282,23 +3369,28 @@ watch(
         font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
+
         .conflict-title {
           margin-bottom: 16px;
           font-size: 14px;
           color: var(--default-font-color);
         }
+
         .conflict-box {
           max-height: 100px;
           overflow-y: auto;
+
           .conflict-item {
             margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 0 8px;
+
             .conflict-icon {
               width: 12px;
               height: 12px;
             }
+
             .conflict-name {
               overflow: hidden;
               text-overflow: ellipsis;
@@ -3346,26 +3438,31 @@ watch(
   transform: scale(0.3) translateY(-50px);
   opacity: 0;
 }
+
 .abstract-box-popover {
   padding: 20px !important;
   width: 376px !important;
   background: #ffffff;
   box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
   border-radius: 16px !important;
+
   .abstract-box {
     width: 100%;
+
     .abstract-title {
       margin-bottom: 14px;
       font-size: 14px;
       color: var(--default-font-color);
       line-height: 18px;
     }
+
     .time {
       margin-bottom: 10px;
       font-size: 14px;
       color: #adadad;
       line-height: 18px;
     }
+
     .abstract-desc {
       font-size: 14px;
       color: #646464;
@@ -3373,6 +3470,7 @@ watch(
     }
   }
 }
+
 .custom-repository-popover {
   border-radius: 8px !important;
   padding: 12px 8px !important;
@@ -3389,13 +3487,16 @@ watch(
       line-height: 22px;
       border-radius: 4px;
       cursor: pointer;
+
       &.active {
         background: var(--el-color-primary-light-9) !important;
         color: var(--el-color-primary);
+
         .check-icon {
           display: block;
         }
       }
+
       &:last-child {
         margin-bottom: 0;
       }
@@ -3409,6 +3510,7 @@ watch(
         flex: 1;
         white-space: nowrap;
         text-overflow: ellipsis;
+
         .unreadApplyNumber {
           position: absolute;
           top: 50%;
@@ -3424,10 +3526,12 @@ watch(
           line-height: 16px;
         }
       }
+
       .check-icon {
         display: none;
         color: var(--el-color-primary);
       }
+
       .icon {
         flex-shrink: 0;
         display: block;

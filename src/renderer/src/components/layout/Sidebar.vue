@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, inject, onBeforeMount } from 'vue'
+import { ref, inject, onBeforeMount, onUnmounted } from 'vue'
 import { getIndexLeftKnowList } from '@renderer/api/repository'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
@@ -135,6 +135,7 @@ const handleClick = (item) => {
     isInternal: true
   })
 }
+const intervalId = ref(null)
 const knowList = ref([])
 const getList = () => {
   getIndexLeftKnowList()
@@ -152,6 +153,12 @@ const refreshData = () => {
 }
 onBeforeMount(() => {
   getList()
+  intervalId.value = setInterval(() => {
+    getList()
+  }, 5000)
+})
+onUnmounted(() => {
+  clearInterval(intervalId.value)
 })
 const toKnowledge = (item) => {
   if (!useCheckLogin().value) {
@@ -163,7 +170,8 @@ const toKnowledge = (item) => {
     icon: repositoryIcon,
     isInternal: true,
     attrs: {
-      RepositoryId: item.id
+      RepositoryId: item.id,
+      randomId: item.id + '-' + Math.random().toString(36).substring(2)
     }
   })
 }
@@ -203,6 +211,7 @@ defineExpose({
     height: 32px;
     cursor: pointer;
     border-radius: 6px;
+    object-fit: cover;
     -webkit-user-drag: none;
     -moz-user-drag: none;
     -ms-user-drag: none;

@@ -78,7 +78,13 @@
         <div class="recommendQuestions-box">
           <div class="recommendQuestions-hd">
             <div class="label-title">设置推荐问题</div>
-            <div class="add-btn" @click="addRecommendQuestion">添加问题</div>
+            <div
+              v-if="form.recommendQuestions.length < 5"
+              class="add-btn"
+              @click="addRecommendQuestion"
+            >
+              添加问题
+            </div>
           </div>
           <div class="recommendQuestions-list">
             <div

@@ -67,7 +67,9 @@
       </div>
       <div class="footer-btns">
         <el-button class="cancel-btn" @click="skip">跳过</el-button>
-        <el-button class="confirm-btn" type="primary" @click="submitForm"> 一键申请全部 </el-button>
+        <el-button v-if="list.length" class="confirm-btn" type="primary" @click="submitForm">
+          一键申请全部
+        </el-button>
       </div>
     </div>
   </div>

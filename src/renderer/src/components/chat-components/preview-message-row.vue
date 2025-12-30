@@ -270,7 +270,11 @@ const formatFileSize = (kb) => {
               :retrieved-document-list="props.message.retrievedDocumentList"
             ></MarkdownMessage>
             <!-- 返回附件 -->
-            <div v-if="props.message.file_info.length" class="attachment" style="margin-top: 10px">
+            <div
+              v-if="props.message?.file_info?.length"
+              class="attachment"
+              style="margin-top: 10px"
+            >
               <div
                 v-for="(item, index) in props.message.file_info"
                 :key="index"

@@ -2,7 +2,7 @@
   <div class="document-detail">
     <div class="center-box" :class="{ 'mr-chat': chatVisible }">
       <div class="center-head">
-        <div class="title"></div>
+        <div class="title">{{ fileName }}</div>
         <div class="right-handle-box">
           <div v-if="!chatVisible" class="open-chat" @click="openChat">
             <img class="logo" src="@renderer/assets/logo.png" alt="" />
@@ -87,12 +87,16 @@ watchEffect(() => {
       justify-content: space-between;
       gap: 6px;
       background: #fff;
-
+      overflow: hidden;
       .title {
+        flex: 1;
         font-size: 16px;
         font-weight: 600;
         color: var(--default-font-color);
         line-height: 22px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .right-handle-box {

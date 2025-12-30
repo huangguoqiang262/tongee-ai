@@ -405,6 +405,12 @@ const handleForget = () => {
 const handleLogin = () => {
   loginFormRef.value?.validate((valid) => {
     if (valid) {
+      // eslint-disable-next-line no-undef
+      let loading = ElLoading.service({
+        lock: true,
+        text: '登录中...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
       if (switchType.value == 'msg_code') {
         login(loginForm)
           .then(async (response) => {
@@ -423,7 +429,9 @@ const handleLogin = () => {
               }, 1000)
             }
           })
-          .catch(() => {})
+          .catch(() => {}).finally(() => {
+            loading.close()
+          })
       } else {
         passlogin(loginForm)
           .then(async (response) => {
@@ -453,7 +461,9 @@ const handleLogin = () => {
               }, 1000)
             }
           })
-          .catch(() => {})
+          .catch(() => {}).finally(() => {
+            loading.close()
+          })
       }
     } else {
       nextTick(() => {
