@@ -108,8 +108,10 @@
     </div>
     <div class="input-box">
       <el-input
+        ref="inputRef"
         v-model="message.text"
         resize="none"
+        :autofocus="true"
         class="input"
         type="textarea"
         placeholder="询问关于该文档的任何问题"
@@ -151,6 +153,7 @@ const emit = defineEmits(['closeMenu'])
 const closeMenu = () => {
   emit('closeMenu')
 }
+let inputRef = ref(null)
 let subActionPopoverRef = ref(null)
 let elUploadRef = ref(null)
 let uploadBtnRef = ref(null)
@@ -348,6 +351,9 @@ const handleAttachListScroll = () => {
 }
 onMounted(() => {
   updateScrollButtons()
+  nextTick(() => {
+    inputRef.value.focus()
+  })
   watch(
     localfileList,
     () => {

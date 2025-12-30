@@ -456,20 +456,30 @@ const submitImport = async () => {
   try {
     if (props.importType == 'note') {
       const { html } = markdownToRichText(props.markDownText, transFormOptions)
+      // eslint-disable-next-line no-undef
+      let importLoading = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
       note_edit({
         note_id: activeFiles.value[0].id,
         notebook_id: activeBook.value.id,
         title: activeFiles.value[0].title,
         content: activeFiles.value[0].content + html
-      }).then((res) => {
-        if (res.code == 200) {
-          activeFiles.value[0].isCreated = false
-          // eslint-disable-next-line no-undef
-          ElMessage.primary('导入成功')
-          refreshList()
-          emits('submitImport')
-        }
       })
+        .then((res) => {
+          if (res.code == 200) {
+            activeFiles.value[0].isCreated = false
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('导入成功')
+            refreshList()
+            emits('submitImport')
+          }
+        })
+        .finally(() => {
+          importLoading.close()
+        })
     } else {
       emits(
         'submitImport',

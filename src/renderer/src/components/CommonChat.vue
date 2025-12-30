@@ -790,7 +790,7 @@ onMounted(() => {
   .chat-content {
     flex: 1;
     padding: 20px 0;
-    width: 770px;
+    width: 100%;
     margin: 0 auto;
     overflow-y: auto;
   }

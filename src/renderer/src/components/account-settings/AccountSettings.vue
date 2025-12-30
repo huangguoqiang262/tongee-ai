@@ -341,6 +341,8 @@ import copyIcon from '@renderer/assets/settings/copy-icon.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
 const userStore = useUserStore()
+console.log(userStore);
+
 const userInfo = useUserInfo()
 let getLoading = ref(false)
 const updateApi = inject('updateApi')
@@ -363,6 +365,8 @@ const getAppVersion = async () => {
 }
 
 const compareVersions = (version1, version2) => {
+  console.log(version1, version2,'版本');
+
   // 将版本号拆分成数字数组
   var arr1 = version1.split('.')
   var arr2 = version2.split('.')

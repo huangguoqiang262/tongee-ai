@@ -1293,6 +1293,8 @@ const selecteFileIdList = computed(() => {
     })
 })
 const getRepositoryInfo = (id) => {
+  isSearching.value = false
+  searchText.value = ''
   activeRepositoryId.value = id
   pathList.value = [
     {

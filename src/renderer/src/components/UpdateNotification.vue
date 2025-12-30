@@ -225,11 +225,7 @@ const checkForUpdates = async (silent = false) => {
       if (updateStatus.value === 'checking') {
         console.log('更新检查超时，设置为无更新状态')
         updateStatus.value = 'not-available'
-        if (!silent) {
-          showUpdate.value = true
-          // 获取当前版本显示
-          getCurrentVersion()
-        }
+        getCurrentVersion()
       }
     }, 5000)
   } catch (error) {
@@ -323,7 +319,7 @@ const handleUpdateStatus = (event, status) => {
         releaseDate: status.releaseDate || '',
         releaseNotes: status.releaseNotes || '新版本包含性能优化和功能改进'
       }
-      userStore.version = status.version || userStore.version
+      userStore.version = status.version
       ElMessage.info(`发现新版本 ${status.version}`)
       break
 
@@ -360,6 +356,7 @@ const getCurrentVersion = async () => {
   if (window.customApi?.getAppVersion) {
     try {
       currentVersion.value = await window.customApi.getAppVersion()
+      userStore.version = currentVersion.value
     } catch (error) {
       console.error('获取当前版本失败:', error)
       currentVersion.value = '未知'

@@ -155,7 +155,7 @@ onBeforeMount(() => {
   getList()
   intervalId.value = setInterval(() => {
     getList()
-  }, 5000)
+  }, 10000)
 })
 onUnmounted(() => {
   clearInterval(intervalId.value)

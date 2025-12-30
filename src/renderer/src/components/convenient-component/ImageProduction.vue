@@ -77,6 +77,7 @@
           v-model="message.text"
           resize="none"
           class="input"
+          autofocus
           type="textarea"
           placeholder="输入要生成的图片内容"
           @keydown.enter.prevent="handleEnterSend"

@@ -409,7 +409,7 @@ const handleLogin = () => {
       let loading = ElLoading.service({
         lock: true,
         text: '登录中...',
-        background: 'rgba(0, 0, 0, 0.7)'
+        background: 'rgba(0, 0, 0, 0.3)'
       })
       if (switchType.value == 'msg_code') {
         login(loginForm)
@@ -426,7 +426,7 @@ const handleLogin = () => {
               const timer = setTimeout(() => {
                 handleClose()
                 clearTimeout(timer)
-              }, 1000)
+              }, 300)
             }
           })
           .catch(() => {}).finally(() => {
@@ -458,7 +458,7 @@ const handleLogin = () => {
               const timer = setTimeout(() => {
                 handleClose()
                 clearTimeout(timer)
-              }, 1000)
+              }, 300)
             }
           })
           .catch(() => {}).finally(() => {

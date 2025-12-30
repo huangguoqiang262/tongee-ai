@@ -419,7 +419,19 @@ let renameForm = ref({
   chat_words_id: ''
 })
 let renameRules = ref({
-  renameInput: [{ required: true, message: '请输入新名称', trigger: 'blur' }]
+  renameInput: [
+    { required: true, message: '请输入新名称', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (!value.trim().length) {
+          callback(new Error('名称不能为空'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
 })
 let renameFormRef = ref(null)
 const submitRenameForm = (FormRef) => {

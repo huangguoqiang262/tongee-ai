@@ -768,10 +768,13 @@ const download = (index, images) => {
           width: 100%;
           margin-bottom: 10px;
           .vuepress-markdown-body {
-            font-size: 22px;
+            font-size: 20px;
             color: var(--default-font-color);
             font-weight: 600 !important;
             line-height: 30px;
+            > p {
+              font-weight: 600;
+            }
           }
           // max-width: 100%;
         }
