@@ -646,6 +646,7 @@ const handleSendMessage = async (message) => {
   })
   evtSource.value.addEventListener('message', async (event) => {
     const response = JSON.parse(event.data)
+
     if (response.contentText || response.reasoningContentText) {
       if (response.reasoningContentText) {
         //匹配过滤掉\n、<think>、</think> 用正则|| 替换  排除[^\n\n]

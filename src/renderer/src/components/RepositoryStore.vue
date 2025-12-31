@@ -153,6 +153,7 @@
           trigger="click"
           placement="bottom-start"
           :show-arrow="false"
+          @show="getUnreadApplyNumber"
         >
           <template #reference>
             <div class="handle">
@@ -193,6 +194,12 @@
                 <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
                 <div class="title">添加快捷访问</div>
               </div>
+              <template v-if="activeRepository.user_permission?.is_manager == 1">
+                <div class="item" @click="beforeQuitRepository">
+                  <img class="icon" src="@renderer/assets/repository/exit-icon.png" alt="" />
+                  <div class="title">退出知识库</div>
+                </div>
+              </template>
               <div class="item" @click="beforeDeleteRepository">
                 <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
                 <div class="title">删除知识库</div>
@@ -214,7 +221,7 @@
                 <div class="title">添加快捷访问</div>
               </div>
               <div class="item" @click="beforeQuitRepository">
-                <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
+                <img class="icon" src="@renderer/assets/repository/exit-icon.png" alt="" />
                 <div class="title">退出知识库</div>
               </div>
             </template>

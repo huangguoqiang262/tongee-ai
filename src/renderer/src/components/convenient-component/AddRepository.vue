@@ -267,7 +267,10 @@ const submitForm = () => {
     if (valid) {
       var submitData = {
         ...form.value,
-        question: form.value.recommendQuestions.map((item) => item.question).filter((item) => item)
+        desc: form.value.desc.trim(),
+        question: form.value.recommendQuestions
+          .map((item) => item.question)
+          .filter((item) => item.trim())
       }
       emits('submitRepository', submitData)
     } else {

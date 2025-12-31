@@ -51,6 +51,7 @@
                   <el-select
                     v-else
                     v-model="item.is_manager"
+                    :disabled="item.ding_uid == userInfo.ding_uid"
                     placeholder="请选择角色"
                     @change="handlePermissionsChange(item)"
                   >
@@ -122,9 +123,11 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useUserInfo } from '@renderer/hooks/checkLogin'
 import DefaultAvatar from '@renderer/assets/default-avatar.png'
 const repositoryVisible = defineModel({ type: Boolean })
 const emits = defineEmits(['setPermission'])
+const userInfo = useUserInfo()
 let organizationRef = ref(null)
 let checkedNodes = ref([])
 const props = defineProps({

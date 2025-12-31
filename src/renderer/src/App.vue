@@ -16,6 +16,8 @@ provide('updateApi', {
 
 // 应用启动时检查版本和更新
 onMounted(() => {
+  const loading = document.getElementById('loading')
+  loading?.classList.add('loading-hidden')
   // 显示当前版本信息
   if (window.customApi?.getAppVersion) {
     window.customApi

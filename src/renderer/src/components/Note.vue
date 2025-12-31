@@ -182,7 +182,6 @@
             class="editor-content"
             :default-config="editorConfig"
             mode="default"
-            @on-created="handleCreated"
           />
         </div>
       </div>
@@ -287,6 +286,7 @@
             v-model="repositoryForm.title"
             class="book-input"
             size="large"
+            disabled
             placeholder="请输入知识库标题"
           />
         </el-form-item>
@@ -490,7 +490,8 @@ const selecteFileIdList = computed(() => {
       return {
         fileId: item.file_key,
         fileName: item.title,
-        fileUrl: item.file_path
+        fileUrl: item.file_path,
+        id: item.id
       }
     })
 })
@@ -726,7 +727,6 @@ const showContextMenu = (e, item, type) => {
         ]
       }
     }
-
   } else if (type == 'notebook') {
     contextMenu.value = {
       show: true,
@@ -797,17 +797,19 @@ const handleContextMenuAction = ({ action }) => {
         type: 'warning'
       })
         .then(() => {
-          note_del({ note_id: activeNote.value.id }).then((res) => {
-            if (res.code == 200) {
-              // eslint-disable-next-line no-undef
-              ElMessage({
-                type: 'primary',
-                message: '删除成功'
-              })
-              // 刷新笔记列表
-              getNoteList()
+          note_del({ note_id: selecteFileIdList.value.map((item) => item.id).join(',') }).then(
+            (res) => {
+              if (res.code == 200) {
+                // eslint-disable-next-line no-undef
+                ElMessage({
+                  type: 'primary',
+                  message: '删除成功'
+                })
+                // 刷新笔记列表
+                getNoteList()
+              }
             }
-          })
+          )
         })
         .catch(() => {})
     }
