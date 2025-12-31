@@ -678,38 +678,55 @@ const showContextMenu = (e, item, type) => {
   activeNote.value = item
   activeNote.value.type = type
   if (type == 'note') {
-    contextMenu.value = {
-      show: true,
-      x: e.clientX,
-      y: e.clientY,
-      actionSheet: [
-        {
-          name: '重命名',
-          icon: renameIcon,
-          action: 'rename'
-        },
-        {
-          name: '分享',
-          icon: shareIcon,
-          action: 'share'
-        },
-        {
-          name: '添加到知识库',
-          icon: repositoryIcon,
-          action: 'addToRepository'
-        },
-        {
-          name: '移动到笔记本',
-          icon: moveIcon,
-          action: 'moveToNotebook'
-        },
-        {
-          name: '删除',
-          icon: deleteIcon,
-          action: 'delete'
-        }
-      ]
+    item.checked = true
+    if (selecteFileIdList.value.length > 1) {
+      contextMenu.value = {
+        show: true,
+        x: e.clientX,
+        y: e.clientY,
+        actionSheet: [
+          {
+            name: '删除',
+            icon: deleteIcon,
+            action: 'delete'
+          }
+        ]
+      }
+    } else {
+      contextMenu.value = {
+        show: true,
+        x: e.clientX,
+        y: e.clientY,
+        actionSheet: [
+          {
+            name: '重命名',
+            icon: renameIcon,
+            action: 'rename'
+          },
+          {
+            name: '分享',
+            icon: shareIcon,
+            action: 'share'
+          },
+          {
+            name: '添加到知识库',
+            icon: repositoryIcon,
+            action: 'addToRepository'
+          },
+          {
+            name: '移动到笔记本',
+            icon: moveIcon,
+            action: 'moveToNotebook'
+          },
+          {
+            name: '删除',
+            icon: deleteIcon,
+            action: 'delete'
+          }
+        ]
+      }
     }
+
   } else if (type == 'notebook') {
     contextMenu.value = {
       show: true,
