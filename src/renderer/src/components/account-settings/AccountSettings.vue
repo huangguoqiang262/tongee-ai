@@ -363,8 +363,6 @@ const getAppVersion = async () => {
 }
 
 const compareVersions = (version1, version2) => {
-  console.log(version1, version2,'版本');
-
   // 将版本号拆分成数字数组
   var arr1 = version1.split('.')
   var arr2 = version2.split('.')
