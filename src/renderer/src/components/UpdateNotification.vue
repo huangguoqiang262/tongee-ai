@@ -206,7 +206,7 @@ const checkForUpdates = async (silent = false) => {
 
   if (!silent) {
     showUpdate.value = true
-  } else if (updateStatus.value !== 'checking' || updateStatus.value !== 'not-available') {
+  } else if (updateStatus.value !== 'checking' && updateStatus.value !== 'not-available') {
     showUpdate.value = true
   }
 
@@ -411,8 +411,8 @@ const autoCheckUpdates = () => {
   const lastCheck = localStorage.getItem('lastUpdateCheck')
   const now = Date.now()
 
-  if (!lastCheck || now - parseInt(lastCheck) > 60 * 60 * 1000) {
-    // 1小时检查一次
+  if (!lastCheck || now - parseInt(lastCheck) > 2 * 60 * 60 * 1000) {
+    // 2小时检查一次
     checkForUpdates() // 静默检查
   }
 }

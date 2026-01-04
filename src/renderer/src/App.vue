@@ -40,12 +40,12 @@ onMounted(() => {
 const autoCheckForUpdates = () => {
   // const lastCheck = localStorage.getItem('lastUpdateCheck')
   const now = Date.now()
-  // const oneDay = 60 * 60 * 1000
+  // const oneDay = 2 * 60 * 60 * 1000
   if (updateNotificationRef.value) {
     updateNotificationRef.value.checkForUpdates(true) // 静默检查
   }
   localStorage.setItem('lastUpdateCheck', now.toString())
-  // 如果从未检查过或超过24小时，则检查更新
+  // 如果从未检查过或超过2小时，则检查更新
   // if (!lastCheck || now - parseInt(lastCheck) > oneDay) {
   //   if (updateNotificationRef.value) {
   //     updateNotificationRef.value.checkForUpdates(true) // 静默检查
