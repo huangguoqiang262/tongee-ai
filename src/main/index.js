@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, protocol, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, Tray, Menu, protocol, MenuItem, dialog } from 'electron'
 // 在文件顶部添加导入
 import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
@@ -96,39 +96,39 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  // mainWindow.webContents.on('context-menu', (event, params) => {
-  //   // 创建自定义右键菜单
-  //   const menu = new Menu()
+  mainWindow.webContents.on('context-menu', (event, params) => {
+    // 创建自定义右键菜单
+    const menu = new Menu()
 
-  //   // 添加粘贴选项
-  //   if (params.isEditable) {
-  //     menu.append(
-  //       new MenuItem({
-  //         label: '粘贴',
-  //         role: 'paste' // 使用内置的粘贴功能
-  //       })
-  //     )
-  //   }
+    // 添加粘贴选项
+    if (params.isEditable) {
+      menu.append(
+        new MenuItem({
+          label: '粘贴',
+          role: 'paste' // 使用内置的粘贴功能
+        })
+      )
+    }
 
-  //   // 添加其他常用选项
-  //   menu.append(
-  //     new MenuItem({
-  //       label: '复制',
-  //       role: 'copy', // 使用内置的复制功能
-  //       enabled: !!params.selectionText // 仅当有选中文本时启用
-  //     })
-  //   )
-  //   menu.append(
-  //     new MenuItem({
-  //       label: '剪切',
-  //       role: 'cut', // 使用内置的剪切功能
-  //       enabled: !!params.selectionText // 仅当有选中文本时启用
-  //     })
-  //   )
+    // 添加其他常用选项
+    menu.append(
+      new MenuItem({
+        label: '复制',
+        role: 'copy', // 使用内置的复制功能
+        enabled: !!params.selectionText // 仅当有选中文本时启用
+      })
+    )
+    menu.append(
+      new MenuItem({
+        label: '剪切',
+        role: 'cut', // 使用内置的剪切功能
+        enabled: !!params.selectionText // 仅当有选中文本时启用
+      })
+    )
 
-  //   // 显示菜单
-  //   menu.popup({ window: mainWindow })
-  // })
+    // 显示菜单
+    menu.popup({ window: mainWindow })
+  })
 }
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([

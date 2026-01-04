@@ -126,12 +126,12 @@
             >
               <template #reference>
                 <el-button class="reference-btn size-btn style-btn">
-                  风格不限
+                  {{ activeStyle }}
                   <el-icon><ArrowDown /></el-icon>
                 </el-button>
               </template>
               <div class="handle-box">
-                <div class="item default-item">
+                <div class="item default-item" @click="setActiveStyle('风格不限')">
                   <img
                     class="cover"
                     src="@renderer/assets/ImageProduction/default-style.png"

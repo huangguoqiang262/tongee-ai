@@ -402,20 +402,39 @@ export default {
       }).then((res) => {
         this.models = res.data
         if (this.models?.length) {
-          this.modelValue =
-            this.models[0].model_name +
-            '/' +
-            this.models[0].provider_key +
-            '/' +
-            this.models[0].id +
-            '/' +
-            this.models[0].net_status
-          this.modelInfo = {
-            model_name: this.models[0].model_name,
-            provider_key: this.models[0].provider_key,
-            model_id: this.models[0].id,
-            net_status: this.models[0].net_status,
-            isNetwork: false
+          var defaultModel = this.models.find((item) => item.is_default == 1)
+          if (defaultModel) {
+            this.modelValue =
+              defaultModel.model_name +
+              '/' +
+              defaultModel.provider_key +
+              '/' +
+              defaultModel.id +
+              '/' +
+              defaultModel.net_status
+            this.modelInfo = {
+              model_name: defaultModel.model_name,
+              provider_key: defaultModel.provider_key,
+              model_id: defaultModel.id,
+              net_status: defaultModel.net_status,
+              isNetwork: false
+            }
+          } else {
+            this.modelValue =
+              this.models[0].model_name +
+              '/' +
+              this.models[0].provider_key +
+              '/' +
+              this.models[0].id +
+              '/' +
+              this.models[0].net_status
+            this.modelInfo = {
+              model_name: this.models[0].model_name,
+              provider_key: this.models[0].provider_key,
+              model_id: this.models[0].id,
+              net_status: this.models[0].net_status,
+              isNetwork: false
+            }
           }
           if (this.modelInfo.net_status == 2) {
             this.modelInfo.isNetwork = false

@@ -706,11 +706,19 @@ const createChat = () => {
     activeSession.value.title = res.data.title || ''
     activeSession.value.chat_key = res.data.chat_key
     activeSession.value.know_key = res.data.know_key
-    activeSession.value.model_id = res.data.model_info?.model_id || ''
-    activeSession.value.model_name = res.data.model_info?.model_name
-    activeSession.value.provider_key = res.data.model_info?.provider_key
-    activeSession.value.enableSearch = res.data.model_info?.net_status || 2
-    activeSession.value.isNetwork = res.data.is_use_net ? true : false
+    if (props.attrs?.modelInfo?.model_id) {
+      activeSession.value.model_id = props.attrs.modelInfo?.model_id
+      activeSession.value.model_name = props.attrs.modelInfo?.model_name
+      activeSession.value.provider_key = props.attrs.modelInfo?.provider_key
+      activeSession.value.enableSearch = props.attrs.modelInfo?.net_status || 2
+      activeSession.value.isNetwork = props.attrs.modelInfo?.isNetwork ? true : false
+    } else {
+      activeSession.value.model_id = res.data.model_info?.model_id || ''
+      activeSession.value.model_name = res.data.model_info?.model_name
+      activeSession.value.provider_key = res.data.model_info?.provider_key
+      activeSession.value.enableSearch = res.data.model_info?.net_status || 2
+      activeSession.value.isNetwork = res.data.is_use_net ? true : false
+    }
     mentionedList.value = props.attrs?.knows || []
     if (activeSession.value.enableSearch == 2) {
       activeSession.value.isNetwork = false

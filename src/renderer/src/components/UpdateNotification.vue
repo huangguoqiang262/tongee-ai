@@ -385,7 +385,7 @@ const remindLater = () => {
     () => {
       checkForUpdates(true) // 静默检查
     },
-    60 * 60 * 1000
+    2 * 60 * 60 * 1000
   )
 }
 
@@ -406,16 +406,15 @@ const retryCheck = () => {
 }
 
 // 自动检查更新（应用启动时）
-const autoCheckUpdates = () => {
-  // 检查上次检查时间，避免频繁检查
-  const lastCheck = localStorage.getItem('lastUpdateCheck')
-  const now = Date.now()
-
-  if (!lastCheck || now - parseInt(lastCheck) > 2 * 60 * 60 * 1000) {
-    // 2小时检查一次
-    checkForUpdates() // 静默检查
-  }
-}
+// const autoCheckUpdates = () => {
+//   // 检查上次检查时间，避免频繁检查
+//   const lastCheck = localStorage.getItem('lastUpdateCheck')
+//   const now = Date.now()
+//   if (!lastCheck || now - parseInt(lastCheck) > 2 * 60 * 60 * 1000) {
+//     // 2小时检查一次
+//     checkForUpdates() // 静默检查
+//   }
+// }
 
 // 生命周期
 onMounted(() => {
@@ -425,7 +424,7 @@ onMounted(() => {
   }
 
   // 应用启动时自动检查更新
-  autoCheckUpdates()
+  // autoCheckUpdates()
 })
 
 onUnmounted(() => {
