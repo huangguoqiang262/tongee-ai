@@ -845,6 +845,8 @@ const handleContextMenuAction = ({ action }) => {
                 type: 'primary',
                 message: '删除成功'
               })
+              activeNotebook.value = ''
+              notebookLists.value = []
               // 刷新笔记本列表
               getBookList()
             }

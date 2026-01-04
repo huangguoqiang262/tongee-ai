@@ -219,7 +219,7 @@ const sendMessage = (event = {}) => {
     medias: [
       {
         type: 'image',
-        data: [{}, {}, {}, {}]
+        data: referenceImgs.value.length ? [{}, {}, {}, {}] : [{}]
       }
     ],
     type: 'ASSISTANT',
