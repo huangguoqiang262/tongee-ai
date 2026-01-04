@@ -311,6 +311,9 @@ const resetFeedback = () => {
     sug_or_pb: '2',
     know_id: props.attrs.knowId || ''
   }
+  nextTick(() => {
+    editorRef.value.enable()
+  })
 }
 const getText = (content) => {
   return convertToPlainText(content, { maxLength: 100 })
