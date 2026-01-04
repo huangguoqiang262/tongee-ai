@@ -926,7 +926,7 @@ const handleDroppedFiles = (files) => {
   }
   tempUploadList.value = []
   conflictFiles.value = []
-
+  ReadyUploadList.length = 0
   // 准备上传文件列表
   tempUploadList.value = validFiles.map((file) => ({
     file: file,
@@ -2157,12 +2157,13 @@ const handleSelectChange = (event) => {
     }
   })
   if (detailFileList.value.length) {
-    detailFileList.value.filter((item) => {
-      tempUploadList.value.filter((readyItem) => {
-        if (readyItem.title == item.title && item.item_type == 1) {
-          conflictFiles.value.push(readyItem)
-        }
-      })
+    tempUploadList.value.filter((readyItem) => {
+      var flag = detailFileList.value.some(
+        (item) => item.title == readyItem.name && item.item_type == 1
+      )
+      if (flag) {
+        conflictFiles.value.push(readyItem)
+      }
     })
     if (conflictFiles.value.length) {
       conflictVisible.value = true
