@@ -47,6 +47,11 @@ const props = defineProps({
   retrievedDocumentList: {
     type: Array,
     default: () => []
+  },
+  // 添加预览属性
+  isPreView: {
+    type: Boolean,
+    default: false
   }
 })
 const addNewTab = inject('addNewTab')
@@ -86,11 +91,13 @@ const currentDocumentInfo = ref(null)
 
 // 处理消息内容，将[kno_数字]格式转换为HTML  我还想将[eqm_1]替换为按钮
 const processedMessage = computed(() => {
-  return props.message.replace(/\[kno_(\d+)\]/g, (match, id) => {
-    return `<span class="knowledge-tag" data-knowledge-id="${id}">${id}</span>`
-  }).replace(/\[eqm_(\d+)\]/g, (match, id) => {
-    return `<span class="equipment-tag" data-equipment-id="${id}">查看</span>`
-  })
+  return props.message
+    .replace(/\[kno_(\d+)\]/g, (match, id) => {
+      return `<span class="knowledge-tag" data-knowledge-id="${id}">${id}</span>`
+    })
+    .replace(/\[eqm_(\d+)\]/g, (match, id) => {
+      return `<span class="equipment-tag" data-equipment-id="${id}">查看</span>`
+    })
 })
 
 // 根据知识库ID获取文档信息
@@ -141,12 +148,12 @@ const handleEquipmentClick = (event) => {
   addNewTab({
     title: '设备保养',
     url: 'Maintain',
-    isInternal: true,
+    isInternal: true
   })
 }
 // 添加事件监听
 onMounted(() => {
-  if (markdownContainer.value) {
+  if (markdownContainer.value && !props.isPreView) {
     // 监听鼠标移入事件
     markdownContainer.value.addEventListener('mouseenter', handleKnowledgeHover, true)
     // 监听鼠标移入事件
@@ -156,7 +163,7 @@ onMounted(() => {
 
 // 移除事件监听
 onUnmounted(() => {
-  if (markdownContainer.value) {
+  if (markdownContainer.value && !props.isPreView) {
     markdownContainer.value.removeEventListener('mouseenter', handleKnowledgeHover, true)
     // 监听鼠标移入事件
     markdownContainer.value.addEventListener('click', handleEquipmentClick, true)

@@ -51,7 +51,8 @@ const props = defineProps({
     default: false
   }
 })
-const emit = defineEmits(['newChat', 'retrievedDocumen', 'lookOver', 'handleAction', 'handleCheck'])
+const unfoldCiteFile = ref(false)
+const emit = defineEmits(['newChat', 'handleAction', 'handleCheck'])
 const localSpread = ref(props.message.spread || false)
 const markdownMessage = ref(null)
 
@@ -146,6 +147,9 @@ const formatFileSize = (kb) => {
     return (kb / (1024 * 1024 * 1024)).toFixed(2) + ' TB'
   }
 }
+const rotateCiteFile = () => {
+  unfoldCiteFile.value = !unfoldCiteFile.value
+}
 </script>
 
 <!-- 整个div是用来调整内部消息的位置，每条消息占的空间都是一整行，然后根据right还是left来调整内部的消息是靠右边还是靠左边 -->
@@ -234,6 +238,28 @@ const formatFileSize = (kb) => {
           }"
         >
           <div class="message-content" :class="{ 'no-line-number': !props.lineNumber }">
+            <div v-if="props.message.retrievedDocumentList.length" class="file-list">
+              <div class="file-label" @click="rotateCiteFile">
+                找到了{{ props.message.retrievedDocumentList.length }}个资料
+                <img
+                  class="rotate"
+                  :style="{ transform: unfoldCiteFile ? 'rotate(180deg)' : '' }"
+                  src="@renderer/assets/down-icon.png"
+                  alt=""
+                />
+              </div>
+              <div v-show="unfoldCiteFile" class="file-content-box">
+                <div
+                  v-for="file in props.message.retrievedDocumentList"
+                  :key="file.fileId"
+                  class="file-item"
+                >
+                  <div class="file-name">
+                    {{ file.fileName }}
+                  </div>
+                </div>
+              </div>
+            </div>
             <!-- 如果消息的内容为空则显示加载动画 -->
             <TextLoading
               v-if="
@@ -266,6 +292,7 @@ const formatFileSize = (kb) => {
               v-if="props.message.textContent"
               ref="markdownMessage"
               :type="props.message.type"
+              :is-pre-view="true"
               :message="props.message.textContent"
               :retrieved-document-list="props.message.retrievedDocumentList"
             ></MarkdownMessage>
@@ -338,16 +365,29 @@ const formatFileSize = (kb) => {
   }
 }
 .file-list {
-  margin: 10px 0;
+  margin-bottom: 10px;
   width: 100%;
   box-sizing: border-box;
-  padding: 15px;
-  background: #fff;
+  // padding: 15px 0;
   border-radius: 8px;
   .file-label {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     font-size: 14px;
-    margin-bottom: 15px;
-    color: #2c3e50;
+    color: #909090;
+    cursor: pointer;
+    .rotate {
+      flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      margin-left: 10px;
+      align-self: center;
+      transition: all 0.2s linear;
+    }
+  }
+  .file-content-box {
+    margin-top: 10px;
   }
   .file-item {
     box-sizing: border-box;
@@ -360,10 +400,16 @@ const formatFileSize = (kb) => {
     height: 40px;
     width: 100%;
     overflow: hidden;
-    background-color: #f9f9f9;
+    background-color: #fff;
     border-radius: 6px;
+    cursor: pointer;
     &:nth-last-child(1) {
       margin-bottom: 0;
+    }
+    &:hover {
+      .file-name {
+        color: var(--el-color-primary);
+      }
     }
     .file-name {
       max-width: 100%;
@@ -372,17 +418,7 @@ const formatFileSize = (kb) => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      cursor: pointer;
-      &:hover {
-        color: var(--primary-bg-color);
-      }
     }
-    // .down {
-    //   font-size: 18px;
-    //   color: #000000;
-    //   font-size: 18px;
-    //   cursor: pointer;
-    // }
   }
 }
 .attachment {

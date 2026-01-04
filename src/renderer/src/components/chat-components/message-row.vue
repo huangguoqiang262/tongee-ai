@@ -60,8 +60,9 @@ const props = defineProps({
     default: false
   }
 })
+const unfoldCiteFile = ref(false)
 const addNewTab = inject('addNewTab')
-const emit = defineEmits(['newChat', 'retrievedDocumen', 'lookOver', 'handleAction'])
+const emit = defineEmits(['newChat', 'handleAction'])
 const localSpread = ref(props.message.spread || false)
 const markdownMessage = ref(null)
 
@@ -95,12 +96,26 @@ const newChat = (item) => {
   emit('newChat', item)
 }
 
-// //下载引用文件
-// const retrievedDocumen = (fileId) => {
-//   emit('retrievedDocumen', fileId)
-// }
+// //引用文件
+const retrievedDocumen = (file) => {
+  if (props.isPreView) {
+    return
+  }
+  addNewTab({
+    title: file.fileName,
+    url: 'DocumentDetail',
+    isInternal: true,
+    attrs: {
+      fileUrl: file.fileUrl,
+      fileName: file.fileName
+    }
+  })
+}
 
 const lookOver = (file, type = 1) => {
+  if (props.isPreView) {
+    return
+  }
   if (type == 1) {
     addNewTab({
       title: file.title,
@@ -239,6 +254,9 @@ const download = (index, images) => {
   //     link.remove()
   //   })
 }
+const rotateCiteFile = () => {
+  unfoldCiteFile.value = !unfoldCiteFile.value
+}
 </script>
 
 <!-- 整个div是用来调整内部消息的位置，每条消息占的空间都是一整行，然后根据right还是left来调整内部的消息是靠右边还是靠左边 -->
@@ -340,6 +358,29 @@ const download = (index, images) => {
         }"
       >
         <div class="message-content" :class="{ 'no-line-number': !props.lineNumber }">
+          <div v-if="props.message.retrievedDocumentList.length" class="file-list">
+            <div class="file-label" @click="rotateCiteFile">
+              找到了{{ props.message.retrievedDocumentList.length }}个资料
+              <img
+                class="rotate"
+                :style="{ transform: unfoldCiteFile ? 'rotate(180deg)' : '' }"
+                src="@renderer/assets/down-icon.png"
+                alt=""
+              />
+            </div>
+            <div v-show="unfoldCiteFile" class="file-content-box">
+              <div
+                v-for="file in props.message.retrievedDocumentList"
+                :key="file.fileId"
+                class="file-item"
+                @click="retrievedDocumen(file)"
+              >
+                <div class="file-name">
+                  {{ file.fileName }}
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- 如果消息的内容为空则显示加载动画 -->
           <TextLoading
             v-if="
@@ -373,6 +414,7 @@ const download = (index, images) => {
             ref="markdownMessage"
             :type="props.message.type"
             :message="props.message.textContent"
+            :is-pre-view="props.isPreView"
             :retrieved-document-list="props.message.retrievedDocumentList"
           ></MarkdownMessage>
           <!-- 返回附件 -->
@@ -513,16 +555,30 @@ const download = (index, images) => {
   }
 }
 .file-list {
-  margin: 10px 0;
+  margin-bottom: 10px;
   width: 100%;
   box-sizing: border-box;
-  padding: 15px;
+  // padding: 15px 0;
   background: #fff;
   border-radius: 8px;
   .file-label {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     font-size: 14px;
-    margin-bottom: 15px;
-    color: #2c3e50;
+    color: #909090;
+    cursor: pointer;
+    .rotate {
+      flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      margin-left: 10px;
+      align-self: center;
+      transition: all 0.2s linear;
+    }
+  }
+  .file-content-box {
+    margin-top: 10px;
   }
   .file-item {
     box-sizing: border-box;
@@ -537,8 +593,14 @@ const download = (index, images) => {
     overflow: hidden;
     background-color: #f9f9f9;
     border-radius: 6px;
+    cursor: pointer;
     &:nth-last-child(1) {
       margin-bottom: 0;
+    }
+    &:hover {
+      .file-name {
+        color: var(--el-color-primary);
+      }
     }
     .file-name {
       max-width: 100%;
@@ -547,17 +609,7 @@ const download = (index, images) => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      cursor: pointer;
-      &:hover {
-        color: var(--primary-bg-color);
-      }
     }
-    // .down {
-    //   font-size: 18px;
-    //   color: #000000;
-    //   font-size: 18px;
-    //   cursor: pointer;
-    // }
   }
 }
 .attachment {

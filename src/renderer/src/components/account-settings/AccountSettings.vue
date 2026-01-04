@@ -341,8 +341,6 @@ import copyIcon from '@renderer/assets/settings/copy-icon.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
 const userStore = useUserStore()
-console.log(userStore);
-
 const userInfo = useUserInfo()
 let getLoading = ref(false)
 const updateApi = inject('updateApi')
