@@ -97,7 +97,7 @@ const handleClick = (item) => {
   }
   if (item.url == 'Management') {
     addNewTab({
-      url: 'http://192.168.31.181?t=' + Date.now(),
+      url: 'http://192.168.11.241?t=' + Date.now(),
       title: item.name,
       icon: item.icon,
       isInternal: false
