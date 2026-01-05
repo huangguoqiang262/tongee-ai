@@ -140,7 +140,7 @@ const lookOver = (file, type = 1) => {
 }
 const getFileIcon1 = (item) => {
   // 根据文件扩展名返回不同的图标
-  const ext = item.filename?.split('.').pop()?.toLowerCase()
+  const ext = item.url?.split('.').pop()?.toLowerCase()
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -162,7 +162,7 @@ const getFileIcon1 = (item) => {
 // 获取文件图标
 const getFileIcon = (item) => {
   // 根据文件扩展名返回不同的图标
-  const ext = item.title?.split('.').pop()?.toLowerCase()
+  const ext = item.full_path?.split('.').pop()?.toLowerCase()
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -302,7 +302,7 @@ const rotateCiteFile = () => {
                 </div>
                 <div class="attach-type">
                   <span class="file-extension">{{
-                    item.title?.split('.').pop()?.toUpperCase()
+                    item.full_path?.split('.').pop()?.toUpperCase()
                   }}</span>
                   <span v-if="item.total_space" class="file-size">{{
                     formatFileSize(item.total_space)
@@ -432,7 +432,7 @@ const rotateCiteFile = () => {
                 </div>
                 <div class="attach-type">
                   <span class="file-extension">{{
-                    item.filename?.split('.').pop()?.toUpperCase()
+                    item.url?.split('.').pop()?.toUpperCase()
                   }}</span>
                   <!-- <span class="file-size">{{ formatFileSize(item.total_space) }}</span> -->
                 </div>

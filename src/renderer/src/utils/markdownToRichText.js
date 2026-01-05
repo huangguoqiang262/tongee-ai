@@ -48,7 +48,7 @@ function escapeHtml(text) {
     '`': '&#x60;'
   }
 
-  return text.replace(/[&<>"'`]/g, char => escapeMap[char])
+  return text.replace(/[&<>"'`]/g, (char) => escapeMap[char])
 }
 
 /**
@@ -103,7 +103,7 @@ function validateMarkdown(markdown) {
     warnings,
     lineCount: lines.length,
     charCount: markdown.length,
-    wordCount: markdown.split(/\s+/).filter(word => word.length > 0).length
+    wordCount: markdown.split(/\s+/).filter((word) => word.length > 0).length
   }
 }
 
@@ -238,11 +238,13 @@ function parseList(lines, startIndex, options) {
   }
 
   const listTag = isOrdered ? 'ol' : 'ul'
-  const listClass = isOrdered ? `${options.classPrefix}ordered-list` : `${options.classPrefix}unordered-list`
+  const listClass = isOrdered
+    ? `${options.classPrefix}ordered-list`
+    : `${options.classPrefix}unordered-list`
 
-  const listHtml = listItems.map(item =>
-    `<li class="${options.classPrefix}list-item">${item.content}</li>`
-  ).join('')
+  const listHtml = listItems
+    .map((item) => `<li class="${options.classPrefix}list-item">${item.content}</li>`)
+    .join('')
 
   return {
     type: 'list',
@@ -275,9 +277,9 @@ function parseBlockquote(lines, startIndex, options) {
     currentIndex++
   }
 
-  const quoteHtml = quoteLines.map(line =>
-    `<p class="${options.classPrefix}quote-line">${line}</p>`
-  ).join('')
+  const quoteHtml = quoteLines
+    .map((line) => `<p class="${options.classPrefix}quote-line">${line}</p>`)
+    .join('')
 
   return {
     type: 'blockquote',
@@ -376,29 +378,47 @@ function parseTable(lines, startIndex, options) {
   }
 
   // 解析表头
-  const headers = headerLine.split('|').filter(cell => cell.trim()).map(cell => cell.trim())
-  const alignments = separatorLine.split('|').filter(cell => cell.trim()).map(cell => {
-    const content = cell.trim()
-    if (content.startsWith(':') && content.endsWith(':')) return 'center'
-    if (content.endsWith(':')) return 'right'
-    return 'left'
-  })
+  const headers = headerLine
+    .split('|')
+    .filter((cell) => cell.trim())
+    .map((cell) => cell.trim())
+  const alignments = separatorLine
+    .split('|')
+    .filter((cell) => cell.trim())
+    .map((cell) => {
+      const content = cell.trim()
+      if (content.startsWith(':') && content.endsWith(':')) return 'center'
+      if (content.endsWith(':')) return 'right'
+      return 'left'
+    })
 
   // 解析数据行
-  const rows = dataLines.map(line =>
-    line.split('|').filter(cell => cell.trim()).map(cell => cell.trim())
+  const rows = dataLines.map((line) =>
+    line
+      .split('|')
+      .filter((cell) => cell.trim())
+      .map((cell) => cell.trim())
   )
 
   // 生成HTML表格
-  const headerHtml = headers.map((header, index) =>
-    `<th class="${options.classPrefix}table-header" style="text-align: ${alignments[index]}">${parseInlineElements(header, options)}</th>`
-  ).join('')
+  const headerHtml = headers
+    .map(
+      (header, index) =>
+        `<th class="${options.classPrefix}table-header" style="text-align: ${alignments[index]}">${parseInlineElements(header, options)}</th>`
+    )
+    .join('')
 
-  const rowsHtml = rows.map(row =>
-    `<tr class="${options.classPrefix}table-row">${row.map((cell, index) =>
-      `<td class="${options.classPrefix}table-cell" style="text-align: ${alignments[index]}">${parseInlineElements(cell, options)}</td>`
-    ).join('')}</tr>`
-  ).join('')
+  const rowsHtml = rows
+    .map(
+      (row) =>
+        `<tr class="${options.classPrefix}table-row">${row
+          .map(
+            (cell, index) =>
+              `<td class="${options.classPrefix}table-cell" style="text-align: ${alignments[index]}">${parseInlineElements(cell, options)}</td>`
+          )
+          .join('')}</tr>`
+    )
+    .join('')
 
   const tableHtml = `
     <table class="${options.classPrefix}table">
@@ -434,8 +454,7 @@ function parseParagraph(lines, startIndex, options) {
     const line = lines[currentIndex]
 
     // 遇到空行或新的块级元素时结束段落
-    if (!line.trim() ||
-        line.match(/^(#{1,6}\s|[-*+] |\d+\.|>|```|\|)/)) {
+    if (!line.trim() || line.match(/^(#{1,6}\s|[-*+] |\d+\.|>|```|\|)/)) {
       break
     }
 
@@ -514,11 +533,19 @@ export function markdownToRichText(markdown, userOptions = {}) {
 
       if (block) {
         blocks.push(block)
-        stats[block.type === 'code_block' ? 'codeBlocks' :
-               block.type === 'heading' ? 'headings' :
-               block.type === 'table' ? 'tables' :
-               block.type === 'list' ? 'lists' :
-               block.type === 'blockquote' ? 'blockquotes' : 'paragraphs']++
+        stats[
+          block.type === 'code_block'
+            ? 'codeBlocks'
+            : block.type === 'heading'
+              ? 'headings'
+              : block.type === 'table'
+                ? 'tables'
+                : block.type === 'list'
+                  ? 'lists'
+                  : block.type === 'blockquote'
+                    ? 'blockquotes'
+                    : 'paragraphs'
+        ]++
 
         // 更新图片和链接统计
         if (block.html) {
@@ -535,7 +562,7 @@ export function markdownToRichText(markdown, userOptions = {}) {
     }
 
     // 生成最终的HTML
-    const html = blocks.map(block => block.html).join('\n')
+    const html = blocks.map((block) => block.html).join('\n')
 
     const result = {
       success: true,
@@ -546,7 +573,6 @@ export function markdownToRichText(markdown, userOptions = {}) {
     }
 
     return result
-
   } catch (error) {
     return {
       success: false,

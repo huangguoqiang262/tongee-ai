@@ -1,19 +1,19 @@
 <template>
   <div v-if="showToolbar" ref="toolbarRef" :style="toolbarStyle" class="text-selection-toolbar">
     <button class="toolbar-btn" title="AI解读" @click="handleAI">
-      <img class="btn-icon" src="@renderer/assets/settings/unscramble-icon.png" alt=""/>
+      <img class="btn-icon" src="@renderer/assets/settings/unscramble-icon.png" alt="" />
       <span class="btn-text">AI解读</span>
     </button>
     <button class="toolbar-btn" title="搜索" @click="handleTranslate">
-      <img class="btn-icon" src="@renderer/assets/settings/translate-icon.png" alt=""/>
+      <img class="btn-icon" src="@renderer/assets/settings/translate-icon.png" alt="" />
       <span class="btn-text">翻译</span>
     </button>
     <button class="toolbar-btn" title="笔记本" @click="handleNotebook">
-      <img class="btn-icon" src="@renderer/assets/settings/notebook-icon.png" alt=""/>
+      <img class="btn-icon" src="@renderer/assets/settings/notebook-icon.png" alt="" />
       <span class="btn-text">笔记本</span>
     </button>
     <button class="toolbar-btn" title="复制" @click="handleCopy">
-      <img class="btn-icon" src="@renderer/assets/settings/copy-icon.png" alt=""/>
+      <img class="btn-icon" src="@renderer/assets/settings/copy-icon.png" alt="" />
       <span class="btn-text">复制</span>
     </button>
   </div>
@@ -249,7 +249,6 @@ const handleSelection = debounce(async () => {
   }
 })
 
-
 // 工具栏按钮事件
 const handleTranslate = () => {
   console.log('翻译文本:', selectedText.value)
@@ -301,7 +300,7 @@ onUnmounted(() => {
   background: var(--toolbar-bg);
   border-radius: 8px;
   padding: 10px;
-  box-shadow: 0px 2px 20px 8px rgba(0,0,0,0.07);
+  box-shadow: 0px 2px 20px 8px rgba(0, 0, 0, 0.07);
   border-radius: 8px;
   z-index: 9999;
 

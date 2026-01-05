@@ -98,22 +98,21 @@ const loadData = () => {
   getList(false)
 }
 const replaceImgStyle = (html) => {
-  const newStyle =
-          "vertical-align: middle;max-width:100%;height:auto !important;";
-  const imgRegex = /<img[^>]*>/gi;
+  const newStyle = 'vertical-align: middle;max-width:100%;height:auto !important;'
+  const imgRegex = /<img[^>]*>/gi
   return html.replace(imgRegex, (match) => {
-    const styleRegex = /style="([^"]*)"/i;
-    const styleMatch = match.match(styleRegex);
+    const styleRegex = /style="([^"]*)"/i
+    const styleMatch = match.match(styleRegex)
     if (styleMatch) {
       // 已有style，替换或添加新样式
-      const oldStyle = styleMatch[1].toLowerCase();
-      const newAttr = `style="${newStyle}${oldStyle}"`;
-      return match.replace(styleRegex, newAttr);
+      const oldStyle = styleMatch[1].toLowerCase()
+      const newAttr = `style="${newStyle}${oldStyle}"`
+      return match.replace(styleRegex, newAttr)
     } else {
       // 无style，直接添加新样式
-      return match.replace("<img", `<img style="${newStyle}"`);
+      return match.replace('<img', `<img style="${newStyle}"`)
     }
-  });
+  })
 }
 
 const getList = (load = true) => {

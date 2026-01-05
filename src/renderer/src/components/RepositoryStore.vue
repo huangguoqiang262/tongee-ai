@@ -522,14 +522,16 @@
                           <span v-if="item.item_type == 3" class="web-url">{{
                             item.info.web_url
                           }}</span>
-                          <span v-else-if="item.title.split('.').pop() == 'txt'">文本</span>
+                          <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
                           <span
                             v-else-if="
-                              ['png', 'jpg', 'jpeg', 'gif'].includes(item.title.split('.').pop())
+                              ['png', 'jpg', 'jpeg', 'gif'].includes(
+                                item.info?.url.split('.').pop()
+                              )
                             "
                             >图片</span
                           >
-                          <span v-else>{{ item.title.split('.').pop().toLocaleUpperCase() }}</span>
+                          <span v-else>{{ item.info?.url.split('.').pop().toUpperCase() }}</span>
                         </div>
                         <div v-if="item.item_type != 3" class="size">
                           {{ formatFileSize(item.total_space) }}
@@ -764,7 +766,7 @@
       <div class="conflict-box">
         <div v-for="(item, index) in conflictFiles" :key="index" class="conflict-item">
           <img v-if="item.type == 'directory'" :src="catalogueIcon" class="conflict-icon" alt="" />
-          <img v-else class="conflict-icon" :src="getFileIcon(item)" alt="" />
+          <img v-else class="conflict-icon" :src="getFileIcon1(item)" alt="" />
           <div class="conflict-name">{{ item?.title || '' }}</div>
         </div>
       </div>
@@ -2312,6 +2314,34 @@ const getFileIcon = (item) => {
     return webPageIcon
   }
   // 根据文件扩展名返回不同的图标
+  const ext = item.info?.url?.split('.').pop()?.toLowerCase()
+  const iconMap = {
+    doc: wordIcon,
+    docx: wordIcon,
+    pdf: pdfIcon,
+    xls: excelIcon,
+    xlsx: excelIcon,
+    csv: csvIcon,
+    ppt: pptIcon,
+    pptx: pptIcon,
+    txt: txtIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon,
+    web: webPageIcon
+  }
+
+  return iconMap[ext] || wordIcon
+}
+// copy获取文件图标
+const getFileIcon1 = (item) => {
+  if (item.item_type == 2) {
+    return catalogueIcon
+  } else if (item.item_type == 3) {
+    return webPageIcon
+  }
+  // 根据文件扩展名返回不同的图标
   const ext = item.title?.split('.').pop()?.toLowerCase()
   const iconMap = {
     doc: wordIcon,
@@ -3175,6 +3205,7 @@ watch(
                 flex: 1;
                 display: flex;
                 align-items: center;
+                justify-content: flex-start;
                 gap: 10px;
                 overflow: hidden;
 
@@ -3201,6 +3232,7 @@ watch(
 
                 .tags {
                   flex: 1;
+                  min-width: 50px;
                   overflow: hidden;
                   white-space: nowrap;
                   text-overflow: ellipsis;
@@ -3236,7 +3268,7 @@ watch(
                   overflow: hidden;
 
                   .web-url {
-                    display: block;
+                    display: inline-block;
                     max-width: calc(100% - 20px);
                     white-space: nowrap;
                     text-overflow: ellipsis;

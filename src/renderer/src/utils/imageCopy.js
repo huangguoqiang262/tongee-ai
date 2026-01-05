@@ -60,7 +60,6 @@ export async function copyBase64ImageAsNormalImage(base64Url) {
 
     await navigator.clipboard.write([clipboardItem])
     return true
-
   } catch (error) {
     console.error('复制base64图片失败:', error)
 

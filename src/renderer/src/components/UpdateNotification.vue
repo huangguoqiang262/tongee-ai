@@ -309,7 +309,6 @@ const handleUpdateStatus = (event, status) => {
     clearTimeout(checkTimeout.value)
     checkTimeout.value = null
   }
-
   switch (status.stage) {
     case 'available':
       // 有可用更新
@@ -320,7 +319,7 @@ const handleUpdateStatus = (event, status) => {
         releaseNotes: status.releaseNotes || '新版本包含性能优化和功能改进'
       }
       userStore.version = status.version
-      ElMessage.info(`发现新版本 ${status.version}`)
+      ElMessage.primary(`发现新版本 ${status.version}`)
       break
 
     case 'downloading':

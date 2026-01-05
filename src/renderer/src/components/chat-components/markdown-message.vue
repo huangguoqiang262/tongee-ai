@@ -20,7 +20,7 @@
         </div>
         <div class="knowledge-popover-footer">
           <img class="icon" :src="getFileIcon(currentDocumentInfo)" alt="" />
-          <span>{{ currentDocumentInfo?.fileName?.split('.').pop()?.toUpperCase() }}</span>
+          <span>{{ currentDocumentInfo?.fileUrl?.split('.').pop()?.toUpperCase() }}</span>
           <span class="knowledge-popover-filename">{{ currentDocumentInfo?.fileName }}</span>
         </div>
       </div>
@@ -61,7 +61,7 @@ const getFileIcon = (item) => {
     return ''
   }
   // 根据文件扩展名返回不同的图标
-  const ext = item.fileName?.split('.').pop()?.toLowerCase()
+  const ext = item.fileUrl?.split('.').pop()?.toUpperCase()
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,

@@ -52,7 +52,9 @@
                   <el-icon @click="actions('zoomIn', { enableTransition: false, zoomRate: 2 })">
                     <ZoomIn />
                   </el-icon>
-                  <el-icon @click="actions('clockwise', { rotateDeg: 180, enableTransition: false })">
+                  <el-icon
+                    @click="actions('clockwise', { rotateDeg: 180, enableTransition: false })"
+                  >
                     <RefreshRight />
                   </el-icon>
                   <el-icon @click="actions('anticlockwise')"><RefreshLeft /></el-icon>
@@ -66,7 +68,9 @@
                   {{ item.title }}
                 </div>
                 <div class="attach-type">
-                  <span class="file-extension">{{ item.title?.split('.').pop()?.toUpperCase() }}</span>
+                  <span class="file-extension">{{
+                    item.full_path?.split('.').pop()?.toUpperCase()
+                  }}</span>
                   <span class="file-size">{{ formatFileSize(item.total_space) }}</span>
                 </div>
               </div> -->
@@ -590,7 +594,7 @@ const clearAttach = (i) => {
 // 获取文件图标
 // const getFileIcon = (item) => {
 //   // 根据文件扩展名返回不同的图标
-//   const ext = item.title?.split('.').pop()?.toLowerCase()
+//   const ext = item.full_path?.split('.').pop()?.toLowerCase()
 //   const iconMap = {
 //     doc: wordIcon,
 //     docx: wordIcon,

@@ -29,7 +29,7 @@
               </div>
               <div class="attach-type">
                 <span class="file-extension">{{
-                  item.title?.split('.').pop()?.toUpperCase()
+                  item.full_path?.split('.').pop()?.toUpperCase()
                 }}</span>
                 <!-- <span class="file-size">{{ formatFileSize(item.size) }}</span> -->
               </div>
@@ -374,7 +374,7 @@ export default {
     // 获取文件图标
     getFileIcon(item) {
       // 根据文件扩展名返回不同的图标
-      const ext = item.title?.split('.').pop()?.toLowerCase()
+      const ext = item.full_path?.split('.').pop()?.toLowerCase()
       const iconMap = {
         doc: wordIcon,
         docx: wordIcon,

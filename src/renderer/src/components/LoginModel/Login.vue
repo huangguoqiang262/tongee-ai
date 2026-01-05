@@ -429,7 +429,8 @@ const handleLogin = () => {
               }, 300)
             }
           })
-          .catch(() => {}).finally(() => {
+          .catch(() => {})
+          .finally(() => {
             loading.close()
           })
       } else {
@@ -461,7 +462,8 @@ const handleLogin = () => {
               }, 300)
             }
           })
-          .catch(() => {}).finally(() => {
+          .catch(() => {})
+          .finally(() => {
             loading.close()
           })
       }

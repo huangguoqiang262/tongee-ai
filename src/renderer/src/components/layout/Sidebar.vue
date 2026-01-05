@@ -52,7 +52,7 @@ import recycleDarkIcon from '@renderer/assets/menu/recycled-dark-icon.png'
 import messageCenterDarkIcon from '@renderer/assets/menu/message-center-dark-icon.png'
 import historyIcon from '@renderer/assets/menu/history-icon.png'
 import historyDarkIcon from '@renderer/assets/menu/history-dark-icon.png'
-
+import settingIcon from '@renderer/assets/menu/setting-icon.png'
 import defaultCover from '@renderer/assets/repository/default-cover.png'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 const addNewTab = inject('addNewTab')
@@ -111,7 +111,7 @@ const handleClick = (item) => {
       isInternal: true
     })
     return
-  } else if (item.url == 'History'){
+  } else if (item.url == 'History') {
     addNewTab({
       url: 'History',
       title: '历史记录',
@@ -119,7 +119,7 @@ const handleClick = (item) => {
       isInternal: true
     })
     return
-  } else if (item.url == 'Recycled'){
+  } else if (item.url == 'Recycled') {
     addNewTab({
       url: 'Recycled',
       title: '回收站',
@@ -182,7 +182,7 @@ const accountClick = () => {
   addNewTab({
     url: 'AccountSettings',
     title: '账户设置',
-    icon: repositoryIcon,
+    icon: settingIcon,
     isInternal: true
   })
 }

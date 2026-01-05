@@ -556,7 +556,6 @@ const reload = (tabId = '') => {
         //   loading: false,
         //   progress: 0
         // })
-
       }
       return
     }

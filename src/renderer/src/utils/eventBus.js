@@ -14,7 +14,7 @@ export const on = (event, callback) => {
 // 触发事件
 export const emit = (event, data) => {
   if (eventBus.value[event]) {
-    eventBus.value[event].forEach(callback => {
+    eventBus.value[event].forEach((callback) => {
       callback(data)
     })
   }
