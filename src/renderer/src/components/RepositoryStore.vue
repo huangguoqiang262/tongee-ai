@@ -483,7 +483,7 @@
                       </div>
                     </div>
                   </div>
-                  <div class="management-box">{{ item.createtime }}</div>
+                  <div class="management-box">{{ item.createtime.split(' ')[0] }}</div>
                 </div>
               </div>
             </div>
