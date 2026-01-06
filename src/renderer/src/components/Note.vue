@@ -261,7 +261,12 @@
         />
         <div class="title">添加到知识库</div>
       </template>
-      <el-form ref="repositoryFormRef" :model="repositoryForm" :rules="repositoryRules">
+      <el-form
+        ref="repositoryFormRef"
+        :model="repositoryForm"
+        :rules="repositoryRules"
+        @submit.prevent
+      >
         <el-form-item prop="id">
           <el-select
             v-model="repositoryForm.id"
@@ -322,7 +327,7 @@
         />
         <div class="title">移动到笔记本</div>
       </template>
-      <el-form ref="moveNoteFormRef" :model="moveNoteForm" :rules="moveNoteRules">
+      <el-form ref="moveNoteFormRef" :model="moveNoteForm" :rules="moveNoteRules" @submit.prevent>
         <el-form-item prop="id">
           <el-select
             v-model="moveNoteForm.id"

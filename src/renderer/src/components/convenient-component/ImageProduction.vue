@@ -310,7 +310,7 @@ const sizeLists = ref([
     icon: img11,
     checkedIcon: img11Checked,
     title: '1:1',
-    id: '512x512',
+    id: '512*512',
     width: 512,
     height: 512
   },
@@ -318,7 +318,7 @@ const sizeLists = ref([
     icon: img43,
     checkedIcon: img43Checked,
     title: '4:3',
-    id: '682x512',
+    id: '682*512',
     width: 682,
     height: 512
   },
@@ -326,7 +326,7 @@ const sizeLists = ref([
     icon: img34,
     checkedIcon: img34Checked,
     title: '3:4',
-    id: '512x682',
+    id: '512*682',
     width: 512,
     height: 682
   },
@@ -334,7 +334,7 @@ const sizeLists = ref([
     icon: img169,
     checkedIcon: img169Checked,
     title: '16:9',
-    id: '910x512',
+    id: '910*512',
     width: 910,
     height: 512
   },
@@ -342,14 +342,14 @@ const sizeLists = ref([
     icon: img916,
     checkedIcon: img916Checked,
     title: '9:16',
-    id: '512x910',
+    id: '512*910',
     width: 512,
     height: 910
   }
 ])
 let activeSize = ref({
   title: '1:1',
-  id: '512x512',
+  id: '512*512',
   width: 512,
   height: 512
 })
@@ -1051,10 +1051,10 @@ const clearAttach = (i) => {
   }
 }
 .custom-style-popover {
-  padding: 8px !important;
+  padding: 8px 2px 8px 8px !important;
   border-radius: 8px !important;
-  width: 476px !important;
-  height: 164px !important;
+  width: 478px !important;
+  height: 168px !important;
   .handle-box {
     display: flex;
     flex-wrap: wrap;
@@ -1063,6 +1063,7 @@ const clearAttach = (i) => {
     height: 100%;
     overflow-y: auto;
     .item {
+      box-sizing: border-box;
       position: relative;
       width: 70px;
       height: 70px;

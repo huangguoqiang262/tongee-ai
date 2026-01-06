@@ -27,6 +27,7 @@
           label-width="60px"
           label-position="left"
           require-asterisk-position="right"
+          @submit.prevent
         >
           <el-form-item v-if="props.type == 'common'" label="类型" prop="type_id">
             <el-select v-model="form.type_id" size="large" placeholder="请选择类型">

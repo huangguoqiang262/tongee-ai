@@ -49,6 +49,7 @@
             hide-required-asterisk
             :scroll-to-error="true"
             class="ms-content"
+            @submit.prevent
           >
             <template v-if="switchType == 'password'">
               <el-form-item prop="mobile" label="手机号">
@@ -132,6 +133,7 @@
             hide-required-asterisk
             :scroll-to-error="true"
             class="ms-content"
+            @submit.prevent
           >
             <template v-if="isforgetPassword && !nextForget">
               <el-form-item prop="mobile" label="手机号">

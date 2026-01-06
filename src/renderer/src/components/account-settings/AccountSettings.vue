@@ -287,6 +287,7 @@
         label-position="top"
         :model="passwordForm"
         :rules="passwordRules"
+        @submit.prevent
       >
         <el-form-item prop="password" label="新密码">
           <el-input

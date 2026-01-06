@@ -105,6 +105,7 @@ const retrievedDocumen = (file) => {
     title: file.fileName,
     url: 'DocumentDetail',
     isInternal: true,
+    icon: getFileIcon(file),
     attrs: {
       fileUrl: file.fileUrl,
       fileName: file.fileName
@@ -120,6 +121,7 @@ const lookOver = (file, type = 1) => {
     addNewTab({
       title: file.title,
       url: 'DocumentDetail',
+      icon: getFileIcon(file),
       isInternal: true,
       attrs: {
         fileUrl: file.full_path,
@@ -162,7 +164,14 @@ const getFileIcon1 = (item) => {
 // 获取文件图标
 const getFileIcon = (item) => {
   // 根据文件扩展名返回不同的图标
-  const ext = item.full_path?.split('.').pop()?.toLowerCase()
+  let ext = ''
+  if (item.full_path) {
+    ext = item.full_path?.split('.').pop()?.toLowerCase()
+  } else if (item.fileUrl) {
+    ext = item.fileUrl?.split('.').pop()?.toLowerCase()
+  } else {
+    ext = item.url?.split('.').pop()?.toLowerCase()
+  }
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,

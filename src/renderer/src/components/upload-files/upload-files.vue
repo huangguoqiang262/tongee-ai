@@ -342,7 +342,6 @@ const uploadSingleFile = async (fileItem) => {
     }
 
     xhr.onload = () => {
-      console.log('上传完成:', xhr)
       let response = JSON.parse(xhr.response)
       if (xhr.status == 200 && response.code == 200) {
         fileItem.status = uploadStatus.SUCCESS

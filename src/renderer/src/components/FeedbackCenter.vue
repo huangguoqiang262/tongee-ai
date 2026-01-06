@@ -31,6 +31,7 @@
             :model="feedbackData"
             :rules="feedbackRules"
             class="feedback-form"
+            @submit.prevent
           >
             <el-form-item label="文档类别" prop="doc_type">
               <el-select

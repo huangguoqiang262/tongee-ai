@@ -165,7 +165,7 @@ const activeSession = ref({
   vector_folder_path: '',
   know_modelName: '',
   know_provider_key: '',
-  image_size: props.attrs.image_size || '512x512',
+  image_size: props.attrs.image_size || '512*512',
   image_style: props.attrs.image_style || '风格不限'
 })
 const sendMessage = (event = {}) => {
@@ -264,18 +264,16 @@ const sendMessage = (event = {}) => {
       // modelName: 'qwen-image-edit-plus',
       // modelPlatform: 'aliyun'
     },
-    diagramParams: {
-      n: 4,
-      prompt_extend: true,
-      prompt: message.value.text + '，风格：' + activeSession.value.image_style,
-      // num_inference_steps: 20,
-      seed: 247483647,
-      // guidance_scale: 7.5,
-      negative_prompt: '',
-      image_size: activeSession.value.image_size,
-      // model: 'qwen-image-edit-plus',
-      images: referenceImgs.value[0] ? [referenceImgs.value[0].full_path] : []
-    },
+    sessionId: activeSession.value.chat_key,
+    prompt_extend: true,
+    prompt: message.value.text + '，风格：' + activeSession.value.image_style,
+    // num_inference_steps: 20,
+    seed: 247483647,
+    // guidance_scale: 7.5,
+    negative_prompt: '',
+    imageSize: activeSession.value.image_size,
+    // model: 'qwen-image-edit-plus',
+    images: referenceImgs.value[0] ? [referenceImgs.value[0].full_path] : [],
     params: {
       ding_uid: userInfo.value.ding_uid,
       chat_key: activeSession.value.chat_key
@@ -291,7 +289,7 @@ const sendMessage = (event = {}) => {
     text: '',
     image: []
   }
-  let apiUrl = import.meta.env.VITE_API_BASE_AI_URL + '/ai/image/test-to-image'
+  let apiUrl = import.meta.env.VITE_API_BASE_AI_URL + '/ai/image/text-to-image'
   fetch(apiUrl, {
     method: 'POST',
     headers: {

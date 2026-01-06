@@ -757,7 +757,13 @@
         />
         <div class="title">导入网页</div>
       </template>
-      <el-form ref="webFormRef" :model="webForm" :rules="webRules" class="rename-form">
+      <el-form
+        ref="webFormRef"
+        :model="webForm"
+        :rules="webRules"
+        class="rename-form"
+        @submit.prevent
+      >
         <el-form-item prop="urls" style="margin-bottom: 0">
           <el-input
             v-model="webForm.urls"
@@ -1147,7 +1153,7 @@ const detailChange = (item) => {
       })
     } else {
       addNewTab({
-        icon: item.info?.icon,
+        icon: getFileIcon(item),
         title: item.title,
         url: 'DocumentDetail',
         isInternal: true,
@@ -1756,9 +1762,32 @@ const createOrRename = (item) => {
       })
     }
   } else {
+    // 判断是否有后缀  如果没有后缀则根据info.url后缀拼接
     data = {
       item_id: item.id,
       new_name: item.title
+    }
+    if (item.item_type == 1) {
+      const allowedTypes = [
+        'txt',
+        'png',
+        'jpg',
+        'jpeg',
+        'gif',
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'ppt',
+        'pptx'
+      ]
+      let fileExt = data.new_name.split('.').pop().toLowerCase()
+      if (!allowedTypes.includes(fileExt)) {
+        data.new_name += data.new_name.endsWith('.')
+          ? activeFiles.value[0]?.info.url.split('.').pop().toLowerCase()
+          : '.' + activeFiles.value[0]?.info.url.split('.').pop().toLowerCase()
+      }
     }
     reNameItem(data).then((res) => {
       if (res.code == 200) {
@@ -1921,7 +1950,10 @@ const showContextMenu = (e, item) => {
             }
           ]
         }
-        if (repositoryPermission.value.setting?.permission_type == 1) {
+        if (
+          repositoryPermission.value.setting?.permission_type == 1 &&
+          repositoryPermission.value.is_public == 1
+        ) {
           contextMenu.value.actionSheet.splice(
             3,
             0,
@@ -1953,7 +1985,10 @@ const showContextMenu = (e, item) => {
               action: 'export'
             }
           )
-        } else if (repositoryPermission.value.setting?.permission_type == 2) {
+        } else if (
+          repositoryPermission.value.setting?.permission_type == 2 &&
+          repositoryPermission.value.is_public == 1
+        ) {
           contextMenu.value.actionSheet.splice(3, 0, {
             name: '内容权限',
             icon: permissionIcon,
@@ -1974,7 +2009,7 @@ const showContextMenu = (e, item) => {
         }
       }
     }
-  } else if (item.permission_type === 1) {
+  } else if (item.permission_type === 1 && repositoryPermission.value.is_public == 1) {
     if (item.item_type == 1) {
       item.checked = true
       contextMenu.value = {
@@ -2033,7 +2068,32 @@ const handleContextMenuAction = ({ action }) => {
   } else if (action === 'rename') {
     // 重命名
     if (activeFiles.value.length == 1) {
+      if (activeFiles.value[0].item_type == 1) {
+        const allowedTypes = [
+          'txt',
+          'png',
+          'jpg',
+          'jpeg',
+          'gif',
+          'pdf',
+          'doc',
+          'docx',
+          'xls',
+          'xlsx',
+          'ppt',
+          'pptx'
+        ]
+        let fileExt = activeFiles.value[0].title.split('.').pop().toLowerCase()
+        if (allowedTypes.includes(fileExt)) {
+          //  删除后缀
+          activeFiles.value[0].title = activeFiles.value[0].title.substring(
+            0,
+            activeFiles.value[0].title.lastIndexOf('.')
+          )
+        }
+      }
       activeFiles.value[0].isCreated = true
+
       nextTick(() => {
         // 让新生成的input聚焦 且让其内容selected选中
         const newInput = document.querySelector('.create-input input')
@@ -3301,10 +3361,11 @@ watch(
               font-size: 14px;
               color: var(--default-font-color);
               line-height: 18px;
-              white-space: nowrap;
-              text-overflow: ellipsis;
+              display: -webkit-box;
+              -webkit-box-orient: vertical;
+              -webkit-line-clamp: 2;
               overflow: hidden;
-
+              text-overflow: ellipsis;
               :deep(.create-input) {
                 width: calc(100% - 30px);
                 height: 100%;
@@ -3613,12 +3674,13 @@ watch(
   padding: 20px !important;
   width: 376px !important;
   background: #ffffff;
+  max-height: 65%;
+  overflow-y: auto;
   box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
   border-radius: 16px !important;
 
   .abstract-box {
     width: 100%;
-
     .abstract-title {
       margin-bottom: 14px;
       font-size: 14px;

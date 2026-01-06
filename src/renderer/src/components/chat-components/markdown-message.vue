@@ -129,6 +129,7 @@ const toKnowledge = (item) => {
     title: item.fileName,
     url: 'DocumentDetail',
     isInternal: true,
+    icon: getFileIcon(item),
     attrs: {
       fileUrl: item.fileUrl,
       fileName: item.fileName
