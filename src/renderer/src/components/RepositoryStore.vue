@@ -1950,7 +1950,7 @@ const showContextMenu = (e, item) => {
             }
           ]
         }
-        if (activeFiles.value[0].is_public == 1) {
+        if (activeRepository.value.is_public == 1) {
           contextMenu.value.actionSheet.splice(
             3,
             0,
