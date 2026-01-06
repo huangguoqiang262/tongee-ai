@@ -137,8 +137,6 @@ const getList = (load = true) => {
       }
     })
     .finally(() => {
-      console.log(55555);
-      
       loading.value = false
     })
 }
@@ -408,6 +406,8 @@ onMounted(() => {
       border-radius: 12px;
       // box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.1);
       .empty-content {
+        box-sizing: border-box;
+        padding-top: 20vh;
         height: 100%;
       }
     }

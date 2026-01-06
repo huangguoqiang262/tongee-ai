@@ -33,6 +33,7 @@
                     class="create-input"
                     placeholder="请输入笔记本名称"
                     @keyup.enter="editNoteBookName(item)"
+                    @click.stop=""
                     @blur="editNoteBookName(item)"
                   />
                   <template v-else>{{ item.title }}</template>
@@ -94,6 +95,7 @@
                     class="create-input"
                     placeholder="请输入笔记名称"
                     @keyup.enter="editNoteName(item)"
+                    @click.stop=""
                     @blur="editNoteName(item)"
                   />
                   <template v-else>{{ item.title }}</template>

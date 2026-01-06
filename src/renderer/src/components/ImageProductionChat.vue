@@ -414,7 +414,7 @@ const getWordList = () => {
           var images = []
           item.attach_file_ids.map((image_item) => {
             images.push({
-              full_path: image_item.image
+              full_path: image_item.image || image_item
             })
           })
           if (item.msg_type == 'ASSISTANT') {

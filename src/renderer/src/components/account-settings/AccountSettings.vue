@@ -458,6 +458,7 @@ const toUploadLog = () => {
   addNewTab({
     title: '功能介绍',
     url: 'UpdateLog',
+    icon: notebookIcon,
     isInternal: true,
     attrs: {}
   })

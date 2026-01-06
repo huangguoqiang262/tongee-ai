@@ -41,14 +41,19 @@
     </div>
     <div class="center-box">
       <div ref="containerRef" class="center-content">
-        <div
-          v-for="(value, index) in list"
-          :id="'version' + index"
-          :key="value.id"
-          class="version-item"
-        >
-          <h3>{{ value.version }}主要更新</h3>
-          <v-md-preview :text="replaceImgStyle(value.content)"></v-md-preview>
+        <template v-if="list.length">
+          <div
+            v-for="(value, index) in list"
+            :id="'version' + index"
+            :key="value.id"
+            class="version-item"
+          >
+            <h3>{{ value.version }}主要更新</h3>
+            <v-md-preview :text="replaceImgStyle(value.content)"></v-md-preview>
+          </div>
+        </template>
+        <div v-else class="empty-content">
+          <el-empty :image-size="120" description="暂无内容" />
         </div>
       </div>
     </div>
@@ -264,6 +269,11 @@ onMounted(() => {
       color: var(--default-font-color);
       line-height: 22px;
       border-radius: 12px;
+      .empty-content {
+        box-sizing: border-box;
+        padding-top: 20vh;
+        height: 100%;
+      }
       .version-item {
         :deep(.vuepress-markdown-body) {
           padding: 10px !important;

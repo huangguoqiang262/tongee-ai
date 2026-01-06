@@ -197,7 +197,7 @@ const ensureFocusAndSend = (channel, data = null, delay = 0) => {
   // 在Mac上，需要延迟以确保截图窗口完全关闭
   // 当截图区域超过应用窗口时，需要更长的延迟
   if (process.platform === 'darwin') {
-    const finalDelay = delay || 400 // 增加默认延迟到400ms
+    const finalDelay = delay || 600 // 增加默认延迟到600ms
     console.log(`[截图] Mac平台，延迟 ${finalDelay}ms 后发送消息`)
     setTimeout(() => sendMessage(), finalDelay)
   } else {
@@ -340,7 +340,7 @@ export const initScreenshoots = () => {
           buffer: buffer.toString('base64'),
           bounds: bounds
         },
-        process.platform === 'darwin' ? 400 : 150
+        process.platform === 'darwin' ? 600 : 150
       )
     } else {
       debounceResetCapturingState()
@@ -360,7 +360,7 @@ export const initScreenshoots = () => {
           buffer: buffer.toString('base64'),
           bounds: bounds
         },
-        process.platform === 'darwin' ? 400 : 150
+        process.platform === 'darwin' ? 600 : 150
       )
     } else {
       debounceResetCapturingState()
@@ -377,13 +377,13 @@ export const initScreenshoots = () => {
   })
 
   // // esc取消
-  // globalShortcut.register('esc', () => {
-  //   if (screenshots.$win?.isFocused()) {
-  //     screenshots.endCapture()
-  //     // 重置截图状态
-  //     screenshots.isCapturing = false
-  //     // 发送取消事件到渲染进程
-  //     ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
-  //   }
-  // })
+  globalShortcut.register('esc', () => {
+    if (screenshots.$win?.isFocused()) {
+      screenshots.endCapture()
+      // 重置截图状态
+      screenshots.isCapturing = false
+      // 发送取消事件到渲染进程
+      ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
+    }
+  })
 }
