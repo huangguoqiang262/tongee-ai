@@ -45,8 +45,11 @@
           </div>
         </div>
       </div>
-      <div v-loading="!html" class="center-content">
-        <v-md-preview :text="html"></v-md-preview>
+      <div v-loading="!html && loading" class="center-content">
+        <v-md-preview v-if="html" :text="html"></v-md-preview>
+        <div v-else class="empty-content">
+          <el-empty :image-size="120" description="暂无内容" />
+        </div>
       </div>
     </div>
     <div v-if="chatVisible" class="right-box">
@@ -134,6 +137,8 @@ const getList = (load = true) => {
       }
     })
     .finally(() => {
+      console.log(55555);
+      
       loading.value = false
     })
 }
@@ -402,6 +407,9 @@ onMounted(() => {
       line-height: 22px;
       border-radius: 12px;
       // box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.1);
+      .empty-content {
+        height: 100%;
+      }
     }
   }
   .right-box {

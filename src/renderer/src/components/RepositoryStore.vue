@@ -234,7 +234,11 @@
                 <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
                 <div class="title">添加快捷访问</div>
               </div>
-              <div class="item" @click="beforeDeleteRepository">
+              <div
+                v-if="activeRepository.is_default != 1"
+                class="item"
+                @click="beforeDeleteRepository"
+              >
                 <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
                 <div class="title">删除知识库</div>
               </div>

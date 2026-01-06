@@ -87,12 +87,9 @@ const props = defineProps({
 /** 获取后缀名（不带点，小写） */
 const ext = computed(() => {
   const url = props.fileUrl || ''
-  const name = props.fileName || ''
-
-  const fromName = name.split('?')[0].split('#')[0]
   const fromUrl = url.split('?')[0].split('#')[0]
 
-  const full = fromName || fromUrl
+  const full = fromUrl
   const idx = full.lastIndexOf('.')
   if (idx === -1) return ''
   return full.slice(idx + 1).toLowerCase()
@@ -154,10 +151,21 @@ const MAX_SCALE = 5
 // 处理图片加载
 const handleImageLoad = (event) => {
   const img = event.target
+  //  判断如果初始大小大于容器大小，则进行适应性缩放
+  const container = document.querySelector('.file-preview-img-container')
+  const containerWidth = container.clientWidth
+  const containerHeight = container.clientHeight
+  let initialScale = 1
+  if (img.naturalWidth > containerWidth || img.naturalHeight > containerHeight) {
+    const scaleX = containerWidth / img.naturalWidth
+    const scaleY = containerHeight / img.naturalHeight
+    initialScale = Math.min(scaleX, scaleY)
+  }
+  scale.value = initialScale
   imageSize.width = img.naturalWidth
   imageSize.height = img.naturalHeight
   updateContainerSize()
-  resetView()
+  resetView(scale.value)
 }
 
 // 更新容器尺寸
@@ -170,8 +178,8 @@ const updateContainerSize = () => {
 }
 
 // 重置视图
-const resetView = () => {
-  scale.value = 1
+const resetView = (defaultScale = 1) => {
+  scale.value = defaultScale
   position.x = 0
   position.y = 0
 }
