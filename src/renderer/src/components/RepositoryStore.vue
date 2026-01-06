@@ -1950,10 +1950,7 @@ const showContextMenu = (e, item) => {
             }
           ]
         }
-        if (
-          repositoryPermission.value.setting?.permission_type == 1 &&
-          repositoryPermission.value.is_public == 1
-        ) {
+        if (activeFiles.value[0].is_public == 1) {
           contextMenu.value.actionSheet.splice(
             3,
             0,
@@ -1985,28 +1982,29 @@ const showContextMenu = (e, item) => {
               action: 'export'
             }
           )
-        } else if (
-          repositoryPermission.value.setting?.permission_type == 2 &&
-          repositoryPermission.value.is_public == 1
-        ) {
-          contextMenu.value.actionSheet.splice(3, 0, {
-            name: '内容权限',
-            icon: permissionIcon,
-            action: 'permission',
-            children: [
-              {
-                name: '可查看、不可导出',
-                icon: disabledExportIcon,
-                action: 'private'
-              },
-              {
-                name: '不可查看',
-                icon: cannotViewIcon,
-                action: 'cannotView'
-              }
-            ]
-          })
         }
+        // else if (
+        //   repositoryPermission.value.setting?.permission_type == 2 &&
+        //   repositoryPermission.value.is_public == 1
+        // ) {
+        //   contextMenu.value.actionSheet.splice(3, 0, {
+        //     name: '内容权限',
+        //     icon: permissionIcon,
+        //     action: 'permission',
+        //     children: [
+        //       {
+        //         name: '可查看、不可导出',
+        //         icon: disabledExportIcon,
+        //         action: 'private'
+        //       },
+        //       {
+        //         name: '不可查看',
+        //         icon: cannotViewIcon,
+        //         action: 'cannotView'
+        //       }
+        //     ]
+        //   })
+        // }
       }
     }
   } else if (item.permission_type === 1 && repositoryPermission.value.is_public == 1) {
