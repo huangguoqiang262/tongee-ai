@@ -568,7 +568,7 @@
                         <div class="type-box">
                           <img class="icon" :src="getFileIcon(item)" alt="" />
                           <span v-if="item.item_type == 3" class="web-url">{{
-                            item.info.web_url
+                            item.info?.web_url
                           }}</span>
                           <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
                           <span
@@ -1223,7 +1223,7 @@ const getCommonJoinList = (repositoryId = '') => {
     }
     if (!activeRepositoryId.value && commonJoinList.value.length) {
       activeRepositoryId.value = commonJoinList.value[0].id
-      repositoryType.value = 'personage'
+      repositoryType.value = 'common'
       getRepositoryInfo(activeRepositoryId.value)
     } else if (
       !activeRepositoryId.value &&
@@ -1239,7 +1239,7 @@ const getCommonJoinList = (repositoryId = '') => {
       personalCreateList.value.length
     ) {
       activeRepositoryId.value = personalCreateList.value[0].id
-      repositoryType.value = 'common'
+      repositoryType.value = 'personage'
       getRepositoryInfo(activeRepositoryId.value)
     }
   })
@@ -1423,7 +1423,7 @@ const submitImport = (ids) => {
 }
 const selecteFileIdList = computed(() => {
   return detailFileList.value
-    .filter((item) => item.checked && item.item_type != 2)
+    .filter((item) => item.checked && item.item_type != 2 && item.info)
     .map((item) => {
       return {
         fileId: item.info.file_key,
@@ -1481,6 +1481,9 @@ const getUnreadApplyNumber = () => {
   know_apply_number({ know_id: activeRepositoryId.value }).then((res) => {
     if (res.code == 200) {
       unreadApplyNumber.value = res.data.new_number
+      if (unreadApplyNumber.value <= 0) {
+        activeRepository.value.is_prompt = 0
+      }
     }
   })
 }

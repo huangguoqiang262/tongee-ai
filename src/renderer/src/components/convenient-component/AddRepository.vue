@@ -212,14 +212,6 @@ watch(repositoryVisible, (newVal) => {
     }
   }
 })
-watch(
-  () => props.type,
-  (newVal) => {
-    if (newVal == 'common') {
-      form.value.type_id = ''
-    }
-  }
-)
 const form = ref({
   type_id: '',
   title: '',

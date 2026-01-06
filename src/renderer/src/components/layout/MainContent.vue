@@ -102,7 +102,7 @@ const updateTabLayout = debounce(() => {
   const containerWidth = tabsContainer.clientWidth
   const tabCount = tabs.value.length
   const minTabWidth = 120
-  const maxTabWidth = 240
+  const maxTabWidth = 120
 
   // 获取新建标签按钮的实际宽度
   const newTabEl = document.querySelector('.new-tab')
