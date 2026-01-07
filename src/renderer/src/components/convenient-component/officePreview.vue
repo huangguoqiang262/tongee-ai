@@ -81,10 +81,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-overlay">
-      <div class="loading-spinner">
-        <i class="el-icon-loading"></i>
-        <p>文档加载中...</p>
-      </div>
+      <div class="loading-spinner"></div>
     </div>
 
     <!-- 错误状态 -->
@@ -209,9 +206,6 @@ const onError = (err) => {
 
 // PPTX文档渲染完成回调
 const onPptxRendered = () => {
-  console.log('PPTX文档渲染完成')
-  console.log('当前src:', encodedSrc.value)
-  console.log('文档类型:', trimmedType.value)
   loading.value = false
   error.value = false
   emit('rendered')
@@ -220,8 +214,6 @@ const onPptxRendered = () => {
 // PPTX文档加载错误回调
 const onPptxError = (err) => {
   console.error('PPTX文档渲染失败:', err)
-  console.log('失败时的src:', encodedSrc.value)
-  console.log('失败时的文档类型:', trimmedType.value)
   loading.value = false
   error.value = true
   errorMessage.value = err.message || 'PPTX文档加载失败'
@@ -502,21 +494,8 @@ defineExpose({
     z-index: 1000;
 
     .loading-spinner {
-      text-align: center;
-      color: #409eff;
-
-      i {
-        font-size: 32px;
-        margin-bottom: 12px;
-        display: block;
-        animation: rotate 2s linear infinite;
-      }
-
-      p {
-        margin: 0;
-        font-size: 14px;
-        color: #666;
-      }
+      border-color: var(--el-color-primary-light-9);
+      border-top-color: var(--el-color-primary);
     }
   }
 

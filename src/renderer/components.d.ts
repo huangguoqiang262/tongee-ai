@@ -54,7 +54,6 @@ declare module 'vue' {
     EnchiridionChat: typeof import('./src/components/EnchiridionChat.vue')['default']
     FeedbackCenter: typeof import('./src/components/FeedbackCenter.vue')['default']
     FilePreview: typeof import('./src/components/convenient-component/FilePreview.vue')['default']
-    FilePreviewBak: typeof import('./src/components/FilePreviewBak.vue')['default']
     HandleContextMenu: typeof import('./src/components/HandleContextMenu.vue')['default']
     History: typeof import('./src/components/History.vue')['default']
     HomePage: typeof import('./src/components/HomePage.vue')['default']
