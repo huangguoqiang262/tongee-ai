@@ -52,14 +52,15 @@
     </div>
 
     <!-- PDF 预览 -->
-    <webview v-else-if="isPdf" :src="fileUrl" class="file-preview-iframe"></webview>
+    <!-- <webview v-else-if="isPdf" :src="fileUrl" class="file-preview-iframe"></webview> -->
 
     <!-- 文本预览（txt） -->
     <div v-else-if="isTxt" class="file-preview-iframe">
       <v-md-preview :text="txtContent"></v-md-preview>
     </div>
     <!-- Office 文档在线预览（需要公网可访问的URL） -->
-    <webview v-else-if="isOffice" :src="officePreviewUrl" class="file-preview-iframe"></webview>
+    <!-- <webview v-else-if="isOffice" :src="officePreviewUrl" class="file-preview-iframe"></webview> -->
+    <office-preview v-else-if="isOffice || isPdf" :type="ext" :src="fileUrl"></office-preview>
     <!-- 网页 -->
     <webview v-else-if="isWebUrl" :src="fileUrl" class="file-preview-iframe"></webview>
     <!-- 其他类型：仅提供打开/下载 -->
@@ -72,7 +73,6 @@
 
 <script setup>
 import { computed, ref, reactive, onMounted, watch, onUnmounted } from 'vue'
-
 const props = defineProps({
   fileUrl: {
     type: String,
@@ -123,11 +123,11 @@ const isWebUrl = computed(() => props.fileUrl.startsWith('http'))
  * 使用 Microsoft Office 在线预览
  * 文档要求是公网可访问的 URL
  */
-const officePreviewUrl = computed(() => {
-  if (!isOffice.value) return ''
-  const encoded = encodeURIComponent(props.fileUrl)
-  return `https://view.officeapps.live.com/op/view.aspx?src=${encoded}`
-})
+// const officePreviewUrl = computed(() => {
+//   if (!isOffice.value) return ''
+//   const encoded = encodeURIComponent(props.fileUrl)
+//   return `https://view.officeapps.live.com/op/view.aspx?src=${encoded}`
+// })
 
 // 图片预览相关状态
 const scale = ref(1) // 缩放比例

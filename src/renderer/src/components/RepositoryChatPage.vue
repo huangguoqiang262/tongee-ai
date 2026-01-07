@@ -105,7 +105,7 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, nextTick, onMounted, watchEffect } from 'vue'
+import { ref, reactive, nextTick, onMounted, watchEffect, watch } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
@@ -514,6 +514,14 @@ watchEffect(() => {
     })
   }, 300)
 })
+watch(
+  () => props.knowId,
+  (newVal, oldVal) => {
+    if (newVal !== oldVal) {
+      stopChat()
+    }
+  }
+)
 onMounted(() => {
   get_type_models({
     model_type: 'reasoning',

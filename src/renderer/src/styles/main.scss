@@ -7,6 +7,9 @@
   --el-input-icon-color: var(--primary-color);
   --el-select-input-color: var(--primary-color) !important;
 }
+html {
+  font-size: 12px;
+}
 body {
   display: flex;
   flex-direction: column;

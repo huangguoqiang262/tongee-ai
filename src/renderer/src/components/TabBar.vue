@@ -2,7 +2,38 @@
   <div class="tabs-container-box">
     <!-- 左侧下拉菜单按钮 -->
     <div v-if="showDropdownButton" class="dropdown-button" @click="toggleDropdown">
-      <el-icon><ArrowDown /></el-icon>
+      <!-- 下拉菜单 -->
+      <el-popover
+        v-model:visible="dropdownVisible"
+        placement="bottom"
+        :width="260"
+        trigger="click"
+        popper-class="tabs-dropdown-popover"
+      >
+        <template #reference>
+          <el-icon><ArrowDown /></el-icon>
+        </template>
+        <div class="tabs-dropdown-menu">
+          <div class="dropdown-header">
+            <span>所有标签页 ({{ tabs.length }})</span>
+          </div>
+          <div class="dropdown-tabs-list">
+            <div
+              v-for="tab in tabs"
+              :key="tab.id"
+              class="dropdown-tab"
+              :class="{ active: activeTabId === tab.id }"
+              @click="selectTabFromDropdown(tab.id)"
+            >
+              <img :src="tab.favicon || defaultIcon" class="dropdown-tab-favicon" alt="favicon" />
+              <span class="dropdown-tab-title">{{ tab.title }}</span>
+              <div class="dropdown-tab-close" @click.stop="$emit('closeTab', tab.id)">
+                <el-icon><Close /></el-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+      </el-popover>
     </div>
 
     <!-- 标签滚动容器 -->
@@ -45,39 +76,6 @@
         ></div>
       </div>
     </div>
-
-    <!-- 下拉菜单 -->
-    <el-popover
-      v-model:visible="dropdownVisible"
-      placement="bottom-start"
-      :width="300"
-      trigger="click"
-      popper-class="tabs-dropdown-popover"
-    >
-      <template #reference>
-        <div style="display: none"></div>
-      </template>
-      <div class="tabs-dropdown-menu">
-        <div class="dropdown-header">
-          <span>所有标签页 ({{ tabs.length }})</span>
-        </div>
-        <div class="dropdown-tabs-list">
-          <div
-            v-for="tab in tabs"
-            :key="tab.id"
-            class="dropdown-tab"
-            :class="{ active: activeTabId === tab.id }"
-            @click="selectTabFromDropdown(tab.id)"
-          >
-            <img :src="tab.favicon || defaultIcon" class="dropdown-tab-favicon" alt="favicon" />
-            <span class="dropdown-tab-title">{{ tab.title }}</span>
-            <div class="dropdown-tab-close" @click.stop="$emit('closeTab', tab.id)">
-              <el-icon><Close /></el-icon>
-            </div>
-          </div>
-        </div>
-      </div>
-    </el-popover>
   </div>
 </template>
 
@@ -374,18 +372,6 @@ const emit = defineEmits([
   z-index: 2;
   pointer-events: none;
 }
-
-// 下拉菜单样式
-:deep(.tabs-dropdown-popover) {
-  padding: 0;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-
-  .el-popper__arrow {
-    display: none;
-  }
-}
-
 .dropdown-header {
   padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
@@ -473,5 +459,13 @@ const emit = defineEmits([
 
 .dropdown-tab:hover .dropdown-tab-close {
   opacity: 1;
+}
+</style>
+<style lang="scss">
+.tabs-dropdown-popover {
+  transform: translateX(10px);
+  padding-top: 5px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>
