@@ -1,11 +1,7 @@
 <template>
   <div class="tabs-container-box">
     <!-- 左侧下拉菜单按钮 -->
-    <div
-      v-if="showDropdownButton"
-      class="dropdown-button"
-      @click="toggleDropdown"
-    >
+    <div v-if="showDropdownButton" class="dropdown-button" @click="toggleDropdown">
       <el-icon><ArrowDown /></el-icon>
     </div>
 
@@ -34,7 +30,10 @@
               <el-icon><Close /></el-icon>
             </div>
           </div>
-          <div class="tab-loading" :style="{ width: tab.loading ? tab.progress + '%' : '0%' }"></div>
+          <div
+            class="tab-loading"
+            :style="{ width: tab.loading ? tab.progress + '%' : '0%' }"
+          ></div>
         </div>
         <div class="new-tab" @click="$emit('newTab')">
           <el-icon><Plus /></el-icon>
@@ -115,7 +114,7 @@ const visibleTabs = computed(() => {
   }
 
   // 确保活动标签始终可见
-  const activeTabIndex = props.tabs.findIndex(tab => tab.id === props.activeTabId)
+  const activeTabIndex = props.tabs.findIndex((tab) => tab.id === props.activeTabId)
   if (activeTabIndex === -1) {
     return props.tabs.slice(0, maxVisibleTabs.value)
   }
@@ -136,16 +135,14 @@ const calculateMaxVisibleTabs = () => {
 
   const container = scrollContainer.value
   const containerWidth = container.clientWidth
-
   // 计算每个标签的预估宽度（包括边距）
-  const estimatedTabWidth = 130 // 标签预估宽度
+  const estimatedTabWidth = 126 // 标签预估宽度
   const tabMargin = 4 // 标签间距
   const newTabWidth = 32 // 新建标签按钮宽度
 
   // 计算可以显示的标签数量
-  const availableWidth = containerWidth - newTabWidth - 20 // 留出一些边距
+  const availableWidth = containerWidth - newTabWidth - 10 // 留出一些边距
   maxVisibleTabs.value = Math.max(1, Math.floor(availableWidth / (estimatedTabWidth + tabMargin)))
-
   // 检查是否需要显示下拉按钮
   showDropdownButton.value = props.tabs.length > maxVisibleTabs.value
 }
@@ -162,11 +159,14 @@ const selectTabFromDropdown = (tabId) => {
 }
 
 // 监听标签变化
-watch(() => props.tabs.length, () => {
-  nextTick(() => {
-    calculateMaxVisibleTabs()
-  })
-})
+watch(
+  () => props.tabs.length,
+  () => {
+    nextTick(() => {
+      calculateMaxVisibleTabs()
+    })
+  }
+)
 
 // 监听窗口大小变化
 const handleResize = () => {
@@ -195,7 +195,15 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
 
-const emit = defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'contextmenu', 'closeTab', 'newTab'])
+const emit = defineEmits([
+  'dragover',
+  'dragend',
+  'dragstart',
+  'tabClick',
+  'contextmenu',
+  'closeTab',
+  'newTab'
+])
 </script>
 
 <style scoped lang="scss">
@@ -239,15 +247,16 @@ const emit = defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'conte
   flex: 1;
   overflow-x: hidden;
   overflow-y: hidden;
-  app-region: no-drag;
+  app-region: drag;
 }
 
 .tabs-container {
+  width: 100%;
   display: flex;
   background: transparent;
   user-select: none;
   min-width: min-content;
-  app-region: no-drag;
+  app-region: drag;
   padding: 0 2px;
 }
 
@@ -266,6 +275,7 @@ const emit = defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'conte
   color: #1a2530;
   overflow: hidden;
   flex-shrink: 0;
+  app-region: no-drag;
 }
 
 .tab.active {
@@ -350,7 +360,7 @@ const emit = defineEmits(['dragover', 'dragend', 'dragstart', 'tabClick', 'conte
   font-weight: 600;
   transition: background 0.3s;
   background: var(--primary-bg-color);
-
+  app-region: no-drag;
   &:hover {
     background: #fff;
   }

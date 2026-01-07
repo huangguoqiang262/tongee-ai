@@ -46,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { add_web_log } from '@renderer/api/history'
 import defaultIcon from '@renderer/assets/logo.png'
 const tabs = ref([])
@@ -84,50 +84,6 @@ const handleUpdateWebviewInstance = (info) => {
     webviewInstances.value.set(info.tabId, info.webview)
   }
 }
-
-// 防抖函数
-const debounce = (func, delay) => {
-  let timeoutId
-  return (...args) => {
-    clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => func.apply(this, args), delay)
-  }
-}
-
-// 更新标签布局
-const updateTabLayout = debounce(() => {
-  const tabsContainer = document.querySelector('.tabs-container')
-  if (!tabsContainer) return
-
-  const containerWidth = tabsContainer.clientWidth
-  const tabCount = tabs.value.length
-  const minTabWidth = 120
-  const maxTabWidth = 120
-
-  // 获取新建标签按钮的实际宽度
-  const newTabEl = document.querySelector('.new-tab')
-  const newTabWidth = newTabEl ? newTabEl.offsetWidth : 34
-
-  // 计算可用宽度（减去新建标签按钮宽度和边距）
-  const availableWidth = containerWidth - newTabWidth - 8
-
-  // 计算每个标签的理想宽度（避免除以0）
-  let idealTabWidth =
-    tabCount > 0
-      ? Math.max(minTabWidth, Math.min(maxTabWidth, availableWidth / tabCount))
-      : maxTabWidth
-
-  // 应用宽度到所有标签
-  const tabElements = document.querySelectorAll('.tab')
-  tabElements.forEach((tab) => {
-    tab.style.flexGrow = '1'
-    tab.style.flexShrink = '1'
-    tab.style.flexBasis = `${idealTabWidth}px`
-    tab.style.minWidth = `${minTabWidth}px`
-    tab.style.maxWidth = `${maxTabWidth}px`
-  })
-}, 100)
-
 // 初始化标签
 const initTabs = () => {
   const initialTabs = [
@@ -204,16 +160,6 @@ const addNewTab = (config = {}) => {
   activeTabId.value = newTab.id
   updateAddressBar()
 
-  // 更新标签布局
-  nextTick(() => {
-    updateTabLayout()
-    // 滚动到最右侧显示新标签
-    const tabsContainer = document.querySelector('.tabs-container')
-    if (tabsContainer) {
-      tabsContainer.scrollLeft = tabsContainer.scrollWidth
-    }
-  })
-
   // 初始化历史记录 - 修复：确保新建标签页时正确初始化历史记录
   if (!newTab.isInternal && newTab.url) {
     newTab.history = [] // 直接初始化为包含当前URL的数组
@@ -257,17 +203,6 @@ const replaceActiveTab = (config = {}) => {
     activeTabId.value = newTab.id
   }
   updateAddressBar()
-
-  // 更新标签布局
-  nextTick(() => {
-    updateTabLayout()
-    // 滚动到最右侧显示新标签
-    const tabsContainer = document.querySelector('.tabs-container')
-    if (tabsContainer) {
-      tabsContainer.scrollLeft = tabsContainer.scrollWidth
-    }
-  })
-
   // 初始化历史记录 - 修复：确保新建标签页时正确初始化历史记录
   if (!newTab.isInternal && newTab.url) {
     newTab.history = [] // 直接初始化为包含当前URL的数组
@@ -277,14 +212,6 @@ const replaceActiveTab = (config = {}) => {
     newTab.canGoForward = false
   }
 }
-// 监听标签数量变化，自动更新布局
-watch(
-  () => tabs.value.length,
-  () => {
-    nextTick(updateTabLayout)
-  }
-)
-
 // 模拟加载过程
 const simulateLoading = (tab) => {
   tab.loading = true
@@ -747,15 +674,6 @@ const hideContextMenu = (e) => {
 // 初始化
 onMounted(() => {
   initTabs()
-
-  // 监听窗口大小变化，更新标签布局
-  window.addEventListener('resize', updateTabLayout)
-
-  // 初始更新标签布局
-  nextTick(() => {
-    updateTabLayout()
-  })
-
   document.addEventListener('click', hideContextMenu)
 })
 onUnmounted(() => {
