@@ -1,5 +1,5 @@
 appId: com.tongee.ai
-productName: tongee-app
+productName: 糖源AI
 directories:
   buildResources: build
 files:
@@ -11,7 +11,7 @@ files:
 extraResources:
   - build/**
 win:
-  executableName: tongee-app
+  executableName: 糖源AI
   icon: build/icon.ico
   target:
     - target: nsis

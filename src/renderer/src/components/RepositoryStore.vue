@@ -1143,7 +1143,30 @@ const downloadFile = (url, fileName) => {
 }
 // 到达详情
 const detailChange = (item) => {
-  if (item.permission_type == 1 || item.permission_type == 2) {
+  if (
+    activeRepository.value.user_permission?.is_creator ||
+    activeRepository.value.user_permission?.is_manager
+  ) {
+    if (item.item_type == 3) {
+      addNewTab({
+        icon: item.info?.icon,
+        title: item.title,
+        url: item.info?.web_url,
+        isInternal: false
+      })
+    } else {
+      addNewTab({
+        icon: getFileIcon(item),
+        title: item.title,
+        url: 'DocumentDetail',
+        isInternal: true,
+        attrs: {
+          fileUrl: item.info?.url,
+          fileName: item.title
+        }
+      })
+    }
+  } else if (item.permission_type == 1 || item.permission_type == 2) {
     if (item.item_type == 3) {
       addNewTab({
         icon: item.info?.icon,
@@ -1300,6 +1323,7 @@ const getRepositoryPermission = () => {
     if (res.code == 200) {
       repositoryPermission.value = res.data
       repositoryMemberTree.value = res.data.tree
+      refreshList()
     }
   })
 }
@@ -1988,7 +2012,7 @@ const showContextMenu = (e, item) => {
         }
         // else if (
         //   repositoryPermission.value.setting?.permission_type == 2 &&
-        //   repositoryPermission.value.is_public == 1
+        //   activeRepository.value.is_public == 1
         // ) {
         //   contextMenu.value.actionSheet.splice(3, 0, {
         //     name: '内容权限',
