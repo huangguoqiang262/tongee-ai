@@ -320,6 +320,7 @@ const handleUpdateStatus = (event, status) => {
       }
       userStore.version = status.version
       ElMessage.primary(`发现新版本 ${status.version}`)
+      showUpdate.value = true
       break
 
     case 'downloading':
