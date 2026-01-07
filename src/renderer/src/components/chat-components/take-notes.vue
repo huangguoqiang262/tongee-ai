@@ -90,7 +90,9 @@
                     </div>
                   </div>
                 </template>
-                <div v-else class="empty">暂无笔记本，点击新建笔记本创建一个</div>
+                <div v-else class="empty">
+                  暂无笔记本{{ props.importType == 'note' ? '，点击新建笔记本创建一个' : '' }}
+                </div>
               </template>
             </el-skeleton>
           </template>
@@ -130,7 +132,9 @@
                     </div>
                   </div>
                 </template>
-                <div v-else class="empty">暂无笔记，点击新建笔记创建一个</div>
+                <div v-else class="empty">
+                  暂无笔记{{ props.importType == 'note' ? '，点击新建笔记创建一个' : '' }}
+                </div>
               </template>
             </el-skeleton>
           </template>

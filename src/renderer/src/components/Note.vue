@@ -98,7 +98,16 @@
                     @click.stop=""
                     @blur="editNoteName(item)"
                   />
-                  <template v-else>{{ item.title }}</template>
+                  <template v-else>
+                    <template v-if="item.title">
+                      <span
+                        v-for="(text, i) in item.title"
+                        :key="i"
+                        :class="{ 'active-filter': searchValue && searchValue.includes(text) }"
+                        >{{ text }}</span
+                      >
+                    </template>
+                  </template>
                 </div>
                 <div class="des">{{ htmlToText(item.content) || '无任何内容' }}</div>
                 <div class="item-bottom">
@@ -1235,6 +1244,9 @@ onMounted(() => {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          .active-filter {
+            color: var(--el-color-primary);
+          }
         }
 
         .des {

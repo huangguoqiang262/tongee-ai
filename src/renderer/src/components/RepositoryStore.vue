@@ -463,7 +463,17 @@
               <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
               <img class="cover-img" :src="getFileIcon(item)" alt="" />
               <div class="item-right">
-                <div v-if="!item.isCreated" class="title">{{ item.title }}</div>
+                <div v-if="!item.isCreated" class="title">
+                  <!-- 将字符串分割为每个字符 -->
+                  <template v-if="item.title">
+                    <span
+                      v-for="(text, i) in item.title"
+                      :key="i"
+                      :class="{ 'active-filter': searchText && searchText.includes(text) }"
+                      >{{ text }}</span
+                    >
+                  </template>
+                </div>
                 <div v-else class="title">
                   <el-input
                     v-model="item.title"
@@ -551,7 +561,17 @@
                   />
                   <img class="cover-img cover-file-img" :src="item.info?.icon" alt="" />
                   <div class="item-right">
-                    <div v-if="!item.isCreated" class="title">{{ item.title }}</div>
+                    <div v-if="!item.isCreated" class="title">
+                      <!-- 将字符串分割为每个字符 -->
+                      <template v-if="item.title">
+                        <span
+                          v-for="(text, i) in item.title"
+                          :key="i"
+                          :class="{ 'active-filter': searchText && searchText.includes(text) }"
+                          >{{ text }}</span
+                        >
+                      </template>
+                    </div>
                     <div v-else class="title">
                       <el-input
                         v-model="item.title"
@@ -3128,6 +3148,7 @@ watch(
               font-weight: 600;
               font-size: 18px;
               color: var(--default-font-color);
+              word-break: break-all;
               line-height: 22px;
               white-space: nowrap;
               text-overflow: ellipsis;
@@ -3386,11 +3407,15 @@ watch(
               font-size: 14px;
               color: var(--default-font-color);
               line-height: 18px;
+              word-break: break-all;
               display: -webkit-box;
               -webkit-box-orient: vertical;
               -webkit-line-clamp: 2;
               overflow: hidden;
               text-overflow: ellipsis;
+              .active-filter {
+                color: var(--el-color-primary);
+              }
               :deep(.create-input) {
                 width: calc(100% - 30px);
                 height: 100%;
