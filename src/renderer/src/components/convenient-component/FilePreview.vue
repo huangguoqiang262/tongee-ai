@@ -52,7 +52,7 @@
     </div>
 
     <!-- PDF 预览 -->
-    <!-- <webview v-else-if="isPdf" :src="fileUrl" class="file-preview-iframe"></webview> -->
+    <webview v-else-if="isPdf" :src="fileUrl" class="file-preview-iframe"></webview>
 
     <!-- 文本预览（txt） -->
     <div v-else-if="isTxt" class="file-preview-iframe">
@@ -60,7 +60,12 @@
     </div>
     <!-- Office 文档在线预览（需要公网可访问的URL） -->
     <!-- <webview v-else-if="isOffice" :src="officePreviewUrl" class="file-preview-iframe"></webview> -->
-    <office-preview v-else-if="isOffice || isPdf" :type="ext" :src="fileUrl"></office-preview>
+    <office-preview
+      v-else-if="isOffice"
+      class="file-preview-iframe"
+      :type="ext"
+      :src="fileUrl"
+    ></office-preview>
     <!-- 网页 -->
     <webview v-else-if="isWebUrl" :src="fileUrl" class="file-preview-iframe"></webview>
     <!-- 其他类型：仅提供打开/下载 -->
