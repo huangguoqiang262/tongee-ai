@@ -29,6 +29,7 @@
       v-else-if="trimmedType === 'docx' || trimmedType === 'doc'"
       ref="docxViewer"
       :src="encodedSrc"
+      :options="{ doc: true }"
       :style="{
         height: height,
         width: width,
@@ -44,6 +45,7 @@
       v-else-if="trimmedType === 'xlsx' || trimmedType === 'xls'"
       ref="excelViewer"
       :src="encodedSrc"
+      :options="{ xls: true }"
       :style="{
         height: height,
         width: width,
