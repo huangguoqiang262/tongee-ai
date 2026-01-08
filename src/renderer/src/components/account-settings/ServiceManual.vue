@@ -153,6 +153,7 @@ onMounted(() => {
   align-items: flex-start;
   position: relative;
   background: var(--primary-bg-color);
+  overflow: hidden;
   .catalogue {
     width: 32px;
     height: 64px;
@@ -396,14 +397,13 @@ onMounted(() => {
     .center-content {
       flex: 1;
       user-select: text;
-      height: 100%;
-      overflow-y: auto;
       margin: 0 auto;
       max-width: 770px;
       font-size: 14px;
       color: var(--default-font-color);
       line-height: 22px;
       border-radius: 12px;
+      overflow-y: auto;
       // box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.1);
       .empty-content {
         box-sizing: border-box;

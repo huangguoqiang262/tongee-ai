@@ -149,6 +149,7 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   position: relative;
+  overflow: hidden;
   .catalogue {
     width: 32px;
     height: 64px;

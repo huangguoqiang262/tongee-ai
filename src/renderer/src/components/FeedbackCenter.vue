@@ -36,7 +36,7 @@
             <el-form-item label="文档类别" prop="doc_type">
               <el-select
                 v-model="feedbackData.doc_type"
-                :disabled="activeHistoryItem?.id"
+                :disabled="activeHistoryItem?.id ? true : false"
                 size="large"
                 placeholder="请选择文档类别"
               >
@@ -53,7 +53,7 @@
               <el-select
                 v-model="feedbackData.type"
                 size="large"
-                :disabled="activeHistoryItem?.id"
+                :disabled="activeHistoryItem?.id ? true : false"
                 placeholder="请选择反馈分类"
               >
                 <el-option-group v-for="group in typeTreeList" :key="group.id" :label="group.name">
@@ -203,7 +203,7 @@ let editorConfig = {
       meta: {
         uniacid: userStore.uniacid
       },
-      allowedFileTypes: ['png', 'jpg', 'jpeg', 'gif'],
+      allowedFileTypes: ['.png', '.jpg', '.jpeg', '.gif'],
       customInsert(res, insertFn) {
         insertFn(res.data[0].url, res.data[0].file_type || '', res.data[0].url || '')
       }
@@ -290,6 +290,7 @@ const getHistoryList = () => {
   })
 }
 const handleHistoryItemClick = (item) => {
+  feedbackForm.value.resetFields()
   activeHistoryItem.value = item
   feedbackData.value = {
     content: item.content || '',
@@ -299,7 +300,7 @@ const handleHistoryItemClick = (item) => {
     know_id: item.know_id
   }
   nextTick(() => {
-    editorRef.value.disable()
+    editorRef.value?.disable()
   })
 }
 const resetFeedback = () => {

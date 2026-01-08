@@ -351,6 +351,7 @@ const loadData = () => {
   if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
     return
   }
+  pagination.value.page++
   if (activeTab.value == '1') {
     getList()
   } else if (activeTab.value == '2') {
