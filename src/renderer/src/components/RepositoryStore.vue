@@ -2054,21 +2054,23 @@ const showContextMenu = (e, item) => {
         // }
       }
     }
-  } else if (item.permission_type === 1 && repositoryPermission.value.is_public == 1) {
-    if (item.item_type == 1) {
-      item.checked = true
-      contextMenu.value = {
-        show: true,
-        permission_type: 'cannotView',
-        x: e.clientX,
-        y: e.clientY,
-        actionSheet: [
-          {
-            name: '导出',
-            icon: exportIcon,
-            action: 'export'
-          }
-        ]
+  } else {
+    item.checked = true
+    if (item.permission_type === 1 && repositoryPermission.value.is_public == 1) {
+      if (item.item_type == 1 && activeFiles.value.length === 1) {
+        contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: '导出',
+              icon: exportIcon,
+              action: 'export'
+            }
+          ]
+        }
       }
     }
   }

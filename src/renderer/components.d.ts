@@ -76,7 +76,6 @@ declare module 'vue' {
     NotFound: typeof import('./src/components/NotFound.vue')['default']
     OfficePreview: typeof import('./src/components/convenient-component/officePreview.vue')['default']
     OnlineFileSelection: typeof import('./src/components/convenient-component/OnlineFileSelection.vue')['default']
-    OnlyofficeEmbed: typeof import('./src/components/convenient-component/onlyofficeEmbed.vue')['default']
     OnlyofficePreview: typeof import('./src/components/convenient-component/onlyofficePreview.vue')['default']
     PreviewMessage: typeof import('./src/components/chat-components/preview-message.vue')['default']
     PreviewMessageRow: typeof import('./src/components/chat-components/preview-message-row.vue')['default']
