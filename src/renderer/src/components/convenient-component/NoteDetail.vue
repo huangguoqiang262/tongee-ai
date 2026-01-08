@@ -41,7 +41,6 @@
             <Toolbar :default-config="defaultConfig" :editor="editorRef" mode="default" />
             <el-input
               v-model="deepData.title"
-              type="input"
               size="large"
               class="title-input"
               placeholder="请输入标题"
