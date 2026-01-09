@@ -101,7 +101,8 @@
               class="issue-item"
               @click.stop="handleKnowledge(item)"
             >
-              <img class="issue-img" :src="item.picurl || defaultCover" alt="" />
+              <img v-if="item.picurl" class="issue-img" :src="item.picurl" alt="" />
+              <defaultCoverSvg v-else class="issue-img" />
               <div class="issue-text">{{ item.title }}</div>
             </div>
           </div>
@@ -162,7 +163,8 @@
           @click="handleToHome(item)"
         >
           <div class="issue-item-left">
-            <img class="issue-img" :src="item.picurl || defaultCover" alt="" />
+            <img v-if="item.picurl" class="issue-img" :src="item.picurl" alt="" />
+            <defaultCoverSvg v-else class="issue-img" />
             <div class="issue-text">{{ item.know_title }}&nbsp; {{ item.title }}</div>
           </div>
           <el-icon class="issue-item-right"><ArrowRight /></el-icon>
@@ -185,7 +187,7 @@
   </div>
 </template>
 <script>
-import defaultCover from '@renderer/assets/repository/default-cover.png'
+import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import cloneDeep from 'lodash.clonedeep'
 import updateIcon from '@renderer/assets/menu/update-icon.png'
 import knowledgeBaseSquareIcon from '@renderer/assets/home/knowledgeBaseSquare-icon.png'
@@ -208,6 +210,9 @@ import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
 export default {
   name: 'MessageInput',
+  components: {
+    defaultCoverSvg
+  },
   inject: ['addNewTab', 'replaceActiveTab'],
   props: {
     isActiveTab: {
@@ -219,7 +224,6 @@ export default {
     return {
       showDragOverlay: false,
       isChatting: false,
-      defaultCover,
       message: { text: '', image: '' },
       loading: false,
       uniacid: 2,
@@ -1184,6 +1188,7 @@ export default {
               height: 18px;
               border-radius: 4px;
               object-fit: cover;
+              color: var(--el-color-primary);
             }
             .issue-text {
               flex: 1;
@@ -1293,6 +1298,7 @@ export default {
             height: 18px;
             border-radius: 4px;
             object-fit: cover;
+            color: var(--el-color-primary);
           }
           .issue-text {
             flex: 1;

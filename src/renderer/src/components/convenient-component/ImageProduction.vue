@@ -136,11 +136,12 @@
               </template>
               <div class="handle-box">
                 <div class="item default-item" @click="setActiveStyle('风格不限')">
-                  <img
+                  <!-- <img
                     class="cover"
                     src="@renderer/assets/ImageProduction/default-style.png"
                     alt=""
-                  />
+                  /> -->
+                  <defaultStyleSvg class="cover" />
                   <div class="title default-title">风格不限</div>
                   <img
                     v-if="activeStyle == '风格不限'"
@@ -200,11 +201,16 @@
               参考图
             </el-button>
           </div>
-          <img
+          <!-- <img
             v-if="message.text.trim().length"
             class="send-icon"
             src="@renderer/assets/send-icon.png"
             alt=""
+            @click="handleSendClick"
+          /> -->
+          <sendSvgIcon
+            v-if="message.text.trim().length"
+            class="send-icon"
             @click="handleSendClick"
           />
           <img
@@ -263,6 +269,8 @@
 import cloneDeep from 'lodash.clonedeep'
 import { ref, watch, nextTick, onMounted, inject } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
+import sendSvgIcon from '@renderer/assets/send-icon.svg'
+import defaultStyleSvg from '@renderer/assets/ImageProduction/default-style.svg'
 // import Logo from '@renderer/assets/logo.png'
 // import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
 // import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
@@ -760,6 +768,7 @@ const clearAttach = (i) => {
           width: 34px;
           height: 34px;
           border-radius: 50%;
+          color: var(--el-color-primary);
           cursor: pointer;
 
           &.disabled {
@@ -1105,6 +1114,7 @@ const clearAttach = (i) => {
         height: 100%;
         object-fit: cover;
         transition: all 0.2s linear;
+        color: var(--el-color-primary);
       }
       .title {
         width: 90%;

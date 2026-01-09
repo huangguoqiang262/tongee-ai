@@ -61,7 +61,7 @@
                   alt=""
                 />
                 <img v-if="form.pic_url" :src="form.pic_url" class="cover" />
-                <img v-else src="@renderer/assets/repository/default-cover.png" class="cover" />
+                <defaultCoverSvg v-else class="cover" />
               </div>
             </el-upload>
           </el-form-item>
@@ -120,6 +120,7 @@ import cloneDeep from 'lodash.clonedeep'
 import { useUserStore } from '@renderer/stores/user'
 import { ref, watch, onMounted, computed } from 'vue'
 import { know_types } from '@renderer/api/repository'
+import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
 import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
 const props = defineProps({
@@ -432,6 +433,7 @@ const submitForm = () => {
                 height: 90px;
                 border-radius: 12px;
                 object-fit: cover;
+                color: var(--el-color-primary);
               }
             }
             &:hover {

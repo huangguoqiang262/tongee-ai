@@ -196,11 +196,16 @@
               </div>
             </el-popover>
 
-            <img
+            <!-- <img
               v-if="message.text.trim().length"
               class="send-icon"
               src="@renderer/assets/send-icon.png"
               alt=""
+              @click="handleSendClick"
+            /> -->
+            <sendSvgIcon
+              v-if="message.text.trim().length"
+              class="send-icon"
               @click="handleSendClick"
             />
             <img
@@ -261,6 +266,7 @@ import { useUserStore } from '@renderer/stores/user'
 import { get_user_knows } from '@renderer/api/chat'
 import cloneDeep from 'lodash.clonedeep'
 import { ref, watch, nextTick, onMounted, inject } from 'vue'
+import sendSvgIcon from '@renderer/assets/send-icon.svg'
 import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
 import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
@@ -865,6 +871,7 @@ defineExpose({
             flex-shrink: 0;
             width: 34px;
             height: 34px;
+            color: var(--el-color-primary);
             border-radius: 50%;
             cursor: pointer;
 

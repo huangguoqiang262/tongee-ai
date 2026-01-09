@@ -18,7 +18,8 @@
         <img class="menu-icon" src="@renderer/assets/menu/common-knowledge-icon.png" alt="" />
         <div v-for="item in knowList" :key="item.id" class="sub-menu">
           <div class="sub-menu-item" @click="toKnowledge(item)">
-            <img class="sub-menu-icon" :src="item.picurl || defaultCover" alt="" />
+            <img v-if="item.picurl" class="sub-menu-icon" :src="item.picurl" alt="" />
+            <defaultCoverSvg v-else class="sub-menu-icon" />
           </div>
         </div>
       </div>
@@ -53,7 +54,7 @@ import messageCenterDarkIcon from '@renderer/assets/menu/message-center-dark-ico
 import historyIcon from '@renderer/assets/menu/history-icon.png'
 import historyDarkIcon from '@renderer/assets/menu/history-dark-icon.png'
 import settingIcon from '@renderer/assets/menu/setting-icon.png'
-import defaultCover from '@renderer/assets/repository/default-cover.png'
+import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 const addNewTab = inject('addNewTab')
 const menuList = ref([
@@ -279,6 +280,7 @@ defineExpose({
             height: 20px;
             border-radius: 4px;
             cursor: pointer;
+            color: var(--el-color-primary);
           }
         }
       }

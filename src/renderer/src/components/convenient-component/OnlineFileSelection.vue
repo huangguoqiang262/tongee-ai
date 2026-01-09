@@ -80,11 +80,12 @@
                   <div class="item-content">
                     <div class="content-left">
                       <img v-if="item.item_type == 1" :src="item.file_icon" alt="" />
-                      <img
+                      <!-- <img
                         v-else-if="item.item_type == 2"
                         :src="item.picurl || catalogueIcon"
                         alt=""
-                      />
+                      /> -->
+                      <catalogueSvgIcon v-else-if="item.item_type == 2" class="cover-img" />
                       <img
                         v-else-if="item.next_type == 2 && !item.is_public"
                         :src="personageRepositoryIcon"
@@ -95,11 +96,10 @@
                         :src="commonRepositoryIcon"
                         alt=""
                       />
-                      <img
-                        v-else-if="item.next_type == 3"
-                        :src="item.picurl || defaultCover"
-                        alt=""
-                      />
+                      <template v-else-if="item.next_type == 3">
+                        <img v-if="item.picurl" :src="item.picurl" alt="" />
+                        <defaultCoverSvg v-else class="cover-img" />
+                      </template>
                       <div class="title">
                         {{ item.title }}
                       </div>
@@ -134,8 +134,9 @@
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
 import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
-import defaultCover from '@renderer/assets/repository/default-cover.png'
-import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
+import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
+// import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
+import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import { get_file_list } from '@renderer/api/index'
 const onlineFileVisible = defineModel({ type: Boolean })
 const list = ref([])
@@ -395,6 +396,13 @@ const submitImport = () => {
                   align-items: center;
                   gap: 10px;
                   overflow: hidden;
+                  .cover-img {
+                    flex-shrink: 0;
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 2px;
+                    color: var(--el-color-primary);
+                  }
                   img {
                     flex-shrink: 0;
                     width: 18px;

@@ -36,7 +36,8 @@
           <template #default>
             <div v-if="list.length" v-infinite-scroll="loadData" class="list-box">
               <div v-for="item in list" :key="item.id" class="list-item">
-                <img class="logo" :src="item.picurl || defaultCover" alt="" />
+                <img v-if="item.picurl" class="logo" :src="item.picurl" alt="" />
+                <defaultCoverSvg v-else class="logo" />
                 <div class="item-right">
                   <div class="right-top">
                     <div class="title">{{ item.title }}</div>
@@ -80,7 +81,7 @@ import { ref, onMounted } from 'vue'
 import { apply_know_join } from '@renderer/api/repository'
 import { getLoginKnowList, skipLogin, applyAllLoginShowKnows, user_info } from '@renderer/api/user'
 import { useUserStore } from '@renderer/stores/user'
-import defaultCover from '@renderer/assets/repository/default-cover.png'
+import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 const emits = defineEmits(['closeMenu'])
 const handleClose = () => {
@@ -275,6 +276,7 @@ onMounted(() => {
         background: #ffffff;
         border-radius: 8px;
         object-fit: cover;
+        color: var(--el-color-primary);
       }
       .logo-skeleton {
         flex-shrink: 0;

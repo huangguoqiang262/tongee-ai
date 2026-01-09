@@ -27,7 +27,8 @@
                   alt=""
                   @click.stop="delItem(item, index)"
                 />
-                <img class="icon" :src="item.picurl || defaultCover" alt="" />
+                <img v-if="item.picurl" class="icon" :src="item.picurl" alt="" />
+                <defaultCoverSvg v-else class="icon" />
                 <div class="name">{{ item.title }}</div>
               </div>
             </template>
@@ -43,7 +44,7 @@
 import { ref, onMounted, inject } from 'vue'
 import { lists_access, del_access } from '@renderer/api/index'
 import { useCheckLogin } from '@renderer/hooks/checkLogin'
-import defaultCover from '@renderer/assets/repository/default-cover.png'
+import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
 const addNewTab = inject('addNewTab')
 const emits = defineEmits(['closeMenu'])
@@ -221,6 +222,7 @@ onMounted(() => {
           height: 44px;
           border-radius: 4px;
           object-fit: cover;
+          color: var(--el-color-primary);
         }
         .del-icon {
           display: none;

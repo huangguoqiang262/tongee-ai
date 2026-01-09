@@ -24,7 +24,8 @@
           class="file-item"
           :class="{ err: item.status === 'error' }"
         >
-          <img class="icon" :src="getFileIcon(item)" alt="" />
+          <catalogueSvgIcon v-if="item.type == 'directory'" class="icon" />
+          <img v-else class="icon" :src="getFileIcon(item)" alt="" />
           <div class="file-item-right">
             <div class="right-top">
               <div class="title">{{ item.name }}</div>
@@ -156,6 +157,7 @@ import { useUserStore } from '@renderer/stores/user'
 import cloneDeep from 'lodash.clonedeep'
 import { ref, watch, onUnmounted } from 'vue'
 import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
+import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-icon.png'
 import pdfIcon from '@renderer/assets/file-icons/pdf-icon.png'
@@ -682,6 +684,7 @@ const formatFileSize = (bytes) => {
             margin-top: 3px;
             width: 14px;
             height: 14px;
+            color: var(--el-color-primary);
           }
 
           .file-item-right {

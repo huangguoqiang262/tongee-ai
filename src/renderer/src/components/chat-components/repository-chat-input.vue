@@ -90,11 +90,16 @@
           </template>
         </div>
         <div class="btn-box">
-          <img
+          <!-- <img
             v-if="message.text.trim().length && !isChatting"
             class="send-icon"
             src="@renderer/assets/send-icon.png"
             alt=""
+            @click="sendMessage"
+          /> -->
+          <sendSvgIcon
+            v-if="message.text.trim().length && !isChatting"
+            class="send-icon"
             @click="sendMessage"
           />
           <img
@@ -110,8 +115,12 @@
   </div>
 </template>
 <script>
+import sendSvgIcon from '@renderer/assets/send-icon.svg'
 export default {
   name: 'RepositoryChatInput',
+  components: {
+    sendSvgIcon
+  },
   inject: ['addNewTab'],
   props: {
     // eslint-disable-next-line vue/prop-name-casing
@@ -914,6 +923,7 @@ export default {
           width: 34px;
           height: 34px;
           border-radius: 50%;
+          color: var(--el-color-primary);
           cursor: pointer;
 
           &.disabled {

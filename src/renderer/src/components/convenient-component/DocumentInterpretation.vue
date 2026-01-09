@@ -119,13 +119,14 @@
         placeholder="询问关于该文档的任何问题"
         @keydown.enter.prevent="handleEnterSend"
       ></el-input>
-      <img
+      <!-- <img
         v-if="message.text.trim().length"
         class="send-icon"
         src="@renderer/assets/send-icon.png"
         alt=""
         @click="handleSendClick"
-      />
+      /> -->
+      <sendSvgIcon v-if="message.text.trim().length" class="send-icon" @click="handleSendClick" />
       <img v-else class="send-icon disabled" src="@renderer/assets/disabled-send-icon.png" alt="" />
     </div>
   </div>
@@ -146,6 +147,7 @@ import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
+import sendSvgIcon from '@renderer/assets/send-icon.svg'
 let replaceActiveTab = inject('replaceActiveTab')
 const message = ref({
   text: '',
@@ -701,6 +703,7 @@ defineExpose({
       width: 34px;
       height: 34px;
       border-radius: 50%;
+      color: var(--el-color-primary);
       cursor: pointer;
 
       &.disabled {

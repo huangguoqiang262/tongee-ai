@@ -28,7 +28,8 @@
               公共知识库
             </div>
             <div class="square-icon-box" @click="squaretabChange">
-              <img class="square-icon" src="@renderer/assets/repository/square-icon.png" alt="" />
+              <!-- <img class="square-icon" src="@renderer/assets/repository/square-icon.png" alt="" /> -->
+              <squareSvgIcon class="square-icon" />
             </div>
           </div>
           <div class="my-create-box">
@@ -55,7 +56,8 @@
                   @click="getRepositoryInfo(item.id)"
                 >
                   <div class="icon-box">
-                    <img class="icon" :src="item.picurl || defaultCover" alt="" />
+                    <img v-if="item.picurl" class="icon" :src="item.picurl" alt="" />
+                    <defaultCoverSvg v-else class="icon" />
                   </div>
                   <div class="title">{{ item.title }}</div>
                   <div v-if="item.is_prompt == 1" class="dot-dark"></div>
@@ -87,7 +89,8 @@
                   @click="getRepositoryInfo(item.id)"
                 >
                   <div class="icon-box">
-                    <img class="icon" :src="item.picurl || defaultCover" alt="" />
+                    <img v-if="item.picurl" class="icon" :src="item.picurl" alt="" />
+                    <defaultCoverSvg v-else class="icon" />
                   </div>
                   <div class="title">{{ item.title }}</div>
                   <div v-if="item.is_prompt == 1" class="dot-dark"></div>
@@ -130,7 +133,8 @@
                 @click="getRepositoryInfo(item.id)"
               >
                 <div class="icon-box">
-                  <img class="icon" :src="item.picurl || defaultCover" alt="" />
+                  <img v-if="item.picurl" class="icon" :src="item.picurl" alt="" />
+                  <defaultCoverSvg v-else class="icon" />
                 </div>
                 <div class="title">{{ item.title }}</div>
                 <div v-if="item.is_prompt == 1" class="dot-dark"></div>
@@ -255,7 +259,13 @@
           </el-popover>
           <div v-if="Object.keys(activeRepository).length" class="detail-box">
             <div class="top" @click="beforeEditRepository">
-              <img class="cover-img" :src="activeRepository.picurl || defaultCover" alt="" />
+              <img
+                v-if="activeRepository.picurl"
+                class="cover-img"
+                :src="activeRepository.picurl"
+                alt=""
+              />
+              <defaultCoverSvg v-else class="cover-img" />
               <div class="top-right">
                 <div class="title">{{ activeRepository.title }}</div>
                 <div class="top-right-bottom">
@@ -469,7 +479,8 @@
                 @click="dirChange(item)"
               >
                 <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
-                <img class="cover-img" :src="getFileIcon(item)" alt="" />
+                <!-- <img class="cover-img" :src="getFileIcon(item)" alt="" /> -->
+                <catalogueSvgIcon class="cover-img" />
                 <div class="item-right">
                   <div v-if="!item.isCreated" class="title">
                     <!-- 将字符串分割为每个字符 -->
@@ -998,7 +1009,8 @@
       </div>
       <div class="conflict-box">
         <div v-for="(item, index) in conflictFiles" :key="index" class="conflict-item">
-          <img v-if="item.type == 'directory'" :src="catalogueIcon" class="conflict-icon" alt="" />
+          <!-- <img v-if="item.type == 'directory'" :src="catalogueIcon" class="conflict-icon" alt="" /> -->
+          <catalogueSvgIcon v-if="item.type == 'directory'" class="conflict-icon" />
           <img v-else class="conflict-icon" :src="getFileIcon1(item)" alt="" />
           <div class="conflict-name">{{ item?.title || '' }}</div>
         </div>
@@ -1037,6 +1049,7 @@ import canViewIcon from '@renderer/assets/contextMenu/can-view-icon.png'
 import disabledExportIcon from '@renderer/assets/contextMenu/disabled-export-icon.png'
 import cannotViewIcon from '@renderer/assets/contextMenu/cannot-view-icon.png'
 import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
+import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-icon.png'
 import pdfIcon from '@renderer/assets/file-icons/pdf-icon.png'
@@ -1046,8 +1059,9 @@ import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 import feedbackIcon from '@renderer/assets/repository/fk-icon.png'
+import squareSvgIcon from '@renderer/assets/repository/square-icon.svg'
 import headSquareIcon from '@renderer/assets/repository/head-square-icon.png'
-import defaultCover from '@renderer/assets/repository/default-cover.png'
+import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
 import { WarnTriangleFilled } from '@element-plus/icons-vue'
@@ -2845,12 +2859,12 @@ watch(
           align-items: center;
           justify-content: center;
           cursor: pointer;
-
           // border-radius: 4px;
           .square-icon {
             display: block;
             width: 18px;
             height: 18px;
+            color: var(--el-color-primary);
           }
         }
       }
@@ -2955,6 +2969,7 @@ watch(
                 display: block;
                 width: 18px;
                 height: 18px;
+                color: var(--el-color-primary);
               }
             }
 
@@ -3109,6 +3124,7 @@ watch(
               display: block;
               width: 18px;
               height: 18px;
+              color: var(--el-color-primary);
             }
           }
 
@@ -3224,6 +3240,7 @@ watch(
             width: 64px;
             height: 64px;
             object-fit: cover;
+            color: var(--el-color-primary);
             border-radius: 8px;
           }
 
@@ -3480,6 +3497,7 @@ watch(
             width: 40px;
             height: 40px;
             border-radius: 8px;
+            color: var(--el-color-primary);
 
             &.cover-file-img {
               border-radius: 4px;
@@ -3760,6 +3778,7 @@ watch(
             .conflict-icon {
               width: 12px;
               height: 12px;
+              color: var(--el-color-primary);
             }
 
             .conflict-name {

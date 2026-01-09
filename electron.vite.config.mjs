@@ -2,6 +2,7 @@ import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
+import svgLoader from 'vite-svg-loader'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import vue from '@vitejs/plugin-vue'
 
@@ -28,6 +29,27 @@ export default defineConfig({
           compilerOptions: {
             isCustomElement: (tag) => tag === 'webview'
           }
+        }
+      }),
+      svgLoader({
+        svgoConfig: {
+          plugins: [
+            {
+              name: 'preset-default',
+              params: {
+                overrides: {
+                  removeViewBox: false,
+                },
+              },
+            },
+            // 确保SVG使用currentColor
+            {
+              name: 'addAttributesToSVGElement',
+              params: {
+                attributes: [{ fill: 'currentColor' }]
+              }
+            }
+          ]
         }
       }),
       AutoImport({
