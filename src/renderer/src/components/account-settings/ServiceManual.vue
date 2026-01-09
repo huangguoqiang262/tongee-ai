@@ -1,58 +1,60 @@
 <template>
   <div class="manual-box disabled-tools-chat">
-    <div v-if="!catalogueShow" class="catalogue" @click="catalogueClick(true)">目录</div>
-    <div v-if="catalogueShow" class="left-box">
-      <div class="common-box">
-        <div class="common-box-left">目录</div>
-        <div class="square-icon-box" @click="catalogueClick(false)">
-          <img class="square-icon" src="@renderer/assets/close-chat-icon.png" alt="" />
-        </div>
-      </div>
-      <div v-infinite-scroll="loadData" class="notebook-list">
-        <el-skeleton animated :loading="loading">
-          <template #template>
-            <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />
-          </template>
-          <template #default>
-            <template v-if="list.length">
-              <div
-                v-for="value in list"
-                :key="value.id"
-                :class="{ 'active-note': itemId == value.item_id }"
-                class="item"
-                @click="itemChange(value)"
-              >
-                <div class="vertical-marker"></div>
-                <div class="title">{{ value.title }}</div>
-              </div>
-            </template>
-            <div v-else class="empty">
-              <div class="empty-text">暂无数据</div>
-            </div>
-          </template>
-        </el-skeleton>
-      </div>
-    </div>
-    <div class="center-box" :class="{ 'mr-chat': chatVisible }">
-      <div class="center-head">
-        <div class="title"></div>
-        <div class="right-handle-box">
-          <div v-if="!chatVisible" class="open-chat" @click="openChat">
-            <img class="logo" src="@renderer/assets/logo.png" alt="" />
-            问问糖源
+    <el-splitter>
+      <div v-if="!catalogueShow" class="catalogue" @click="catalogueClick(true)">目录</div>
+      <el-splitter-panel v-if="catalogueShow" :size="292" :min="200" :max="400" class="left-box">
+        <div class="common-box">
+          <div class="common-box-left">目录</div>
+          <div class="square-icon-box" @click="catalogueClick(false)">
+            <img class="square-icon" src="@renderer/assets/close-chat-icon.png" alt="" />
           </div>
         </div>
-      </div>
-      <div v-loading="!html && loading" class="center-content">
-        <v-md-preview v-if="html" :text="html"></v-md-preview>
-        <div v-else class="empty-content">
-          <el-empty :image-size="120" description="暂无内容" />
+        <div v-infinite-scroll="loadData" class="notebook-list">
+          <el-skeleton animated :loading="loading">
+            <template #template>
+              <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />
+            </template>
+            <template #default>
+              <template v-if="list.length">
+                <div
+                  v-for="value in list"
+                  :key="value.id"
+                  :class="{ 'active-note': itemId == value.item_id }"
+                  class="item"
+                  @click="itemChange(value)"
+                >
+                  <div class="vertical-marker"></div>
+                  <div class="title">{{ value.title }}</div>
+                </div>
+              </template>
+              <div v-else class="empty">
+                <div class="empty-text">暂无数据</div>
+              </div>
+            </template>
+          </el-skeleton>
         </div>
-      </div>
-    </div>
-    <div v-if="chatVisible" class="right-box">
-      <EnchiridionChat :know-id="knowId" :item-id="itemId" @close-chat="chatVisible = false" />
-    </div>
+      </el-splitter-panel>
+      <el-splitter-panel :min="400" class="center-box" :class="{ 'mr-chat': chatVisible }">
+        <div class="center-head">
+          <div class="title"></div>
+          <div class="right-handle-box">
+            <div v-if="!chatVisible" class="open-chat" @click="openChat">
+              <img class="logo" src="@renderer/assets/logo.png" alt="" />
+              问问糖源
+            </div>
+          </div>
+        </div>
+        <div v-loading="!html && loading" class="center-content">
+          <v-md-preview v-if="html" :text="html"></v-md-preview>
+          <div v-else class="empty-content">
+            <el-empty :image-size="120" description="暂无内容" />
+          </div>
+        </div>
+      </el-splitter-panel>
+      <el-splitter-panel v-if="chatVisible" :size="375" :min="375" class="right-box">
+        <EnchiridionChat :know-id="knowId" :item-id="itemId" @close-chat="chatVisible = false" />
+      </el-splitter-panel>
+    </el-splitter>
   </div>
 </template>
 
@@ -167,10 +169,11 @@ onMounted(() => {
     cursor: pointer;
   }
 
-  .left-box {
+  :deep(.left-box) {
     box-sizing: border-box;
     padding: 20px;
-    width: 292px;
+    min-width: 200px;
+    max-width: 400px;
     height: 100%;
     border-right: 1px solid #efefef;
     display: flex;
@@ -295,9 +298,8 @@ onMounted(() => {
     }
   }
 
-  .center-box {
-    flex: 1;
-    min-width: 43%;
+  :deep(.center-box) {
+    min-width: 400px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -306,7 +308,7 @@ onMounted(() => {
     background: #fff;
     border-radius: 0 12px 12px 0;
     &.mr-chat {
-      margin-right: 10px;
+      margin-right: 5px;
     }
     .center-head {
       flex-shrink: 0;
@@ -341,7 +343,7 @@ onMounted(() => {
           cursor: pointer;
         }
 
-        :deep(.search-input) {
+        .search-input {
           width: 240px;
           height: 36px;
 
@@ -402,8 +404,9 @@ onMounted(() => {
       }
     }
   }
-  .right-box {
-    flex: 1;
+  :deep(.right-box) {
+    margin-left: 5px;
+    min-width: 375px;
     height: 100%;
     overflow: hidden;
     // display: flex;

@@ -15,69 +15,116 @@
         </div>
       </div>
     </div>
-
-    <div class="left-box">
-      <div class="common-repository-box">
-        <div class="common-box">
-          <div class="common-box-left">
-            <img class="icon" src="@renderer/assets/repository/common-repository-icon.png" alt="" />
-            公共知识库
-          </div>
-          <div class="square-icon-box" @click="squaretabChange">
-            <img class="square-icon" src="@renderer/assets/repository/square-icon.png" alt="" />
-          </div>
-        </div>
-        <div class="my-create-box">
-          <div class="lable-box" @click="closeCommonChange">
-            <div class="label-box-left">
+    <el-splitter>
+      <el-splitter-panel :size="236" :min="200" :max="300" class="left-box">
+        <div class="common-repository-box">
+          <div class="common-box">
+            <div class="common-box-left">
               <img
                 class="icon"
-                :class="{ 'rotate-icon': closeCommonList }"
+                src="@renderer/assets/repository/common-repository-icon.png"
+                alt=""
+              />
+              公共知识库
+            </div>
+            <div class="square-icon-box" @click="squaretabChange">
+              <img class="square-icon" src="@renderer/assets/repository/square-icon.png" alt="" />
+            </div>
+          </div>
+          <div class="my-create-box">
+            <div class="lable-box" @click="closeCommonChange">
+              <div class="label-box-left">
+                <img
+                  class="icon"
+                  :class="{ 'rotate-icon': closeCommonList }"
+                  src="@renderer/assets/repository/down-icon.png"
+                  alt=""
+                />
+                我的创建
+              </div>
+              <div class="add-icon-box" @click.stop="beforeAddRepository('common')">
+                <img class="add-icon" src="@renderer/assets/repository/add-icon.png" alt="" />
+              </div>
+            </div>
+            <div class="commom-list" :class="{ 'close-box': closeCommonList }">
+              <template v-for="(item, index) in commonCreateList" :key="item.id">
+                <div
+                  v-show="index < 3 || createCommonExpand"
+                  class="item"
+                  :class="{ 'active-repository': activeRepositoryId == item.id }"
+                  @click="getRepositoryInfo(item.id)"
+                >
+                  <div class="icon-box">
+                    <img class="icon" :src="item.picurl || defaultCover" alt="" />
+                  </div>
+                  <div class="title">{{ item.title }}</div>
+                  <div v-if="item.is_prompt == 1" class="dot-dark"></div>
+                </div>
+              </template>
+              <div v-if="commonCreateList.length > 3" class="expand" @click="commonExpandChange">
+                {{ createCommonExpand ? '收起' : '展开' }}
+              </div>
+            </div>
+          </div>
+          <div class="my-create-box">
+            <div class="lable-box">
+              <div class="label-box-left" @click="closeJoinChange">
+                <img
+                  class="icon"
+                  :class="{ 'rotate-icon': closeJoinList }"
+                  src="@renderer/assets/repository/down-icon.png"
+                  alt=""
+                />
+                我的加入
+              </div>
+            </div>
+            <div class="commom-list" :class="{ 'close-box': closeJoinList }">
+              <template v-for="(item, index) in commonJoinList" :key="item.id">
+                <div
+                  v-show="index < 3 || joinCommonExpand"
+                  class="item"
+                  :class="{ 'active-repository': activeRepositoryId == item.id }"
+                  @click="getRepositoryInfo(item.id)"
+                >
+                  <div class="icon-box">
+                    <img class="icon" :src="item.picurl || defaultCover" alt="" />
+                  </div>
+                  <div class="title">{{ item.title }}</div>
+                  <div v-if="item.is_prompt == 1" class="dot-dark"></div>
+                </div>
+              </template>
+
+              <div v-if="commonJoinList.length > 3" class="expand" @click="joinExpandChange">
+                {{ joinCommonExpand ? '收起' : '展开' }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="personage-repository-box">
+          <div class="personage-box">
+            <div class="personage-box-left" @click="closePersonageChange">
+              <img
+                class="personage-icon"
+                src="@renderer/assets/repository/personage-repository-icon.png"
+                alt=""
+              />
+              个人知识库
+              <img
+                class="icon"
+                :class="{ 'rotate-icon': closePersonageList }"
                 src="@renderer/assets/repository/down-icon.png"
                 alt=""
               />
-              我的创建
             </div>
-            <div class="add-icon-box" @click.stop="beforeAddRepository('common')">
+            <div class="add-icon-box" @click.stop="beforeAddRepository('personage')">
               <img class="add-icon" src="@renderer/assets/repository/add-icon.png" alt="" />
             </div>
           </div>
-          <div class="commom-list" :class="{ 'close-box': closeCommonList }">
-            <template v-for="(item, index) in commonCreateList" :key="item.id">
+          <div class="personage-list" :class="{ 'close-box': closePersonageList }">
+            <template v-for="(item, index) in personalCreateList" :key="item.id">
               <div
-                v-show="index < 3 || createCommonExpand"
-                class="item"
-                :class="{ 'active-repository': activeRepositoryId == item.id }"
-                @click="getRepositoryInfo(item.id)"
-              >
-                <div class="icon-box">
-                  <img class="icon" :src="item.picurl || defaultCover" alt="" />
-                </div>
-                <div class="title">{{ item.title }}</div>
-                <div v-if="item.is_prompt == 1" class="dot-dark"></div>
-              </div>
-            </template>
-            <div v-if="commonCreateList.length > 3" class="expand" @click="commonExpandChange">
-              {{ createCommonExpand ? '收起' : '展开' }}
-            </div>
-          </div>
-        </div>
-        <div class="my-create-box">
-          <div class="lable-box">
-            <div class="label-box-left" @click="closeJoinChange">
-              <img
-                class="icon"
-                :class="{ 'rotate-icon': closeJoinList }"
-                src="@renderer/assets/repository/down-icon.png"
-                alt=""
-              />
-              我的加入
-            </div>
-          </div>
-          <div class="commom-list" :class="{ 'close-box': closeJoinList }">
-            <template v-for="(item, index) in commonJoinList" :key="item.id">
-              <div
-                v-show="index < 3 || joinCommonExpand"
+                v-show="index < 3 || personageExpand"
                 class="item"
                 :class="{ 'active-repository': activeRepositoryId == item.id }"
                 @click="getRepositoryInfo(item.id)"
@@ -90,262 +137,223 @@
               </div>
             </template>
 
-            <div v-if="commonJoinList.length > 3" class="expand" @click="joinExpandChange">
-              {{ joinCommonExpand ? '收起' : '展开' }}
+            <div class="storage-space-box">
+              <div class="space-box">
+                已使用 {{ userInfo?.space_use_total || '0MB' }}/{{ userInfo?.space || '0GB' }}
+              </div>
+              <div
+                v-if="personalCreateList.length > 3"
+                class="expand"
+                @click="personageExpandChange"
+              >
+                {{ personageExpand ? '收起' : '展开' }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="divider"></div>
-      <div class="personage-repository-box">
-        <div class="personage-box">
-          <div class="personage-box-left" @click="closePersonageChange">
-            <img
-              class="personage-icon"
-              src="@renderer/assets/repository/personage-repository-icon.png"
-              alt=""
-            />
-            个人知识库
-            <img
-              class="icon"
-              :class="{ 'rotate-icon': closePersonageList }"
-              src="@renderer/assets/repository/down-icon.png"
-              alt=""
-            />
-          </div>
-          <div class="add-icon-box" @click.stop="beforeAddRepository('personage')">
-            <img class="add-icon" src="@renderer/assets/repository/add-icon.png" alt="" />
-          </div>
-        </div>
-        <div class="personage-list" :class="{ 'close-box': closePersonageList }">
-          <template v-for="(item, index) in personalCreateList" :key="item.id">
-            <div
-              v-show="index < 3 || personageExpand"
-              class="item"
-              :class="{ 'active-repository': activeRepositoryId == item.id }"
-              @click="getRepositoryInfo(item.id)"
-            >
-              <div class="icon-box">
-                <img class="icon" :src="item.picurl || defaultCover" alt="" />
+      </el-splitter-panel>
+      <el-splitter-panel :size="399" :min="300" class="center-box">
+        <div class="repository-detail-box">
+          <el-popover
+            v-if="Object.keys(activeRepository).length"
+            ref="repositoryPopover"
+            popper-class="custom-repository-popover"
+            trigger="click"
+            placement="bottom-start"
+            :show-arrow="false"
+            @show="getUnreadApplyNumber"
+          >
+            <template #reference>
+              <div class="handle">
+                <img class="more-icon" src="@renderer/assets/repository/more-icon.png" alt="" />
+                <div v-if="unreadApplyNumber > 0" class="dot-dark"></div>
               </div>
-              <div class="title">{{ item.title }}</div>
-              <div v-if="item.is_prompt == 1" class="dot-dark"></div>
-            </div>
-          </template>
-
-          <div class="storage-space-box">
-            <div class="space-box">
-              已使用 {{ userInfo?.space_use_total || '0MB' }}/{{ userInfo?.space || '0GB' }}
-            </div>
-            <div v-if="personalCreateList.length > 3" class="expand" @click="personageExpandChange">
-              {{ personageExpand ? '收起' : '展开' }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="center-box">
-      <div class="repository-detail-box">
-        <el-popover
-          v-if="Object.keys(activeRepository).length"
-          ref="repositoryPopover"
-          popper-class="custom-repository-popover"
-          trigger="click"
-          placement="bottom-start"
-          :show-arrow="false"
-          @show="getUnreadApplyNumber"
-        >
-          <template #reference>
-            <div class="handle">
-              <img class="more-icon" src="@renderer/assets/repository/more-icon.png" alt="" />
-              <div v-if="unreadApplyNumber > 0" class="dot-dark"></div>
-            </div>
-          </template>
-          <div class="common-handle-box" @click="hidePopover(repositoryPopover)">
-            <template
-              v-if="
-                activeRepository.is_public == 1 &&
-                (activeRepository.user_permission?.is_manager == 1 ||
-                  activeRepository.user_permission?.is_creator == 1)
-              "
-            >
-              <div class="item" @click="beforeEditRepository">
-                <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
-                <div class="title">资料修改</div>
-              </div>
-              <div class="item" @click="beforeRepositoryPermission">
-                <img class="icon" src="@renderer/assets/repository/qxsz-icon.png" alt="" />
-                <div class="title">权限设置</div>
-              </div>
-              <div class="item" @click="beforeRepositoryMember(true)">
-                <img class="icon" src="@renderer/assets/repository/cysz-icon.png" alt="" />
-                <div class="title">
-                  知识库成员
-                  <div v-if="unreadApplyNumber > 0" class="unreadApplyNumber">
-                    {{ unreadApplyNumber > 99 ? 99 : unreadApplyNumber }}
+            </template>
+            <div class="common-handle-box" @click="hidePopover(repositoryPopover)">
+              <template
+                v-if="
+                  activeRepository.is_public == 1 &&
+                  (activeRepository.user_permission?.is_manager == 1 ||
+                    activeRepository.user_permission?.is_creator == 1)
+                "
+              >
+                <div class="item" @click="beforeEditRepository">
+                  <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
+                  <div class="title">资料修改</div>
+                </div>
+                <div class="item" @click="beforeRepositoryPermission">
+                  <img class="icon" src="@renderer/assets/repository/qxsz-icon.png" alt="" />
+                  <div class="title">权限设置</div>
+                </div>
+                <div class="item" @click="beforeRepositoryMember(true)">
+                  <img class="icon" src="@renderer/assets/repository/cysz-icon.png" alt="" />
+                  <div class="title">
+                    知识库成员
+                    <div v-if="unreadApplyNumber > 0" class="unreadApplyNumber">
+                      {{ unreadApplyNumber > 99 ? 99 : unreadApplyNumber }}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="item" @click="beforeRepositoryFeedback">
-                <img class="icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
-                <div class="title">反馈</div>
-              </div>
-              <div class="item" @click="addQuickAccess">
-                <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
-                <div class="title">添加快捷访问</div>
-              </div>
-              <template v-if="activeRepository.user_permission?.is_manager == 1">
+                <div class="item" @click="beforeRepositoryFeedback">
+                  <img class="icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
+                  <div class="title">反馈</div>
+                </div>
+                <div class="item" @click="addQuickAccess">
+                  <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
+                  <div class="title">添加快捷访问</div>
+                </div>
+                <template v-if="activeRepository.user_permission?.is_manager == 1">
+                  <div class="item" @click="beforeQuitRepository">
+                    <img class="icon" src="@renderer/assets/repository/exit-icon.png" alt="" />
+                    <div class="title">退出知识库</div>
+                  </div>
+                </template>
+                <div class="item" @click="beforeDeleteRepository">
+                  <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
+                  <div class="title">删除知识库</div>
+                </div>
+              </template>
+              <template
+                v-else-if="
+                  activeRepository.is_public == 1 &&
+                  activeRepository.user_permission?.is_manager == 0 &&
+                  activeRepository.user_permission?.is_creator == 0
+                "
+              >
+                <div class="item" @click="beforeRepositoryFeedback">
+                  <img class="icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
+                  <div class="title">反馈</div>
+                </div>
+                <div class="item" @click="addQuickAccess">
+                  <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
+                  <div class="title">添加快捷访问</div>
+                </div>
                 <div class="item" @click="beforeQuitRepository">
                   <img class="icon" src="@renderer/assets/repository/exit-icon.png" alt="" />
                   <div class="title">退出知识库</div>
                 </div>
               </template>
-              <div class="item" @click="beforeDeleteRepository">
-                <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
-                <div class="title">删除知识库</div>
-              </div>
-            </template>
-            <template
-              v-else-if="
-                activeRepository.is_public == 1 &&
-                activeRepository.user_permission?.is_manager == 0 &&
-                activeRepository.user_permission?.is_creator == 0
-              "
-            >
-              <div class="item" @click="beforeRepositoryFeedback">
-                <img class="icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
-                <div class="title">反馈</div>
-              </div>
-              <div class="item" @click="addQuickAccess">
-                <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
-                <div class="title">添加快捷访问</div>
-              </div>
-              <div class="item" @click="beforeQuitRepository">
-                <img class="icon" src="@renderer/assets/repository/exit-icon.png" alt="" />
-                <div class="title">退出知识库</div>
-              </div>
-            </template>
-            <template v-else-if="activeRepository.is_public == 0">
-              <div class="item" @click="beforeEditRepository">
-                <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
-                <div class="title">资料修改</div>
-              </div>
-              <div class="item" @click="addQuickAccess">
-                <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
-                <div class="title">添加快捷访问</div>
-              </div>
-              <div
-                v-if="activeRepository.is_default != 1"
-                class="item"
-                @click="beforeDeleteRepository"
-              >
-                <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
-                <div class="title">删除知识库</div>
-              </div>
-            </template>
-          </div>
-        </el-popover>
-        <div v-if="Object.keys(activeRepository).length" class="detail-box">
-          <div class="top" @click="beforeEditRepository">
-            <img class="cover-img" :src="activeRepository.picurl || defaultCover" alt="" />
-            <div class="top-right">
-              <div class="title">{{ activeRepository.title }}</div>
-              <div class="top-right-bottom">
-                <div class="author-or-num-box">
-                  <img
-                    class="avatar"
-                    :src="activeRepository.create_user?.avatar || defaultAvatar"
-                    alt=""
-                  />
-                  <div class="author-name">{{ activeRepository.create_user?.name }}</div>
-                  <div class="vertical-line"></div>
-                  <div class="num">{{ activeRepository.content_count }}个内容</div>
+              <template v-else-if="activeRepository.is_public == 0">
+                <div class="item" @click="beforeEditRepository">
+                  <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
+                  <div class="title">资料修改</div>
                 </div>
-                <div class="management-box" @click.stop="">
-                  <MultiAvatar
-                    :avatars="activeRepository.manager_avatars"
-                    :size="18"
-                    :max-count="5"
-                    :spacing="-5"
-                  />
+                <div class="item" @click="addQuickAccess">
+                  <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
+                  <div class="title">添加快捷访问</div>
                 </div>
-              </div>
+                <div
+                  v-if="activeRepository.is_default != 1"
+                  class="item"
+                  @click="beforeDeleteRepository"
+                >
+                  <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
+                  <div class="title">删除知识库</div>
+                </div>
+              </template>
             </div>
-          </div>
-          <div class="repository-des" @click="beforeEditRepository">
-            {{ activeRepository.desc || '快来填写知识库的描述吧～' }}
-          </div>
-        </div>
-        <el-skeleton v-else class="detail-box" animated>
-          <template #template>
-            <div class="top">
-              <el-skeleton-item class="cover-img" />
+          </el-popover>
+          <div v-if="Object.keys(activeRepository).length" class="detail-box">
+            <div class="top" @click="beforeEditRepository">
+              <img class="cover-img" :src="activeRepository.picurl || defaultCover" alt="" />
               <div class="top-right">
-                <el-skeleton-item class="title"></el-skeleton-item>
+                <div class="title">{{ activeRepository.title }}</div>
                 <div class="top-right-bottom">
                   <div class="author-or-num-box">
-                    <el-skeleton-item variant="image" class="avatar" />
-                    <el-skeleton-item class="author-name" style="width: 60px" />
-                    <el-skeleton-item class="author-name" style="width: 60px" />
+                    <img
+                      class="avatar"
+                      :src="activeRepository.create_user?.avatar || defaultAvatar"
+                      alt=""
+                    />
+                    <div class="author-name">{{ activeRepository.create_user?.name }}</div>
+                    <div class="vertical-line"></div>
+                    <div class="num">{{ activeRepository.content_count }}个内容</div>
+                  </div>
+                  <div class="management-box" @click.stop="">
+                    <MultiAvatar
+                      :avatars="activeRepository.manager_avatars"
+                      :size="18"
+                      :max-count="5"
+                      :spacing="-5"
+                    />
                   </div>
                 </div>
               </div>
             </div>
-            <el-skeleton-item class="repository-des"> </el-skeleton-item>
-          </template>
-        </el-skeleton>
-      </div>
-      <div class="detail-list-box">
-        <div v-show="!isSearching" class="list-handle-box">
-          <div class="path-box">
-            <!-- <span>内容</span> -->
-            <!-- <div class="path-box"> -->
-            <div
-              v-for="(item, index) in pathList"
-              :key="index"
-              class="path-item"
-              :class="{ active: index === pathList.length - 1 }"
-              @click="pathChange(index)"
-            >
-              <el-icon v-if="index !== 0" class="icon">
-                <ArrowRight />
-              </el-icon>
-              {{ item.name }}
+            <div class="repository-des" @click="beforeEditRepository">
+              {{ activeRepository.desc || '快来填写知识库的描述吧～' }}
             </div>
-            <!-- </div> -->
           </div>
-          <div class="icons">
-            <el-popover
-              v-if="
-                (activeRepository.is_public == 1 &&
-                  (activeRepository.user_permission?.is_manager == 1 ||
-                    activeRepository.user_permission?.is_creator == 1)) ||
-                activeRepository.is_public == 0
-              "
-              ref="repositoryaddPopover"
-              popper-class="custom-repository-popover"
-              trigger="click"
-              placement="bottom-start"
-              :show-arrow="false"
-            >
-              <template #reference>
-                <img
-                  class="icon"
-                  src="@renderer/assets/repository/add-file-icon.png"
-                  alt=""
-                  @click="addMenuClick"
-                />
-              </template>
-              <div class="common-handle-box" @click="hidePopover(repositoryaddPopover)">
-                <div class="item" @click="beforeUploadFiles('local-file')">
-                  <img class="icon" src="@renderer/assets/popover/local-file-icon.png" alt="" />
-                  <div class="title">本地文件</div>
+          <el-skeleton v-else class="detail-box" animated>
+            <template #template>
+              <div class="top">
+                <el-skeleton-item class="cover-img" />
+                <div class="top-right">
+                  <el-skeleton-item class="title"></el-skeleton-item>
+                  <div class="top-right-bottom">
+                    <div class="author-or-num-box">
+                      <el-skeleton-item variant="image" class="avatar" />
+                      <el-skeleton-item class="author-name" style="width: 60px" />
+                      <el-skeleton-item class="author-name" style="width: 60px" />
+                    </div>
+                  </div>
                 </div>
-                <div class="item" @click="beforeUploadFiles('local-folder')">
-                  <img class="icon" src="@renderer/assets/popover/local-folder-icon.png" alt="" />
-                  <div class="title">本地文件夹</div>
-                </div>
-                <!-- <div class="item">
+              </div>
+              <el-skeleton-item class="repository-des"> </el-skeleton-item>
+            </template>
+          </el-skeleton>
+        </div>
+        <div class="detail-list-box">
+          <div v-show="!isSearching" class="list-handle-box">
+            <div class="path-box">
+              <!-- <span>内容</span> -->
+              <!-- <div class="path-box"> -->
+              <div
+                v-for="(item, index) in pathList"
+                :key="index"
+                class="path-item"
+                :class="{ active: index === pathList.length - 1 }"
+                @click="pathChange(index)"
+              >
+                <el-icon v-if="index !== 0" class="icon">
+                  <ArrowRight />
+                </el-icon>
+                {{ item.name }}
+              </div>
+              <!-- </div> -->
+            </div>
+            <div class="icons">
+              <el-popover
+                v-if="
+                  (activeRepository.is_public == 1 &&
+                    (activeRepository.user_permission?.is_manager == 1 ||
+                      activeRepository.user_permission?.is_creator == 1)) ||
+                  activeRepository.is_public == 0
+                "
+                ref="repositoryaddPopover"
+                popper-class="custom-repository-popover"
+                trigger="click"
+                placement="bottom-start"
+                :show-arrow="false"
+              >
+                <template #reference>
+                  <img
+                    class="icon"
+                    src="@renderer/assets/repository/add-file-icon.png"
+                    alt=""
+                    @click="addMenuClick"
+                  />
+                </template>
+                <div class="common-handle-box" @click="hidePopover(repositoryaddPopover)">
+                  <div class="item" @click="beforeUploadFiles('local-file')">
+                    <img class="icon" src="@renderer/assets/popover/local-file-icon.png" alt="" />
+                    <div class="title">本地文件</div>
+                  </div>
+                  <div class="item" @click="beforeUploadFiles('local-folder')">
+                    <img class="icon" src="@renderer/assets/popover/local-folder-icon.png" alt="" />
+                    <div class="title">本地文件夹</div>
+                  </div>
+                  <!-- <div class="item">
                   <img class="icon" src="@renderer/assets/popover/catalogue-file-icon.png" alt="" />
                   <div class="title">目录文件</div>
                 </div>
@@ -357,415 +365,442 @@
                   />
                   <div class="title">目录文件夹</div>
                 </div> -->
-                <el-popover
-                  ref="repositoryNotePopover"
-                  popper-class="custom-repository-popover"
-                  trigger="hover"
-                  placement="right-start"
-                  :show-arrow="false"
-                >
-                  <template #reference>
-                    <div class="item">
-                      <img class="icon" src="@renderer/assets/popover/note-icon.png" alt="" />
-                      <div class="title">笔记</div>
-                      <el-icon>
-                        <ArrowRight />
-                      </el-icon>
-                    </div>
-                  </template>
-                  <div class="common-handle-box" @click="hidePopover(repositoryNotePopover)">
-                    <div class="item" @click="beforeUploadFiles('createNote')">
-                      <img
-                        class="icon"
-                        src="@renderer/assets/repository/new-note-icon.png"
-                        alt=""
-                      />
-                      <div class="title">新建笔记</div>
-                    </div>
-                    <div class="item" @click="beforeUploadFiles('importNotes')">
-                      <img
-                        class="icon"
-                        src="@renderer/assets/repository/import-notes-icon.png"
-                        alt=""
-                      />
-                      <div class="title">导入笔记</div>
-                    </div>
-                  </div>
-                </el-popover>
-
-                <div class="item" @click="beforeUploadFiles('createFolder')">
-                  <img class="icon" src="@renderer/assets/popover/createFolder-icon.png" alt="" />
-                  <div class="title">创建文件夹</div>
-                </div>
-                <div class="item" @click="beforeUploadFiles('import-web')">
-                  <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
-                  <div class="title">导入网页</div>
-                </div>
-              </div>
-            </el-popover>
-            <el-popover
-              ref="repositorySortPopover"
-              popper-class="custom-repository-popover"
-              trigger="click"
-              placement="bottom-start"
-              :show-arrow="false"
-            >
-              <template #reference>
-                <img class="icon" src="@renderer/assets/repository/sort-icon.png" alt="" />
-              </template>
-              <div class="common-handle-box" @click="hidePopover(repositorySortPopover)">
-                <div
-                  v-for="item in sortList"
-                  :key="item.value"
-                  class="item"
-                  :class="{ active: item.value == sortType }"
-                  @click="sortMenuClick(item)"
-                >
-                  <div class="title">{{ item.label }}</div>
-                  <el-icon class="check-icon">
-                    <Check />
-                  </el-icon>
-                </div>
-              </div>
-            </el-popover>
-
-            <img
-              class="icon"
-              src="@renderer/assets/repository/search-icon.png"
-              alt=""
-              @click="searchMenuClick"
-            />
-          </div>
-        </div>
-        <div v-show="isSearching" class="search-box">
-          <el-input
-            ref="searchBoxRef"
-            v-model="searchText"
-            class="search-input"
-            placeholder="搜索"
-            clearable
-            @blur="handleBlur"
-            @keyup.enter="handleBlur"
-          />
-          <el-icon class="search-icon">
-            <Search />
-          </el-icon>
-        </div>
-        <div v-if="detailFileList.length" class="list-box">
-          <template v-for="item in detailFileList" :key="item.id">
-            <div
-              v-if="item.item_type == 2"
-              class="list-item"
-              :class="{ 'active-repository': item.checked, is_top: item.is_top }"
-              @contextmenu="(e) => showContextMenu(e, item)"
-              @click="dirChange(item)"
-            >
-              <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
-              <img class="cover-img" :src="getFileIcon(item)" alt="" />
-              <div class="item-right">
-                <div v-if="!item.isCreated" class="title">
-                  <!-- 将字符串分割为每个字符 -->
-                  <template v-if="item.title">
-                    <span
-                      v-for="(text, i) in item.title"
-                      :key="i"
-                      :class="{ 'active-filter': searchText && searchText.includes(text) }"
-                      >{{ text }}</span
-                    >
-                  </template>
-                </div>
-                <div v-else class="title">
-                  <el-input
-                    v-model="item.title"
-                    autofocus
-                    class="create-input"
-                    placeholder="请输入文件夹名称"
-                    @keyup.enter="createOrRename(item)"
-                    @blur="createOrRename(item)"
-                    @click.stop=""
-                  />
-                </div>
-                <div class="item-right-bottom">
-                  <div class="size-or-num-box">
-                    <div class="num">{{ item.file_count }}个内容</div>
-                    <div class="vertical-line"></div>
-                    <div class="size">{{ formatFileSize(item.total_space) }}</div>
-                    <el-popover
-                      v-if="item.tags"
-                      popper-class="abstract-box-popover"
-                      placement="right-start"
-                    >
-                      <template #reference>
-                        <div class="tags">
-                          <div
-                            v-for="tag in item.tags.split(',')"
-                            :key="tag"
-                            class="tag"
-                            :class="{ activeTag: tag == searchText }"
-                          >
-                            <svg
-                              class="icon"
-                              width="10px"
-                              height="10px"
-                              viewBox="0 0 10 10"
-                              version="1.1"
-                              xmlns="http://www.w3.org/2000/svg"
-                              xmlns:xlink="http://www.w3.org/1999/xlink"
-                            >
-                              <title>形状结合</title>
-                              <g
-                                id="页面-1"
-                                stroke="none"
-                                stroke-width="1"
-                                fill="none"
-                                fill-rule="evenodd"
-                              >
-                                <g
-                                  id="公共知识库—文件设置"
-                                  transform="translate(-460, -471)"
-                                  :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'"
-                                  fill-rule="nonzero"
-                                >
-                                  <g id="标签" transform="translate(460, 471)">
-                                    <rect
-                                      id="矩形"
-                                      opacity="0"
-                                      x="0"
-                                      y="0"
-                                      width="10"
-                                      height="10"
-                                    ></rect>
-                                    <path
-                                      id="形状结合"
-                                      d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
-                                    ></path>
-                                  </g>
-                                </g>
-                              </g>
-                            </svg>
-                            {{ tag }}
-                          </div>
-                        </div>
-                      </template>
-                      <div class="abstract-box">
-                        <div v-if="item.tags" class="tag-box folder-tag-box">
-                          <div
-                            v-for="tag in item.tags.split(',')"
-                            :key="tag"
-                            class="tag"
-                            :class="{ activeTag: tag == searchText }"
-                          >
-                            <svg
-                              class="icon"
-                              width="10px"
-                              height="10px"
-                              viewBox="0 0 10 10"
-                              version="1.1"
-                              xmlns="http://www.w3.org/2000/svg"
-                              xmlns:xlink="http://www.w3.org/1999/xlink"
-                            >
-                              <title>形状结合</title>
-                              <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                <g
-                                  id="公共知识库—文件设置"
-                                  transform="translate(-460, -471)"
-                                  :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'"
-                                  fill-rule="nonzero"
-                                >
-                                  <g id="标签" transform="translate(460, 471)">
-                                    <rect id="矩形" opacity="0" x="0" y="0" width="10" height="10"></rect>
-                                    <path
-                                      id="形状结合"
-                                      d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
-                                    ></path>
-                                  </g>
-                                </g>
-                              </g>
-                            </svg>
-                            {{ tag }}
-                          </div>
-                        </div>
-                      </div>
-                    </el-popover>
-                  </div>
-                  <div class="management-box">{{ item.createtime.split(' ')[0] }}</div>
-                </div>
-              </div>
-            </div>
-            <el-popover v-else popper-class="abstract-box-popover" placement="right-start">
-              <template #reference>
-                <div
-                  class="list-item"
-                  :class="{ 'active-repository': item.checked, is_top: item.is_top }"
-                  @contextmenu="(e) => showContextMenu(e, item)"
-                  @click="detailChange(item)"
-                >
-                  <el-checkbox
-                    v-model="item.checked"
-                    class="checkbox"
-                    size="large"
-                    @click.stop="contextMenu.show = false"
-                  />
-                  <img class="cover-img cover-file-img" :src="item.info?.icon" alt="" />
-                  <div class="item-right">
-                    <div v-if="!item.isCreated" class="title">
-                      <!-- 将字符串分割为每个字符 -->
-                      <template v-if="item.title">
-                        <span
-                          v-for="(text, i) in item.title"
-                          :key="i"
-                          :class="{ 'active-filter': searchText && searchText.includes(text) }"
-                          >{{ text }}</span
-                        >
-                      </template>
-                    </div>
-                    <div v-else class="title">
-                      <el-input
-                        v-model="item.title"
-                        autofocus
-                        class="create-input"
-                        placeholder="请输入文件名称"
-                        @click.stop=""
-                        @keyup.enter="createOrRename(item)"
-                        @blur="createOrRename(item)"
-                      />
-                    </div>
-                    <div class="item-right-bottom">
-                      <div class="size-or-num-box">
-                        <div class="type-box">
-                          <img class="icon" :src="getFileIcon(item)" alt="" />
-                          <span v-if="item.item_type == 3" class="web-url">{{
-                            item.info?.web_url
-                          }}</span>
-                          <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
-                          <span
-                            v-else-if="
-                              ['png', 'jpg', 'jpeg', 'gif'].includes(
-                                item.info?.url.split('.').pop()
-                              )
-                            "
-                            >图片</span
-                          >
-                          <span v-else>{{ item.info?.url.split('.').pop().toUpperCase() }}</span>
-                        </div>
-                        <div v-if="item.item_type != 3" class="size">
-                          {{ formatFileSize(item.total_space) }}
-                        </div>
-                        <div v-if="item.tags" class="tags">
-                          <div
-                            v-for="tag in item.tags.split(',')"
-                            :key="tag"
-                            class="tag"
-                            :class="{ activeTag: tag == searchText }"
-                          >
-                            <svg
-                              class="icon"
-                              width="10px"
-                              height="10px"
-                              viewBox="0 0 10 10"
-                              version="1.1"
-                              xmlns="http://www.w3.org/2000/svg"
-                              xmlns:xlink="http://www.w3.org/1999/xlink"
-                            >
-                              <title>形状结合</title>
-                              <g
-                                id="页面-1"
-                                stroke="none"
-                                stroke-width="1"
-                                fill="none"
-                                fill-rule="evenodd"
-                              >
-                                <g
-                                  id="公共知识库—文件设置"
-                                  transform="translate(-460, -471)"
-                                  :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'"
-                                  fill-rule="nonzero"
-                                >
-                                  <g id="标签" transform="translate(460, 471)">
-                                    <rect
-                                      id="矩形"
-                                      opacity="0"
-                                      x="0"
-                                      y="0"
-                                      width="10"
-                                      height="10"
-                                    ></rect>
-                                    <path
-                                      id="形状结合"
-                                      d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
-                                    ></path>
-                                  </g>
-                                </g>
-                              </g>
-                            </svg>
-                            {{ tag }}
-                          </div>
-                        </div>
-                      </div>
-                      <div class="management-box">{{ item.createtime.split(' ')[0] }}</div>
-                    </div>
-                  </div>
-                </div>
-              </template>
-              <div class="abstract-box">
-                <div class="abstract-title">{{ item.title }}</div>
-                <div class="time">上传时间：{{ item.createtime }}</div>
-                <div class="abstract-desc">{{ item.info?.ai_desc || '该内容暂未生成摘要' }}</div>
-                <div v-if="item.tags" class="tag-box">
-                  <div
-                    v-for="tag in item.tags.split(',')"
-                    :key="tag"
-                    class="tag"
-                    :class="{ activeTag: tag == searchText }"
+                  <el-popover
+                    ref="repositoryNotePopover"
+                    popper-class="custom-repository-popover"
+                    trigger="hover"
+                    placement="right-start"
+                    :show-arrow="false"
                   >
-                    <svg
-                      class="icon"
-                      width="10px"
-                      height="10px"
-                      viewBox="0 0 10 10"
-                      version="1.1"
-                      xmlns="http://www.w3.org/2000/svg"
-                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                    <template #reference>
+                      <div class="item">
+                        <img class="icon" src="@renderer/assets/popover/note-icon.png" alt="" />
+                        <div class="title">笔记</div>
+                        <el-icon>
+                          <ArrowRight />
+                        </el-icon>
+                      </div>
+                    </template>
+                    <div class="common-handle-box" @click="hidePopover(repositoryNotePopover)">
+                      <div class="item" @click="beforeUploadFiles('createNote')">
+                        <img
+                          class="icon"
+                          src="@renderer/assets/repository/new-note-icon.png"
+                          alt=""
+                        />
+                        <div class="title">新建笔记</div>
+                      </div>
+                      <div class="item" @click="beforeUploadFiles('importNotes')">
+                        <img
+                          class="icon"
+                          src="@renderer/assets/repository/import-notes-icon.png"
+                          alt=""
+                        />
+                        <div class="title">导入笔记</div>
+                      </div>
+                    </div>
+                  </el-popover>
+
+                  <div class="item" @click="beforeUploadFiles('createFolder')">
+                    <img class="icon" src="@renderer/assets/popover/createFolder-icon.png" alt="" />
+                    <div class="title">创建文件夹</div>
+                  </div>
+                  <div class="item" @click="beforeUploadFiles('import-web')">
+                    <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
+                    <div class="title">导入网页</div>
+                  </div>
+                </div>
+              </el-popover>
+              <el-popover
+                ref="repositorySortPopover"
+                popper-class="custom-repository-popover"
+                trigger="click"
+                placement="bottom-start"
+                :show-arrow="false"
+              >
+                <template #reference>
+                  <img class="icon" src="@renderer/assets/repository/sort-icon.png" alt="" />
+                </template>
+                <div class="common-handle-box" @click="hidePopover(repositorySortPopover)">
+                  <div
+                    v-for="item in sortList"
+                    :key="item.value"
+                    class="item"
+                    :class="{ active: item.value == sortType }"
+                    @click="sortMenuClick(item)"
+                  >
+                    <div class="title">{{ item.label }}</div>
+                    <el-icon class="check-icon">
+                      <Check />
+                    </el-icon>
+                  </div>
+                </div>
+              </el-popover>
+
+              <img
+                class="icon"
+                src="@renderer/assets/repository/search-icon.png"
+                alt=""
+                @click="searchMenuClick"
+              />
+            </div>
+          </div>
+          <div v-show="isSearching" class="search-box">
+            <el-input
+              ref="searchBoxRef"
+              v-model="searchText"
+              class="search-input"
+              placeholder="搜索"
+              clearable
+              @blur="handleBlur"
+              @keyup.enter="handleBlur"
+            />
+            <el-icon class="search-icon">
+              <Search />
+            </el-icon>
+          </div>
+          <div v-if="detailFileList.length" class="list-box">
+            <template v-for="item in detailFileList" :key="item.id">
+              <div
+                v-if="item.item_type == 2"
+                class="list-item"
+                :class="{ 'active-repository': item.checked, is_top: item.is_top }"
+                @contextmenu="(e) => showContextMenu(e, item)"
+                @click="dirChange(item)"
+              >
+                <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
+                <img class="cover-img" :src="getFileIcon(item)" alt="" />
+                <div class="item-right">
+                  <div v-if="!item.isCreated" class="title">
+                    <!-- 将字符串分割为每个字符 -->
+                    <template v-if="item.title">
+                      <span
+                        v-for="(text, i) in item.title"
+                        :key="i"
+                        :class="{ 'active-filter': searchText && searchText.includes(text) }"
+                        >{{ text }}</span
+                      >
+                    </template>
+                  </div>
+                  <div v-else class="title" @click.stop="">
+                    <el-input
+                      v-model="item.title"
+                      autofocus
+                      class="create-input"
+                      placeholder="请输入文件夹名称"
+                      @keyup.enter="createOrRename(item)"
+                      @blur="createOrRename(item)"
+                      @click.stop=""
+                    />
+                  </div>
+                  <div class="item-right-bottom">
+                    <div class="size-or-num-box">
+                      <div class="num">{{ item.file_count }}个内容</div>
+                      <div class="vertical-line"></div>
+                      <div class="size">{{ formatFileSize(item.total_space) }}</div>
+                      <el-popover
+                        v-if="item.tags"
+                        popper-class="abstract-box-popover"
+                        placement="right-start"
+                      >
+                        <template #reference>
+                          <div class="tags">
+                            <div
+                              v-for="tag in item.tags.split(',')"
+                              :key="tag"
+                              class="tag"
+                              :class="{ activeTag: tag == searchText }"
+                            >
+                              <svg
+                                class="icon"
+                                width="10px"
+                                height="10px"
+                                viewBox="0 0 10 10"
+                                version="1.1"
+                                xmlns="http://www.w3.org/2000/svg"
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                              >
+                                <title>形状结合</title>
+                                <g
+                                  id="页面-1"
+                                  stroke="none"
+                                  stroke-width="1"
+                                  fill="none"
+                                  fill-rule="evenodd"
+                                >
+                                  <g
+                                    id="公共知识库—文件设置"
+                                    transform="translate(-460, -471)"
+                                    :fill="
+                                      tag == searchText ? 'var(--el-color-primary)' : '#909090'
+                                    "
+                                    fill-rule="nonzero"
+                                  >
+                                    <g id="标签" transform="translate(460, 471)">
+                                      <rect
+                                        id="矩形"
+                                        opacity="0"
+                                        x="0"
+                                        y="0"
+                                        width="10"
+                                        height="10"
+                                      ></rect>
+                                      <path
+                                        id="形状结合"
+                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
+                                      ></path>
+                                    </g>
+                                  </g>
+                                </g>
+                              </svg>
+                              {{ tag }}
+                            </div>
+                          </div>
+                        </template>
+                        <div class="abstract-box">
+                          <div v-if="item.tags" class="tag-box folder-tag-box">
+                            <div
+                              v-for="tag in item.tags.split(',')"
+                              :key="tag"
+                              class="tag"
+                              :class="{ activeTag: tag == searchText }"
+                            >
+                              <svg
+                                class="icon"
+                                width="10px"
+                                height="10px"
+                                viewBox="0 0 10 10"
+                                version="1.1"
+                                xmlns="http://www.w3.org/2000/svg"
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                              >
+                                <title>形状结合</title>
+                                <g
+                                  id="页面-1"
+                                  stroke="none"
+                                  stroke-width="1"
+                                  fill="none"
+                                  fill-rule="evenodd"
+                                >
+                                  <g
+                                    id="公共知识库—文件设置"
+                                    transform="translate(-460, -471)"
+                                    :fill="
+                                      tag == searchText ? 'var(--el-color-primary)' : '#909090'
+                                    "
+                                    fill-rule="nonzero"
+                                  >
+                                    <g id="标签" transform="translate(460, 471)">
+                                      <rect
+                                        id="矩形"
+                                        opacity="0"
+                                        x="0"
+                                        y="0"
+                                        width="10"
+                                        height="10"
+                                      ></rect>
+                                      <path
+                                        id="形状结合"
+                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
+                                      ></path>
+                                    </g>
+                                  </g>
+                                </g>
+                              </svg>
+                              {{ tag }}
+                            </div>
+                          </div>
+                        </div>
+                      </el-popover>
+                    </div>
+                    <div class="management-box">{{ item.createtime.split(' ')[0] }}</div>
+                  </div>
+                </div>
+              </div>
+              <el-popover v-else popper-class="abstract-box-popover" placement="right-start">
+                <template #reference>
+                  <div
+                    class="list-item"
+                    :class="{ 'active-repository': item.checked, is_top: item.is_top }"
+                    @contextmenu="(e) => showContextMenu(e, item)"
+                    @click="detailChange(item)"
+                  >
+                    <el-checkbox
+                      v-model="item.checked"
+                      class="checkbox"
+                      size="large"
+                      @click.stop="contextMenu.show = false"
+                    />
+                    <img class="cover-img cover-file-img" :src="item.info?.icon" alt="" />
+                    <div class="item-right">
+                      <div v-if="!item.isCreated" class="title">
+                        <!-- 将字符串分割为每个字符 -->
+                        <template v-if="item.title">
+                          <span
+                            v-for="(text, i) in item.title"
+                            :key="i"
+                            :class="{ 'active-filter': searchText && searchText.includes(text) }"
+                            >{{ text }}</span
+                          >
+                        </template>
+                      </div>
+                      <div v-else class="title">
+                        <el-input
+                          v-model="item.title"
+                          autofocus
+                          class="create-input"
+                          placeholder="请输入文件名称"
+                          @click.stop=""
+                          @keyup.enter="createOrRename(item)"
+                          @blur="createOrRename(item)"
+                        />
+                      </div>
+                      <div class="item-right-bottom">
+                        <div class="size-or-num-box">
+                          <div class="type-box">
+                            <img class="icon" :src="getFileIcon(item)" alt="" />
+                            <span v-if="item.item_type == 3" class="web-url">{{
+                              item.info?.web_url
+                            }}</span>
+                            <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
+                            <span
+                              v-else-if="
+                                ['png', 'jpg', 'jpeg', 'gif'].includes(
+                                  item.info?.url.split('.').pop()
+                                )
+                              "
+                              >图片</span
+                            >
+                            <span v-else>{{ item.info?.url.split('.').pop().toUpperCase() }}</span>
+                          </div>
+                          <div v-if="item.item_type != 3" class="size">
+                            {{ formatFileSize(item.total_space) }}
+                          </div>
+                          <div v-if="item.tags" class="tags">
+                            <div
+                              v-for="tag in item.tags.split(',')"
+                              :key="tag"
+                              class="tag"
+                              :class="{ activeTag: tag == searchText }"
+                            >
+                              <svg
+                                class="icon"
+                                width="10px"
+                                height="10px"
+                                viewBox="0 0 10 10"
+                                version="1.1"
+                                xmlns="http://www.w3.org/2000/svg"
+                                xmlns:xlink="http://www.w3.org/1999/xlink"
+                              >
+                                <title>形状结合</title>
+                                <g
+                                  id="页面-1"
+                                  stroke="none"
+                                  stroke-width="1"
+                                  fill="none"
+                                  fill-rule="evenodd"
+                                >
+                                  <g
+                                    id="公共知识库—文件设置"
+                                    transform="translate(-460, -471)"
+                                    :fill="
+                                      tag == searchText ? 'var(--el-color-primary)' : '#909090'
+                                    "
+                                    fill-rule="nonzero"
+                                  >
+                                    <g id="标签" transform="translate(460, 471)">
+                                      <rect
+                                        id="矩形"
+                                        opacity="0"
+                                        x="0"
+                                        y="0"
+                                        width="10"
+                                        height="10"
+                                      ></rect>
+                                      <path
+                                        id="形状结合"
+                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
+                                      ></path>
+                                    </g>
+                                  </g>
+                                </g>
+                              </svg>
+                              {{ tag }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="management-box">{{ item.createtime.split(' ')[0] }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <div class="abstract-box">
+                  <div class="abstract-title">{{ item.title }}</div>
+                  <div class="time">上传时间：{{ item.createtime }}</div>
+                  <div class="abstract-desc">{{ item.info?.ai_desc || '该内容暂未生成摘要' }}</div>
+                  <div v-if="item.tags" class="tag-box">
+                    <div
+                      v-for="tag in item.tags.split(',')"
+                      :key="tag"
+                      class="tag"
+                      :class="{ activeTag: tag == searchText }"
                     >
-                      <title>形状结合</title>
-                      <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                      <svg
+                        class="icon"
+                        width="10px"
+                        height="10px"
+                        viewBox="0 0 10 10"
+                        version="1.1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                      >
+                        <title>形状结合</title>
                         <g
-                          id="公共知识库—文件设置"
-                          transform="translate(-460, -471)"
-                          :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'"
-                          fill-rule="nonzero"
+                          id="页面-1"
+                          stroke="none"
+                          stroke-width="1"
+                          fill="none"
+                          fill-rule="evenodd"
                         >
-                          <g id="标签" transform="translate(460, 471)">
-                            <rect id="矩形" opacity="0" x="0" y="0" width="10" height="10"></rect>
-                            <path
-                              id="形状结合"
-                              d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
-                            ></path>
+                          <g
+                            id="公共知识库—文件设置"
+                            transform="translate(-460, -471)"
+                            :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'"
+                            fill-rule="nonzero"
+                          >
+                            <g id="标签" transform="translate(460, 471)">
+                              <rect id="矩形" opacity="0" x="0" y="0" width="10" height="10"></rect>
+                              <path
+                                id="形状结合"
+                                d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
+                              ></path>
+                            </g>
                           </g>
                         </g>
-                      </g>
-                    </svg>
-                    {{ tag }}
+                      </svg>
+                      {{ tag }}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </el-popover>
-          </template>
+              </el-popover>
+            </template>
+          </div>
+          <div v-else class="empty">
+            <div class="empty-text">暂无内容，快去添加吧</div>
+          </div>
         </div>
-        <div v-else class="empty">
-          <div class="empty-text">暂无内容，快去添加吧</div>
-        </div>
-      </div>
-    </div>
-    <div class="right-box">
-      <RepositoryChatPage
-        :know-id="activeRepository.id"
-        :item-id="parentItemId"
-        :selecte-file-id-list="selecteFileIdList"
-        :repository-name="activeRepository.title"
-        :questions="activeRepository.questions"
-      />
-    </div>
+      </el-splitter-panel>
+      <el-splitter-panel :min="375" class="right-box">
+        <RepositoryChatPage
+          :know-id="activeRepository.id"
+          :item-id="parentItemId"
+          :selecte-file-id-list="selecteFileIdList"
+          :repository-name="activeRepository.title"
+          :questions="activeRepository.questions"
+        />
+      </el-splitter-panel>
+    </el-splitter>
+
     <HandleContextMenu
       :show="contextMenu.show"
       :x="contextMenu.x"
@@ -2753,12 +2788,12 @@ watch(
     }
   }
 
-  .left-box {
-    flex-shrink: 0;
+  :deep(.left-box) {
     box-sizing: border-box;
     padding: 25px 8px 20px;
-    width: 236px;
     height: 100%;
+    min-width: 200px;
+    max-width: 300px;
     border-right: 1px solid #efefef;
     overflow-y: auto;
 
@@ -2959,7 +2994,7 @@ watch(
 
     .divider {
       margin: 2px auto 29px;
-      width: 211px;
+      width: calc(100% - 14px);
       height: 1px;
       background-color: #efefef;
     }
@@ -3128,11 +3163,10 @@ watch(
     }
   }
 
-  .center-box {
+  :deep(.center-box) {
     flex-shrink: 0;
     box-sizing: border-box;
     padding: 10px 6px 20px;
-    width: 399px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -3350,7 +3384,7 @@ watch(
         display: flex;
         align-items: center;
 
-        :deep(.search-input) {
+        .search-input {
           flex: 1;
 
           .el-input__wrapper {
@@ -3471,7 +3505,7 @@ watch(
               .active-filter {
                 color: var(--el-color-primary);
               }
-              :deep(.create-input) {
+              .create-input {
                 width: calc(100% - 30px);
                 height: 100%;
 
@@ -3591,7 +3625,7 @@ watch(
     }
   }
 
-  .right-box {
+  :deep(.right-box) {
     flex: 1;
     height: 100%;
     overflow: hidden;

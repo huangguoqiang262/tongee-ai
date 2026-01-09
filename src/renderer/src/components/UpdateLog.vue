@@ -1,66 +1,68 @@
 <template>
   <div class="notebook-box">
-    <div v-if="!catalogueShow" class="catalogue" @click="catalogueClick(true)">目录</div>
-    <div v-if="catalogueShow" class="left-box">
-      <div class="common-box">
-        <div class="common-box-left">目录</div>
-        <div class="square-icon-box" @click="catalogueClick(false)">
-          <img class="square-icon" src="@renderer/assets/close-chat-icon.png" alt="" />
+    <el-splitter>
+      <div v-if="!catalogueShow" class="catalogue" @click="catalogueClick(true)">目录</div>
+      <el-splitter-panel v-if="catalogueShow" :size="292" :min="200" :max="400" class="left-box">
+        <div class="common-box">
+          <div class="common-box-left">目录</div>
+          <div class="square-icon-box" @click="catalogueClick(false)">
+            <img class="square-icon" src="@renderer/assets/close-chat-icon.png" alt="" />
+          </div>
         </div>
-      </div>
-      <div class="notebook-list">
-        <el-skeleton animated :loading="loading">
-          <template #template>
-            <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />
-          </template>
-          <template #default>
-            <template v-if="list.length">
-              <el-anchor
-                :container="containerRef"
-                direction="vertical"
-                type="default"
-                :offset="0"
-                select-scroll-top
-                @click="handleClick"
-              >
-                <el-anchor-link
-                  v-for="(value, index) in list"
-                  :key="value.id"
-                  class="anchor-item"
-                  :href="'#version' + index"
-                  :title="value.version + '主要更新'"
-                />
-              </el-anchor>
+        <div class="notebook-list">
+          <el-skeleton animated :loading="loading">
+            <template #template>
+              <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />
             </template>
-            <div v-else class="empty">
-              <div class="empty-text">暂无数据</div>
+            <template #default>
+              <template v-if="list.length">
+                <el-anchor
+                  :container="containerRef"
+                  direction="vertical"
+                  type="default"
+                  :offset="0"
+                  select-scroll-top
+                  @click="handleClick"
+                >
+                  <el-anchor-link
+                    v-for="(value, index) in list"
+                    :key="value.id"
+                    class="anchor-item"
+                    :href="'#version' + index"
+                    :title="value.version + '主要更新'"
+                  />
+                </el-anchor>
+              </template>
+              <div v-else class="empty">
+                <div class="empty-text">暂无数据</div>
+              </div>
+            </template>
+          </el-skeleton>
+        </div>
+      </el-splitter-panel>
+      <el-splitter-panel :min="400" class="center-box">
+        <div ref="containerRef" class="center-content">
+          <template v-if="list.length">
+            <div
+              v-for="(value, index) in list"
+              :id="'version' + index"
+              :key="value.id"
+              class="version-item"
+            >
+              <h3 class="label">{{ value.version }}主要更新</h3>
+              <div class="create-time">更新时间：{{ value.createtime }}</div>
+              <v-md-preview :text="replaceImgStyle(value.content)"></v-md-preview>
             </div>
           </template>
-        </el-skeleton>
-      </div>
-    </div>
-    <div class="center-box">
-      <div ref="containerRef" class="center-content">
-        <template v-if="list.length">
-          <div
-            v-for="(value, index) in list"
-            :id="'version' + index"
-            :key="value.id"
-            class="version-item"
-          >
-            <h3 class="label">{{ value.version }}主要更新</h3>
-            <div class="create-time">更新时间：{{ value.createtime }}</div>
-            <v-md-preview :text="replaceImgStyle(value.content)"></v-md-preview>
+          <div v-else class="empty-content">
+            <el-empty :image-size="120" description="暂无内容" />
           </div>
-        </template>
-        <div v-else class="empty-content">
-          <el-empty :image-size="120" description="暂无内容" />
         </div>
-      </div>
-    </div>
-    <div v-if="chatVisible" class="right-box">
-      <!-- <EnchiridionChat :know-id="knowId" :item-id="itemId" @close-chat="chatVisible = false" /> -->
-    </div>
+      </el-splitter-panel>
+      <!-- <div v-if="chatVisible" class="right-box">
+        <EnchiridionChat :know-id="knowId" :item-id="itemId" @close-chat="chatVisible = false" />
+      </div> -->
+    </el-splitter>
   </div>
 </template>
 
@@ -70,7 +72,7 @@ import { ref, onMounted } from 'vue'
 import { uplogsNoPaginate } from '@renderer/api/update'
 // import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 let containerRef = ref(null)
-let chatVisible = ref(false)
+// let chatVisible = ref(false)
 let catalogueShow = ref(true)
 const catalogueClick = (show) => {
   catalogueShow.value = show
@@ -166,10 +168,12 @@ onMounted(() => {
     cursor: pointer;
   }
 
-  .left-box {
+  :deep(.left-box) {
     box-sizing: border-box;
     padding: 20px;
     width: 292px;
+    min-width: 200px;
+    max-width: 400px;
     height: 100%;
     border-right: 1px solid #efefef;
     display: flex;
@@ -245,7 +249,7 @@ onMounted(() => {
           margin-bottom: 16vh;
         }
       }
-      :deep(.anchor-item) {
+      .anchor-item {
         .el-anchor__link {
           padding: 8px 0;
           font-size: 14px;
@@ -258,7 +262,7 @@ onMounted(() => {
     }
   }
 
-  .center-box {
+  :deep(.center-box) {
     flex: 1;
     min-width: 400px;
     height: 100%;
@@ -288,7 +292,7 @@ onMounted(() => {
         height: 100%;
       }
       .version-item {
-        :deep(.vuepress-markdown-body) {
+        .vuepress-markdown-body {
           padding: 0 0 5px !important;
           font-size: 14px !important;
           line-height: 20px !important;

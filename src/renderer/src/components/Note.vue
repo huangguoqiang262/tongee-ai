@@ -1,136 +1,138 @@
 <template>
   <div class="notebook-box">
-    <div class="left-box">
-      <div class="common-box">
-        <div class="common-box-left">笔记本</div>
-        <div class="square-icon-box" @click="addNotebook">
-          <img class="square-icon" src="@renderer/assets/repository/add-icon.png" alt="" />
-        </div>
-      </div>
-      <div class="notebook-list">
-        <el-skeleton animated :loading="bookLoading">
-          <template #template>
-            <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />
-          </template>
-          <template #default>
-            <template v-if="notebookLists.length">
-              <div
-                v-for="item in notebookLists"
-                :key="item.id"
-                class="item"
-                :class="{ 'active-note': item.id === activeNotebook }"
-                @click="bookChange(item)"
-                @contextmenu="(e) => showContextMenu(e, item, 'notebook')"
-              >
-                <div class="icon-box">
-                  <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
-                </div>
-                <div class="title">
-                  <el-input
-                    v-if="item.isEdit"
-                    v-model="item.title"
-                    autofocus
-                    class="create-input"
-                    placeholder="请输入笔记本名称"
-                    @keyup.enter="editNoteBookName(item)"
-                    @click.stop=""
-                    @blur="editNoteBookName(item)"
-                  />
-                  <template v-else>{{ item.title }}</template>
-                </div>
-              </div>
-            </template>
-            <div v-else class="empty">
-              <div class="empty-text">暂无笔记本，快去添加吧</div>
-            </div>
-          </template>
-        </el-skeleton>
-      </div>
-    </div>
-    <div class="center-box" :class="{ 'mr-chat': chatVisible }">
-      <div class="center-head">
-        <div class="title">工作笔记</div>
-        <div class="right-handle-box">
-          <img
-            class="add-icon"
-            src="@renderer/assets/repository/add-icon.png"
-            alt=""
-            @click="beforeAddNote"
-          />
-          <el-input
-            v-model="searchValue"
-            class="search-input"
-            :prefix-icon="Search"
-            clearable
-            placeholder="搜索笔记"
-            @change="searchChange"
-          ></el-input>
-          <div v-if="!chatVisible" class="open-chat" @click="openChat">
-            <img class="logo" src="@renderer/assets/logo.png" alt="" />
-            问问糖源
+    <el-splitter>
+      <el-splitter-panel :size="332" :min="200" :max="400" class="left-box">
+        <div class="common-box">
+          <div class="common-box-left">笔记本</div>
+          <div class="square-icon-box" @click="addNotebook">
+            <img class="square-icon" src="@renderer/assets/repository/add-icon.png" alt="" />
           </div>
         </div>
-      </div>
-      <div class="center-content">
-        <el-skeleton animated :loading="noteLoading">
-          <template #template>
-            <el-skeleton-item v-for="i in 16" :key="i" variant="text" style="margin: 10px 0" />
-          </template>
-          <template #default>
-            <template v-if="noteLists.length">
-              <div
-                v-for="item in noteLists"
-                :key="item.id"
-                class="note-item"
-                :class="{ 'active-note': item.checked }"
-                @contextmenu="(e) => showContextMenu(e, item, 'note')"
-                @click="beforeEditNote(item)"
-              >
-                <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
-                <div class="title">
-                  <el-input
-                    v-if="item.isEdit"
-                    v-model="item.title"
-                    autofocus
-                    class="create-input"
-                    placeholder="请输入笔记名称"
-                    @keyup.enter="editNoteName(item)"
-                    @click.stop=""
-                    @blur="editNoteName(item)"
-                  />
-                  <template v-else>
-                    <template v-if="item.title">
-                      <span
-                        v-for="(text, i) in item.title"
-                        :key="i"
-                        :class="{ 'active-filter': searchValue && searchValue.includes(text) }"
-                        >{{ text }}</span
-                      >
-                    </template>
-                  </template>
+        <div class="notebook-list">
+          <el-skeleton animated :loading="bookLoading">
+            <template #template>
+              <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />
+            </template>
+            <template #default>
+              <template v-if="notebookLists.length">
+                <div
+                  v-for="item in notebookLists"
+                  :key="item.id"
+                  class="item"
+                  :class="{ 'active-note': item.id === activeNotebook }"
+                  @click="bookChange(item)"
+                  @contextmenu="(e) => showContextMenu(e, item, 'notebook')"
+                >
+                  <div class="icon-box">
+                    <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
+                  </div>
+                  <div class="title">
+                    <el-input
+                      v-if="item.isEdit"
+                      v-model="item.title"
+                      autofocus
+                      class="create-input"
+                      placeholder="请输入笔记本名称"
+                      @keyup.enter="editNoteBookName(item)"
+                      @click.stop=""
+                      @blur="editNoteBookName(item)"
+                    />
+                    <template v-else>{{ item.title }}</template>
+                  </div>
                 </div>
-                <div class="des">{{ htmlToText(item.content) || '无任何内容' }}</div>
-                <div class="item-bottom">
-                  <div class="time">{{ formatTimeFun(item.updatetime) }}</div>
-                  <div class="size">{{ formatFileSize(item?.file_space || 0) || '< 0 KB' }}</div>
-                </div>
+              </template>
+              <div v-else class="empty">
+                <div class="empty-text">暂无笔记本，快去添加吧</div>
               </div>
             </template>
-            <div v-else class="empty">
-              <div class="empty-text">暂无笔记内容，快去添加吧</div>
+          </el-skeleton>
+        </div>
+      </el-splitter-panel>
+      <el-splitter-panel :min="380" class="center-box" :class="{ 'mr-chat': chatVisible }">
+        <div class="center-head">
+          <div class="title">工作笔记</div>
+          <div class="right-handle-box">
+            <img
+              class="add-icon"
+              src="@renderer/assets/repository/add-icon.png"
+              alt=""
+              @click="beforeAddNote"
+            />
+            <el-input
+              v-model="searchValue"
+              class="search-input"
+              :prefix-icon="Search"
+              clearable
+              placeholder="搜索笔记"
+              @change="searchChange"
+            ></el-input>
+            <div v-if="!chatVisible" class="open-chat" @click="openChat">
+              <img class="logo" src="@renderer/assets/logo.png" alt="" />
+              问问糖源
             </div>
-          </template>
-        </el-skeleton>
-      </div>
-    </div>
-    <div v-if="chatVisible" class="right-box">
-      <ToolChat
-        v-if="chatVisible"
-        :selecte-file-id-list="selecteFileIdList"
-        :notebook-id="activeNotebook"
-        @close-chat="chatVisible = false"
-      />
-    </div>
+          </div>
+        </div>
+        <div class="center-content">
+          <el-skeleton animated :loading="noteLoading">
+            <template #template>
+              <el-skeleton-item v-for="i in 16" :key="i" variant="text" style="margin: 10px 0" />
+            </template>
+            <template #default>
+              <template v-if="noteLists.length">
+                <div
+                  v-for="item in noteLists"
+                  :key="item.id"
+                  class="note-item"
+                  :class="{ 'active-note': item.checked }"
+                  @contextmenu="(e) => showContextMenu(e, item, 'note')"
+                  @click="beforeEditNote(item)"
+                >
+                  <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
+                  <div class="title">
+                    <el-input
+                      v-if="item.isEdit"
+                      v-model="item.title"
+                      autofocus
+                      class="create-input"
+                      placeholder="请输入笔记名称"
+                      @keyup.enter="editNoteName(item)"
+                      @click.stop=""
+                      @blur="editNoteName(item)"
+                    />
+                    <template v-else>
+                      <template v-if="item.title">
+                        <span
+                          v-for="(text, i) in item.title"
+                          :key="i"
+                          :class="{ 'active-filter': searchValue && searchValue.includes(text) }"
+                          >{{ text }}</span
+                        >
+                      </template>
+                    </template>
+                  </div>
+                  <div class="des">{{ htmlToText(item.content) || '无任何内容' }}</div>
+                  <div class="item-bottom">
+                    <div class="time">{{ formatTimeFun(item.updatetime) }}</div>
+                    <div class="size">{{ formatFileSize(item?.file_space || 0) || '< 0 KB' }}</div>
+                  </div>
+                </div>
+              </template>
+              <div v-else class="empty">
+                <div class="empty-text">暂无笔记内容，快去添加吧</div>
+              </div>
+            </template>
+          </el-skeleton>
+        </div>
+      </el-splitter-panel>
+      <el-splitter-panel v-if="chatVisible" :size="375" :min="375" class="right-box">
+        <ToolChat
+          v-if="chatVisible"
+          :selecte-file-id-list="selecteFileIdList"
+          :notebook-id="activeNotebook"
+          @close-chat="chatVisible = false"
+        />
+      </el-splitter-panel>
+    </el-splitter>
     <HandleContextMenu
       :show="contextMenu.show"
       :x="contextMenu.x"
@@ -955,13 +957,14 @@ onMounted(() => {
 .notebook-box {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: flex-start;
+  // display: flex;
+  // align-items: flex-start;
   background: var(--primary-bg-color);
-  .left-box {
+  :deep(.left-box) {
     box-sizing: border-box;
     padding: 20px;
-    width: 332px;
+    min-width: 200px;
+    max-width: 400px;
     height: 100%;
     border-right: 1px solid #efefef;
     display: flex;
@@ -1042,7 +1045,7 @@ onMounted(() => {
         position: relative;
         margin-bottom: 4px;
         box-sizing: border-box;
-        padding: 0 36px 0 16px;
+        padding: 0 16px 0 16px;
         display: flex;
         align-items: center;
         gap: 6px;
@@ -1087,15 +1090,24 @@ onMounted(() => {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          .create-input {
+            width: 100%;
+            height: 100%;
+
+            .el-input__inner {
+              font-size: 14px;
+              color: var(--default-font-color);
+            }
+          }
         }
       }
     }
   }
 
-  .center-box {
-    flex: 1;
-    min-width: 40%;
+  :deep(.center-box) {
+    // flex: 1;
     height: 100%;
+    min-width: 380px;
     padding: 13px 10px 20px 20px;
     display: flex;
     flex-direction: column;
@@ -1103,7 +1115,7 @@ onMounted(() => {
     background: #fff;
     border-radius: 0 12px 12px 0;
     &.mr-chat {
-      margin-right: 10px;
+      margin-right: 5px;
     }
     .center-head {
       flex-shrink: 0;
@@ -1136,7 +1148,7 @@ onMounted(() => {
           cursor: pointer;
         }
 
-        :deep(.search-input) {
+        .search-input {
           width: 240px;
           height: 36px;
 
@@ -1247,6 +1259,15 @@ onMounted(() => {
           .active-filter {
             color: var(--el-color-primary);
           }
+          .create-input {
+            width: calc(100% - 30px);
+            height: 100%;
+
+            .el-input__inner {
+              font-size: 14px;
+              color: var(--default-font-color);
+            }
+          }
         }
 
         .des {
@@ -1273,8 +1294,10 @@ onMounted(() => {
       }
     }
   }
-  .right-box {
-    flex: 1;
+  :deep(.right-box) {
+    // flex: 1;
+    min-width: 375px;
+    margin-left: 5px;
     height: 100%;
     overflow: hidden;
   }

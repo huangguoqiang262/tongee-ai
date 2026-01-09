@@ -612,15 +612,18 @@ const handleDragEnd = (e) => {
 }
 
 // 右键菜单相关函数
-const showContextMenu = (e, tab) => {
+const showContextMenu = (e) => {
   e.preventDefault()
-  contextMenu.value = {
-    show: true,
-    x: e.clientX,
-    y: e.clientY,
-    tabId: tab.id
-  }
 }
+// const showContextMenu = (e, tab) => {
+//   e.preventDefault()
+//   contextMenu.value = {
+//     show: true,
+//     x: e.clientX,
+//     y: e.clientY,
+//     tabId: tab.id
+//   }
+// }
 
 const handleTabAction = (action) => {
   const tabId = contextMenu.value.tabId
