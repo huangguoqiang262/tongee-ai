@@ -3520,6 +3520,32 @@ watch(
                   color: #909090;
                   line-height: 12px;
                 }
+                .type-box {
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  font-size: 10px;
+                  color: #909090;
+                  line-height: 12px;
+                  overflow: hidden;
+
+                  .web-url {
+                    /* 在 flex 容器中允许此项按比例收缩并显示省略号 */
+                    display: block;
+                    flex: 1;
+                    min-width: 0; /* 允许在 flex 中正确收缩 */
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    max-width: none;
+                  }
+
+                  .icon {
+                    display: block;
+                    width: 10px;
+                    height: 10px;
+                  }
+                }
                 .tags {
                   flex: 1;
                   min-width: 50px;
@@ -3548,30 +3574,6 @@ watch(
                       width: 10px;
                       height: 10px;
                     }
-                  }
-                }
-
-                .type-box {
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                  font-size: 10px;
-                  color: #909090;
-                  line-height: 12px;
-                  overflow: hidden;
-
-                  .web-url {
-                    display: inline-block;
-                    max-width: calc(100% - 20px);
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
-                    overflow: hidden;
-                  }
-
-                  .icon {
-                    display: block;
-                    width: 10px;
-                    height: 10px;
                   }
                 }
               }

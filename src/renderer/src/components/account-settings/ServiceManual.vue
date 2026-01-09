@@ -22,9 +22,7 @@
                 class="item"
                 @click="itemChange(value)"
               >
-                <!-- <div class="icon-box">
-              <img class="icon" src="@renderer/assets/notebook/note-icon.png" alt="" />
-            </div> -->
+                <div class="vertical-marker"></div>
                 <div class="title">{{ value.title }}</div>
               </div>
             </template>
@@ -256,39 +254,29 @@ onMounted(() => {
         // padding: 0 36px 0 16px;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 14px;
         font-size: 16px;
         color: var(--default-font-color);
         line-height: 22px;
-        height: 36px;
+        height: 34px;
         border-radius: 6px;
         cursor: pointer;
-        transition: all 0.2s;
-
         // &:hover {
         //   background: #f6f6f6;
         // }
 
-        .icon-box {
+        .vertical-marker {
           flex-shrink: 0;
-          width: 18px;
-          height: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          // border-radius: 2px;
-          transition: all 0.2s;
-
-          .icon {
-            display: block;
-            width: 16px;
-            height: 16px;
-          }
+          width: 4px;
+          height: 14px;
+          border-radius: 4px;
+          background-color: transparent;
         }
 
         .title {
           flex: 1;
-          font-size: 16px;
+          box-sizing: border-box;
+          font-size: 14px;
           color: var(--default-font-color);
           line-height: 22px;
           white-space: nowrap;
@@ -296,9 +284,11 @@ onMounted(() => {
           text-overflow: ellipsis;
         }
         &.active-note {
-          // background: var(--el-color-primary-light-9);
+          .vertical-marker {
+            background-color: var(--el-color-primary);
+          }
           .title {
-            color: var(--el-color-primary) !important;
+            color: var(--el-color-primary);
           }
         }
       }

@@ -127,6 +127,7 @@ import {
   feedback_add,
   feedback_get_list
 } from '@renderer/api/feedback'
+import cloneDeep from 'lodash.clonedeep'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import problemIcon from '@renderer/assets/feedback/problem-icon.png'
 import suggestionIcon from '@renderer/assets/feedback/suggestion-icon.png'
@@ -289,15 +290,21 @@ const getHistoryList = () => {
     pagination.value.page_size = res.data.per_page
   })
 }
-const handleHistoryItemClick = (item) => {
-  feedbackForm.value.resetFields()
-  activeHistoryItem.value = item
+const handleHistoryItemClick = async (item) => {
+  await nextTick(() => {
+    let canUndo = true
+    while (canUndo && editorRef.value) {
+      canUndo = editorRef.value.undo()
+    }
+  })
+  var data = cloneDeep(item)
+  activeHistoryItem.value = data
   feedbackData.value = {
-    content: item.content || '',
-    type: item.type,
-    doc_type: item.doc_type,
-    sug_or_pb: item.sug_or_pb,
-    know_id: item.know_id
+    content: data.content || '',
+    type: data.type,
+    doc_type: data.doc_type,
+    sug_or_pb: data.sug_or_pb,
+    know_id: data.know_id
   }
   nextTick(() => {
     editorRef.value?.disable()

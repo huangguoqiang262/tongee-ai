@@ -48,7 +48,8 @@
             :key="value.id"
             class="version-item"
           >
-            <h3>{{ value.version }}主要更新</h3>
+            <h3 class="label">{{ value.version }}主要更新</h3>
+            <div class="create-time">更新时间：{{ value.createtime }}</div>
             <v-md-preview :text="replaceImgStyle(value.content)"></v-md-preview>
           </div>
         </template>
@@ -248,6 +249,10 @@ onMounted(() => {
         .el-anchor__link {
           padding: 8px 0;
           font-size: 14px;
+          color: var(--default-font-color);
+          &.is-active {
+            color: var(--el-color-primary);
+          }
         }
       }
     }
@@ -270,6 +275,13 @@ onMounted(() => {
       color: var(--default-font-color);
       line-height: 22px;
       border-radius: 12px;
+      .label {
+        margin-bottom: 8px;
+      }
+      .create-time {
+        font-size: 14px;
+        color: #909090;
+      }
       .empty-content {
         box-sizing: border-box;
         padding-top: 20vh;
@@ -277,7 +289,9 @@ onMounted(() => {
       }
       .version-item {
         :deep(.vuepress-markdown-body) {
-          padding: 10px !important;
+          padding: 0 0 5px !important;
+          font-size: 14px !important;
+          line-height: 20px !important;
         }
       }
     }
