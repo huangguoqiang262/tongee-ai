@@ -28,12 +28,7 @@
             <template #template>
               <div class="list-box">
                 <div v-for="item in 6" :key="item" class="list-item">
-                  <el-skeleton-item
-                    variant="text"
-                    class="left-icon"
-                    src="@renderer/assets/feedback-icon.png"
-                    alt=""
-                  />
+                  <el-skeleton-item variant="text" class="left-icon" />
                   <div class="center-box">
                     <el-skeleton-item
                       variant="text"
@@ -70,7 +65,7 @@
                     class="list-item"
                     @contextmenu="showContextMenu(item, $event)"
                   >
-                    <img class="left-icon" src="@renderer/assets/feedback-icon.png" alt="" />
+                    <FeedbackSvgIcon class="left-icon" />
                     <div class="center-box">
                       <div class="title">{{ item.title }}</div>
                       <div class="desc">
@@ -96,13 +91,8 @@
                     class="list-item"
                     @contextmenu="showContextMenu(item, $event)"
                   >
-                    <img
-                      v-if="item.type == 2"
-                      class="left-icon"
-                      src="@renderer/assets/file-icon1.png"
-                      alt=""
-                    />
-                    <img v-else class="left-icon" src="@renderer/assets/file-icon2.png" alt="" />
+                    <FileSvgShadowIcon v-if="item.type == 2" class="left-icon" />
+                    <FolderSvgShadowIcon v-else class="left-icon" />
                     <div class="center-box">
                       <div class="title">{{ item.title }}</div>
                       <div class="desc desc1">{{ item.original_path }}</div>
@@ -161,6 +151,9 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { get_know_list, get_file_list, restore, clean_all, clean_one } from '@renderer/api/Recycled'
 import { formatTime } from '@renderer/utils/index.js'
 import restoreIcon from '@renderer/assets/restore-icon.png'
+import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
+import FolderSvgShadowIcon from '@renderer/assets/file-icon2.svg'
+import FeedbackSvgIcon from '@renderer/assets/feedback-icon.svg'
 import delIcon from '@renderer/assets/del-icon.png'
 let tabs = ref([
   {
@@ -503,6 +496,7 @@ onMounted(() => {
               flex-shrink: 0;
               width: 20px;
               height: 20px;
+              color: var(--el-color-primary);
             }
 
             .center-box {

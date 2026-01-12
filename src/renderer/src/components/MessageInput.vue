@@ -149,7 +149,7 @@
         class="menu-item"
         @click.stop="handleMenuClick(item)"
       >
-        <img class="icon" :src="item.icon" alt="" />
+        <component :is="getSmallComponent(item.icon)" class="icon"></component>
         <div class="text">{{ item.title }}</div>
       </div>
     </div>
@@ -190,12 +190,12 @@
 import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import cloneDeep from 'lodash.clonedeep'
 import updateIcon from '@renderer/assets/menu/update-icon.png'
-import knowledgeBaseSquareIcon from '@renderer/assets/home/knowledgeBaseSquare-icon.png'
-import documentInterpretationIcon from '@renderer/assets/home/documentInterpretation-icon.png'
-import updateNotificationIcon from '@renderer/assets/home/updateNotification-icon.png'
-import quickAccessIcon from '@renderer/assets/home/quickAccess-icon.png'
-import imageProductionIcon from '@renderer/assets/home/imageProduction-icon.png'
-import IntelligentWritingIcon from '@renderer/assets/home/intelligentWriting-icon.png'
+import knowledgeBaseSquareIcon from '@renderer/assets/home/knowledgeBaseSquare-icon.svg'
+import documentInterpretationIcon from '@renderer/assets/home/documentInterpretation-icon.svg'
+import updateNotificationIcon from '@renderer/assets/home/updateNotification-icon.svg'
+import quickAccessIcon from '@renderer/assets/home/quickAccess-icon.svg'
+import imageProductionIcon from '@renderer/assets/home/imageProduction-icon.svg'
+import IntelligentWritingIcon from '@renderer/assets/home/intelligentWriting-icon.svg'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { useUserStore } from '@renderer/stores/user'
 import { get_user_knows } from '@renderer/api/chat'
@@ -238,37 +238,37 @@ export default {
         {
           url: 'Square',
           title: '知识库广场',
-          icon: knowledgeBaseSquareIcon,
+          icon: 'knowledgeBaseSquareIcon',
           isLink: true
         },
         {
           url: 'DocumentInterpretation',
           title: '文档解读',
-          icon: documentInterpretationIcon,
+          icon: 'documentInterpretationIcon',
           isLink: false
         },
         {
           url: 'MessageCenter',
           title: '更新通知',
-          icon: updateNotificationIcon,
+          icon: 'updateNotificationIcon',
           isLink: true
         },
         {
           url: 'QuickAccess',
           title: '快捷访问',
-          icon: quickAccessIcon,
+          icon: 'quickAccessIcon',
           isLink: false
         },
         {
           url: 'ImageProduction',
           title: '图像生成',
-          icon: imageProductionIcon,
+          icon: 'imageProductionIcon',
           isLink: false
         },
         {
           url: 'IntelligentWriting',
           title: '智能写作',
-          icon: IntelligentWritingIcon,
+          icon: 'IntelligentWritingIcon',
           isLink: false
         }
       ],
@@ -322,6 +322,17 @@ export default {
     this.getKnowledgeList()
   },
   methods: {
+    getSmallComponent(key) {
+      var keyMap = {
+        knowledgeBaseSquareIcon: knowledgeBaseSquareIcon,
+        documentInterpretationIcon: documentInterpretationIcon,
+        updateNotificationIcon: updateNotificationIcon,
+        quickAccessIcon: quickAccessIcon,
+        imageProductionIcon: imageProductionIcon,
+        IntelligentWritingIcon: IntelligentWritingIcon
+      }
+      return keyMap[key]
+    },
     getUserInfo() {
       const userStore = useUserStore()
       return user_info({}).then((res) => {
@@ -1258,6 +1269,7 @@ export default {
         margin-bottom: 10px;
         width: 60px;
         height: 60px;
+        color: var(--el-color-primary);
       }
       .text {
         font-size: 12px;

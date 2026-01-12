@@ -72,6 +72,7 @@ defineExpose({
     <RouterView />
     <!-- 更新通知组件 -->
     <UpdateNotification ref="updateNotificationRef" />
+    <theme-picker style="display: none"></theme-picker>
   </el-config-provider>
 </template>
 

@@ -354,6 +354,8 @@ const uploadSingleFile = async (fileItem) => {
         emits('refreshList')
         resolve()
       } else {
+        // eslint-disable-next-line no-undef
+        ElMessage.error(response.msg || '上传失败')
         reject(new Error(response.code || xhr.status))
         clearSuccessUploadItems()
       }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>编组</title>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="消息中心—文件更新" transform="translate(-554, -235)">
+            <g id="编组-3" transform="translate(554, 235)">
+                <rect id="矩形" fill="var(--el-color-primary-light-9)" x="0" y="0" width="20" height="20" rx="4"></rect>
+                <g id="编组">
+                    <rect id="矩形" fill="var(--el-color-primary-light-9)" x="0" y="0" width="20" height="20" rx="4"></rect>
+                    <g id="多文件" transform="translate(3, 3)" fill-rule="nonzero">
+                        <rect id="矩形" fill="#000000" opacity="0" x="0" y="0" width="14" height="14"></rect>
+                        <path d="M10.5449805,3.15879102 L8.05786133,0.878048828 L1.7503418,0.878048828 L1.7503418,11.4968438 L10.5449805,11.4968438 L10.5449805,3.15879102 Z M2.60945508,10.6807422 L2.60945508,1.69415039 L7.32502148,1.69415039 L7.32502148,3.92169531 L9.68585352,3.92169531 L9.68585352,10.6807422 L2.60945508,10.6807422 Z" id="形状" fill="currentColor"></path>
+                        <path d="M11.3932656,3.92668555 L11.3932656,12.3028555 L3.46274414,12.3028555 L3.46274414,13.118957 L12.2523789,13.118957 L12.2523789,3.92668555 L11.3932656,3.92668555 Z M3.50318555,5.07955273 L8.79213672,5.07955273 L8.79213672,5.87525586 L3.50318555,5.87525586 L3.50318555,5.07955273 Z" id="形状" fill="currentColor"></path>
+                        <path d="M3.50318555,6.97735937 L8.79213672,6.97735937 L8.79213672,7.7730625 L3.50318555,7.7730625 L3.50318555,6.97735937 Z M3.50318555,8.87516602 L8.79213672,8.87516602 L8.79213672,9.67086914 L3.50318555,9.67086914 L3.50318555,8.87516602 Z" id="形状" fill="currentColor"></path>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

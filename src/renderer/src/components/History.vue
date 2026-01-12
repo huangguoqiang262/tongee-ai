@@ -28,12 +28,7 @@
             <template #template>
               <div class="list-box">
                 <div v-for="item in 6" :key="item" class="list-item">
-                  <el-skeleton-item
-                    variant="text"
-                    class="left-icon"
-                    src="@renderer/assets/feedback-icon.png"
-                    alt=""
-                  />
+                  <el-skeleton-item variant="text" class="left-icon" />
                   <div class="center-box">
                     <el-skeleton-item
                       variant="text"
@@ -60,7 +55,7 @@
               <div v-if="activeTab == '1'" v-infinite-scroll="loadData" class="list-box">
                 <template v-if="list.length">
                   <div v-for="(item, i) in list" :key="i" class="list-item" @click="openChat(item)">
-                    <img class="left-icon" src="@renderer/assets/answers-icon.png" alt="" />
+                    <answersIcon class="left-icon" />
                     <div class="center-box">
                       <div class="title">{{ item.latest_question?.content || item.title }}</div>
                       <div class="desc">
@@ -97,7 +92,7 @@
               <div v-if="activeTab == '2'" v-infinite-scroll="loadData" class="list-box">
                 <template v-if="list.length">
                   <div v-for="item in list" :key="item" class="list-item" @click="openWeb(item)">
-                    <img class="left-icon" src="@renderer/assets/webpage-icon.png" alt="" />
+                    <webpageIcon class="left-icon" />
                     <div class="center-box">
                       <div class="title">{{ item.title }}</div>
                       <div class="desc desc1">{{ item.web_url }}</div>
@@ -211,6 +206,8 @@
 <script setup>
 import { get_web_log, del_web_log, del_web_log_one } from '@renderer/api/history'
 import { formatTime } from '@renderer/utils/index.js'
+import webpageIcon from '@renderer/assets/webpage-icon.svg'
+import answersIcon from '@renderer/assets/answers-icon.svg'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import { chat_lists, del_chat, del_all_chat, modifyChatHistory } from '@renderer/api/chat'
 import { ref, onMounted, inject } from 'vue'
@@ -657,6 +654,7 @@ onMounted(() => {
               flex-shrink: 0;
               width: 20px;
               height: 20px;
+              color: var(--el-color-primary);
             }
 
             .center-box {

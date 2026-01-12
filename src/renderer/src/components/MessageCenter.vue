@@ -121,7 +121,7 @@
           </div>
           <div v-if="feedList.length" v-infinite-scroll="loadData" class="list-box">
             <div v-for="item in feedList" :key="item.id" class="list-item">
-              <img class="left-icon" src="@renderer/assets/file-icon.png" alt="" />
+              <FileSvgIcon class="left-icon" />
               <div class="center-box">
                 <div class="title">
                   关于{{ item.type_name }}的{{ item.sug_or_pb == 1 ? '问题' : '建议' }}
@@ -149,7 +149,7 @@
         <div v-if="activeTab == '2'" class="repository-box">
           <div v-if="fileList.length" v-infinite-scroll="loadData" class="list-box">
             <div v-for="item in fileList" :key="item.id" class="list-item">
-              <img class="left-icon" src="@renderer/assets/file-icon1.png" alt="" />
+              <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
                 <div class="title">新增《临床实验报告模板》</div>
                 <div class="desc">新增了符合最新法规要求的临床试验报告模板，供所有项目参考使用</div>
@@ -165,7 +165,7 @@
         <div v-if="activeTab == '3'" class="repository-box">
           <div v-if="systemMsgList.length" v-infinite-scroll="loadData" class="list-box">
             <div v-for="item in systemMsgList" :key="item.id" class="list-item">
-              <img class="left-icon" src="@renderer/assets/inform-icon.png" alt="" />
+              <InformSvgIcon class="left-icon" />
               <div class="center-box">
                 <div class="title">{{ item.title }}</div>
                 <div class="desc desc1">
@@ -231,6 +231,9 @@
 <script setup>
 import { Search } from '@element-plus/icons-vue'
 import { ref, onMounted, watchEffect, shallowRef, nextTick } from 'vue'
+import FileSvgIcon from '@renderer/assets/file-icon.svg'
+import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
+import InformSvgIcon from '@renderer/assets/inform-icon.svg'
 import { formatTime } from '@renderer/utils/index.js'
 import {
   get_system_msg,
@@ -725,6 +728,7 @@ watchEffect(() => {
               flex-shrink: 0;
               width: 20px;
               height: 20px;
+              color: var(--el-color-primary);
             }
             .center-box {
               flex: 1;

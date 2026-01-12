@@ -142,7 +142,7 @@
             </template>
 
             <div class="storage-space-box">
-              <div class="space-box">
+              <div class="space-box" :class="{ dangerColor: compareSpace() }">
                 已使用 {{ userInfo?.space_use_total || '0MB' }}/{{ userInfo?.space || '0GB' }}
               </div>
               <div
@@ -1211,6 +1211,40 @@ const getUserInfo = () => {
   })
 }
 const userInfo = useUserInfo()
+const compareSpace = () => {
+  // 比较用户空间和已使用空间  space_use_total、space 为字符串类型(例 1MB 1GB) 须转换为数字类型进行比较
+  // 正则匹配字母部分识别单位 然后进行转换对比
+  const spaceRegex = /(\d+)([A-Za-z]+)/
+  const spaceMatch = userInfo.value.space.match(spaceRegex)
+  const usedSpaceMatch = userInfo.value.space_use_total.match(spaceRegex)
+  if (spaceMatch && usedSpaceMatch) {
+    // 保留两位小数
+    const spaceValue = parseFloat(spaceMatch[1])
+    const usedSpaceValue = parseFloat(usedSpaceMatch[1])
+    const spaceUnit = spaceMatch[2]
+    const usedSpaceUnit = usedSpaceMatch[2]
+    // 如果单位不同，需要转换为相同单位
+    if (spaceUnit !== usedSpaceUnit) {
+      // 简单的单位转换 这里应该以spaceUnit为准进行转换
+      const unitOrder = ['KB', 'MB', 'GB', 'TB']
+      const spaceIndex = unitOrder.indexOf(spaceUnit)
+      const usedSpaceIndex = unitOrder.indexOf(usedSpaceUnit)
+      if (spaceIndex > usedSpaceIndex) {
+        // 将usedSpace转换为space的单位
+        const conversionFactor = Math.pow(1024, spaceIndex - usedSpaceIndex)
+        return spaceValue - usedSpaceValue / conversionFactor <= 0
+      } else {
+        // 将space转换为usedSpace的单位
+        const conversionFactor = Math.pow(1024, usedSpaceIndex - spaceIndex)
+        return spaceValue * conversionFactor - usedSpaceValue <= 0
+      }
+    } else {
+      return spaceValue - usedSpaceValue <= 0
+    }
+  } else {
+    return false
+  }
+}
 let repositorySortPopover = ref(null)
 let repositoryNotePopover = ref(null)
 let sortList = ref([
@@ -3165,6 +3199,9 @@ watch(
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
+            &.dangerColor {
+              color: #ff5151;
+            }
           }
 
           .expand {
