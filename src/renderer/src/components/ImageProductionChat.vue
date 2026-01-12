@@ -14,7 +14,7 @@
       />
     </div>
     <div v-else class="empty-chat">
-      <img class="empty-img" src="@renderer/assets/empty.png" alt="" />
+      <EmptySvgIcon class="empty-img" />
       <div class="empty-text">Hi，有任何问题，尽管提问</div>
     </div>
     <div v-if="feedbackVisible" class="feedback-box">
@@ -77,6 +77,7 @@ import {
 } from '@renderer/api/chat.js'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
 import { useUserStore } from '@renderer/stores/user'
+import EmptySvgIcon from '@renderer/assets/empty-imageChat.svg'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 const props = defineProps({
   attrs: {
@@ -689,8 +690,9 @@ const stopChat = () => {
     justify-content: center;
     .empty-img {
       margin-bottom: 30px;
-      width: 78px;
-      height: 55px;
+      width: 56px;
+      height: 52px;
+      color: var(--el-color-primary);
     }
     .empty-text {
       font-size: 14px;

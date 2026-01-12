@@ -29,7 +29,7 @@
       />
     </div>
     <div v-else class="empty-chat">
-      <img class="empty-img" src="@renderer/assets/empty.png" alt="" />
+      <EmptySvgIcon class="empty-img" />
       <div class="shadow-chunk"></div>
       <div class="empty-text">Hi，任何关于这个知识库的问题，尽管提问</div>
       <div v-if="questions.length" class="question-box">
@@ -109,6 +109,7 @@ import { ref, reactive, nextTick, onMounted, watchEffect, watch } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
+import EmptySvgIcon from '@renderer/assets/empty.svg'
 import { SSE } from 'sse.js'
 import { get_type_models } from '@renderer/api/repository.js'
 import {
@@ -795,8 +796,9 @@ const stopChat = () => {
     .empty-img {
       flex-shrink: 0;
       display: block;
-      width: 78px;
-      height: 55px;
+      width: 56px;
+      height: 52px;
+      // color: var(--el-color-primary);
     }
     .shadow-chunk {
       flex-shrink: 0;

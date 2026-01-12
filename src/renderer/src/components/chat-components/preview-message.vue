@@ -14,8 +14,20 @@
     </div>
     <div class="bottom-action-box">
       <div class="bottom-action">
-        <el-button class="cancel-btn" @click="handleLongImage">生成长图</el-button>
-        <el-button class="confirm-btn" type="primary" @click="handleCopyLink"> 复制链接 </el-button>
+        <el-button
+          class="cancel-btn"
+          :disabled="!shareMessages.length ? true : false"
+          @click="handleLongImage"
+          >生成长图</el-button
+        >
+        <el-button
+          class="confirm-btn"
+          :disabled="!shareMessages.length ? true : false"
+          type="primary"
+          @click="handleCopyLink"
+        >
+          复制链接
+        </el-button>
       </div>
     </div>
     <el-dialog

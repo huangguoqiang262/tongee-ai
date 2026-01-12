@@ -47,7 +47,6 @@
                   />
                 </template>
                 <div class="filter-box" :class="{ active: dateValue && dateValue.length > 0 }">
-                  <!-- <img class="filter-icon" src="@renderer/assets/filter-icon1.svg" alt="" /> -->
                   <svg
                     width="14px"
                     height="14px"

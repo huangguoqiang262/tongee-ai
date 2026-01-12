@@ -32,7 +32,7 @@
       />
     </div>
     <div v-else class="empty-chat">
-      <img class="empty-img" src="@renderer/assets/empty.png" alt="" />
+      <EmptySvgIcon class="empty-img" />
       <div class="empty-text">Hi，有任何问题，尽管提问</div>
     </div>
     <div v-if="feedbackVisible" class="feedback-box">
@@ -108,6 +108,7 @@ import { SSE } from 'sse.js'
 import { get_type_models } from '@renderer/api/repository.js'
 import { useUserStore } from '@renderer/stores/user'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+import EmptySvgIcon from '@renderer/assets/empty-homePage.svg'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
 const props = defineProps({
   attrs: {
@@ -831,8 +832,9 @@ onMounted(() => {
     justify-content: center;
     .empty-img {
       margin-bottom: 30px;
-      width: 78px;
-      height: 55px;
+      width: 56px;
+      height: 52px;
+      color: var(--el-color-primary);
     }
     .empty-text {
       font-size: 14px;

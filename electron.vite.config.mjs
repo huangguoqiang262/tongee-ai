@@ -35,7 +35,7 @@ export default defineConfig({
         svgoConfig: {
           plugins: [
             {
-              name: 'preset-default',
+              name: 'prefixIds',
               params: {
                 overrides: {
                   removeViewBox: false,

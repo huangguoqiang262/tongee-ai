@@ -530,7 +530,7 @@ defineExpose({
   font-size: 64px;
   padding: 16px;
   border-radius: 50%;
-  background: rgba(64, 158, 255, 0.1);
+  background: var(--el-color-primary-light-9);
 }
 
 .loading-icon {
@@ -540,7 +540,6 @@ defineExpose({
 
 .update-icon {
   color: var(--el-color-primary);
-  background: rgba(103, 194, 58, 0.1);
 }
 
 .download-icon {
@@ -550,7 +549,6 @@ defineExpose({
 
 .success-icon {
   color: var(--el-color-primary);
-  background: rgba(103, 194, 58, 0.1);
 }
 
 .info-icon {
@@ -689,7 +687,6 @@ defineExpose({
 
 .primary-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
 .secondary-btn {
@@ -715,7 +712,6 @@ defineExpose({
 
 .install-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
 }
 
 @keyframes fadeIn {

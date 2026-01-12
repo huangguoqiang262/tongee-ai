@@ -48,7 +48,7 @@
           </el-skeleton>
         </div>
       </el-splitter-panel>
-      <el-splitter-panel :min="380" class="center-box" :class="{ 'mr-chat': chatVisible }">
+      <el-splitter-panel :min="400" class="center-box" :class="{ 'mr-chat': chatVisible }">
         <div class="center-head">
           <div class="title">工作笔记</div>
           <div class="right-handle-box">
@@ -1107,7 +1107,7 @@ onMounted(() => {
   :deep(.center-box) {
     // flex: 1;
     height: 100%;
-    min-width: 380px;
+    min-width: 400px;
     padding: 13px 10px 20px 20px;
     display: flex;
     flex-direction: column;
