@@ -210,7 +210,11 @@ import webpageIcon from '@renderer/assets/webpage-icon.svg'
 import answersIcon from '@renderer/assets/answers-icon.svg'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import { chat_lists, del_chat, del_all_chat, modifyChatHistory } from '@renderer/api/chat'
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, inject, onErrorCaptured } from 'vue'
+onErrorCaptured((err, instance, info) => {
+  console.error('组件捕获到错误:', err, info)
+  return false // 阻止继续向上传播错误
+})
 let tabs = ref([
   {
     id: '1',

@@ -382,7 +382,7 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, computed, onUnmounted, nextTick, onErrorCaptured } from 'vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import {
   note_list,
@@ -407,6 +407,10 @@ import { copyBase64ImageAsNormalImage, downloadBase64Image } from '@renderer/uti
 import moveIcon from '@renderer/assets/contextMenu/move-icon.png'
 import renameIcon from '@renderer/assets/contextMenu/rename-icon.png'
 import deleteIcon from '@renderer/assets/contextMenu/delete-icon.png'
+onErrorCaptured((err, instance, info) => {
+  console.error('组件捕获到错误:', err, info)
+  return false // 阻止继续向上传播错误
+})
 let notebookVisible = ref(false)
 let chatVisible = ref(false)
 // 打开对话

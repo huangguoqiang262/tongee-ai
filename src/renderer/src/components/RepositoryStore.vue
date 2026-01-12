@@ -1034,7 +1034,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, watch, nextTick, inject, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch, nextTick, inject, computed, onErrorCaptured } from 'vue'
 import { on, off } from '@renderer/utils/eventBus'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { useUserStore } from '@renderer/stores/user'
@@ -1091,6 +1091,10 @@ import {
   import_note
 } from '@renderer/api/repository'
 import { user_info } from '@renderer/api/user'
+onErrorCaptured((err, instance, info) => {
+  console.error('组件捕获到错误:', err, info)
+  return false // 阻止继续向上传播错误
+})
 const props = defineProps({
   attrs: {
     type: Object,

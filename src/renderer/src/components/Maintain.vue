@@ -5,8 +5,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onErrorCaptured } from 'vue'
 import { get_maintenance_plan } from '@renderer/api/maintain'
+onErrorCaptured((err, instance, info) => {
+  console.error('组件捕获到错误:', err, info)
+  return false // 阻止继续向上传播错误
+})
 const apiData = ref([])
 const getData = () => {
   get_maintenance_plan().then((res) => {

@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onErrorCaptured } from 'vue'
 import SearchHome from './SearchHome.vue'
 import NotFound from './NotFound.vue'
 import AccountSettings from './account-settings/AccountSettings.vue'
@@ -106,7 +106,10 @@ const emit = defineEmits([
   'new-webview',
   'add-syc-tab'
 ])
-
+onErrorCaptured((err, instance, info) => {
+  console.error('ContentArea 组件捕获到错误:', err, info)
+  return false // 阻止继续向上传播错误
+})
 const props = defineProps({
   tabs: {
     type: Array,

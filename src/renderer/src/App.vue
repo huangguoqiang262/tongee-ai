@@ -1,7 +1,11 @@
 <script setup>
-import { ref, onMounted, provide } from 'vue'
+import { ref, onMounted, provide, onErrorCaptured } from 'vue'
 import { RouterView } from 'vue-router'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+onErrorCaptured((err, instance, info) => {
+  console.error('组件捕获到错误:', err, info)
+  return false // 阻止继续向上传播错误
+})
 // 更新组件引用
 const updateNotificationRef = ref()
 

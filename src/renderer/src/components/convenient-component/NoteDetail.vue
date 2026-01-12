@@ -76,7 +76,11 @@ import cloneDeep from 'lodash.clonedeep'
 import { useUserStore } from '@renderer/stores/user'
 import { formatTime } from '@renderer/utils/index.js'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText.js'
-import { ref, shallowRef, watchEffect, computed } from 'vue'
+import { ref, shallowRef, watchEffect, computed, onErrorCaptured } from 'vue'
+onErrorCaptured((err, instance, info) => {
+  console.error('组件捕获到错误:', err, info)
+  return false // 阻止继续向上传播错误
+})
 const noteVisible = defineModel({ type: Boolean })
 const props = defineProps({
   noteDetail: {
