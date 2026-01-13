@@ -354,6 +354,8 @@ const uploadSingleFile = async (fileItem) => {
         emits('refreshList')
         resolve()
       } else {
+        fileItem.status = uploadStatus.ERROR
+        fileItem.errorMessage = response.msg || '上传失败'
         // eslint-disable-next-line no-undef
         ElMessage.error(response.msg || '上传失败')
         reject(new Error(response.code || xhr.status))
@@ -494,6 +496,10 @@ const uploadDirectory = async (directoryItem) => {
       directoryItem.task_id = res.data.task_id
       emits('refreshList')
       startTaskPolling(res.data.task_id)
+    })
+    .catch((err) => {
+      directoryItem.status = uploadStatus.ERROR
+      directoryItem.errorMessage = err || '上传失败'
     })
     .finally(() => {
       loadcontext.close()

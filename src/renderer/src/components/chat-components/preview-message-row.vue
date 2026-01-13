@@ -644,6 +644,9 @@ const rotateCiteFile = () => {
       .v-md-editor-preview {
         width: 100%;
       }
+      .markdown-container {
+        max-width: 100%;
+      }
       .markdown-container[type='user'] {
         :deep(.v-md-editor-preview) {
           width: 100%;
