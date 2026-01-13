@@ -1,12 +1,21 @@
 <template>
   <div class="onlyoffice-preview" :style="{ height, width }">
-    <iframe
+    <!-- <iframe
       ref="iframeRef"
       :srcdoc="iframeSrcdoc"
       style="width:100%;height:100%;border:0;background:white"
       sandbox="allow-scripts allow-same-origin allow-forms"
-    ></iframe>
-
+    ></iframe> -->
+    <DocumentEditor
+      :id="id"
+      :document-server-url="props.serverUrl"
+      :config="config"
+      :events_onDocumentReady="handleDocumentReady"
+      :events_onSave="handleSave"
+      :events_onError="handleError"
+      :events_onDestroy="handleDestroy"
+      v-bind="$attrs"
+    />
     <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner"></div>
       <div class="loading-text">加载中…</div>
@@ -25,7 +34,7 @@
 <script setup>
 /* eslint-disable */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-
+import { DocumentEditor } from '@onlyoffice/document-editor-vue'
 const props = defineProps({
   // 文档访问 URL（建议用局域网可访问的 http(s) 链接，例如: http://192.168.1.100:3000/files/example.docx）
   src: { type: String, required: true },
@@ -36,7 +45,8 @@ const props = defineProps({
   // 可选 JWT（如果你的 Document Server 配置了 JWT 认证）
   jwt: { type: String, default: '' },
   height: { type: String, default: '100%' },
-  width: { type: String, default: '100%' }
+  width: { type: String, default: '100%' },
+  id: { type: String, default: 'onlyoffice-editor-' + Date.now() }
 })
 
 const emit = defineEmits(['ready', 'error', 'loaded'])
@@ -59,110 +69,149 @@ function extToDocType(ext) {
   // 默认使用文本类型（OnlyOffice 会根据后缀解析）
   return 'text'
 }
-
-const iframeSrcdoc = computed(() => {
-  const fileUrl = encodeURIComponent(props.src)
-  const serverUrl = encodeURIComponent(props.serverUrl.replace(/\/$/, ''))
-  const mode = props.mode === 'edit' ? 'edit' : 'view'
-  const token = encodeURIComponent(props.jwt || '')
-  const ext = fileExt.value || ''
-  const docType = extToDocType(ext)
-
-  // 通过 srcdoc 动态生成 iframe 内容，避免路径依赖
-  const html = `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<style>html,body,#placeholder{height:100%;margin:0;padding:0;background:white}</style>
-</head>
-<body>
-<div id="placeholder" style="width:100%;height:100%"></div>
-<script>
-(function(){
-  var fileUrl = decodeURIComponent("${fileUrl}");
-  var serverUrl = decodeURIComponent("${serverUrl}");
-  var mode = "${mode}";
-  var token = decodeURIComponent("${token}");
-  var ext = "${ext}";
-  var docType = "${docType}";
-
-  function postToParent(type, payload){
-    try{ parent.postMessage({type:type, payload: payload}, '*'); }catch(e){}
-  }
-
-  // 动态加载 OnlyOffice API
-  var script = document.createElement('script');
-  script.src = serverUrl + '/web-apps/apps/api/documents/api.js';
-  script.onload = function(){
-    try{
-      var config = {
+const config = ref({
         width: '100%',
         height: '100%',
-        type: ext || 'docx',
+        type: fileExt.value || 'docx',
         documentType: docType,
         document: {
           title: fileUrl.split('/').pop(),
           url: fileUrl,
-          fileType: ext || 'docx',
+          fileType: fileExt.value || 'docx',
           key: Date.now().toString()
         },
         editorConfig: {
-          mode: mode === 'edit' ? 'edit' : 'view',
+          mode: props.mode === 'edit' ? 'edit' : 'view',
           lang: 'zh-cn',
-          callbackUrl: serverUrl // 默认回调为 Document Server，自行在后端实现保存回调接口
+          callbackUrl: props.serverUrl // 默认回调为 Document Server，自行在后端实现保存回调接口
+        },
+        user: {
+          id: 'guest',
+          name: 'Guest User'
         }
-      }
+      })
+// const iframeSrcdoc = computed(() => {
+//   const fileUrl = encodeURIComponent(props.src)
+//   const serverUrl = encodeURIComponent(props.serverUrl.replace(/\/$/, ''))
+//   const mode = props.mode === 'edit' ? 'edit' : 'view'
+//   const token = encodeURIComponent(props.jwt || '')
+//   const ext = fileExt.value || ''
+//   const docType = extToDocType(ext)
 
-      if (token) {
-        config.token = token
-      }
+//   // 通过 srcdoc 动态生成 iframe 内容，避免路径依赖
+//   const html = `<!doctype html>
+// <html>
+// <head>
+// <meta charset="utf-8" />
+// <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+// <meta name="viewport" content="width=device-width,initial-scale=1" />
+// <style>html,body,#placeholder{height:100%;margin:0;padding:0;background:white}</style>
+// </head>
+// <body>
+// <div id="placeholder" style="width:100%;height:100%"></div>
+// <script>
+// (function(){
+//   var fileUrl = decodeURIComponent("${fileUrl}");
+//   var serverUrl = decodeURIComponent("${serverUrl}");
+//   var mode = "${mode}";
+//   var token = decodeURIComponent("${token}");
+//   var ext = "${ext}";
+//   var docType = "${docType}";
 
-      // 创建实例
-      new DocsAPI(config)
-      postToParent('onlyoffice-ready', { file: fileUrl })
+//   function postToParent(type, payload){
+//     try{ parent.postMessage({type:type, payload: payload}, '*'); }catch(e){}
+//   }
 
-    }catch(err){
-      postToParent('onlyoffice-error', { message: err && err.message ? err.message : String(err) })
-    }
-  };
-  script.onerror = function(){
-    postToParent('onlyoffice-error', { message: '加载 OnlyOffice API 失败，请确认 Document Server 地址正确并可从宿主访问' })
-  };
-  document.head.appendChild(script);
-})();
-<\/script>
-</body>
-</html>`
+//   // 动态加载 OnlyOffice API
+//   var script = document.createElement('script');
+//   script.src = serverUrl + '/web-apps/apps/api/documents/api.js';
+//   script.onload = function(){
+//     try{
+//       var config = {
+//         width: '100%',
+//         height: '100%',
+//         type: ext || 'docx',
+//         documentType: docType,
+//         document: {
+//           title: fileUrl.split('/').pop(),
+//           url: fileUrl,
+//           fileType: ext || 'docx',
+//           key: Date.now().toString()
+//         },
+//         editorConfig: {
+//           mode: mode === 'edit' ? 'edit' : 'view',
+//           lang: 'zh-cn',
+//           callbackUrl: serverUrl // 默认回调为 Document Server，自行在后端实现保存回调接口
+//         }
+//       }
 
-  return html
-})
+//       if (token) {
+//         config.token = token
+//       }
 
-function handleMessage(e) {
-  const msg = e && e.data
-  if (!msg || !msg.type) return
-  if (msg.type === 'onlyoffice-ready') {
-    loading.value = false
-    error.value = false
-    emit('ready', msg.payload)
-    emit('loaded', msg.payload)
-  }
-  if (msg.type === 'onlyoffice-error') {
-    loading.value = false
-    error.value = true
-    errorMessage.value = msg.payload && msg.payload.message ? msg.payload.message : 'Unknown error'
-    emit('error', { message: errorMessage.value })
-  }
+//       // 创建实例
+//       new DocsAPI(config)
+//       postToParent('onlyoffice-ready', { file: fileUrl })
+
+//     }catch(err){
+//       postToParent('onlyoffice-error', { message: err && err.message ? err.message : String(err) })
+//     }
+//   };
+//   script.onerror = function(){
+//     postToParent('onlyoffice-error', { message: '加载 OnlyOffice API 失败，请确认 Document Server 地址正确并可从宿主访问' })
+//   };
+//   document.head.appendChild(script);
+// })();
+// <\/script>
+// </body>
+// </html>`
+
+//   return html
+// })
+const handleDocumentReady = (event) => {
+  loading.value = false
+  error.value = false
+  emit('ready', event)
+  emit('loaded', event)
 }
+const handleSave = (event) => {
+  // 可选：处理保存事件
+  console.log('Document saved:', event)
+}
+const handleError = (event) => {
+  loading.value = false
+  error.value = true
+  errorMessage.value = event && event.message ? event.message : 'Unknown error'
+  emit('error', { message: errorMessage.value })
+}
+const handleDestroy = (event) => {
+  // 可选：处理销毁事件
+  console.log('Document editor destroyed:', event)
+}
+// function handleMessage(e) {
+//   const msg = e && e.data
+//   if (!msg || !msg.type) return
+//   if (msg.type === 'onlyoffice-ready') {
+//     loading.value = false
+//     error.value = false
+//     emit('ready', msg.payload)
+//     emit('loaded', msg.payload)
+//   }
+//   if (msg.type === 'onlyoffice-error') {
+//     loading.value = false
+//     error.value = true
+//     errorMessage.value = msg.payload && msg.payload.message ? msg.payload.message : 'Unknown error'
+//     emit('error', { message: errorMessage.value })
+//   }
+// }
 
-onMounted(() => {
-  window.addEventListener('message', handleMessage)
-})
+// onMounted(() => {
+//   window.addEventListener('message', handleMessage)
+// })
 
-onBeforeUnmount(() => {
-  window.removeEventListener('message', handleMessage)
-})
+// onBeforeUnmount(() => {
+//   window.removeEventListener('message', handleMessage)
+// })
 </script>
 
 <style scoped>
