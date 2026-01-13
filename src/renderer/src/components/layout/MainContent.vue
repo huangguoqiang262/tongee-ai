@@ -625,6 +625,7 @@ const handleDragEnd = (e) => {
 // 右键菜单相关函数
 const showContextMenu = (e) => {
   e.preventDefault()
+  e.stopPropagation()
 }
 // const showContextMenu = (e, tab) => {
 //   e.preventDefault()

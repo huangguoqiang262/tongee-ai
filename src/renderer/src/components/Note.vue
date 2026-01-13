@@ -697,6 +697,7 @@ const editNoteName = (item) => {
 }
 // 右键菜单相关函数
 const showContextMenu = (e, item, type) => {
+  e.stopPropagation()
   e.preventDefault()
   activeNote.value = item
   activeNote.value.type = type

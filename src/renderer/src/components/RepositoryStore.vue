@@ -2045,6 +2045,8 @@ let activeFiles = computed(() => {
 })
 // 右键菜单相关函数
 const showContextMenu = (e, item) => {
+  e.stopPropagation()
+  e.preventDefault()
   repositoryaddPopover.value?.hide()
   repositoryNotePopover.value?.hide()
   repositorySortPopover.value?.hide()

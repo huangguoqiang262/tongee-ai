@@ -258,6 +258,8 @@ const getList = (load = true) => {
 const contextMenu = ref({ show: true, x: 0, y: 0, actionSheet: [] })
 // 右键菜单相关函数
 const showContextMenu = (item, e) => {
+  e.stopPropagation()
+  e.preventDefault()
   activeItem.value = item
   contextMenu.value = {
     show: true,
