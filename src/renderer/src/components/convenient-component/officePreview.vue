@@ -92,7 +92,7 @@
         <i class="el-icon-warning"></i>
         <p>文档加载失败</p>
         <p>{{ errorMessage }}</p>
-        <button class="retry-btn" @click="retry">重试</button>
+        <button class="retry-btn" @click="downLoad">下载</button>
       </div>
     </div>
 
@@ -222,11 +222,15 @@ const onPptxError = (err) => {
   emit('error', err)
 }
 
-// 重试加载
-const retry = () => {
-  error.value = false
-  errorMessage.value = ''
-  loading.value = true
+// 下载
+const downLoad = () => {
+  // error.value = false
+  // errorMessage.value = ''
+  // loading.value = true
+  var link = document.createElement('a')
+  link.href = props.src
+  link.download = props.src.split('/').pop()
+  link.click()
 }
 
 // 处理鼠标滚轮缩放（需要按住Ctrl键）
