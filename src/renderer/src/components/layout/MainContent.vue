@@ -475,7 +475,13 @@ const reload = (tabId = '') => {
     if (tab) {
       if (!tab.isInternal) {
         if (activeWebview.value) {
-          activeWebview.value.reload()
+          // 清空缓存后再重新加载
+          try {
+            activeWebview.value.reloadIgnoringCache()
+          } catch (error) {
+            console.error('Error clearing cache:', error)
+            activeWebview.value.reload()
+          }
         }
       } else {
         // tabs.value.splice(tabIndex, 1, {
@@ -489,8 +495,13 @@ const reload = (tabId = '') => {
   }
   if (!activeTab.value || activeTab.value.isInternal) return
   if (activeWebview.value) {
-    // 使用webview的原生reload方法
-    activeWebview.value.reload()
+    // 清空缓存后再重新加载
+    try {
+      activeWebview.value.reloadIgnoringCache()
+    } catch (error) {
+      console.error('Error clearing cache:', error)
+      activeWebview.value.reload()
+    }
   } else {
     // 备用方案：通过URL重置的方式
     activeTab.value.loading = true

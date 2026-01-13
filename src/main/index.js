@@ -67,6 +67,13 @@ function createWindow() {
   //   // 显示系统托盘提示
   //   if (tray) tray.displayBalloon({ title: '应用已最小化', content: '点击托盘图标恢复窗口' })
   // })
+  // 配置通过特殊按键ALT+SHIFT+F12打开开发者工具
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F12' && input.alt && input.shift) {
+      event.preventDefault()
+      mainWindow.webContents.openDevTools()
+    }
+  })
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
