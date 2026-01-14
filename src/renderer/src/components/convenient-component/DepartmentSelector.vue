@@ -2,7 +2,9 @@
   <div class="department-selector">
     <!-- 左侧选择树 -->
     <div class="left-tree">
-      <div class="hd-label">可选列：{{ availableCount }}</div>
+      <div class="hd-label">
+        可选列：{{ selectedCount ? availableCount - selectedCount : availableCount }}
+      </div>
       <el-tree
         ref="leftTreeRef"
         style="width: 100%"

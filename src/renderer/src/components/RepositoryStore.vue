@@ -1034,7 +1034,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, watch, nextTick, inject, computed, onErrorCaptured } from 'vue'
+import {
+  ref,
+  reactive,
+  onMounted,
+  onUnmounted,
+  watch,
+  nextTick,
+  inject,
+  computed,
+  onErrorCaptured
+} from 'vue'
 import { on, off } from '@renderer/utils/eventBus'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { useUserStore } from '@renderer/stores/user'
@@ -1852,6 +1862,23 @@ const beforeRepositoryMember = async (visible = true) => {
     await get_know_persons({ know_id: activeRepository.value.id }).then((res) => {
       if (res.code == 200) {
         repositoryMemberList.value = res.data
+        const countNodes = (nodeList) => {
+          nodeList.forEach((node) => {
+            // 只统计用户类型
+            if (
+              node.is_person &&
+              node.ding_id &&
+              repositoryMemberList.value.length &&
+              repositoryMemberList.value.map((item) => item.ding_uid).includes(node.ding_id)
+            ) {
+              node.disabled = true
+            }
+            if (node.children && node.children.length > 0) {
+              countNodes(node.children)
+            }
+          })
+        }
+        countNodes(repositoryMemberTree.value)
       }
     })
     await apply_know_persons({ know_id: activeRepository.value.id }).then((res) => {
