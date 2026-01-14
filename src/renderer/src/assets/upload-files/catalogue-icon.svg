@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>路径</title>
     <defs>
         <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="id-catalogue-icon">
             <stop stop-color="var(--el-color-primary-light-7)" offset="0%"></stop>

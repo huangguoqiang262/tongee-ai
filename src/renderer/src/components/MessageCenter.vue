@@ -55,7 +55,6 @@
                     xmlns="http://www.w3.org/2000/svg"
                     xmlns:xlink="http://www.w3.org/1999/xlink"
                   >
-                    <title>路径</title>
                     <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                       <g id="消息中心—知识库反馈" transform="translate(-1282, -244)">
                         <rect fill="#FAFAFA" x="0" y="0" width="1920" height="1080"></rect>

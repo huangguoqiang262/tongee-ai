@@ -531,7 +531,6 @@
                                 xmlns="http://www.w3.org/2000/svg"
                                 xmlns:xlink="http://www.w3.org/1999/xlink"
                               >
-                                <title>形状结合</title>
                                 <g
                                   id="页面-1"
                                   stroke="none"
@@ -585,7 +584,6 @@
                                 xmlns="http://www.w3.org/2000/svg"
                                 xmlns:xlink="http://www.w3.org/1999/xlink"
                               >
-                                <title>形状结合</title>
                                 <g
                                   id="页面-1"
                                   stroke="none"
@@ -703,7 +701,6 @@
                                 xmlns="http://www.w3.org/2000/svg"
                                 xmlns:xlink="http://www.w3.org/1999/xlink"
                               >
-                                <title>形状结合</title>
                                 <g
                                   id="页面-1"
                                   stroke="none"
@@ -765,7 +762,6 @@
                         xmlns="http://www.w3.org/2000/svg"
                         xmlns:xlink="http://www.w3.org/1999/xlink"
                       >
-                        <title>形状结合</title>
                         <g
                           id="页面-1"
                           stroke="none"
