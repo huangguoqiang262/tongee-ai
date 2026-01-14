@@ -1872,6 +1872,8 @@ const beforeRepositoryMember = async (visible = true) => {
               repositoryMemberList.value.map((item) => item.ding_uid).includes(node.ding_id)
             ) {
               node.disabled = true
+            } else {
+              node.disabled = false
             }
             if (node.children && node.children.length > 0) {
               countNodes(node.children)
