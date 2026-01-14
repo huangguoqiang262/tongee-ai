@@ -2,18 +2,29 @@
   <div class="department-selector">
     <!-- 左侧选择树 -->
     <div class="left-tree">
-      <div class="hd-label">
-        可选列：{{ selectedCount ? availableCount - selectedCount : availableCount }}
+      <div class="tree-head-box">
+        <div class="hd-label">
+          可选列：{{ selectedCount ? availableCount - selectedCount : availableCount }}
+        </div>
+        <el-input
+          v-model="filterText"
+          class="filter-left-input"
+          clearable
+          size="small"
+          placeholder="输入进行筛选"
+        />
       </div>
       <el-tree
         ref="leftTreeRef"
         style="width: 100%"
+        class="left-tree-content"
         :data="treeData"
         show-checkbox
         node-key="fullKey"
         default-expand-all
         :expand-on-click-node="false"
         :props="treeProps"
+        :filter-node-method="customfilterHandle"
         @check="handleLeftTreeCheck"
       >
       </el-tree>
@@ -21,9 +32,13 @@
 
     <!-- 右侧已选择项显示 -->
     <div class="left-tree">
-      <div class="hd-label">已选列：{{ selectedCount }}</div>
+      <div class="tree-head-box">
+        <div class="hd-label">已选列：{{ selectedCount }}</div>
+        <div></div>
+      </div>
       <el-tree
         style="width: 100%"
+        class="left-tree-content"
         :data="selectedTreeData"
         node-key="fullKey"
         default-expand-all
@@ -50,6 +65,9 @@ const props = defineProps({
     default: () => []
   }
 })
+// 筛选文本
+let filterText = ref('')
+
 // 左侧树引用
 const leftTreeRef = ref()
 
@@ -59,7 +77,13 @@ const treeProps = {
   label: 'name',
   children: 'children'
 }
-
+watch(filterText, (val) => {
+  leftTreeRef.value?.filter(val)
+})
+const customfilterHandle = (value, data) => {
+  if (!value) return true
+  return data.name.includes(value)
+}
 // 选中的keys - 只包含子级节点
 const checkedKeys = ref([])
 
@@ -242,20 +266,39 @@ watch(
     width: 50%;
     height: 100%;
     border-right: 1px solid #efefef;
-
-    .hd-label {
+    .tree-head-box {
+      box-sizing: border-box;
       padding-left: 6px;
       margin-bottom: 10px;
-      font-size: 14px;
-      color: #909090;
-      line-height: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0 30px;
+      height: 28px;
+      .hd-label {
+        font-size: 14px;
+        color: #909090;
+        line-height: 18px;
+        margin-bottom: 0;
+      }
+      :deep(.filter-left-input) {
+        flex: 1;
+        height: 28px;
+        font-size: 12px;
+        .el-input__wrapper {
+          border-radius: 6px !important;
+          padding: 1px 10px;
+        }
+      }
     }
   }
-
+  .left-tree-content {
+    height: calc(100% - 16px) !important;
+  }
   .el-tree {
     padding-right: 40px;
     background: transparent;
-    height: 100%;
+    height: calc(100% - 2px);
     overflow-y: auto;
 
     &::-webkit-scrollbar {
