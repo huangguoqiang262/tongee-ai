@@ -16,7 +16,8 @@
             }"
             @click="tabHandle(tab.id)"
           >
-            <img class="icon" :src="tab.icon" alt="" />
+            <!-- <img class="icon" :src="tab.icon" alt="" /> -->
+            <component :is="coustomIcons[tab.icon]" class="icon"></component>
             <div class="tab-right">
               <div class="title">{{ tab.name }}</div>
               <div class="desc">{{ tab.des }}</div>
@@ -129,26 +130,29 @@ import {
 } from '@renderer/api/feedback'
 import cloneDeep from 'lodash.clonedeep'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
-import problemIcon from '@renderer/assets/feedback/problem-icon.png'
-import suggestionIcon from '@renderer/assets/feedback/suggestion-icon.png'
+import problemIcon from '@renderer/assets/feedback/problem-icon.svg'
+import suggestionIcon from '@renderer/assets/feedback/suggestion-icon.svg'
 let props = defineProps({
   attrs: {
     type: Object,
     default: () => ({})
   }
 })
-
+let coustomIcons = {
+  problemIcon,
+  suggestionIcon
+}
 let tabs = ref([
   {
     id: '2',
     name: '建议',
-    icon: problemIcon,
+    icon: 'problemIcon',
     des: '提供文档缺少、改进或新想法'
   },
   {
     id: '1',
     name: '问题',
-    icon: suggestionIcon,
+    icon: 'suggestionIcon',
     des: '报告文档中错误的内容等问题'
   }
 ])
@@ -396,6 +400,7 @@ onMounted(() => {
           border-radius: 12px;
           border: 1px solid #d8d8d8;
           .icon {
+            color: var(--el-color-primary);
             flex-shrink: 0;
             width: 26px;
             height: 26px;

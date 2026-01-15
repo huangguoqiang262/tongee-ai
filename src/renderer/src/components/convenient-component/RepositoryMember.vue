@@ -90,7 +90,16 @@
           </div>
           <div v-if="activeTab === '3'" class="add-member-box">
             <template v-if="props.treeData.length">
-              <div class="hd-label">可选列：{{ choosableCount(props.treeData) }}</div>
+              <div class="tree-head-box">
+                <el-input
+                  v-model="filterText"
+                  class="filter-left-input"
+                  size="small"
+                  clearable
+                  placeholder="输入进行筛选"
+                />
+                <div class="hd-label">可选列：{{ choosableCount(props.treeData) }}</div>
+              </div>
               <el-tree
                 ref="organizationRef"
                 style="width: 100%"
@@ -100,6 +109,7 @@
                 default-expand-all
                 :expand-on-click-node="false"
                 :props="{ class: 'customNodeClass', label: 'name' }"
+                :filter-node-method="customfilterHandle"
                 @check="handleCheckChange"
               >
               </el-tree>
@@ -122,7 +132,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import DefaultAvatar from '@renderer/assets/default-avatar.png'
 const repositoryVisible = defineModel({ type: Boolean })
@@ -233,6 +243,15 @@ const handlePermissionsChange = (item) => {
   }
   emits('setPermission', option)
 }
+// 筛选文本
+let filterText = ref('')
+watch(filterText, (val) => {
+  organizationRef.value?.filter(val)
+})
+const customfilterHandle = (value, data) => {
+  if (!value) return true
+  return data.name.includes(value)
+}
 const getCompleteSelectedTree = () => {
   const tempCheckedNodes = organizationRef.value.getCheckedNodes(false, false)
   // 标记选中状态
@@ -252,7 +271,7 @@ const handleCheckChange = () => {
       height: 492px;
       padding: 17px 20px 20px;
       .el-dialog__header {
-        padding-bottom: 20px;
+        padding-bottom: 10px;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -422,23 +441,39 @@ const handleCheckChange = () => {
               padding: 0 19px;
               width: 100%;
               height: 100%;
-              .hd-label {
+              .tree-head-box {
+                box-sizing: border-box;
                 position: sticky;
                 left: 0;
                 top: 0;
                 z-index: 1;
-                background: #f9f9f9;
                 padding-top: 5px;
                 padding-left: 6px;
                 margin-bottom: 10px;
-                font-size: 14px;
-                color: #909090;
-                line-height: 18px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0 20px;
+                background: #f9f9f9;
+                .hd-label {
+                  font-size: 14px;
+                  color: #909090;
+                  line-height: 18px;
+                }
+                .filter-left-input {
+                  flex: 1;
+                  height: 28px;
+                  font-size: 12px;
+                  .el-input__wrapper {
+                    border-radius: 6px !important;
+                    padding: 1px 10px;
+                  }
+                }
               }
               .el-tree {
                 padding-right: 40px;
                 background: transparent;
-                height: calc(100% - 95px);
+                height: calc(100% - 110px);
                 overflow-y: auto;
                 &::-webkit-scrollbar {
                   width: 4px;

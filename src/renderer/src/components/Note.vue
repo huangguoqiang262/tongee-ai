@@ -152,14 +152,14 @@
       </template>
       <div class="type-list">
         <div class="type-item" @click="handleShare('link')">
-          <img class="icon" src="@renderer/assets/notebook/link-icon.png" alt="" />
+          <linkSvgIcon class="icon" />
           <div class="right-type">
             <div class="title">链接分享</div>
             <div class="des">生成分享链接，其他人可以通过链接查看笔记</div>
           </div>
         </div>
         <div class="type-item" @click="handleShare('img')">
-          <img class="icon" src="@renderer/assets/notebook/img-icon.png" alt="" />
+          <imgSvgIcon class="icon" />
           <div class="right-type">
             <div class="title">生成长图</div>
             <div class="des">将笔记内容生成场图片，方便分享到社交平台</div>
@@ -407,6 +407,8 @@ import { copyBase64ImageAsNormalImage, downloadBase64Image } from '@renderer/uti
 import moveIcon from '@renderer/assets/contextMenu/move-icon.png'
 import renameIcon from '@renderer/assets/contextMenu/rename-icon.png'
 import deleteIcon from '@renderer/assets/contextMenu/delete-icon.png'
+import imgSvgIcon from '@renderer/assets/notebook/img-icon.svg'
+import linkSvgIcon from '@renderer/assets/notebook/link-icon.svg'
 onErrorCaptured((err, instance, info) => {
   console.error('组件捕获到错误:', err, info)
   return false // 阻止继续向上传播错误
@@ -1486,6 +1488,7 @@ onMounted(() => {
               background: #e9e9e9;
             }
             .icon {
+              color: var(--el-color-primary);
               flex-shrink: 0;
               width: 20px;
               height: 20px;
