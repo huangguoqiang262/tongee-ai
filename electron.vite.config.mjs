@@ -38,9 +38,9 @@ export default defineConfig({
               name: 'prefixIds',
               params: {
                 overrides: {
-                  removeViewBox: false,
-                },
-              },
+                  removeViewBox: false
+                }
+              }
             },
             // 确保SVG使用currentColor
             {

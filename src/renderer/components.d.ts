@@ -95,6 +95,7 @@ declare module 'vue' {
     ServiceManual: typeof import('./src/components/account-settings/ServiceManual.vue')['default']
     Sidebar: typeof import('./src/components/layout/Sidebar.vue')['default']
     Square: typeof import('./src/components/Square.vue')['default']
+    SynergiaUpload: typeof import('./src/components/convenient-component/SynergiaUpload.vue')['default']
     TabBar: typeof import('./src/components/TabBar.vue')['default']
     TakeNotes: typeof import('./src/components/chat-components/take-notes.vue')['default']
     TextLoading: typeof import('./src/components/chat-components/text-loading.vue')['default']

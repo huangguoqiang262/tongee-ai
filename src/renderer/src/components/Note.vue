@@ -87,7 +87,12 @@
                   @contextmenu="(e) => showContextMenu(e, item, 'note')"
                   @click="beforeEditNote(item)"
                 >
-                  <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
+                  <el-checkbox
+                    v-model="item.checked"
+                    class="checkbox"
+                    size="large"
+                    @click.stop=""
+                  />
                   <div class="title">
                     <el-input
                       v-if="item.isEdit"

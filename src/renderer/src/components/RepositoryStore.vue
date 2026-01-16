@@ -419,6 +419,14 @@
                     <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
                     <div class="title">导入网页</div>
                   </div>
+                  <!-- <div
+                    v-if="activeRepository.is_public == 1"
+                    class="item"
+                    @click="beforeUploadFiles('synergia')"
+                  >
+                    <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
+                    <div class="title">协同文件</div>
+                  </div> -->
                 </div>
               </el-popover>
               <el-popover
@@ -1026,6 +1034,7 @@
         </div>
       </template>
     </el-dialog>
+    <synergia-upload v-model="synergiaUploadVisible"></synergia-upload>
   </div>
 </template>
 
@@ -2471,7 +2480,8 @@ let uploadVisible = ref(false) //自定义上传组件
 const closeUploadDialog = () => {
   uploadVisible.value = false
 }
-
+// 协同文件visible
+const synergiaUploadVisible = ref(false)
 const beforeUploadFiles = (type) => {
   if (type == 'local-file') {
     uploadBtnRef.value.value = ''
@@ -2506,7 +2516,6 @@ const beforeUploadFiles = (type) => {
       }, 100)
     })
   } else if (type == 'createNote') {
-    // createNoteVisible.value = true
     addNewTab({
       title: '笔记',
       url: 'Note',
@@ -2515,6 +2524,8 @@ const beforeUploadFiles = (type) => {
     })
   } else if (type == 'importNotes') {
     onlineNoteVisible.value = true
+  } else if (type == 'synergia') {
+    synergiaUploadVisible.value = true
   }
 }
 const ReadyUploadList = reactive([])
