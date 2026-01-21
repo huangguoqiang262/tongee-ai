@@ -432,7 +432,8 @@ const getWordList = () => {
               issueContentText: item.issue_content_text || '',
               retrievedDocumentList: [],
               attach_file_ids: [],
-              file_info: []
+              file_info: [],
+              use_annex: item.use_annex || []
             })
           } else {
             list.push({
@@ -449,7 +450,8 @@ const getWordList = () => {
               issueContentText: item.issue_content_text || '',
               retrievedDocumentList: [],
               attach_file_ids: [],
-              file_info: []
+              file_info: [],
+              use_annex: []
             })
           }
         })
@@ -519,7 +521,8 @@ const loadData = async () => {
                 spread: false,
                 retrievedDocumentList: [],
                 attach_file_ids: [],
-                file_info: []
+                file_info: [],
+                use_annex: item.use_annex || []
               })
             } else {
               list.push({
@@ -536,7 +539,8 @@ const loadData = async () => {
                 issueContentText: item.issue_content_text || '',
                 retrievedDocumentList: [],
                 attach_file_ids: [],
-                file_info: []
+                file_info: [],
+                use_annex: []
               })
             }
           })

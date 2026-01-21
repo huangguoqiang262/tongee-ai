@@ -56,8 +56,8 @@ const props = defineProps({
     default: false
   },
   hideAttachFiles: {
-    type: Boolean,
-    default: false
+    type: Array,
+    default: () => []
   }
 })
 const unfoldCiteFile = ref(false)
@@ -108,7 +108,8 @@ const retrievedDocumen = (file) => {
     icon: getFileIcon(file),
     attrs: {
       fileUrl: file.fileUrl,
-      fileName: file.fileName
+      fileName: file.fileName,
+      fileId: file.fileId || ''
     }
   })
 }
@@ -125,17 +126,20 @@ const lookOver = (file, type = 1) => {
       isInternal: true,
       attrs: {
         fileUrl: file.full_path,
-        fileName: file.title
+        fileName: file.title,
+        fileId: file.fileId || ''
       }
     })
   } else {
     addNewTab({
       title: file.filename,
       url: 'DocumentDetail',
+      icon: getFileIcon1(file),
       isInternal: true,
       attrs: {
         fileUrl: file.url,
-        fileName: file.filename
+        fileName: file.filename,
+        fileId: file.fileId || ''
       }
     })
   }
@@ -266,6 +270,15 @@ const download = (index, images) => {
 const rotateCiteFile = () => {
   unfoldCiteFile.value = !unfoldCiteFile.value
 }
+// 过滤相同url的文件
+// const filterSameUrl = computed(() => {
+//   let files = [...props.message.retrievedDocumentList, ...props.message.use_annex]
+//   const urlMap = {}
+//   files.forEach((file) => {
+//     urlMap[file.full_path] = file
+//   })
+//   return Object.values(urlMap)
+// })
 </script>
 
 <!-- 整个div是用来调整内部消息的位置，每条消息占的空间都是一整行，然后根据right还是left来调整内部的消息是靠右边还是靠左边 -->
@@ -292,33 +305,35 @@ const rotateCiteFile = () => {
             :type="props.message.type"
             :message="props.message.textContent"
             :retrieved-document-list="props.message.retrievedDocumentList"
+            :use-annex-list="props.message.use_annex"
           ></MarkdownMessage>
           <div v-if="props.direction != 'right'" class="empty-message">
             {{ props.message.dateline }}
           </div>
           <!-- 附件 -->
-          <div v-if="!hideAttachFiles" class="attachment">
-            <div
-              v-for="(item, index) in props.message.attach_file_ids"
-              :key="index"
-              class="attach-item"
-              @click="lookOver(item, 1)"
-            >
-              <img class="attached-icon" :src="getFileIcon(item)" alt="" />
-              <div class="attached-content">
-                <div class="attach-name">
-                  {{ item.title }}
-                </div>
-                <div class="attach-type">
-                  <span class="file-extension">{{
-                    item.full_path?.split('.').pop()?.toUpperCase()
-                  }}</span>
-                  <span v-if="item.total_space" class="file-size">{{
-                    formatFileSize(item.total_space)
-                  }}</span>
+          <div class="attachment">
+            <template v-for="(item, index) in props.message.attach_file_ids" :key="index">
+              <div
+                v-if="!props.hideAttachFiles.includes(item.fileId)"
+                class="attach-item"
+                @click="lookOver(item, 1)"
+              >
+                <img class="attached-icon" :src="getFileIcon(item)" alt="" />
+                <div class="attached-content">
+                  <div class="attach-name">
+                    {{ item.title }}
+                  </div>
+                  <div class="attach-type">
+                    <span class="file-extension">{{
+                      item.full_path?.split('.').pop()?.toUpperCase()
+                    }}</span>
+                    <span v-if="item.total_space" class="file-size">{{
+                      formatFileSize(item.total_space)
+                    }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
           <!-- 如果消息的内容是图片，则显示图片  -->
           <div class="image-user-box">
@@ -367,9 +382,14 @@ const rotateCiteFile = () => {
         }"
       >
         <div class="message-content" :class="{ 'no-line-number': !props.lineNumber }">
-          <div v-if="props.message.retrievedDocumentList.length" class="file-list">
+          <div
+            v-if="props.message.retrievedDocumentList.length || props.message.use_annex.length"
+            class="file-list"
+          >
             <div class="file-label" @click="rotateCiteFile">
-              找到了{{ props.message.retrievedDocumentList.length }}个资料
+              找到了{{
+                props.message.retrievedDocumentList.length + props.message.use_annex.length
+              }}个资料
               <img
                 class="rotate"
                 :style="{ transform: unfoldCiteFile ? 'rotate(180deg)' : '' }"
@@ -386,6 +406,18 @@ const rotateCiteFile = () => {
               >
                 <div class="file-name">
                   {{ file.fileName }}
+                  <span class="file-sort">{{ '第' + file.sort + '段落' }}</span>
+                </div>
+              </div>
+              <div
+                v-for="file in props.message.use_annex"
+                :key="file.fileId"
+                class="file-item"
+                @click="retrievedDocumen(file)"
+              >
+                <div class="file-name">
+                  {{ file.fileName }}
+                  <span class="file-sort">{{ '第' + file.sort + '段落' }}</span>
                 </div>
               </div>
             </div>
@@ -425,6 +457,7 @@ const rotateCiteFile = () => {
             :message="props.message.textContent"
             :is-pre-view="props.isPreView"
             :retrieved-document-list="props.message.retrievedDocumentList"
+            :use-annex-list="props.message.use_annex"
           ></MarkdownMessage>
           <!-- 返回附件 -->
           <div v-if="props.message?.file_info?.length" class="attachment" style="margin-top: 10px">
@@ -614,10 +647,20 @@ const rotateCiteFile = () => {
     .file-name {
       max-width: 100%;
       font-size: 14px;
+      line-height: 20px;
       color: #8b8b8b;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      .file-sort {
+        padding: 0 5px;
+        margin: 0 2px;
+        display: inline-block;
+        font-size: 10px;
+        color: var(--el-color-primary);
+        border-radius: 4px;
+        background: var(--el-color-primary-light-9);
+      }
     }
   }
 }

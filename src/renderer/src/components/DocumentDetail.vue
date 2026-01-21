@@ -21,6 +21,7 @@
       <CommonChat
         :is-active-tab="props.isActiveTab"
         :attach-files="attach_files"
+        :chat-key="props.attrs.chat_key"
         @close-chat="chatVisible = false"
       />
     </div>
@@ -45,7 +46,8 @@ let chatVisible = ref(false)
 let attach_files = ref([
   {
     title: props.attrs.fileName,
-    full_path: props.attrs.fileUrl
+    full_path: props.attrs.fileUrl,
+    fileId: props.attrs.fileId || ''
   }
 ])
 const openChat = () => {

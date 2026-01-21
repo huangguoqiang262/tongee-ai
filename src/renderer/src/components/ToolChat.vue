@@ -258,14 +258,16 @@ const handleSendMessage = async (message) => {
     spread: false,
     issueContentText: '',
     attach_file_ids: [...attach_files.value],
-    file_info: []
+    file_info: [],
+    use_annex: []
   })
   var tempAttachs = []
   attach_files.value.map((item) => {
     tempAttachs.push({
       fileName: item.title,
       fileUrl: item.full_path,
-      fileSize: item.total_space || 0
+      fileSize: item.total_space || 0,
+      fileId: item.fileId || ''
     })
   })
   var data = {
@@ -335,7 +337,8 @@ const handleSendMessage = async (message) => {
     issueContentText: '',
     retrievedDocumentList: [],
     attach_file_ids: [],
-    file_info: []
+    file_info: [],
+    use_annex: []
   })
   evtSource.value.addEventListener('document', async (event) => {
     const response = JSON.parse(event.data)
@@ -344,6 +347,10 @@ const handleSendMessage = async (message) => {
   evtSource.value.addEventListener('file', async (event) => {
     const response = JSON.parse(event.data)
     responseMessage.file_info = response || []
+  })
+  evtSource.value.addEventListener('annex', async (event) => {
+    const response = JSON.parse(event.data)
+    responseMessage.use_annex = response || []
   })
   evtSource.value.addEventListener('message', async (event) => {
     const response = JSON.parse(event.data)
@@ -541,7 +548,8 @@ const getWordList = () => {
               issueContentText: item.issue_content_text || '',
               retrievedDocumentList: item.use_file_ids || [],
               attach_file_ids: [],
-              file_info: item.file_info || []
+              file_info: item.file_info || [],
+              use_annex: item.use_annex || []
             })
           } else {
             list.push({
@@ -561,9 +569,11 @@ const getWordList = () => {
                 item.attach_file_ids.map((fileItem) => ({
                   title: fileItem.fileName,
                   full_path: fileItem.fileUrl,
-                  total_space: fileItem.fileSize || 0
+                  total_space: fileItem.fileSize || 0,
+                  fileId: fileItem.fileId || ''
                 })) || [],
-              file_info: item.file_info || []
+              file_info: item.file_info || [],
+              use_annex: []
             })
           }
         })
@@ -627,7 +637,8 @@ const loadData = async () => {
                 spread: false,
                 retrievedDocumentList: item.use_file_ids || [],
                 attach_file_ids: [],
-                file_info: item.file_info || []
+                file_info: item.file_info || [],
+                use_annex: item.use_annex || []
               })
             } else {
               list.push({
@@ -647,9 +658,11 @@ const loadData = async () => {
                   item.attach_file_ids.map((fileItem) => ({
                     title: fileItem.fileName,
                     full_path: fileItem.fileUrl,
-                    total_space: fileItem.fileSize || 0
+                    total_space: fileItem.fileSize || 0,
+                    fileId: fileItem.fileId || ''
                   })) || [],
-                file_info: item.file_info || []
+                file_info: item.file_info || [],
+                use_annex: []
               })
             }
           })

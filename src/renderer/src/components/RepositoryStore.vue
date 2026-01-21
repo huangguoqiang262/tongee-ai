@@ -419,14 +419,14 @@
                     <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
                     <div class="title">导入网页</div>
                   </div>
-                  <!-- <div
+                  <div
                     v-if="activeRepository.is_public == 1"
                     class="item"
                     @click="beforeUploadFiles('synergia')"
                   >
-                    <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
+                    <img class="icon" src="@renderer/assets/popover/synergia-icon.png" alt="" />
                     <div class="title">协同文件</div>
-                  </div> -->
+                  </div>
                 </div>
               </el-popover>
               <el-popover
@@ -1331,7 +1331,8 @@ const detailChange = (item) => {
         isInternal: true,
         attrs: {
           fileUrl: item.info?.url,
-          fileName: item.title
+          fileName: item.title,
+          fileId: item.info?.file_key || ''
         }
       })
     }
@@ -1351,7 +1352,8 @@ const detailChange = (item) => {
         isInternal: true,
         attrs: {
           fileUrl: item.info?.url,
-          fileName: item.title
+          fileName: item.title,
+          fileId: item.info?.file_key || ''
         }
       })
     }

@@ -1,21 +1,21 @@
 <template>
-  <div class="repository-member-box">
+  <div class="SynergiaUpload-box">
     <el-dialog
       v-model="synergiaUploadVisible"
       draggable
       :close-on-click-modal="false"
       align-center
       destroy-on-close
-      modal-class="repository-member-box-dialog"
-      width="390"
+      modal-class="SynergiaUpload-box-dialog"
+      width="65vw"
     >
       <template #header>
         <img
           class="dialog-header-del-icon"
-          src="@renderer/assets/repository/cysz-icon.png"
+          src="@renderer/assets/popover/synergia-icon.png"
           alt=""
         />
-        <div class="">成员设置</div>
+        <div class="">协同文件</div>
       </template>
       <div class="form-box">
         <div class="tab-list-box">
@@ -265,8 +265,8 @@ const handleCheckChange = () => {
 </script>
 
 <style scoped lang="scss">
-.repository-member-box {
-  :deep(.repository-member-box-dialog) {
+.SynergiaUpload-box {
+  :deep(.SynergiaUpload-box-dialog) {
     .el-dialog {
       height: 492px;
       padding: 17px 20px 20px;

@@ -425,7 +425,6 @@ const handleEnterSend = (event) => {
 }
 // 处理导入文件
 const handleSubmitImport = (files) => {
-  console.log(files, '导入文件')
   localfileList.value.push(...files)
 }
 const handleSelectChange = (file) => {
@@ -484,7 +483,8 @@ const uploadSingleFile = async (fileItem) => {
       var uploadedFile = {
         full_path: response.data[0].url,
         title: response.data[0].file_name,
-        total_space: response.data[0].file_size
+        total_space: response.data[0].file_size,
+        fileId: response.data[0].fileId
       }
       localfileList.value.push(uploadedFile)
     } else {

@@ -52,6 +52,11 @@ const props = defineProps({
   isPreView: {
     type: Boolean,
     default: false
+  },
+  // 添加附件属性
+  useAnnexList: {
+    type: Array,
+    default: () => []
   }
 })
 const addNewTab = inject('addNewTab')
@@ -61,7 +66,7 @@ const getFileIcon = (item) => {
     return ''
   }
   // 根据文件扩展名返回不同的图标
-  const ext = item.fileUrl?.split('.').pop()?.toUpperCase()
+  const ext = item.fileUrl?.split('.').pop()?.toLowerCase()
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -96,6 +101,9 @@ const processedMessage = computed(() => {
     .replace(/\[\s?kno_(\d+)\s?\]/g, (match, id) => {
       return `<span class="knowledge-tag" data-knowledge-id="${id}">${id}</span>`
     })
+    .replace(/\[\s?ann_(\d+)\s?\]/g, (match, id) => {
+      return `<span class="ann-tag" data-ann-id="${id}">${id}</span>`
+    })
     .replace(/\[\s?eqm_(\d+)\s?\]/g, (match, id) => {
       return `<span class="equipment-tag" data-equipment-id="${id}">查看</span>`
     })
@@ -106,21 +114,35 @@ const getDocumentInfo = (knowledgeId) => {
   if (!props.retrievedDocumentList || props.retrievedDocumentList.length === 0) {
     return null
   }
-
   // 在文档列表中查找匹配的知识库文档
   return props.retrievedDocumentList.find((doc) => doc.index === parseInt(knowledgeId))
 }
-
-// 显示弹窗
-const showPopover = (knowledgeTag) => {
-  const knowledgeId = knowledgeTag.getAttribute('data-knowledge-id')
-  // 设置弹窗的触发元素
-  triggerElement.value = knowledgeTag
-
-  if (knowledgeId) {
-    currentKnowledgeId.value = knowledgeId
-    currentDocumentInfo.value = getDocumentInfo(knowledgeId)
+// 根据引用文件库ID获取文档信息
+const getAnnexInfo = (annexId) => {
+  if (!props.useAnnexList || props.useAnnexList.length === 0) {
+    return null
   }
+  // 在引用文档列表中查找匹配的知识库文档
+  return props.useAnnexList.find((doc) => doc.index === parseInt(annexId))
+}
+// 显示弹窗
+const showPopover = (targetTag) => {
+  const knowledgeId = targetTag.getAttribute('data-knowledge-id')
+  const annTagId = targetTag.getAttribute('data-ann-id')
+  if (knowledgeId || annTagId) {
+    if (annTagId) {
+      currentKnowledgeId.value = annTagId
+      currentDocumentInfo.value = getAnnexInfo(annTagId)
+      if (!currentDocumentInfo.value) {
+        return
+      }
+    } else {
+      currentKnowledgeId.value = knowledgeId
+      currentDocumentInfo.value = getDocumentInfo(knowledgeId)
+    }
+  }
+  // 设置弹窗的触发元素
+  triggerElement.value = targetTag
 }
 const toKnowledge = (item) => {
   if (!item.fileUrl) {
@@ -133,15 +155,18 @@ const toKnowledge = (item) => {
     icon: getFileIcon(item),
     attrs: {
       fileUrl: item.fileUrl,
-      fileName: item.fileName
+      fileName: item.fileName,
+      fileId: item.fileId || ''
     }
   })
+  triggerElement.value = null
 }
 // 鼠标移入知识库标签事件处理
 const handleKnowledgeHover = (event) => {
   const knowledgeTag = event.target.closest('.knowledge-tag')
-  if (!knowledgeTag) return
-  showPopover(knowledgeTag)
+  const annTag = event.target.closest('.ann-tag')
+  if (!knowledgeTag && !annTag) return
+  showPopover(knowledgeTag || annTag)
 }
 // 跳转保养计划页面
 const handleEquipmentClick = (event) => {
@@ -181,6 +206,26 @@ onUnmounted(() => {
   }
 }
 :deep(.equipment-tag) {
+  color: var(--el-color-primary);
+  padding: 0px 2px;
+  margin: 0 4px;
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
+  font-size: 12px;
+  border-radius: 4px;
+  background: var(--el-color-primary-light-9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:hover {
+    background: var(--el-color-primary-light-8);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+:deep(.ann-tag) {
   color: var(--el-color-primary);
   padding: 0px 2px;
   margin: 0 4px;

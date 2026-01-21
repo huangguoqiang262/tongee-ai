@@ -1,8 +1,9 @@
 <template>
-  <div class="file-preview">
+  <div v-loading="loading" class="file-preview">
     <!-- 图片预览 -->
     <div
       v-if="isImage"
+      ref="imgContainer"
       class="file-preview-img-container"
       @wheel.prevent="handleWheel"
       @mousedown="handleMouseDown"
@@ -11,6 +12,7 @@
       @mouseleave="handleMouseUp"
     >
       <img
+        v-if="!loading"
         :src="fileUrl"
         class="file-preview-img"
         :style="imageStyle"
@@ -88,7 +90,7 @@ const props = defineProps({
     default: ''
   }
 })
-
+let imgContainer = ref(null)
 /** 获取后缀名（不带点，小写） */
 const ext = computed(() => {
   const url = props.fileUrl || ''
@@ -133,7 +135,7 @@ const isWebUrl = computed(() => props.fileUrl.startsWith('http'))
 //   const encoded = encodeURIComponent(props.fileUrl)
 //   return `https://view.officeapps.live.com/op/view.aspx?src=${encoded}`
 // })
-
+const loading = ref(true)
 // 图片预览相关状态
 const scale = ref(1) // 缩放比例
 const position = reactive({ x: 0, y: 0 }) // 图片位置
@@ -157,9 +159,8 @@ const MAX_SCALE = 5
 const handleImageLoad = (event) => {
   const img = event.target
   //  判断如果初始大小大于容器大小，则进行适应性缩放
-  const container = document.querySelector('.file-preview-img-container')
-  const containerWidth = container.clientWidth
-  const containerHeight = container.clientHeight
+  const containerWidth = imgContainer.value.clientWidth
+  const containerHeight = imgContainer.value.clientHeight
   let initialScale = 1
   if (img.naturalWidth > containerWidth || img.naturalHeight > containerHeight) {
     const scaleX = containerWidth / img.naturalWidth
@@ -175,10 +176,9 @@ const handleImageLoad = (event) => {
 
 // 更新容器尺寸
 const updateContainerSize = () => {
-  const container = document.querySelector('.file-preview-img-container')
-  if (container) {
-    containerSize.width = container.clientWidth
-    containerSize.height = container.clientHeight
+  if (imgContainer.value) {
+    containerSize.width = imgContainer.value.clientWidth
+    containerSize.height = imgContainer.value.clientHeight
   }
 }
 
@@ -258,11 +258,10 @@ const handleMouseUp = () => {
 
 // 全屏切换
 const toggleFullscreen = () => {
-  const container = document.querySelector('.file-preview-img-container')
-  if (!container) return
+  if (!imgContainer.value) return
 
   if (!document.fullscreenElement) {
-    container.requestFullscreen().catch((err) => {
+    imgContainer.value.requestFullscreen().catch((err) => {
       console.error('无法进入全屏模式:', err)
     })
   } else {
@@ -277,6 +276,7 @@ const handleResize = () => {
 }
 
 onMounted(() => {
+  loading.value = false
   updateContainerSize()
   window.addEventListener('resize', handleResize)
 })

@@ -46,9 +46,9 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  isFanCreation: {
-    type: Boolean,
-    default: false
+  hideAttachFiles: {
+    type: Array,
+    default: () => []
   }
 })
 const unfoldCiteFile = ref(false)
@@ -182,32 +182,31 @@ const rotateCiteFile = () => {
             :type="props.message.type"
             :retrieved-document-list="props.message.retrievedDocumentList"
             :message="props.message.textContent"
+            :use-annex-list="props.message.use_annex"
           ></MarkdownMessage>
           <div v-if="props.direction != 'right'" class="empty-message">
             {{ props.message.dateline }}
           </div>
           <!-- 附件 -->
           <div class="attachment">
-            <div
-              v-for="(item, index) in props.message.attach_file_ids"
-              :key="index"
-              class="attach-item"
-            >
-              <img class="attached-icon" :src="getFileIcon(item)" alt="" />
-              <div class="attached-content">
-                <div class="attach-name">
-                  {{ item.title }}
-                </div>
-                <div class="attach-type">
-                  <span class="file-extension">{{
-                    item.full_path?.split('.').pop()?.toUpperCase()
-                  }}</span>
-                  <span v-if="item.total_space" class="file-size">{{
-                    formatFileSize(item.total_space)
-                  }}</span>
+            <template v-for="(item, index) in props.message.attach_file_ids" :key="index">
+              <div v-if="!props.hideAttachFiles.includes(item.fileId)" class="attach-item">
+                <img class="attached-icon" :src="getFileIcon(item)" alt="" />
+                <div class="attached-content">
+                  <div class="attach-name">
+                    {{ item.title }}
+                  </div>
+                  <div class="attach-type">
+                    <span class="file-extension">{{
+                      item.full_path?.split('.').pop()?.toUpperCase()
+                    }}</span>
+                    <span v-if="item.total_space" class="file-size">{{
+                      formatFileSize(item.total_space)
+                    }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
           <!-- 如果消息的内容是图片，则显示图片  -->
           <div class="image-user-box">
@@ -238,9 +237,14 @@ const rotateCiteFile = () => {
           }"
         >
           <div class="message-content" :class="{ 'no-line-number': !props.lineNumber }">
-            <div v-if="props.message.retrievedDocumentList.length" class="file-list">
+            <div
+              v-if="props.message.retrievedDocumentList.length || props.message.use_annex.length"
+              class="file-list"
+            >
               <div class="file-label" @click="rotateCiteFile">
-                找到了{{ props.message.retrievedDocumentList.length }}个资料
+                找到了{{
+                  props.message.retrievedDocumentList.length + props.message.use_annex.length
+                }}个资料
                 <img
                   class="rotate"
                   :style="{ transform: unfoldCiteFile ? 'rotate(180deg)' : '' }"
@@ -256,6 +260,13 @@ const rotateCiteFile = () => {
                 >
                   <div class="file-name">
                     {{ file.fileName }}
+                    <span class="file-sort">{{ '第' + file.sort + '段落' }}</span>
+                  </div>
+                </div>
+                <div v-for="file in props.message.use_annex" :key="file.fileId" class="file-item">
+                  <div class="file-name">
+                    {{ file.fileName }}
+                    <span class="file-sort">{{ '第' + file.sort + '段落' }}</span>
                   </div>
                 </div>
               </div>
@@ -295,6 +306,7 @@ const rotateCiteFile = () => {
               :is-pre-view="true"
               :message="props.message.textContent"
               :retrieved-document-list="props.message.retrievedDocumentList"
+              :use-annex-list="props.message.use_annex"
             ></MarkdownMessage>
             <!-- 返回附件 -->
             <div
@@ -414,10 +426,20 @@ const rotateCiteFile = () => {
     .file-name {
       max-width: 100%;
       font-size: 14px;
+      line-height: 20px;
       color: #8b8b8b;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      .file-sort {
+        padding: 0 5px;
+        margin: 0 2px;
+        display: inline-block;
+        font-size: 10px;
+        color: var(--el-color-primary);
+        border-radius: 4px;
+        background: var(--el-color-primary-light-9);
+      }
     }
   }
 }

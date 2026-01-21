@@ -8,6 +8,7 @@
         v-for="(message, index) in deepMessages"
         :key="message.dateline + index"
         :message="message"
+        :hide-attach-files="props.hideAttachFiles"
         :direction="props.direction"
         @handle-check="handleCheck"
       />
@@ -57,6 +58,7 @@
             :key="index"
             :image-size="'156px'"
             :is-pre-view="true"
+            :hide-attach-files="props.hideAttachFiles"
             :message="message"
             :direction="props.direction"
           />
@@ -94,6 +96,10 @@ let props = defineProps({
   repositoryName: {
     type: String,
     default: ''
+  },
+  hideAttachFiles: {
+    type: Array,
+    default: () => []
   }
 })
 let emits = defineEmits(['closePreview'])

@@ -262,7 +262,8 @@ const uploadSingleFile = async (fileItem) => {
       var uploadedFile = {
         full_path: response.data[0].url,
         title: response.data[0].file_name,
-        total_space: response.data[0].file_size
+        total_space: response.data[0].file_size,
+        fileId: response.data[0].fileId
       }
       localfileList.value.push(uploadedFile)
     } else {
