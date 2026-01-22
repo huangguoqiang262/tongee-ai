@@ -124,7 +124,9 @@ watch(
   { immediate: true }
 )
 
-const isOffice = computed(() => ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext.value))
+const isOffice = computed(() =>
+  ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'csv', 'pptx'].includes(ext.value)
+)
 const isWebUrl = computed(() => props.fileUrl.startsWith('http'))
 /**
  * 使用 Microsoft Office 在线预览

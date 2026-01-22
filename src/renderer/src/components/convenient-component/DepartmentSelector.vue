@@ -21,7 +21,7 @@
         :data="treeData"
         show-checkbox
         node-key="fullKey"
-        default-expand-all
+        :default-expand-all="false"
         :expand-on-click-node="false"
         :props="treeProps"
         :filter-node-method="customfilterHandle"

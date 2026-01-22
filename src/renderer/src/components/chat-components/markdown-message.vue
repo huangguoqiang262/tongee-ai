@@ -94,17 +94,17 @@ let triggerElement = ref(null)
 const currentKnowledgeId = ref(null)
 const currentDocumentInfo = ref(null)
 
-// 处理消息内容，将[kno_数字] 或[ kno_数字 ]格式转换为HTML  我还想将[eqm_1]或[ eqm_1 ]替换为按钮
+// 处理消息内容，将[kno_数字] 或[ kno_数字 ]或`[kno_数字]`或`[ kno_数字 ]`格式转换为HTML  我还想将[eqm_1]或[ eqm_1 ]替换为按钮
 // 带空格的也要匹配
 const processedMessage = computed(() => {
   return props.message
-    .replace(/\[\s?kno_(\d+)\s?\]/g, (match, id) => {
+    .replace(/`?\[\s?kno_(\d+)\s?\]`?/g, (match, id) => {
       return `<span class="knowledge-tag" data-knowledge-id="${id}">${id}</span>`
     })
-    .replace(/\[\s?ann_(\d+)\s?\]/g, (match, id) => {
+    .replace(/`?\[\s?ann_(\d+)\s?\]`?/g, (match, id) => {
       return `<span class="ann-tag" data-ann-id="${id}">${id}</span>`
     })
-    .replace(/\[\s?eqm_(\d+)\s?\]/g, (match, id) => {
+    .replace(/`?\[\s?eqm_(\d+)\s?\]`?/g, (match, id) => {
       return `<span class="equipment-tag" data-equipment-id="${id}">查看</span>`
     })
 })

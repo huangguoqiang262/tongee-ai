@@ -42,7 +42,7 @@
 
     <!-- Excel文档预览 -->
     <VueOfficeExcel
-      v-else-if="trimmedType === 'xlsx' || trimmedType === 'xls'"
+      v-else-if="trimmedType === 'xlsx' || trimmedType === 'xls' || trimmedType === 'csv'"
       ref="excelViewer"
       :src="encodedSrc"
       :options="{ xls: true }"

@@ -279,6 +279,15 @@ const rotateCiteFile = () => {
 //   })
 //   return Object.values(urlMap)
 // })
+const processedReasoning = computed(() => {
+  return props.message?.reasoningContentText
+    .replace(/`?\[\s?kno_(\d+)\s?\]`?/g, (match, id) => {
+      return `资料${id}`
+    })
+    .replace(/`?\[\s?ann_(\d+)\s?\]`?/g, (match, id) => {
+      return `资料${id}`
+    })
+})
 </script>
 
 <!-- 整个div是用来调整内部消息的位置，每条消息占的空间都是一整行，然后根据right还是left来调整内部的消息是靠右边还是靠左边 -->
@@ -447,7 +456,7 @@ const rotateCiteFile = () => {
           >
             <div class="line"></div>
             <div class="reasoning-content">
-              {{ props.message.reasoningContentText }}
+              {{ processedReasoning }}
             </div>
           </div>
           <MarkdownMessage

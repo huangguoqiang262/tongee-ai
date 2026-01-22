@@ -40,6 +40,8 @@
       :show="contextMenu.show"
       :x="contextMenu.x"
       :y="contextMenu.y"
+      :tabs="tabs"
+      :tab-id="contextMenu.tabId"
       @action="handleTabAction"
     />
   </div>
@@ -623,19 +625,20 @@ const handleDragEnd = (e) => {
 }
 
 // 右键菜单相关函数
-const showContextMenu = (e) => {
+// const showContextMenu = (e) => {
+//   e.preventDefault()
+//   e.stopPropagation()
+// }
+const showContextMenu = (e, tab) => {
   e.preventDefault()
   e.stopPropagation()
+  contextMenu.value = {
+    show: true,
+    x: e.clientX,
+    y: e.clientY,
+    tabId: tab.id
+  }
 }
-// const showContextMenu = (e, tab) => {
-//   e.preventDefault()
-//   contextMenu.value = {
-//     show: true,
-//     x: e.clientX,
-//     y: e.clientY,
-//     tabId: tab.id
-//   }
-// }
 
 const handleTabAction = (action) => {
   const tabId = contextMenu.value.tabId
@@ -662,10 +665,12 @@ const handleTabAction = (action) => {
       break
     case 'close-others':
       tabs.value = tabs.value.filter((tab) => tab.id === tabId)
+      activateTab(tabId)
       break
     case 'close-right': {
       const index = tabs.value.findIndex((tab) => tab.id === tabId)
       tabs.value = tabs.value.slice(0, index + 1)
+      activateTab(tabId)
       break
     }
     case 'close-all':

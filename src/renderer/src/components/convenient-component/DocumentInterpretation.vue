@@ -22,11 +22,7 @@
       :on-change="handleSelectChange"
       accept=".doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
     >
-      <img
-        class="document-icon"
-        src="@renderer/assets/documentInterpretation/document-icon.png"
-        alt=""
-      />
+      <documentSvgIcon class="document-icon" />
       <div class="tip-title">将文档拖动至此或选择文档</div>
       <div class="tip-format">
         支持.doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
@@ -90,7 +86,7 @@
       >
         <template #reference>
           <div class="continue-box">
-            <img class="icon" src="@renderer/assets/documentInterpretation/link-icon.png" alt="" />
+            <linkSvgIcon class="icon" />
             继续添加
           </div>
         </template>
@@ -148,6 +144,8 @@ import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
 import sendSvgIcon from '@renderer/assets/send-icon.svg'
+import documentSvgIcon from '@renderer/assets/documentInterpretation/document-icon.svg'
+import linkSvgIcon from '@renderer/assets/documentInterpretation/link-icon.svg'
 let replaceActiveTab = inject('replaceActiveTab')
 const message = ref({
   text: '',

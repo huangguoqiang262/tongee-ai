@@ -1,5 +1,11 @@
 <template>
-  <div class="SynergiaUpload-box">
+  <div
+    class="SynergiaUpload-box"
+    @dragenter.stop.prevent=""
+    @dragover.stop.prevent=""
+    @dragleave.stop.prevent=""
+    @drop.stop.prevent=""
+  >
     <el-dialog
       v-model="synergiaUploadVisible"
       draggable
@@ -18,112 +24,139 @@
         <div class="">协同文件</div>
       </template>
       <div class="form-box">
-        <div class="tab-list-box">
-          <div
-            v-for="item in tabList"
-            :key="item.id"
-            class="tab-item"
-            :class="{ active: activeTab === item.id }"
-            @click="tabChange(item.id)"
-          >
-            {{ item.name }}
-            <div v-if="item.id === '2' && props.unreadApplyNumber > 0" class="unreadApplyNumber">
-              {{ props.unreadApplyNumber > 99 ? 99 : props.unreadApplyNumber }}
-            </div>
-          </div>
-        </div>
         <div class="content-box">
-          <div v-if="activeTab === '1'" class="member-list-box">
-            <div class="member-header">
-              <div class="member-header-item">成员</div>
-              <div class="member-header-item member-header-item-role">项目角色</div>
-            </div>
-            <template v-if="props.memberList.length">
-              <div v-for="item in props.memberList" :key="item.id" class="member-item">
-                <div class="item-left">
-                  <img :src="item.user_avatar || DefaultAvatar" alt="" class="member-avatar" />
-                  <div class="member-name">{{ item.user_name }}</div>
-                </div>
-                <div class="item-right">
-                  <template v-if="item.is_creator == 1">
-                    <div class="creator">创建者</div>
-                  </template>
-                  <el-select
-                    v-else
-                    v-model="item.is_manager"
-                    :disabled="item.ding_uid == userInfo.ding_uid"
-                    placeholder="请选择角色"
-                    @change="handlePermissionsChange(item)"
-                  >
-                    <el-option label="普通成员" :value="0" />
-                    <el-option label="管理员" :value="1" />
-                    <el-option label="移出" :value="2" />
-                  </el-select>
-                </div>
-              </div>
-            </template>
-            <div v-else class="no-member">暂无成员</div>
-          </div>
-          <div v-if="activeTab === '2'" class="member-list-box">
-            <div class="member-header">
-              <div class="member-header-item">成员</div>
-              <div class="member-header-item member-header-item-role">操作</div>
-            </div>
-            <template v-if="props.applyList.length">
-              <div v-for="item in props.applyList" :key="item.id" class="member-item">
-                <div class="item-left">
-                  <img :src="item.avatar || DefaultAvatar" alt="" class="member-avatar" />
-                  <div class="member-name">{{ item.name }}</div>
-                </div>
-                <div class="item-right">
-                  <el-button
-                    class="confirm-btn"
-                    size="small"
-                    type="primary"
-                    @click="handleAdd(item)"
-                    >确认添加</el-button
-                  >
-                </div>
-              </div>
-            </template>
-            <div v-else class="no-member">暂无申请</div>
-          </div>
-          <div v-if="activeTab === '3'" class="add-member-box">
-            <template v-if="props.treeData.length">
-              <div class="tree-head-box">
-                <el-input
-                  v-model="filterText"
-                  class="filter-left-input"
-                  size="small"
-                  clearable
-                  placeholder="输入进行筛选"
+          <div class="left-container">
+            <el-form
+              ref="synergiaFormRef"
+              label-position="top"
+              :model="synergiaForm"
+              :rules="synergiaRules"
+              hide-required-asterisk
+              label-width="auto"
+              class="left-form-box"
+            >
+              <div class="head-title">文件信息</div>
+              <el-form-item label="文件类型" prop="type">
+                <el-select v-model="synergiaForm.type" class="input" placeholder="请选择文件类型">
+                  <el-option
+                    v-for="item in fileTypes"
+                    :key="item.id"
+                    :label="item.title"
+                    :value="item.id"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="期待完成时间" prop="finishTime">
+                <el-date-picker
+                  v-model="synergiaForm.finishTime"
+                  class="input date-picker"
+                  type="date"
+                  placeholder="选择时间"
                 />
-                <div class="hd-label">可选列：{{ choosableCount(props.treeData) }}</div>
-              </div>
-              <el-tree
-                ref="organizationRef"
-                style="width: 100%"
-                :data="props.treeData"
-                show-checkbox
-                node-key="ding_id"
-                default-expand-all
-                :expand-on-click-node="false"
-                :props="{ class: 'customNodeClass', label: 'name' }"
-                :filter-node-method="customfilterHandle"
-                @check="handleCheckChange"
+              </el-form-item>
+              <el-form-item label="修改人员" prop="modifiers">
+                <div class="tree-parent-box">
+                  <el-input
+                    v-model="modifiersSearch"
+                    class="input"
+                    type="text"
+                    placeholder="搜索修改人员"
+                    suffix-icon="Search"
+                    @focus="modifiersVisible = true"
+                  />
+                  <template v-if="modifiersVisible">
+                    <el-divider class="divider" border-style="dashed" />
+                    <el-tree
+                      ref="modifiersRef"
+                      style="width: 100%"
+                      :data="modifiersTreeData"
+                      show-checkbox
+                      node-key="ding_id"
+                      :expand-on-click-node="false"
+                      :props="{ class: 'customNodeClass', label: 'name' }"
+                      :filter-node-method="modifiersFilterHandle"
+                      @check="modifiersCheckChange"
+                    >
+                    </el-tree>
+                  </template>
+                </div>
+                <div class="tip">未选择人员</div>
+              </el-form-item>
+              <el-form-item label="批准人员（最多两名）" prop="approvers">
+                <div class="tree-parent-box">
+                  <el-input
+                    v-model="approversSearch"
+                    class="input"
+                    type="text"
+                    placeholder="搜索批准人员"
+                    suffix-icon="Search"
+                    @focus="approversVisible = true"
+                  />
+                  <template v-if="approversVisible">
+                    <el-divider class="divider" border-style="dashed" />
+                    <el-tree
+                      ref="approversRef"
+                      style="width: 100%"
+                      :data="approversTreeData"
+                      show-checkbox
+                      node-key="ding_id"
+                      :expand-on-click-node="false"
+                      :props="{ class: 'customNodeClass', label: 'name' }"
+                      :filter-node-method="approversFilterHandle"
+                      @check="approversCheckChange"
+                    >
+                    </el-tree>
+                  </template>
+                </div>
+                <div class="tip">未选择人员</div>
+              </el-form-item>
+            </el-form>
+            <div class="foot-box">
+              <el-button class="cancel-btn" size="small" @click="synergiaUploadVisible = false"
+                >取消</el-button
               >
-              </el-tree>
-              <div class="foot-box">
-                <el-button
-                  :disabled="!checkedNodes.length"
-                  class="confirm-btn"
-                  type="primary"
-                  @click="handleConfirm"
-                  >确认</el-button
-                >
+              <el-button class="confirm-btn" size="small" type="primary" @click="handleAdd(item)"
+                >上传协同文件</el-button
+              >
+            </div>
+          </div>
+          <div class="right-container">
+            <div class="head-title">文件上传</div>
+            <el-upload
+              class="upload-box"
+              drag
+              :show-file-list="false"
+              :auto-upload="false"
+              :on-change="handleFiileChange"
+              accept=".doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
+            >
+              <documentSvgIcon class="document-icon" />
+              <div class="tip-title">将文档拖动至此或选择文档</div>
+              <div class="tip-format">
+                支持.doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
               </div>
-            </template>
-            <div v-else class="empty">暂无可选成员</div>
+              <el-button class="btn-box" type="primary">选择文件</el-button>
+            </el-upload>
+            <div v-if="synergiaForm.file" class="uploaded-box">
+              <div class="uploaded-title">已选文件</div>
+              <div class="uploaded-list">
+                <div class="uploaded-item">
+                  <img class="icon" :src="getFileIcon(synergiaForm.file)" alt="" />
+                  <div class="item-content">
+                    <div class="item-name">{{ synergiaForm.file.name }}</div>
+                    <div class="item-size-ext">
+                      <span class="ext">
+                        {{ synergiaForm.file.name.split('.').pop().toUpperCase() }}
+                      </span>
+                      <span>{{ formatFileSize(synergiaForm.file.size) }}</span>
+                    </div>
+                  </div>
+                  <el-icon class="close-icon" color="#737475" @click="handleRemove(item)"
+                    ><Close
+                  /></el-icon>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -132,66 +165,144 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useUserInfo } from '@renderer/hooks/checkLogin'
-import DefaultAvatar from '@renderer/assets/default-avatar.png'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import cloneDeep from 'lodash.clonedeep'
+// import { useUserInfo } from '@renderer/hooks/checkLogin'
+// import DefaultAvatar from '@renderer/assets/default-avatar.png'
+import documentSvgIcon from '@renderer/assets/documentInterpretation/document-icon.svg'
+import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
+import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
+import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
+import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
+import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
+import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
 const synergiaUploadVisible = defineModel({ type: Boolean })
-const emits = defineEmits(['setPermission'])
-const userInfo = useUserInfo()
-let organizationRef = ref(null)
-let checkedNodes = ref([])
+// const emits = defineEmits(['setPermission'])
+// const userInfo = useUserInfo()
+let modifiersRef = ref(null)
+let approversRef = ref(null)
 const props = defineProps({
   treeData: {
     type: Array,
     default: () => []
   },
-  memberList: {
-    type: Array,
-    default: () => []
+  knowId: {
+    type: [String, Number],
+    default: ''
   },
-  applyList: {
-    type: Array,
-    default: () => []
-  },
-  unreadApplyNumber: {
-    type: Number,
-    default: 0
+  itemId: {
+    type: [String, Number],
+    default: ''
   }
 })
-let tabList = ref([
+let synergiaFormRef = ref(null)
+let synergiaForm = ref({
+  finishTime: '',
+  type: '',
+  modifiers: [],
+  approvers: [],
+  file: null
+})
+const modifiersTreeData = ref(cloneDeep(props.treeData))
+const approversTreeData = ref(cloneDeep(props.treeData))
+let modifiersSearch = ref('')
+let approversSearch = ref('')
+let modifiersVisible = ref(false)
+let approversVisible = ref(false)
+let synergiaRules = ref({
+  finishTime: [{ required: true, message: '请选择期待完成时间', trigger: ['blur'] }],
+  type: [{ required: true, message: '请选择文件类型', trigger: ['blur'] }],
+  modifiers: [{ required: true, message: '请选择修改人员', trigger: ['blur'] }],
+  approvers: [{ required: true, message: '请选择批准人员', trigger: ['blur'] }],
+  file: [{ required: true, message: '请上传文件', trigger: ['change'] }]
+})
+let fileTypes = ref([
   {
-    name: '成员',
+    title: '注册资料',
     id: '1'
   },
   {
-    name: '申请',
+    title: 'DHF资料',
     id: '2'
   },
   {
-    name: '添加成员',
+    title: 'DMR文件',
     id: '3'
+  },
+  {
+    title: '体系文件',
+    id: '4'
+  },
+  {
+    title: '其他文件',
+    id: '5'
   }
 ])
-let activeTab = ref('1')
-const tabChange = (id) => {
-  activeTab.value = id
-}
-// 统计用户节点数量
-const choosableCount = (nodes) => {
-  let count = 0
-  const countNodes = (nodeList) => {
-    nodeList.forEach((node) => {
-      // 只统计用户类型
-      if (node.is_person) {
-        count++
-      }
-      if (node.children && node.children.length > 0) {
-        countNodes(node.children)
-      }
-    })
+// 文件选取回调
+const handleFiileChange = (file) => {
+  const allowedTypes = [
+    '.txt',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.csv',
+    '.xls',
+    '.xlsx',
+    '.ppt',
+    '.pptx'
+  ]
+  const fileExt = '.' + file.raw.name.split('.').pop().toLowerCase()
+  if (!allowedTypes.includes(fileExt)) {
+    // eslint-disable-next-line no-undef
+    ElMessage.warning('不支持的文件类型')
+    return
   }
-  countNodes(nodes)
-  return count
+  synergiaForm.value.file = file.raw
+}
+// 删除文件
+const handleRemove = () => {
+  synergiaForm.value.file = null
+}
+// 获取文件图标
+const getFileIcon = (file) => {
+  // 根据文件扩展名返回不同的图标
+  const ext = file.name?.split('.').pop()?.toLowerCase()
+  const iconMap = {
+    doc: wordIcon,
+    docx: wordIcon,
+    pdf: pdfIcon,
+    xls: excelIcon,
+    xlsx: excelIcon,
+    csv: csvIcon,
+    ppt: pptIcon,
+    pptx: pptIcon,
+    txt: txtIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon
+  }
+
+  return iconMap[ext] || wordIcon
+}
+const formatFileSize = (B) => {
+  if (!B) return '0 B'
+  if (B < 1024) {
+    return B + ' B'
+  } else if (B < 1024 * 1024) {
+    return (B / 1024).toFixed(2) + ' KB'
+  } else if (B < 1024 * 1024 * 1024) {
+    return (B / (1024 * 1024)).toFixed(2) + ' MB'
+  } else if (B < 1024 * 1024 * 1024 * 1024) {
+    return (B / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+  } else {
+    return (B / (1024 * 1024 * 1024 * 1024)).toFixed(2) + ' TB'
+  }
 }
 // 递归标记节点选中状态
 const markSelectedNodes = (checkedNodes) => {
@@ -214,53 +325,60 @@ const markSelectedNodes = (checkedNodes) => {
   //   })
   return ding_ids
 }
-const handleConfirm = () => {
-  emits('setPermission', {
-    type: 'join',
-    data: {
-      ding_ids: checkedNodes.value.join(',')
-    }
-  })
-}
 // 处理添加成员
-const handleAdd = (item) => {
-  emits('setPermission', {
-    type: 'allowable',
-    data: {
-      join_id: item.id
-    }
-  })
-}
-// 处理权限变更
-const handlePermissionsChange = (item) => {
-  var option = {
-    type: 'member',
-    data: {
-      ding_uid: item.ding_uid,
-      is_manager: item.is_manager,
-      is_remove: item.is_manager == 2 ? 1 : 0
-    }
+const handleAdd = () => {
+  if (synergiaFormRef.value) {
+    synergiaFormRef.value.validate((valid) => {
+      console.log(valid)
+    })
   }
-  emits('setPermission', option)
+  // emits('setPermission', {
+  //   type: 'allowable',
+  //   data: {
+  //     join_id: item.id
+  //   }
+  // })
 }
-// 筛选文本
-let filterText = ref('')
-watch(filterText, (val) => {
-  organizationRef.value?.filter(val)
+watch(modifiersSearch, (val) => {
+  modifiersRef.value?.filter(val)
 })
-const customfilterHandle = (value, data) => {
+watch(approversSearch, (val) => {
+  approversRef.value?.filter(val)
+})
+const hidePersonList = (e) => {
+  if (!e.target.closest('.tree-parent-box') && modifiersVisible.value) {
+    modifiersVisible.value = false
+  }
+  if (!e.target.closest('.tree-parent-box') && approversVisible.value) {
+    approversVisible.value = false
+  }
+}
+onMounted(() => {
+  document.addEventListener('click', hidePersonList)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', hidePersonList)
+})
+const modifiersFilterHandle = (value, data) => {
   if (!value) return true
   return data.name.includes(value)
 }
-const getCompleteSelectedTree = () => {
-  const tempCheckedNodes = organizationRef.value.getCheckedNodes(false, false)
+const approversFilterHandle = (value, data) => {
+  if (!value) return true
+  return data.name.includes(value)
+}
+const getCompleteSelectedTree = (personRef) => {
+  const tempCheckedNodes = personRef.value.getCheckedNodes(false, false)
   // 标记选中状态
   // const uids = markSelectedNodes(props.treeData, tempCheckedNodes)
   const uids = markSelectedNodes(tempCheckedNodes)
   return uids
 }
-const handleCheckChange = () => {
-  checkedNodes.value = getCompleteSelectedTree()
+const modifiersCheckChange = () => {
+  synergiaForm.value.modifiers = getCompleteSelectedTree(modifiersRef)
+}
+const approversCheckChange = () => {
+  synergiaForm.value.approvers = getCompleteSelectedTree(approversRef)
 }
 </script>
 
@@ -268,7 +386,8 @@ const handleCheckChange = () => {
 .SynergiaUpload-box {
   :deep(.SynergiaUpload-box-dialog) {
     .el-dialog {
-      height: 492px;
+      height: 672px;
+      min-width: 1060px;
       padding: 17px 20px 20px;
       .el-dialog__header {
         padding-bottom: 10px;
@@ -295,186 +414,100 @@ const handleCheckChange = () => {
 
         .form-box {
           box-sizing: border-box;
-          .tab-list-box {
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            .tab-item {
-              position: relative;
-              width: 110px;
-              height: 32px;
-              line-height: 30px;
-              text-align: center;
-              font-size: 14px;
-              color: var(--default-font-color);
-              background: #f9f9f9;
-              border-radius: 6px;
-              border: 1px solid #f9f9f9;
-              cursor: pointer;
-              transition: all 0.2s linear;
-              &.active {
-                background: var(--el-color-primary-light-9);
-                border-color: var(--el-color-primary);
-                color: var(--el-color-primary);
-                &:hover {
-                  opacity: 0.8;
-                }
-              }
-              .unreadApplyNumber {
-                position: absolute;
-                top: -2px;
-                right: 15px;
-                width: 16px;
-                height: 16px;
-                background: #ff5151;
-                border-radius: 50%;
-                font-size: 10px;
-                color: #fff;
-                text-align: center;
-                line-height: 16px;
-              }
-            }
-          }
           .content-box {
+            box-sizing: border-box;
             width: 100%;
-            height: 354px;
-            background: #f9f9f9;
-            border-radius: 8px;
-            padding: 9px 0px 0;
-            .member-list-box {
-              padding: 0 19px;
+            height: 596px;
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #efefef;
+            display: flex;
+            align-items: flex-start;
+            overflow: hidden;
+            .head-title {
+              flex-shrink: 0;
+              margin-bottom: 20px;
+              font-weight: 600;
+              font-size: 16px;
+              color: var(--default-font-color);
+              line-height: 22px;
+            }
+            .left-container {
+              box-sizing: border-box;
+              padding: 20px 10px 20px 20px;
+              width: 50%;
               height: 100%;
-              overflow-y: auto;
-              &::-webkit-scrollbar {
-                width: 4px;
-                height: 4px;
+              overflow: hidden;
+              position: relative;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              // .el-form-item.is-error {
+              //   .el-select__wrapper,
+              //   .el-input__wrapper {
+              //     box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
+              //   }
+              // }
+              .left-form-box {
+                flex: 1;
+                width: 100%;
+                overflow-y: auto;
               }
-
-              &::-webkit-scrollbar-thumb {
-                border-radius: 2px;
-                background-color: #dddcdc;
-
-                &:hover {
-                  background-color: #909090;
-                }
-              }
-              .member-header {
-                position: sticky;
-                left: 0;
-                top: 0;
-                z-index: 1;
-                background: #f9f9f9;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 10px;
-                font-size: 14px;
-                color: #909090;
-                line-height: 30px;
-                .member-header-item {
-                  flex-shrink: 0;
-                  width: 76px;
-                  text-align: center;
-                  &.member-header-item-role {
-                    width: 124px;
-                  }
-                }
-              }
-              .no-member {
-                height: 260px;
-                line-height: 260px;
-                text-align: center;
-                font-size: 13px;
-                color: #909090;
-              }
-              .member-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                height: 51px;
-                font-size: 14px;
+              .el-form-item__label {
                 color: var(--default-font-color);
-                line-height: 20px;
-                border-bottom: 1px solid #efefef;
-                .item-left {
-                  flex: 1;
-                  overflow: hidden;
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                  .member-avatar {
-                    display: block;
-                    width: 16px;
-                    height: 16px;
-                    border-radius: 50%;
-                  }
-                  .member-name {
-                    flex-shrink: 0;
-                  }
-                }
-                .item-right {
-                  flex-shrink: 0;
-                  width: 124px;
-                  .creator {
-                    width: 100%;
-                    padding: 0 12px;
-                  }
-                  .el-select__wrapper {
-                    background-color: #eaeaea !important;
-                    border-radius: 4px !important;
-                    box-shadow: 0 0 0 1px #f9f9f9 inset;
-                    &.is-focus {
-                      box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+              }
+              .input {
+                width: 100%;
+                height: 48px;
+                &.date-picker {
+                  position: relative;
+                  .el-input__wrapper {
+                    padding-right: 33px;
+                    .el-input__prefix {
+                      position: absolute;
+                      top: 50%;
+                      right: 11px;
+                      transform: translateY(-50%);
+                      width: 22px;
+                      height: 100%;
+                      .el-icon {
+                        margin-left: 8px;
+                        margin-right: 0;
+                      }
                     }
                   }
-                  .confirm-btn {
-                    display: block;
-                    width: 82px;
-                    height: 26px;
-                    margin: 0 10px 0 auto;
+                }
+                .el-select__wrapper {
+                  height: 100%;
+                  border-radius: 6px;
+                  background: #f9f9f9;
+                  box-shadow: 0 0 0 1px #f9f9f9 inset;
+                  &.is-focus {
+                    box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+                  }
+                }
+                .el-input__wrapper {
+                  border-radius: 6px;
+                  background: #f9f9f9;
+                  box-shadow: 0 0 0 1px #f9f9f9 inset;
+                  &.is-focus {
+                    box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
                   }
                 }
               }
-            }
-            .add-member-box {
-              padding: 0 19px;
-              width: 100%;
-              height: 100%;
-              .tree-head-box {
-                box-sizing: border-box;
-                position: sticky;
-                left: 0;
-                top: 0;
-                z-index: 1;
-                padding-top: 5px;
-                padding-left: 6px;
-                margin-bottom: 10px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 0 20px;
+              .tree-parent-box {
+                width: 100%;
                 background: #f9f9f9;
-                .hd-label {
-                  font-size: 14px;
-                  color: #909090;
-                  line-height: 18px;
-                }
-                .filter-left-input {
-                  flex: 1;
-                  height: 28px;
-                  font-size: 12px;
-                  .el-input__wrapper {
-                    border-radius: 6px !important;
-                    padding: 1px 10px;
-                  }
+                border-radius: 6px;
+                overflow: hidden;
+                .divider {
+                  margin: 0 auto;
+                  width: calc(100% - 20px);
                 }
               }
               .el-tree {
-                padding-right: 40px;
-                background: transparent;
-                height: calc(100% - 110px);
-                overflow-y: auto;
+                padding: 20px 40px 20px 25px;
+                background: #f9f9f9;
                 &::-webkit-scrollbar {
                   width: 4px;
                   height: 4px;
@@ -487,26 +520,6 @@ const handleCheckChange = () => {
                   &:hover {
                     background-color: #909090;
                   }
-                }
-              }
-              .empty {
-                height: 260px;
-                line-height: 260px;
-                text-align: center;
-                font-size: 13px;
-                color: #909090;
-              }
-              .foot-box {
-                height: 63px;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                gap: 10px;
-                border-top: 1px solid #efefef;
-                .confirm-btn {
-                  width: 80px;
-                  height: 36px;
-                  border-radius: 8px;
                 }
               }
               .customNodeClass {
@@ -546,6 +559,149 @@ const handleCheckChange = () => {
 
                   svg {
                     display: none;
+                  }
+                }
+              }
+              .tip {
+                margin-top: 12px;
+                font-size: 12px;
+                color: #909090;
+                line-height: 16px;
+              }
+              .foot-box {
+                flex-shrink: 0;
+                margin-top: 20px;
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 10px;
+                .cancel-btn,
+                .confirm-btn {
+                  height: 36px;
+                  width: 112px;
+                  border-radius: 8px;
+                  border: none;
+                  font-size: 14px;
+                }
+
+                .cancel-btn {
+                  width: 80px;
+                  background: #efefef;
+                  color: var(--default-font-color);
+                }
+              }
+            }
+            .right-container {
+              box-sizing: border-box;
+              padding: 20px 20px 20px 10px;
+              width: 50%;
+              height: 100%;
+              overflow: hidden;
+              display: flex;
+              flex-direction: column;
+              .upload-box {
+                flex: 1;
+                overflow: hidden;
+                .el-upload {
+                  width: 100%;
+                  height: 100%;
+                }
+                .el-upload-dragger {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  width: 100%;
+                  height: 100%;
+                  background: #f9f9f9;
+                  border-radius: 10px;
+                }
+
+                .document-icon {
+                  margin-bottom: 20px;
+                  width: 28px;
+                  height: 33px;
+                }
+
+                .tip-title {
+                  margin-bottom: 10px;
+                  font-size: 14px;
+                  color: var(--default-font-color);
+                  line-height: 20px;
+                }
+
+                .tip-format {
+                  margin-bottom: 40px;
+                  font-size: 14px;
+                  color: #aeaeae;
+                  line-height: 20px;
+                }
+
+                .btn-box {
+                  margin-bottom: 60px;
+                  width: 104px;
+                  height: 36px;
+                  border-radius: 8px;
+                }
+              }
+              .uploaded-box {
+                .uploaded-title {
+                  margin: 20px 0 14px;
+                  font-size: 14px;
+                  color: var(--default-font-color);
+                  line-height: 20px;
+                }
+                .uploaded-list {
+                  .uploaded-item {
+                    box-sizing: border-box;
+                    padding: 12px 10px;
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: space-between;
+                    gap: 0 4px;
+                    width: 100%;
+                    height: 80px;
+                    background: #f9f9f9;
+                    border-radius: 4px;
+                    overflow: hidden;
+                    .icon {
+                      flex-shrink: 0;
+                      align-self: center;
+                      width: 36px;
+                      height: 36px;
+                    }
+                    .item-content {
+                      flex: 1;
+                      overflow: hidden;
+                      .item-name {
+                        margin-bottom: 14px;
+                        font-size: 14px;
+                        color: var(--default-font-color);
+                        line-height: 20px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                      }
+                      .item-size-ext {
+                        font-size: 10px;
+                        color: #909090;
+                        line-height: 12px;
+                        .ext {
+                          margin-right: 8px;
+                          text-transform: uppercase;
+                        }
+                      }
+                    }
+                    .close-icon {
+                      flex-shrink: 0;
+                      align-self: center;
+                      font-size: 18px;
+                      cursor: pointer;
+                      &:hover {
+                        color: var(--el-color-primary);
+                      }
+                    }
                   }
                 }
               }

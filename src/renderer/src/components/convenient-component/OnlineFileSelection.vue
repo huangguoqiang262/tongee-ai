@@ -79,7 +79,12 @@
                   />
                   <div class="item-content">
                     <div class="content-left">
-                      <img v-if="item.item_type == 1" :src="item.file_icon" alt="" />
+                      <img
+                        v-if="item.item_type == 1"
+                        :src="item.file_icon"
+                        alt=""
+                        @error="(e) => (e.target.src = defaultImg)"
+                      />
                       <!-- <img
                         v-else-if="item.item_type == 2"
                         :src="item.picurl || catalogueIcon"
@@ -137,6 +142,7 @@ import personageRepositoryIcon from '@renderer/assets/repository/personage-repos
 import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 // import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
+import defaultImg from '@renderer/assets/repository/default-img.png'
 import { get_file_list } from '@renderer/api/index'
 const onlineFileVisible = defineModel({ type: Boolean })
 const list = ref([])

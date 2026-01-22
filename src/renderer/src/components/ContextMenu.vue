@@ -1,66 +1,129 @@
 <template>
   <div v-if="show" class="context-menu" :style="{ left: x + 'px', top: y + 'px' }">
-    <div class="context-menu-item" @click="$emit('action', 'new')">
-      <i class="fas fa-plus"></i>
-      <span>新建标签页</span>
-    </div>
-    <div class="context-menu-divider"></div>
-    <div class="context-menu-item" @click="$emit('action', 'reload')">
-      <i class="fas fa-redo"></i>
-      <span>重新加载</span>
-    </div>
-    <div class="context-menu-item" @click="$emit('action', 'duplicate')">
-      <i class="fas fa-copy"></i>
-      <span>复制标签页</span>
-    </div>
-    <div class="context-menu-divider"></div>
-    <div class="context-menu-item" @click="$emit('action', 'close')">
-      <i class="fas fa-times"></i>
-      <span>关闭标签页</span>
+    <div
+      v-for="item in actions"
+      :key="item.action"
+      class="context-menu-item"
+      :class="{ disabled: item.disabled }"
+      @click="handleAction(item.action, item.disabled)"
+    >
+      <span>{{ item.title }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { ref, watchEffect } from 'vue'
+const props = defineProps({
   show: Boolean,
   x: Number,
-  y: Number
+  y: Number,
+  tabs: {
+    type: Array,
+    default: () => []
+  },
+  tabId: {
+    type: [String, Number],
+    default: ''
+  }
 })
-
-defineEmits(['action'])
+let whiteList = [
+  'SearchHome',
+  'HomePage',
+  'ImageProductionChat',
+  'IntelligentWritingChat',
+  'ChatPage',
+  'DocumentDetail'
+]
+const actions = ref([
+  {
+    title: '新建标签页',
+    action: 'new',
+    disabled: false
+  },
+  {
+    title: '复制标签页',
+    action: 'duplicate',
+    disabled: false
+  },
+  {
+    title: '关闭标签页',
+    action: 'close',
+    disabled: false
+  },
+  {
+    title: '关闭其他标签页',
+    action: 'close-others',
+    disabled: false
+  },
+  {
+    title: '关闭右侧标签页',
+    action: 'close-right',
+    disabled: false
+  }
+])
+watchEffect(() => {
+  const tabIndex = props.tabs.findIndex((tab) => tab.id === props.tabId)
+  if (tabIndex !== -1) {
+    actions.value[1].disabled = !whiteList.includes(props.tabs[tabIndex].url)
+    if (tabIndex == props.tabs.length - 1) {
+      actions.value[4].disabled = true
+    } else if (props.tabs.length == 1) {
+      actions.value[3].disabled = true
+      actions.value[4].disabled = true
+    } else {
+      actions.value[3].disabled = false
+      actions.value[4].disabled = false
+    }
+  } else {
+    actions.value[1].disabled = false
+    actions.value[3].disabled = false
+    actions.value[4].disabled = false
+  }
+})
+const emits = defineEmits(['action'])
+const handleAction = (action, disabled) => {
+  if (disabled) {
+    return
+  }
+  emits('action', action)
+}
 </script>
 
 <style scoped lang="scss">
 .context-menu {
   position: fixed;
   background: #fff;
-  border-radius: 6px;
+  border-radius: 10px;
   box-shadow: 0 4px 15px #e0e0e0;
   z-index: 1000;
-  min-width: 180px;
+  padding: 8px 0;
+  min-width: 150px;
   overflow: hidden;
 }
 
 .context-menu-item {
   padding: 10px 15px;
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   color: var(--default-font-color);
   transition: background 0.2s;
+  &.disabled {
+    cursor: not-allowed;
+    color: #66686b;
+  }
 }
 
 .context-menu-item:hover {
-  background: #e0e0e0;
+  background: var(--primary-bg-color);
 }
 
 .context-menu-divider {
   height: 1px;
   background: #e0e0e0;
-  margin: 4px 0;
 }
 
 .empty-state {

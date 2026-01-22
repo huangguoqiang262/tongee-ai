@@ -419,14 +419,14 @@
                     <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
                     <div class="title">导入网页</div>
                   </div>
-                  <div
+                  <!-- <div
                     v-if="activeRepository.is_public == 1"
                     class="item"
                     @click="beforeUploadFiles('synergia')"
                   >
                     <img class="icon" src="@renderer/assets/popover/synergia-icon.png" alt="" />
                     <div class="title">协同文件</div>
-                  </div>
+                  </div> -->
                 </div>
               </el-popover>
               <el-popover
@@ -648,7 +648,12 @@
                       size="large"
                       @click.stop="contextMenu.show = false"
                     />
-                    <img class="cover-img cover-file-img" :src="item.info?.icon" alt="" />
+                    <img
+                      class="cover-img cover-file-img"
+                      :src="item.info?.icon"
+                      alt=""
+                      @error="(e) => (e.target.src = defaultImg)"
+                    />
                     <div class="item-right">
                       <div v-if="!item.isCreated" class="title">
                         <!-- 将字符串分割为每个字符 -->
@@ -1034,7 +1039,13 @@
         </div>
       </template>
     </el-dialog>
-    <synergia-upload v-model="synergiaUploadVisible"></synergia-upload>
+    <synergia-upload
+      v-model="synergiaUploadVisible"
+      :know-id="activeRepository.id"
+      :tree-data="repositoryMemberTree"
+      :item-id="parentItemId"
+    >
+    </synergia-upload>
   </div>
 </template>
 
@@ -1078,6 +1089,7 @@ import squareSvgIcon from '@renderer/assets/repository/square-icon.svg'
 import headSquareIcon from '@renderer/assets/repository/head-square-icon.png'
 import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
+import defaultImg from '@renderer/assets/repository/default-img.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
 import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import {
@@ -1178,6 +1190,7 @@ const handleDroppedFiles = (files) => {
       '.pdf',
       '.doc',
       '.docx',
+      '.csv',
       '.xls',
       '.xlsx',
       '.ppt',
@@ -2002,6 +2015,7 @@ const createOrRename = (item) => {
         'docx',
         'xls',
         'xlsx',
+        'csv',
         'ppt',
         'pptx'
       ]
@@ -2305,6 +2319,7 @@ const handleContextMenuAction = ({ action }) => {
           'docx',
           'xls',
           'xlsx',
+          'csv',
           'ppt',
           'pptx'
         ]
@@ -2630,6 +2645,7 @@ const handleDirectorySelect = (event) => {
     'docx',
     'ppt',
     'pptx',
+    'csv',
     'png',
     'jpg',
     'jpeg',
@@ -2638,6 +2654,8 @@ const handleDirectorySelect = (event) => {
   const files = Array.from(event.target.files).filter((file) =>
     exts.includes(file.name.split('.').pop())
   )
+  console.log(files);
+
   if (!files.length) {
     // eslint-disable-next-line no-undef
     ElMessage({

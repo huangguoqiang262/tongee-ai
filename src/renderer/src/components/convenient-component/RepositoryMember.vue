@@ -106,7 +106,7 @@
                 :data="props.treeData"
                 show-checkbox
                 node-key="ding_id"
-                default-expand-all
+                :default-expand-all="false"
                 :expand-on-click-node="false"
                 :props="{ class: 'customNodeClass', label: 'name' }"
                 :filter-node-method="customfilterHandle"
