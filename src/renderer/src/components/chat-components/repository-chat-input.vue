@@ -90,13 +90,30 @@
           </template>
         </div>
         <div class="btn-box">
-          <!-- <img
-            v-if="message.text.trim().length && !isChatting"
-            class="send-icon"
-            src="@renderer/assets/send-icon.png"
-            alt=""
-            @click="sendMessage"
-          /> -->
+          <el-popover
+            ref="dialogueSettingsPopover"
+            placement="top"
+            :width="536"
+            trigger="click"
+            :show-arrow="false"
+            popper-class="dialogueSettingsPopover"
+            @show="settingVisible = true"
+            @hide="settingVisible = false"
+          >
+            <template #reference>
+              <DialogueSettingsSvgIcon
+                class="dialogueSettingsSvg"
+                :class="settingVisible ? 'visible' : ''"
+              ></DialogueSettingsSvgIcon>
+            </template>
+            <DialogueSettings
+              :config="defaultModelConfig"
+              :model-config="modelConfig"
+              @close-settings="closeSettings"
+              @change="handleChange"
+            ></DialogueSettings>
+          </el-popover>
+
           <sendSvgIcon
             v-if="message.text.trim().length && !isChatting"
             class="send-icon"
@@ -116,10 +133,12 @@
 </template>
 <script>
 import sendSvgIcon from '@renderer/assets/send-icon.svg'
+import DialogueSettingsSvgIcon from '@renderer/assets/chat-icon/dialogueSettings-icon.svg'
 export default {
   name: 'RepositoryChatInput',
   components: {
-    sendSvgIcon
+    sendSvgIcon,
+    DialogueSettingsSvgIcon
   },
   inject: ['addNewTab'],
   props: {
@@ -150,9 +169,26 @@ export default {
     enableSearch: {
       type: [Number, String],
       default: 2
+    },
+    // 模型默认配置
+    defaultModelConfig: {
+      type: Object,
+      default: () => {}
+    },
+    // 模型当前配置
+    modelConfig: {
+      type: Object,
+      default: () => {}
     }
   },
-  emits: ['stopChat', 'networkChange', 'selectModel', 'uploadedAttachment', 'send'],
+  emits: [
+    'stopChat',
+    'networkChange',
+    'selectModel',
+    'uploadedAttachment',
+    'send',
+    'configurationChange'
+  ],
   data() {
     return {
       knowledge_id: '',
@@ -168,7 +204,8 @@ export default {
       fileList: [],
       showPrevBtn: false,
       showNextBtn: false,
-      isHoveringAttachBox: false
+      isHoveringAttachBox: false,
+      settingVisible: false
     }
   },
   watch: {
@@ -195,6 +232,12 @@ export default {
     )
   },
   methods: {
+    handleChange(configuration) {
+      this.$emit('configurationChange', configuration)
+    },
+    closeSettings() {
+      this.$refs.dialogueSettingsPopover.hide()
+    },
     // 是否联网
     networkChange() {
       if (!this.enableSearch || this.enableSearch == 2) return
@@ -917,6 +960,18 @@ export default {
         display: flex;
         justify-content: flex-end;
         align-items: center;
+        .dialogueSettingsSvg {
+          margin-right: 18px;
+          width: 24px;
+          height: 24px;
+          color: var(--default-font-color);
+          outline: none;
+          transition: all 0.1s linear;
+          cursor: pointer;
+          &.visible {
+            color: var(--el-color-primary);
+          }
+        }
         .send-icon {
           margin-left: 5px;
           flex-shrink: 0;
@@ -980,6 +1035,11 @@ export default {
 }
 </style>
 <style lang="scss">
+.dialogueSettingsPopover {
+  padding: 16px !important;
+  border-radius: 12px !important;
+  transform: translateX(-20px);
+}
 .message-input-model-select {
   .el-select-dropdown__list {
     padding: 10px;

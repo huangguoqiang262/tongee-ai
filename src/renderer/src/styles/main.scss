@@ -63,6 +63,9 @@ body {
   }
   .el-message-box {
     border-radius: 8px;
+    .el-button {
+      border-radius: 6px;
+    }
   }
   .el-dialog {
     padding: 17px 20px;

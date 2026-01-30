@@ -36,8 +36,12 @@
               class="left-form-box"
             >
               <div class="head-title">文件信息</div>
-              <el-form-item label="文件类型" prop="type">
-                <el-select v-model="synergiaForm.type" class="input" placeholder="请选择文件类型">
+              <el-form-item label="文件类型" prop="type_id">
+                <el-select
+                  v-model="synergiaForm.type_id"
+                  class="input"
+                  placeholder="请选择文件类型"
+                >
                   <el-option
                     v-for="item in fileTypes"
                     :key="item.id"
@@ -52,6 +56,8 @@
                   class="input date-picker"
                   type="date"
                   placeholder="选择时间"
+                  value-format="x"
+                  :disabled-date="disabledDate"
                 />
               </el-form-item>
               <el-form-item label="修改人员" prop="modifiers">
@@ -64,23 +70,34 @@
                     suffix-icon="Search"
                     @focus="modifiersVisible = true"
                   />
-                  <template v-if="modifiersVisible">
-                    <el-divider class="divider" border-style="dashed" />
-                    <el-tree
-                      ref="modifiersRef"
-                      style="width: 100%"
-                      :data="modifiersTreeData"
-                      show-checkbox
-                      node-key="ding_id"
-                      :expand-on-click-node="false"
-                      :props="{ class: 'customNodeClass', label: 'name' }"
-                      :filter-node-method="modifiersFilterHandle"
-                      @check="modifiersCheckChange"
-                    >
-                    </el-tree>
-                  </template>
+                  <el-divider v-show="modifiersVisible" class="divider" border-style="dashed" />
+                  <el-tree
+                    v-show="modifiersVisible"
+                    ref="modifiersRef"
+                    style="width: 100%"
+                    :data="modifiersTreeData"
+                    show-checkbox
+                    node-key="key"
+                    :expand-on-click-node="false"
+                    :props="{ class: 'customNodeClass', label: 'title' }"
+                    :filter-node-method="modifiersFilterHandle"
+                    @check="modifiersCheckChange"
+                  >
+                  </el-tree>
                 </div>
-                <div class="tip">未选择人员</div>
+                <div v-if="synergiaForm.modifiers.length" class="person-list">
+                  <el-tag
+                    v-for="(tag, i) in synergiaForm.modifiers"
+                    :key="i"
+                    closable
+                    round
+                    type="primary"
+                    @close="removeModifier(i)"
+                  >
+                    {{ tag.title }}
+                  </el-tag>
+                </div>
+                <div v-else class="tip">未选择人员</div>
               </el-form-item>
               <el-form-item label="批准人员（最多两名）" prop="approvers">
                 <div class="tree-parent-box">
@@ -92,23 +109,34 @@
                     suffix-icon="Search"
                     @focus="approversVisible = true"
                   />
-                  <template v-if="approversVisible">
-                    <el-divider class="divider" border-style="dashed" />
-                    <el-tree
-                      ref="approversRef"
-                      style="width: 100%"
-                      :data="approversTreeData"
-                      show-checkbox
-                      node-key="ding_id"
-                      :expand-on-click-node="false"
-                      :props="{ class: 'customNodeClass', label: 'name' }"
-                      :filter-node-method="approversFilterHandle"
-                      @check="approversCheckChange"
-                    >
-                    </el-tree>
-                  </template>
+                  <el-divider v-show="approversVisible" class="divider" border-style="dashed" />
+                  <el-tree
+                    v-show="approversVisible"
+                    ref="approversRef"
+                    style="width: 100%"
+                    :data="approversTreeData"
+                    show-checkbox
+                    node-key="key"
+                    :expand-on-click-node="false"
+                    :props="{ class: 'customNodeClass', label: 'title' }"
+                    :filter-node-method="approversFilterHandle"
+                    @check-change="approversCheckChange"
+                  >
+                  </el-tree>
                 </div>
-                <div class="tip">未选择人员</div>
+                <div v-if="synergiaForm.approvers.length" class="person-list">
+                  <el-tag
+                    v-for="(tag, i) in synergiaForm.approvers"
+                    :key="i"
+                    closable
+                    round
+                    type="primary"
+                    @close="removeApprover(i)"
+                  >
+                    {{ tag.title }}
+                  </el-tag>
+                </div>
+                <div v-else class="tip">未选择人员</div>
               </el-form-item>
             </el-form>
             <div class="foot-box">
@@ -165,8 +193,13 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import cloneDeep from 'lodash.clonedeep'
+import { ref, watch, onBeforeMount, onMounted, onUnmounted, nextTick } from 'vue'
+import {
+  org_organ_user_tree,
+  synergia_upload_file,
+  synergia_type_list
+} from '@renderer/api/repository'
+// import cloneDeep from 'lodash.clonedeep'
 // import { useUserInfo } from '@renderer/hooks/checkLogin'
 // import DefaultAvatar from '@renderer/assets/default-avatar.png'
 import documentSvgIcon from '@renderer/assets/documentInterpretation/document-icon.svg'
@@ -183,10 +216,6 @@ const synergiaUploadVisible = defineModel({ type: Boolean })
 let modifiersRef = ref(null)
 let approversRef = ref(null)
 const props = defineProps({
-  treeData: {
-    type: Array,
-    default: () => []
-  },
   knowId: {
     type: [String, Number],
     default: ''
@@ -196,49 +225,51 @@ const props = defineProps({
     default: ''
   }
 })
+const emits = defineEmits(['refreshList'])
 let synergiaFormRef = ref(null)
 let synergiaForm = ref({
   finishTime: '',
-  type: '',
+  type_id: '',
   modifiers: [],
   approvers: [],
   file: null
 })
-const modifiersTreeData = ref(cloneDeep(props.treeData))
-const approversTreeData = ref(cloneDeep(props.treeData))
+let fileTypes = ref([])
+const modifiersTreeData = ref([])
+const approversTreeData = ref([])
+// 获取类型列表
+const getTypeList = () => {
+  synergia_type_list({}).then((res) => {
+    if (res.code == 200) {
+      fileTypes.value = res.data
+    }
+  })
+}
+// 获取组织人员树
+const getTreeData = () => {
+  org_organ_user_tree({}).then((res) => {
+    if (res.code == 200) {
+      modifiersTreeData.value = res.data
+      approversTreeData.value = res.data
+    }
+  })
+}
+// 组件挂载前获取组织人员树
+onBeforeMount(() => {
+  getTypeList()
+  getTreeData()
+})
 let modifiersSearch = ref('')
 let approversSearch = ref('')
 let modifiersVisible = ref(false)
 let approversVisible = ref(false)
 let synergiaRules = ref({
   finishTime: [{ required: true, message: '请选择期待完成时间', trigger: ['blur'] }],
-  type: [{ required: true, message: '请选择文件类型', trigger: ['blur'] }],
-  modifiers: [{ required: true, message: '请选择修改人员', trigger: ['blur'] }],
-  approvers: [{ required: true, message: '请选择批准人员', trigger: ['blur'] }],
+  type_id: [{ required: true, message: '请选择文件类型', trigger: ['blur'] }],
+  modifiers: [{ required: true, message: '请选择修改人员', trigger: ['change'] }],
+  approvers: [{ required: true, message: '请选择批准人员', trigger: ['change'] }],
   file: [{ required: true, message: '请上传文件', trigger: ['change'] }]
 })
-let fileTypes = ref([
-  {
-    title: '注册资料',
-    id: '1'
-  },
-  {
-    title: 'DHF资料',
-    id: '2'
-  },
-  {
-    title: 'DMR文件',
-    id: '3'
-  },
-  {
-    title: '体系文件',
-    id: '4'
-  },
-  {
-    title: '其他文件',
-    id: '5'
-  }
-])
 // 文件选取回调
 const handleFiileChange = (file) => {
   const allowedTypes = [
@@ -305,31 +336,83 @@ const formatFileSize = (B) => {
   }
 }
 // 递归标记节点选中状态
-const markSelectedNodes = (checkedNodes) => {
-  let ding_ids = []
+const markSelectedNodes = (checkedNodes, type) => {
+  let persons = []
   checkedNodes.some((checkedNode) => {
-    if (checkedNode.is_person) {
-      ding_ids.push(checkedNode.ding_id)
+    if (checkedNode.type == 'user') {
+      persons.push({
+        ding_uid: checkedNode.ding_uid,
+        dept_id: checkedNode.dept_id,
+        position: checkedNode.position,
+        key: checkedNode.key,
+        title: checkedNode.title
+      })
     }
   })
-  //  treeData.map((node) => {
-  //     const isSelected = checkedNodes.some((checkedNode) => checkedNode.ding_id === node.ding_id)
-  //     if (isSelected) {
-  //       console.log(isSelected);
-  //       console.log(node.ding_id,66666);
-  //       ding_ids.push(node.ding_id)
-  //     }
-  //     if (node.children && node.children.length > 0) {
-  //       ding_ids = ding_ids.concat(markSelectedNodes(node.children, checkedNodes))
-  //     }
-  //   })
-  return ding_ids
+  if (persons.length > 2 && type === '2') {
+    approversRef.value.setCheckedKeys(
+      persons.slice(0, 2).map((item) => item.key),
+      false
+    )
+    return persons.slice(0, 2)
+  }
+  return persons
+}
+// 删除修改人员
+const removeModifier = (index) => {
+  synergiaForm.value.modifiers.splice(index, 1)
+  modifiersRef.value.setCheckedKeys(
+    synergiaForm.value.modifiers.map((item) => item.key),
+    false
+  )
+}
+// 删除批准人员
+const removeApprover = (index) => {
+  synergiaForm.value.approvers.splice(index, 1)
+  approversRef.value.setCheckedKeys(
+    synergiaForm.value.approvers.slice(0, 2).map((item) => item.key),
+    false
+  )
+}
+const disabledDate = (time) => {
+  return time.getTime() < new Date(new Date().toLocaleDateString()).getTime()
 }
 // 处理添加成员
 const handleAdd = () => {
   if (synergiaFormRef.value) {
     synergiaFormRef.value.validate((valid) => {
-      console.log(valid)
+      if (valid) {
+        var data = {
+          completion_time: parseInt(synergiaForm.value.finishTime / 1000),
+          type_id: synergiaForm.value.type_id,
+          editors: JSON.stringify(synergiaForm.value.modifiers),
+          auditors: JSON.stringify(synergiaForm.value.approvers),
+          'file[]': synergiaForm.value.file,
+          parent_item_id: props.itemId,
+          knowledge_id: props.knowId
+        }
+        synergia_upload_file(data).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('上传成功')
+            // 重置表单
+            synergiaForm.value = {
+              finishTime: '',
+              type_id: '',
+              modifiers: [],
+              approvers: [],
+              file: null
+            }
+            synergiaFormRef.value.resetFields()
+            // 重置树状图选中状态
+            modifiersRef.value.setCheckedKeys([], false)
+            approversRef.value.setCheckedKeys([], false)
+            emits('refreshList')
+            // 隐藏弹窗
+            synergiaUploadVisible.value = false
+          }
+        })
+      }
     })
   }
   // emits('setPermission', {
@@ -361,24 +444,23 @@ onUnmounted(() => {
 })
 const modifiersFilterHandle = (value, data) => {
   if (!value) return true
-  return data.name.includes(value)
+  return data.title.includes(value)
 }
 const approversFilterHandle = (value, data) => {
   if (!value) return true
-  return data.name.includes(value)
+  return data.title.includes(value)
 }
-const getCompleteSelectedTree = (personRef) => {
+const getCompleteSelectedTree = (personRef, type) => {
   const tempCheckedNodes = personRef.value.getCheckedNodes(false, false)
   // 标记选中状态
-  // const uids = markSelectedNodes(props.treeData, tempCheckedNodes)
-  const uids = markSelectedNodes(tempCheckedNodes)
+  const uids = markSelectedNodes(tempCheckedNodes, type)
   return uids
 }
 const modifiersCheckChange = () => {
-  synergiaForm.value.modifiers = getCompleteSelectedTree(modifiersRef)
+  synergiaForm.value.modifiers = getCompleteSelectedTree(modifiersRef, '1')
 }
 const approversCheckChange = () => {
-  synergiaForm.value.approvers = getCompleteSelectedTree(approversRef)
+  synergiaForm.value.approvers = getCompleteSelectedTree(approversRef, '2')
 }
 </script>
 
@@ -567,6 +649,12 @@ const approversCheckChange = () => {
                 font-size: 12px;
                 color: #909090;
                 line-height: 16px;
+              }
+              .person-list {
+                padding-top: 10px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px 5px;
               }
               .foot-box {
                 flex-shrink: 0;

@@ -4,14 +4,16 @@
       <el-icon><ArrowLeftBold /></el-icon>
     </div>
     <div v-if="showChat" ref="messageListRef" class="chat-content" @scroll.passive="handleScroll">
-      <MessageRow
-        v-for="(messageItem, index) in activeSession.messages"
-        :key="messageItem.dateline + index"
-        :message="messageItem"
-        chat-type="image"
-        :is-chatting="isChatting"
-        @handle-action="handleAction"
-      />
+      <div class="message-row-box">
+        <MessageRow
+          v-for="(messageItem, index) in activeSession.messages"
+          :key="messageItem.dateline + index"
+          :message="messageItem"
+          chat-type="image"
+          :is-chatting="isChatting"
+          @handle-action="handleAction"
+        />
+      </div>
     </div>
     <div v-else class="empty-chat">
       <EmptySvgIcon class="empty-img" />
@@ -214,7 +216,8 @@ const sendMessage = (event = {}) => {
     spread: false,
     issueContentText: '',
     attach_file_ids: [],
-    file_info: []
+    file_info: [],
+    use_annex: []
   })
   const responseMessage = reactive({
     medias: [
@@ -236,7 +239,8 @@ const sendMessage = (event = {}) => {
     issueContentText: '',
     retrievedDocumentList: [],
     attach_file_ids: [],
-    file_info: []
+    file_info: [],
+    use_annex: []
   })
   // diagramModelParams: {
   //     modelName: 'Kwai-Kolors/Kolors',
@@ -656,7 +660,7 @@ const stopChat = () => {
   position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
-  padding: 0 20px 20px;
+  padding: 0 0 20px;
   height: 100%;
   min-width: 375px;
   background: #fff;
@@ -680,11 +684,33 @@ const stopChat = () => {
     color: var(--default-font-color);
   }
   .chat-content {
+    box-sizing: border-box;
     flex: 1;
-    padding: 20px 0;
-    width: 770px;
+    padding: 20px;
+    width: 100%;
     margin: 0 auto;
     overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 2px;
+      background-color: #c1c1c1;
+      transition: all 0.2s ease-in-out;
+      &:hover {
+        background-color: #a8a8a8;
+      }
+    }
+    .message-row-box {
+      overflow: hidden;
+      width: 100%;
+      max-width: 770px;
+      margin: 0 auto;
+    }
   }
   .empty-chat {
     flex: 1;

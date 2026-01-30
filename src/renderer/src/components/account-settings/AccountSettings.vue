@@ -663,7 +663,9 @@ const handleSendMessage = async (message) => {
     retrievedDocumentList: [],
     spread: false,
     issueContentText: '',
-    attach_file_ids: []
+    attach_file_ids: [],
+    file_info: [],
+    use_annex: []
   })
   var data = {
     messageParams: {
@@ -721,7 +723,9 @@ const handleSendMessage = async (message) => {
     spread: true,
     issueContentText: '',
     retrievedDocumentList: [],
-    attach_file_ids: []
+    attach_file_ids: [],
+    file_info: [],
+    use_annex: []
   })
   evtSource.value.addEventListener('document', async (event) => {
     const response = JSON.parse(event.data)

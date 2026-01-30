@@ -429,6 +429,29 @@
                   </div> -->
                 </div>
               </el-popover>
+              <!-- <el-popover
+                v-else-if="activeRepository.is_public == 1"
+                ref="repositoryaddPopover"
+                popper-class="custom-repository-popover"
+                trigger="click"
+                placement="bottom-start"
+                :show-arrow="false"
+              >
+                <template #reference>
+                  <img
+                    class="icon"
+                    src="@renderer/assets/repository/add-file-icon.png"
+                    alt=""
+                    @click="addMenuClick"
+                  />
+                </template>
+                <div class="common-handle-box" @click="hidePopover(repositoryaddPopover)">
+                  <div class="item" @click="beforeUploadFiles('synergia')">
+                    <img class="icon" src="@renderer/assets/popover/synergia-icon.png" alt="" />
+                    <div class="title">协同文件</div>
+                  </div>
+                </div>
+              </el-popover> -->
               <el-popover
                 ref="repositorySortPopover"
                 popper-class="custom-repository-popover"
@@ -648,12 +671,20 @@
                       size="large"
                       @click.stop="contextMenu.show = false"
                     />
-                    <img
-                      class="cover-img cover-file-img"
-                      :src="item.info?.icon"
-                      alt=""
-                      @error="(e) => (e.target.src = defaultImg)"
-                    />
+                    <div class="cover-img-box">
+                      <img
+                        class="cover-img cover-file-img"
+                        :src="item.info?.icon"
+                        alt=""
+                        @error="(e) => (e.target.src = defaultImg)"
+                      />
+                      <img
+                        v-if="item.is_collaboration == 1"
+                        class="is-synergia-icon"
+                        src="@renderer/assets/repository/isSynergia-icon.png"
+                        alt=""
+                      />
+                    </div>
                     <div class="item-right">
                       <div v-if="!item.isCreated" class="title">
                         <!-- 将字符串分割为每个字符 -->
@@ -1042,10 +1073,16 @@
     <synergia-upload
       v-model="synergiaUploadVisible"
       :know-id="activeRepository.id"
-      :tree-data="repositoryMemberTree"
       :item-id="parentItemId"
     >
     </synergia-upload>
+    <synergia-look
+      v-model="synergiaLookVisible"
+      :know-id="activeRepository.id"
+      :tree-data="repositoryMemberTree"
+      :item-id="parentItemId"
+    >
+    </synergia-look>
   </div>
 </template>
 
@@ -1091,6 +1128,11 @@ import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 import defaultImg from '@renderer/assets/repository/default-img.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
+import synergyIcon from '@renderer/assets/contextMenu/synergy-icon.png'
+import synergyEditIcon from '@renderer/assets/contextMenu/synergy-edit-icon.png'
+import synergyConfirmIcon from '@renderer/assets/contextMenu/synergy-confirm-icon.png'
+import synergyLookIcon from '@renderer/assets/contextMenu/synergy-look-icon.png'
+import synergyRatifyIcon from '@renderer/assets/contextMenu/synergy-ratify-icon.png'
 import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import {
   get_knows,
@@ -2093,6 +2135,8 @@ const submitWebForm = (FormRef) => {
 let activeFiles = computed(() => {
   return detailFileList.value.filter((item) => item.checked)
 })
+// 查看协同
+const synergiaLookVisible = ref(false)
 // 右键菜单相关函数
 const showContextMenu = (e, item) => {
   e.stopPropagation()
@@ -2221,6 +2265,35 @@ const showContextMenu = (e, item) => {
               action: 'export'
             }
           )
+          if (activeFiles.value[0].is_collaboration == 1) {
+            contextMenu.value.actionSheet.splice(-2, 0, {
+              name: '协同管理',
+              icon: synergyIcon,
+              action: 'synergy',
+              children: [
+                {
+                  name: '在线编辑',
+                  icon: synergyEditIcon,
+                  action: 'synergyEdit'
+                },
+                {
+                  name: '查看协同',
+                  icon: synergyLookIcon,
+                  action: 'synergyLook'
+                },
+                {
+                  name: '确认通过',
+                  icon: synergyConfirmIcon,
+                  action: 'synergyConfirm'
+                },
+                {
+                  name: '批准入库',
+                  icon: synergyRatifyIcon,
+                  action: 'synergyRatify'
+                }
+              ]
+            })
+          }
         }
         // else if (
         //   repositoryPermission.value.setting?.permission_type == 2 &&
@@ -2263,6 +2336,75 @@ const showContextMenu = (e, item) => {
             }
           ]
         }
+      }
+    }
+    if (
+      contextMenu.value.show &&
+      activeFiles.value.length === 1 &&
+      activeFiles.value[0].is_collaboration == 1
+    ) {
+      contextMenu.value.actionSheet.splice(-1, 0, {
+        name: '协同管理',
+        icon: synergyIcon,
+        action: 'synergy',
+        children: [
+          {
+            name: '在线编辑',
+            icon: synergyEditIcon,
+            action: 'synergyEdit'
+          },
+          {
+            name: '查看协同',
+            icon: synergyLookIcon,
+            action: 'synergyLook'
+          },
+          {
+            name: '确认通过',
+            icon: synergyConfirmIcon,
+            action: 'synergyConfirm'
+          },
+          {
+            name: '批准入库',
+            icon: synergyRatifyIcon,
+            action: 'synergyRatify'
+          }
+        ]
+      })
+    } else if (activeFiles.value.length === 1 && activeFiles.value[0].is_collaboration == 1) {
+      contextMenu.value = {
+        show: true,
+        permission_type: 'cannotView',
+        x: e.clientX,
+        y: e.clientY,
+        actionSheet: [
+          {
+            name: '协同管理',
+            icon: synergyIcon,
+            action: 'synergy',
+            children: [
+              {
+                name: '在线编辑',
+                icon: synergyEditIcon,
+                action: 'synergyEdit'
+              },
+              {
+                name: '查看协同',
+                icon: synergyLookIcon,
+                action: 'synergyLook'
+              },
+              {
+                name: '确认通过',
+                icon: synergyConfirmIcon,
+                action: 'synergyConfirm'
+              },
+              {
+                name: '批准入库',
+                icon: synergyRatifyIcon,
+                action: 'synergyRatify'
+              }
+            ]
+          }
+        ]
       }
     }
   }
@@ -2419,6 +2561,15 @@ const handleContextMenuAction = ({ action }) => {
         refreshList()
       }
     })
+  } else if (action === 'synergyConfirm') {
+    // 协同确认
+  } else if (action === 'synergyEdit') {
+    // 协同编辑
+  } else if (action === 'synergyLook') {
+    // 协同查看
+    synergiaLookVisible.value = true
+  } else if (action === 'synergyRatify') {
+    // 协同批准
   }
   contextMenu.value.show = false
 }
@@ -2497,7 +2648,7 @@ let uploadVisible = ref(false) //自定义上传组件
 const closeUploadDialog = () => {
   uploadVisible.value = false
 }
-// 协同文件visible
+// 协同文件上传visible
 const synergiaUploadVisible = ref(false)
 const beforeUploadFiles = (type) => {
   if (type == 'local-file') {
@@ -2654,7 +2805,7 @@ const handleDirectorySelect = (event) => {
   const files = Array.from(event.target.files).filter((file) =>
     exts.includes(file.name.split('.').pop())
   )
-  console.log(files);
+  console.log(files)
 
   if (!files.length) {
     // eslint-disable-next-line no-undef
@@ -3590,7 +3741,9 @@ watch(
               display: block;
             }
           }
-
+          .cover-img-box {
+            position: relative;
+          }
           .cover-img {
             display: block;
             width: 40px;
@@ -3603,7 +3756,14 @@ watch(
               border: 1px solid #efefef;
             }
           }
-
+          .is-synergia-icon {
+            position: absolute;
+            bottom: 0px;
+            right: 0px;
+            width: 12px;
+            height: 12px;
+            z-index: 9;
+          }
           .item-right {
             flex: 1;
             overflow: hidden;

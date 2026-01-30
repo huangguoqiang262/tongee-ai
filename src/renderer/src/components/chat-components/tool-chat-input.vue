@@ -96,6 +96,29 @@
           </template>
         </div>
         <div class="btn-box">
+          <el-popover
+            ref="dialogueSettingsPopover"
+            placement="top"
+            :width="536"
+            trigger="click"
+            :show-arrow="false"
+            popper-class="dialogueSettingsPopover"
+            @show="settingVisible = true"
+            @hide="settingVisible = false"
+          >
+            <template #reference>
+              <DialogueSettingsSvgIcon
+                class="dialogueSettingsSvg"
+                :class="settingVisible ? 'visible' : ''"
+              ></DialogueSettingsSvgIcon>
+            </template>
+            <DialogueSettings
+              :config="defaultModelConfig"
+              :model-config="modelConfig"
+              @close-settings="closeSettings"
+              @change="handleChange"
+            ></DialogueSettings>
+          </el-popover>
           <!-- <el-tooltip effect="light" content="" placement="top">
             <template #content>
               上传附件（doc、docx、xls、xlsx、pdf、txt、<br />ppt、pptx、jpg、jpeg、png、gif格式）
@@ -166,8 +189,12 @@ import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
+import DialogueSettingsSvgIcon from '@renderer/assets/chat-icon/dialogueSettings-icon.svg'
 export default {
   name: 'MessageChatInput',
+  components: {
+    DialogueSettingsSvgIcon
+  },
   inject: ['addNewTab'],
   props: {
     // 是否是活动标签
@@ -198,6 +225,16 @@ export default {
     isChatting: {
       type: Boolean,
       default: false
+    },
+    // 模型默认配置
+    defaultModelConfig: {
+      type: Object,
+      default: () => {}
+    },
+    // 模型当前配置
+    modelConfig: {
+      type: Object,
+      default: () => {}
     }
   },
   emits: [
@@ -206,7 +243,8 @@ export default {
     'uploadedAttachment',
     'send',
     'mention-change',
-    'networkChange'
+    'networkChange',
+    'configurationChange'
   ],
   data() {
     return {
@@ -222,7 +260,8 @@ export default {
       showNextBtn: false,
       isHoveringAttachBox: false,
       mentioned: [],
-      allowable: false
+      allowable: false,
+      settingVisible: false
     }
   },
   watch: {
@@ -257,6 +296,12 @@ export default {
     this.getKnows()
   },
   methods: {
+    handleChange(configuration) {
+      this.$emit('configurationChange', configuration)
+    },
+    closeSettings() {
+      this.$refs.dialogueSettingsPopover.hide()
+    },
     // 获取文件图标
     getFileIcon(item) {
       // 根据文件扩展名返回不同的图标
@@ -987,6 +1032,17 @@ export default {
         display: flex;
         justify-content: flex-end;
         align-items: center;
+        .dialogueSettingsSvg {
+          width: 24px;
+          height: 24px;
+          color: var(--default-font-color);
+          outline: none;
+          transition: all 0.1s linear;
+          cursor: pointer;
+          &.visible {
+            color: var(--el-color-primary);
+          }
+        }
         .upload-box {
           flex-shrink: 0;
           display: flex;
@@ -1082,6 +1138,11 @@ export default {
 }
 </style>
 <style lang="scss">
+.dialogueSettingsPopover {
+  padding: 16px !important;
+  border-radius: 12px !important;
+  transform: translateX(-20px);
+}
 .message-input-model-select {
   .el-select-dropdown__list {
     padding: 10px;

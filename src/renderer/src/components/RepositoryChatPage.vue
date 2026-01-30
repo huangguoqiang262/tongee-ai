@@ -19,14 +19,16 @@
       class="chat-content"
       @scroll.passive="handleScroll"
     >
-      <MessageRow
-        v-for="(message, index) in activeSession.messages"
-        :key="index"
-        :message="message"
-        direction="right"
-        :is-chatting="isChatting"
-        @handle-action="handleAction"
-      />
+      <div class="message-rows-box">
+        <MessageRow
+          v-for="(message, index) in activeSession.messages"
+          :key="index"
+          :message="message"
+          direction="right"
+          :is-chatting="isChatting"
+          @handle-action="handleAction"
+        />
+      </div>
     </div>
     <div v-else class="empty-chat">
       <EmptySvgIcon class="empty-img" />
@@ -80,12 +82,15 @@
         :is-network="activeSession.isNetwork"
         :is-chatting="isChatting"
         :attach_file="attach_file"
+        :default-model-config="defaultModelConfig"
+        :model-config="modelConfig"
         @select-model="selectModel"
         @network-change="networkChange"
         @send="handleSendMessage"
         @uploaded-attachment="uploadedAttachment"
         @clear-attach="clearAttach"
         @stop-chat="stopChat"
+        @configuration-change="handleConfigurationChange"
       >
       </repository-chat-input>
     </div>
@@ -143,6 +148,13 @@ let props = defineProps({
     default: () => []
   }
 })
+// 模型默认配置
+const defaultModelConfig = ref({})
+// 模型当前配置
+const modelConfig = ref({})
+const handleConfigurationChange = (config) => {
+  modelConfig.value = config
+}
 let feedbackVisible = ref(false)
 let resultVisible = ref(false)
 let resultTimeout = ref(null)
@@ -196,8 +208,6 @@ const activeSession = ref({
   model_name: '',
   provider_key: '',
   know_key: '',
-  temperature: 0.7,
-  contextNumber: 5,
   stream: true,
   lineNumber: true,
   prompt: '',
@@ -503,6 +513,30 @@ watchEffect(() => {
       activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
       activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
       activeSession.value.enableSearch = res.data.model_info?.net_status || 2
+      // 模型默认配置
+      defaultModelConfig.value = res.data.model_default_set || {
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        seed: 100,
+        temperature: 0.7,
+        top_p: 0.5,
+        vector_shard_number: 10,
+        similarity_threshold: 0.5,
+        context_number: 5,
+        enable_thinking: true
+      }
+      // 模型当前配置
+      modelConfig.value = {
+        frequency_penalty: res.data.frequency_penalty,
+        presence_penalty: res.data.presence_penalty,
+        seed: res.data.seed,
+        temperature: res.data.temperature,
+        top_p: res.data.top_p,
+        vector_shard_number: res.data.vector_shard_number,
+        similarity_threshold: res.data.similarity_threshold,
+        context_number: res.data.context_number,
+        enable_thinking: res.data.enable_thinking
+      }
       activeSession.value.isNetwork = res.data.is_use_net ? true : false
       if (activeSession.value.enableSearch == 2) {
         activeSession.value.isNetwork = false
@@ -594,11 +628,18 @@ const handleSendMessage = async (message) => {
     chatParams: {
       modelName: activeSession.value.model_name || '',
       modelPlatform: activeSession.value.provider_key || '',
-      contextNumber: activeSession.value.contextNumber,
       prompt: activeSession.value.prompt || '',
       enableSearch: activeSession.value.isNetwork,
-      temperature: activeSession.value.temperature,
-      generateQuestions: activeSession.value.generateQuestions
+      generateQuestions: activeSession.value.generateQuestions,
+      temperature: modelConfig.value.temperature,
+      contextNumber: modelConfig.value.context_number,
+      frequencyPenalty: modelConfig.value.frequency_penalty,
+      presencePenalty: modelConfig.value.presence_penalty,
+      seed: modelConfig.value.seed,
+      topP: modelConfig.value.top_p,
+      vectorShardNumber: modelConfig.value.vector_shard_number,
+      similarityThreshold: modelConfig.value.similarity_threshold,
+      enableThinking: modelConfig.value.enable_thinking
     },
     knowledgeBaseParamsList: [
       {
@@ -773,7 +814,7 @@ const stopChat = () => {
   position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
-  padding: 60px 40px 20px;
+  padding: 60px 0px 20px;
   height: 100%;
   min-width: 375px;
   background: #fff;
@@ -793,13 +834,35 @@ const stopChat = () => {
   }
   .chat-content {
     flex: 1;
-    padding: 20px 0;
+    padding: 20px;
     width: 100%;
-    max-width: 770px;
     margin: 0 auto;
     overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 2px;
+      background-color: #c1c1c1;
+      transition: all 0.2s ease-in-out;
+      &:hover {
+        background-color: #a8a8a8;
+      }
+    }
+    .message-rows-box {
+      width: 100%;
+      max-width: 770px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
   }
   .empty-chat {
+    box-sizing: border-box;
+    padding: 0px 40px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -925,6 +988,8 @@ const stopChat = () => {
     }
   }
   .search-box {
+    box-sizing: border-box;
+    padding: 0px 20px;
     width: 100%;
     .message-input {
       width: 100%;
