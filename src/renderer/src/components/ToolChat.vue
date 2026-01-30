@@ -70,12 +70,15 @@
         :is-network="activeSession.isNetwork"
         :enable-search="activeSession.enableSearch"
         :is-chatting="isChatting"
+        :default-model-config="defaultModelConfig"
+        :model-config="modelConfig"
         @select-model="selectModel"
         @network-change="networkChange"
         @mention-change="handleMentionSelect"
         @send="handleSendMessage"
         @uploaded-attachment="uploadedAttachment"
         @stop-chat="stopChat"
+        @configuration-change="handleConfigurationChange"
       >
       </tool-chat-input>
     </div>
@@ -128,6 +131,13 @@ const props = defineProps({
     default: false
   }
 })
+// 模型默认配置
+const defaultModelConfig = ref({})
+// 模型当前配置
+const modelConfig = ref({})
+const handleConfigurationChange = (config) => {
+  modelConfig.value = config
+}
 const emits = defineEmits(['closeChat', 'submitImport'])
 let feedbackVisible = ref(false)
 let resultVisible = ref(false)
@@ -204,8 +214,6 @@ const activeSession = ref({
   model_name: '',
   provider_key: '',
   know_key: '',
-  temperature: 0.7,
-  contextNumber: 5,
   stream: true,
   lineNumber: true,
   prompt: '',
@@ -279,11 +287,18 @@ const handleSendMessage = async (message) => {
     chatParams: {
       modelName: activeSession.value.model_name || '',
       modelPlatform: activeSession.value.provider_key || '',
-      contextNumber: activeSession.value.contextNumber,
       enableSearch: activeSession.value.isNetwork,
       prompt: activeSession.value.prompt || '',
-      temperature: activeSession.value.temperature,
-      generateQuestions: activeSession.value.generateQuestions
+      generateQuestions: activeSession.value.generateQuestions,
+      temperature: modelConfig.value.temperature,
+      contextNumber: modelConfig.value.context_number,
+      frequencyPenalty: modelConfig.value.frequency_penalty,
+      presencePenalty: modelConfig.value.presence_penalty,
+      seed: modelConfig.value.seed,
+      topP: modelConfig.value.top_p,
+      vectorShardNumber: modelConfig.value.vector_shard_number,
+      similarityThreshold: modelConfig.value.similarity_threshold,
+      enableThinking: modelConfig.value.enable_thinking
     },
     knowledgeBaseParamsList: [
       ...mentionedList.value.map((item) => {
@@ -754,6 +769,30 @@ watchEffect(() => {
       if (activeSession.value.enableSearch == 2) {
         activeSession.value.isNetwork = false
       }
+      // 模型默认配置
+      defaultModelConfig.value = res.data.model_default_set || {
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        seed: 100,
+        temperature: 0.7,
+        top_p: 0.5,
+        vector_shard_number: 10,
+        similarity_threshold: 0.5,
+        context_number: 5,
+        enable_thinking: true
+      }
+      // 模型当前配置
+      modelConfig.value = {
+        frequency_penalty: res.data.frequency_penalty,
+        presence_penalty: res.data.presence_penalty,
+        seed: res.data.seed,
+        temperature: res.data.temperature,
+        top_p: res.data.top_p,
+        vector_shard_number: res.data.vector_shard_number,
+        similarity_threshold: res.data.similarity_threshold,
+        context_number: res.data.context_number,
+        enable_thinking: res.data.enable_thinking
+      }
       activeSession.value.messages = []
       page.value = 1
       pageSize.value = 10
@@ -785,7 +824,7 @@ onMounted(() => {
   position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
-  padding: 10px 20px 10px;
+  padding: 10px 0 10px;
   height: 100%;
   width: 100%;
   background: #fff;
@@ -795,10 +834,8 @@ onMounted(() => {
   overflow: hidden;
   user-select: text;
   .chat-head {
-    // position: absolute;
-    // top: 20px;
-    // left: 20px;
-    // z-index: 1;
+    box-sizing: border-box;
+    padding: 0 20px;
     width: 100%;
     height: 30px;
     border-radius: 6px;
@@ -824,12 +861,30 @@ onMounted(() => {
     }
   }
   .chat-content {
+    box-sizing: border-box;
     flex: 1;
     width: 100%;
-    padding: 20px 0;
+    padding: 20px;
     overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 2px;
+      background-color: #c1c1c1;
+      transition: all 0.2s ease-in-out;
+      &:hover {
+        background-color: #a8a8a8;
+      }
+    }
   }
   .empty-chat {
+    box-sizing: border-box;
+    padding: 20px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -910,6 +965,8 @@ onMounted(() => {
     }
   }
   .search-box {
+    box-sizing: border-box;
+    padding: 0 20px;
     width: 100%;
     .message-input {
       width: 100%;

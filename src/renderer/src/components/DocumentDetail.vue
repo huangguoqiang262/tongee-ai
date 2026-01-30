@@ -1,30 +1,32 @@
 <template>
   <div class="document-detail">
-    <div class="center-box" :class="{ 'mr-chat': chatVisible }">
-      <div class="center-head">
-        <div class="title">{{ fileName }}</div>
-        <div class="right-handle-box">
-          <div v-if="!chatVisible" class="open-chat" @click="openChat">
-            <img class="logo" src="@renderer/assets/logo.png" alt="" />
-            问问糖源
+    <el-splitter>
+      <el-splitter-panel min="50%" class="center-box" :class="{ 'mr-chat': chatVisible }">
+        <div class="center-head">
+          <div class="title">{{ fileName }}</div>
+          <div class="right-handle-box">
+            <div v-if="!chatVisible" class="open-chat" @click="openChat">
+              <img class="logo" src="@renderer/assets/logo.png" alt="" />
+              问问糖源
+            </div>
           </div>
         </div>
-      </div>
-      <FilePreview
-        v-if="fileUrl"
-        class="center-content"
-        :file-url="fileUrl"
-        :file-name="fileName"
-      />
-    </div>
-    <div v-if="chatVisible" class="right-box">
-      <CommonChat
-        :is-active-tab="props.isActiveTab"
-        :attach-files="attach_files"
-        :chat-key="props.attrs.chat_key"
-        @close-chat="chatVisible = false"
-      />
-    </div>
+        <FilePreview
+          v-if="fileUrl"
+          class="center-content"
+          :file-url="fileUrl"
+          :file-name="fileName"
+        />
+      </el-splitter-panel>
+      <el-splitter-panel v-if="chatVisible" :min="375" :size="375" class="right-box">
+        <CommonChat
+          :is-active-tab="props.isActiveTab"
+          :attach-files="attach_files"
+          :chat-key="props.attrs.chat_key"
+          @close-chat="chatVisible = false"
+        />
+      </el-splitter-panel>
+    </el-splitter>
   </div>
 </template>
 
@@ -66,9 +68,9 @@ watchEffect(() => {
   align-content: start;
   overflow: hidden;
   background: var(--primary-bg-color);
-  .center-box {
+  :deep(.center-box) {
     flex: 1;
-    min-width: 65%;
+    min-width: 50%;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -77,7 +79,7 @@ watchEffect(() => {
     background: #fff;
     border-radius: 0 12px 12px 0;
     &.mr-chat {
-      margin-right: 10px;
+      margin-right: 5px;
     }
     .center-head {
       flex-shrink: 0;
@@ -115,7 +117,7 @@ watchEffect(() => {
           cursor: pointer;
         }
 
-        :deep(.search-input) {
+        .search-input {
           width: 240px;
           height: 36px;
 
@@ -171,10 +173,11 @@ watchEffect(() => {
       // box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.1);
     }
   }
-  .right-box {
+  :deep(.right-box) {
     flex: 1;
     height: 100%;
     overflow: hidden;
+    margin-left: 5px;
     // display: flex;
     // flex-direction: column;
     // border-left: 1px solid #efefef;

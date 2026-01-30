@@ -629,21 +629,24 @@ const processedReasoning = computed(() => {
     }
   }
   .file-content-box {
+    box-sizing: border-box;
+    padding: 10px 0;
     margin-top: 10px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
   }
   .file-item {
     box-sizing: border-box;
     padding: 0 10px;
-    margin-bottom: 10px;
+    // margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 0 10px;
-    height: 40px;
+    height: 36px;
     width: 100%;
     overflow: hidden;
-    background-color: #f9f9f9;
-    border-radius: 6px;
+
     cursor: pointer;
     &:nth-last-child(1) {
       margin-bottom: 0;
@@ -855,11 +858,13 @@ const processedReasoning = computed(() => {
             border-left: 2px solid #e5e5e5;
           }
           .reasoning-content {
+            overflow: hidden;
             color: #8b8b8b;
             line-height: 26px;
             padding: 0 0 0 13px;
             font-size: 14px;
             word-break: break-all;
+            line-break: anywhere;
           }
         }
         &.no-line-number {

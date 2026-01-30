@@ -114,6 +114,43 @@
                   <el-empty :image-size="120" description="暂无数据" />
                 </div>
               </div>
+              <div v-if="activeTab == '3'" class="synergia-box">
+                <div class="statistics-list">
+                  <div class="statistics-item">
+                    <div class="value">6</div>
+                    <div class="title">我的文件</div>
+                    <div class="desc">我发起的协同文件</div>
+                  </div>
+                  <div class="statistics-item">
+                    <div class="value">5</div>
+                    <div class="title">等待处理</div>
+                    <div class="desc">未反馈、未确认、未批准</div>
+                  </div>
+                  <div class="statistics-item">
+                    <div class="value">2</div>
+                    <div class="title">完成协同</div>
+                    <div class="desc">已确认或已批准的文件</div>
+                  </div>
+                  <div class="statistics-item">
+                    <div class="value">90%</div>
+                    <div class="title">平均进度</div>
+                    <div class="desc">我的文件平均进度</div>
+                  </div>
+                </div>
+                <div class="synergia-list">
+                  <div v-for="item in 6" :key="item" class="list-item">
+                    <FileSvgShadowIcon class="left-icon" />
+                    <div class="center-box">
+                      <div class="title">新增《临床实验报告模板》</div>
+                      <div class="desc">
+                        新增了符合最新法规要求的临床试验报告模板，供所有项目参考使用
+                      </div>
+                      <div class="author author1">张医生·临床部·5天前更新</div>
+                    </div>
+                    <div class="time">18:00</div>
+                  </div>
+                </div>
+              </div>
             </template>
           </el-skeleton>
         </div>
@@ -217,6 +254,7 @@ import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
+import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import { chat_lists, del_chat, del_all_chat, modifyChatHistory } from '@renderer/api/chat'
 import { ref, onMounted, inject, onErrorCaptured } from 'vue'
@@ -232,7 +270,11 @@ let tabs = ref([
   {
     id: '2',
     name: '网页浏览历史'
-  }
+  },
+  // {
+  //   id: '3',
+  //   name: '协作历史'
+  // }
 ])
 // 获取文件图标
 const getFileIcon = (item) => {
@@ -402,6 +444,8 @@ const getList = (load = true) => {
       .finally(() => {
         loading.value = false
       })
+  } else if (activeTab.value == '3') {
+    loading.value = false
   }
 }
 let delHistory = ref(false)
@@ -605,7 +649,6 @@ onMounted(() => {
       align-items: center;
       flex-wrap: wrap;
       gap: 20px 40px;
-
       .tab-item {
         flex-shrink: 0;
         font-size: 14px;
@@ -613,7 +656,9 @@ onMounted(() => {
         line-height: 22px;
         cursor: pointer;
         transition: all 0.2s linear;
-
+        will-change: color, font-size, font-weight;
+        backface-visibility: hidden;
+        perspective: 100px; // 创建3D渲染上下文
         &.active-tab {
           color: var(--el-color-primary);
           font-size: 16px;
@@ -625,47 +670,19 @@ onMounted(() => {
     .content-box {
       flex: 1;
       overflow: hidden;
-
       .repository-box {
         max-height: 100%;
         width: 100%;
-        box-sizing: border-box;
-        padding: 0 20px;
         background: #f9f9f9;
         border-radius: 12px;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-
-        .head {
-          flex-shrink: 0;
-          padding-top: 20px;
-          margin-bottom: 10px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-
-          .search-box {
-            .search-input {
-              :deep(.el-input__wrapper) {
-                background: #fff;
-                border-radius: 20px;
-                width: 280px;
-                padding-left: 20px;
-                font-size: 14px;
-
-                .el-input__inner {
-                  color: var(--default-font-color);
-                  height: 32px;
-                }
-              }
-            }
-          }
-        }
-
         .list-box {
+          box-sizing: border-box;
+          padding: 0 20px;
           overflow-y: auto;
-
+          contain: layout style;
           &::-webkit-scrollbar {
             width: 4px;
             height: 4px;
@@ -803,6 +820,150 @@ onMounted(() => {
                   height: 14px;
                   cursor: pointer;
                 }
+              }
+            }
+          }
+        }
+        .synergia-box {
+          flex: 1;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          background: #fff;
+          .statistics-list {
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            padding: 20px 48px;
+            width: 100%;
+            height: 120px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            .statistics-item {
+              flex-shrink: 0;
+              width: 25%;
+              text-align: center;
+              .value {
+                margin-bottom: 6px;
+                font-size: 24px;
+                line-height: 32px;
+                font-family: DOUYINSANSBOLD;
+              }
+              .title {
+                margin-bottom: 8px;
+                font-size: 14px;
+                color: var(--default-font-color);
+                line-height: 18px;
+              }
+              .desc {
+                font-size: 12px;
+                line-height: 16px;
+                color: #909090;
+              }
+            }
+          }
+          .synergia-list {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 0 20px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            border-radius: 12px;
+            contain: layout style;
+            &::-webkit-scrollbar {
+              width: 4px;
+              height: 4px;
+            }
+            &::-webkit-scrollbar-thumb {
+              border-radius: 2px;
+              background-color: #dddcdc;
+              &:hover {
+                background-color: #909090;
+              }
+            }
+            .list-item {
+              padding: 20px 0;
+              border-bottom: 1px solid #f0f0f0;
+              display: flex;
+              justify-content: space-between;
+              gap: 20px;
+              &:last-child {
+                border-bottom: none;
+              }
+              .left-icon {
+                flex-shrink: 0;
+                width: 20px;
+                height: 20px;
+                color: var(--el-color-primary);
+              }
+              .center-box {
+                flex: 1;
+                overflow: hidden;
+                .title {
+                  margin-bottom: 4px;
+                  font-size: 14px;
+                  color: var(--default-font-color);
+                  line-height: 22px;
+                }
+                .desc {
+                  margin-bottom: 8px;
+                  font-size: 12px;
+                  color: #909090;
+                  line-height: 16px;
+                  &.desc-hide {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                  }
+                  &.desc1 {
+                    margin-bottom: 0;
+                  }
+                }
+                .author {
+                  margin-bottom: 10px;
+                  font-size: 12px;
+                  color: #909090;
+                  line-height: 16px;
+                  &.author1 {
+                    margin-bottom: 0;
+                  }
+                }
+                .btns {
+                  display: flex;
+                  gap: 10px;
+                  .btn {
+                    box-sizing: border-box;
+                    min-width: 76px;
+                    padding: 5px 8px;
+                    font-size: 12px;
+                    text-align: center;
+                    color: var(--el-color-primary);
+                    line-height: 16px;
+                    border-radius: 6px;
+                    border: 1px solid var(--el-color-primary-light-8);
+                    cursor: pointer;
+                    &:active {
+                      opacity: 0.8;
+                    }
+                    &.btn1 {
+                      color: var(--default-font-color);
+                      border-color: #efefef;
+                    }
+                    &.btn2 {
+                      color: #909090;
+                      border-color: #efefef;
+                      cursor: default;
+                    }
+                  }
+                }
+              }
+              .time {
+                flex-shrink: 0;
+                font-size: 12px;
+                color: #909090;
+                line-height: 22px;
               }
             }
           }

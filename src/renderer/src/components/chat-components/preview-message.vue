@@ -4,14 +4,16 @@
       <el-icon class="close-icon" @click="closePreview"><Close /></el-icon>
     </div>
     <div class="chat-content">
-      <PreviewMessageRow
-        v-for="(message, index) in deepMessages"
-        :key="message.dateline + index"
-        :message="message"
-        :hide-attach-files="props.hideAttachFiles"
-        :direction="props.direction"
-        @handle-check="handleCheck"
-      />
+      <div class="preview-message-row">
+        <PreviewMessageRow
+          v-for="(message, index) in deepMessages"
+          :key="message.dateline + index"
+          :message="message"
+          :hide-attach-files="props.hideAttachFiles"
+          :direction="props.direction"
+          @handle-check="handleCheck"
+        />
+      </div>
     </div>
     <div class="bottom-action-box">
       <div class="bottom-action">
@@ -212,11 +214,29 @@ const handleCheck = (message) => {
   }
   .chat-content {
     flex: 1;
-    padding: 0 0 20px;
+    padding: 0 20px 20px;
     width: 100%;
-    max-width: 770px;
-    margin: 0 auto;
     overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 2px;
+      background-color: #c1c1c1;
+      transition: all 0.2s ease-in-out;
+      &:hover {
+        background-color: #a8a8a8;
+      }
+    }
+    .preview-message-row {
+      width: 100%;
+      max-width: 770px;
+      margin: 0 auto;
+    }
   }
   .empty-chat {
     flex: 1;

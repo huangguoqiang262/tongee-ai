@@ -155,6 +155,7 @@ defineEmits(['action'])
   border-radius: 8px !important;
   padding: 12px 8px !important;
   width: 168px !important;
+  z-index: 9999 !important;
   .common-handle-box {
     .item {
       padding: 5px;

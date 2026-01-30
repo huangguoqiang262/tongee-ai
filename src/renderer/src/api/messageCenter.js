@@ -31,3 +31,11 @@ export function export_feedback(data) {
     data
   })
 }
+// 获取通知列表
+export function synergia_message_list(data) {
+  return request({
+    url: '/collaboration/message_list',
+    method: 'post',
+    data
+  })
+}

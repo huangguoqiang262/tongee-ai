@@ -177,6 +177,38 @@
             <el-empty :image-size="120" description="暂无数据" />
           </div>
         </div>
+        <div v-if="activeTab == '4'" class="synergia-box">
+          <div class="synergia-list">
+            <div v-for="item in 6" :key="item" class="list-item">
+              <FileSvgShadowIcon class="left-icon" />
+              <div class="center-box">
+                <div class="title">新增《临床实验报告模板》</div>
+                <div class="author">
+                  <span>提交者：张三</span>
+                  <span>地址：www.baidu.com</span>
+                </div>
+                <div class="message-box">
+                  <div class="message-text">
+                    文件已完成协同，现申请文件加入【知识库名称】，是否同意
+                  </div>
+                  <div class="handle-box">
+                    <el-button class="btn-refuse" size="small" @click="handleRefuse(item)"
+                      >拒绝</el-button
+                    >
+                    <el-button
+                      class="btn-agree"
+                      type="primary"
+                      size="small"
+                      @click="handleAgree(item)"
+                      >同意</el-button
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="time">18:00</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <el-dialog
@@ -223,6 +255,44 @@
         />
       </div>
     </el-dialog>
+    <el-dialog
+      v-model="refuseVisible"
+      draggable
+      align-center
+      modal-class="refuse-dialog"
+      width="390"
+    >
+      <template #header>
+        <img class="dialog-header-del-icon" src="@renderer/assets/refuse-icon.png" alt="" />
+        <div class="">拒绝原因</div>
+      </template>
+      <el-form
+        ref="refuseFormRef"
+        :model="refuseForm"
+        :rules="refuseRules"
+        class="rename-form"
+        @submit.prevent
+      >
+        <el-form-item prop="refuseInput" style="margin-bottom: 0">
+          <el-input
+            v-model="refuseForm.refuseInput"
+            type="textarea"
+            resize="none"
+            class="refuse-input"
+            size="large"
+            placeholder="请输入拒绝原因"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button class="cancel-btn" @click="refuseVisible = false">取消</el-button>
+          <el-button class="confirm-btn" type="primary" @click="submitRefuseForm(refuseFormRef)">
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -248,6 +318,53 @@ const props = defineProps({
     default: () => {}
   }
 })
+const refuseVisible = ref(false)
+const refuseFormRef = ref(null)
+const refuseForm = ref({
+  refuseInput: ''
+})
+const refuseRules = ref({
+  refuseInput: [{ required: true, message: '请输入拒绝原因', trigger: ['blur'] }]
+})
+const submitRefuseForm = (formRef) => {
+  formRef.validate((valid) => {
+    if (valid) {
+      console.log('提交拒绝表单', refuseForm.value)
+    }
+  })
+}
+// 同意入库
+const handleAgree = (item) => {
+  console.log(item)
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm(
+    '确认同意入库吗？',
+    '提示',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(() => {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        type: 'primary',
+        message: '同意入库成功',
+      })
+    })
+    .catch(() => {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        type: 'info',
+        message: '取消同意入库',
+      })
+    })
+}
+// 拒绝入库
+const handleRefuse = (item) => {
+  refuseVisible.value = true
+}
 let searchVal = ref('')
 let tabs = ref([
   {
@@ -261,7 +378,11 @@ let tabs = ref([
   {
     id: '3',
     name: '系统通知'
-  }
+  },
+  // {
+  //   id: '4',
+  //   name: '协作通知'
+  // }
 ])
 let feedbackDetailVisible = ref(false)
 let deepData = ref({})
@@ -361,6 +482,7 @@ const loadData = () => {
     getSystemMsgList()
   }
 }
+const synergiaMsgList = ref([])
 const feedList = ref([])
 const getList = () => {
   var data = {
@@ -416,6 +538,59 @@ watchEffect(() => {
 </script>
 
 <style scoped lang="scss">
+:deep(.refuse-dialog) {
+  .el-dialog {
+    .el-dialog__header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 22px;
+
+      .dialog-header-del-icon {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .el-dialog__body {
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 22px;
+      .refuse-input {
+        height: 140px;
+        .el-textarea__inner {
+          height: 100%;
+          background: #f9f9f9;
+          box-shadow: none;
+          font-size: 14px;
+          color: var(--default-font-color);
+          &.is-focus {
+            box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+          }
+        }
+      }
+    }
+
+    .dialog-footer {
+      .cancel-btn,
+      .confirm-btn {
+        height: 36px;
+        width: 80px;
+        border-radius: 8px;
+        border: none;
+        font-size: 14px;
+      }
+
+      .cancel-btn {
+        background: #efefef;
+        color: var(--default-font-color);
+      }
+    }
+  }
+}
 :deep(.feedback-detail-box-dialog) {
   .el-dialog {
     padding: 13px 20px 14px;
@@ -604,6 +779,9 @@ watchEffect(() => {
         line-height: 22px;
         cursor: pointer;
         transition: all 0.2s linear;
+        will-change: color, font-size, font-weight;
+        backface-visibility: hidden;
+        perspective: 100px;
         &.active-tab {
           color: var(--el-color-primary);
           font-size: 16px;
@@ -785,6 +963,103 @@ watchEffect(() => {
                     color: #909090;
                     border-color: #efefef;
                     cursor: default;
+                  }
+                }
+              }
+            }
+            .time {
+              flex-shrink: 0;
+              font-size: 12px;
+              color: #909090;
+              line-height: 22px;
+            }
+          }
+        }
+      }
+      .synergia-box {
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        .synergia-list {
+          box-sizing: border-box;
+          width: 100%;
+          padding: 0 20px;
+          overflow-y: auto;
+          background: #f9f9f9;
+          border-radius: 12px;
+          &::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+          }
+          &::-webkit-scrollbar-thumb {
+            border-radius: 2px;
+            background-color: #dddcdc;
+            &:hover {
+              background-color: #909090;
+            }
+          }
+          .list-item {
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            &:last-child {
+              border-bottom: none;
+            }
+            .left-icon {
+              flex-shrink: 0;
+              width: 20px;
+              height: 20px;
+              color: var(--el-color-primary);
+            }
+            .center-box {
+              flex: 1;
+              overflow: hidden;
+              .title {
+                margin-bottom: 10px;
+                font-size: 14px;
+                color: var(--default-font-color);
+                line-height: 22px;
+              }
+              .author {
+                margin-bottom: 16px;
+                font-size: 12px;
+                color: #909090;
+                line-height: 16px;
+                display: flex;
+                align-items: center;
+                gap: 0 20px;
+              }
+              .message-box {
+                box-sizing: border-box;
+                padding: 11px 10px;
+                display: flex;
+                align-items: center;
+                gap: 0 20px;
+                justify-content: space-between;
+                border-radius: 6px;
+                border: 1px solid #efefef;
+                background: #fff;
+                .message-text {
+                  flex: 1;
+                  font-size: 12px;
+                  color: var(--default-font-color);
+                  line-height: 16px;
+                }
+                .handle-box {
+                  display: flex;
+                  .btn-agree,
+                  .btn-refuse {
+                    box-sizing: border-box;
+                    width: 60px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    &:active {
+                      opacity: 0.8;
+                    }
                   }
                 }
               }

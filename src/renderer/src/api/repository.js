@@ -266,3 +266,48 @@ export function getKnowSquareList(data) {
     data
   })
 }
+
+// 协同
+// 组织人员树
+export function org_organ_user_tree(data) {
+  return request({
+    url: '/collaboration/org_organ_user_tree',
+    method: 'post',
+    data
+  })
+}
+// 获取文件类型列表
+export function synergia_type_list(data) {
+  return request({
+    url: '/collaboration/type_list',
+    method: 'post',
+    data
+  })
+}
+// 创建协同流程（上传文件）
+export function synergia_upload_file(data) {
+  return request({
+    url: '/collaboration/upload_file',
+    method: 'post',
+    data,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+// 查看协同(详情)
+export function synergia_process_detail(data) {
+  return request({
+    url: '/collaboration/process_detail',
+    method: 'post',
+    data
+  })
+}
+// 协同人确认完成任务
+export function synergia_task_complete(data) {
+  return request({
+    url: '/collaboration/task_complete_collaborate',
+    method: 'post',
+    data
+  })
+}
