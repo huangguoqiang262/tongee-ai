@@ -501,13 +501,13 @@
             </el-icon>
           </div>
           <div v-if="detailFileList.length" class="list-box">
-            <template v-for="item in detailFileList" :key="item.id">
+            <template v-for="(item, index) in detailFileList" :key="item.id">
               <div
                 v-if="item.item_type == 2"
                 class="list-item"
                 :class="{ 'active-repository': item.checked, is_top: item.is_top }"
                 @contextmenu="(e) => showContextMenu(e, item)"
-                @click="dirChange(item)"
+                @click="dirChange(item, $event, index)"
               >
                 <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
                 <!-- <img class="cover-img" :src="getFileIcon(item)" alt="" /> -->
@@ -663,7 +663,7 @@
                     class="list-item"
                     :class="{ 'active-repository': item.checked, is_top: item.is_top }"
                     @contextmenu="(e) => showContextMenu(e, item)"
-                    @click="detailChange(item)"
+                    @click="detailChange(item, $event, index)"
                   >
                     <el-checkbox
                       v-model="item.checked"
@@ -1396,7 +1396,15 @@ const downloadFile = (url, fileName) => {
   x.send()
 }
 // 到达详情
-const detailChange = (item) => {
+const detailChange = (item, e, i) => {
+  if (e.shiftKey) {
+    detailFileList.value.map((children,j) => {
+      if (j <= i) {
+        children.checked = true
+      }
+    })
+    return
+  }
   if (item.is_collaboration == 1) {
     addNewTab({
       icon: getFileIcon(item),
@@ -1410,7 +1418,7 @@ const detailChange = (item) => {
         itemId: item.id || ''
       }
     })
-    return false
+    return
   }
   if (
     activeRepository.value.user_permission?.is_creator ||
@@ -3198,10 +3206,18 @@ let parentItemId = computed(() => {
   return pathList.value[pathList.value.length - 1].id
 })
 // 点击文件夹
-const dirChange = (e) => {
+const dirChange = (item, e, i) => {
+  if (e.shiftKey) {
+    detailFileList.value.map((children,j) => {
+      if (j <= i) {
+        children.checked = true
+      }
+    })
+    return
+  }
   pathList.value.push({
-    name: e.title,
-    id: e.id
+    name: item.title,
+    id: item.id
   })
 
   refreshList()
