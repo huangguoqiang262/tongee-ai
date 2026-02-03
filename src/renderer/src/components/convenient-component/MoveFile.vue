@@ -1,22 +1,22 @@
 <template>
-  <div class="online-file-selection-box">
+  <div class="move-file-selection-box">
     <el-dialog
-      v-model="onlineFileVisible"
+      v-model="moveFileVisible"
       :close-on-click-modal="false"
       align-center
       :show-close="false"
       destroy-on-close
-      modal-class="online-file-selection-box-dialog"
+      modal-class="move-file-selection-box-dialog"
       width="850"
     >
       <template #header>
         <div class="head-left">
           <img
             class="dialog-header-del-icon"
-            src="@renderer/assets/upload-files/continue-uploading-icon.png"
+            src="@renderer/assets/contextMenu/move-file-icon.png"
             alt=""
           />
-          <div class="">导入内容</div>
+          <div class="">移动：{{ moveFileTitle }}</div>
         </div>
         <div class="head-right">
           <el-input
@@ -29,7 +29,7 @@
           <el-icon class="close-icon" @click="close"><Close /></el-icon>
         </div>
       </template>
-      <div class="online-file-box">
+      <div class="move-file-box">
         <div class="path-box">
           <div class="history-btns">
             <el-icon
@@ -70,30 +70,22 @@
                   v-for="(item, index) in list"
                   :key="index + '-' + item.id"
                   class="file-item"
-                  :class="{ active: checkedFiles.length && item.id == checkedFiles[0].id }"
-                  @click="handleCheckChange(item, !item.checked)"
+                  :class="{
+                    disabled:
+                      item.item_type == 1 || props.moveFiles.map((i) => i.id).includes(item.id)
+                  }"
+                  @click="handleCheckChange(item)"
                 >
-                  <el-checkbox
-                    v-if="item.item_type == 1"
-                    v-model="item.checked"
-                    class="check"
-                    @click.stop="() => {}"
-                  />
                   <div class="item-content">
                     <div class="content-left">
                       <img
                         v-if="item.item_type == 1"
-                        :src="item.file_icon"
+                        :src="item.info?.icon"
                         alt=""
                         @error="(e) => (e.target.src = defaultImg)"
                       />
-                      <!-- <img
-                        v-else-if="item.item_type == 2"
-                        :src="item.picurl || catalogueIcon"
-                        alt=""
-                      /> -->
                       <catalogueSvgIcon v-else-if="item.item_type == 2" class="cover-img" />
-                      <img
+                      <!-- <img
                         v-else-if="item.next_type == 2 && !item.is_public"
                         :src="personageRepositoryIcon"
                         alt=""
@@ -106,7 +98,7 @@
                       <template v-else-if="item.next_type == 3">
                         <img v-if="item.picurl" :src="item.picurl" alt="" />
                         <defaultCoverSvg v-else class="cover-img" />
-                      </template>
+                      </template> -->
                       <div class="title">
                         {{ item.title }}
                       </div>
@@ -120,17 +112,10 @@
         </div>
       </div>
       <template #footer>
-        <div class="is_checked">已选择 {{ checkedFiles.length }} 个文件</div>
+        <div class="is_checked"></div>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="close">取消</el-button>
-          <el-button
-            class="confirm-btn"
-            :disabled="checkedFiles.length === 0"
-            type="primary"
-            @click="submitImport"
-          >
-            导入
-          </el-button>
+          <el-button class="confirm-btn" type="primary" @click="submitMove"> 移动至此 </el-button>
         </div>
       </template>
     </el-dialog>
@@ -139,21 +124,43 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
-import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
-import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
-import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
+// import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
+// import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
+// import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 // import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import defaultImg from '@renderer/assets/repository/default-img.png'
-import { get_file_list } from '@renderer/api/index'
-const onlineFileVisible = defineModel({ type: Boolean })
+import { get_know_info } from '@renderer/api/repository'
+const moveFileVisible = defineModel({ type: Boolean })
 const list = ref([])
-const emits = defineEmits(['submitImport'])
+const props = defineProps({
+  knowId: {
+    type: [Number, String],
+    default: ''
+  },
+  knowTitle: {
+    type: String,
+    default: ''
+  },
+  moveFiles: {
+    type: Array,
+    default: () => []
+  }
+})
+let moveFileTitle = computed(() => {
+  if (props.moveFiles.length == 0) {
+    return ''
+  } else if (props.moveFiles.length == 1) {
+    return props.moveFiles[0].title
+  } else {
+    return props.moveFiles[0].title + '等' + props.moveFiles.length + '个项目'
+  }
+})
+const emits = defineEmits(['submitMove'])
 let pathList = ref([
   {
-    title: '知识库',
-    id: 0,
-    next_type: 1
+    title: props.knowTitle,
+    id: 0
   }
 ])
 let activePath = computed(() => {
@@ -161,12 +168,8 @@ let activePath = computed(() => {
 })
 let loading = ref(true)
 let searchText = ref('')
-// 已选择的文件数量
-const checkedFiles = computed(() => {
-  return list.value.filter((item) => item.checked)
-})
 const close = () => {
-  onlineFileVisible.value = false
+  moveFileVisible.value = false
 }
 const pathChange = (i) => {
   pathList.value = removeItemsAfterIndex(pathList.value, i)
@@ -180,51 +183,27 @@ const removeItemsAfterIndex = (array, index) => {
   }
   return array
 }
-const handleCheckChange = (item, e) => {
-  if (item.next_type == 1 || item.next_type == 2) {
-    pathList.value.push({
-      ...item
-    })
-    refreshList()
-    return
-  } else if (item.next_type == 3) {
-    pathList.value.push({
-      ...item,
-      know_id: item.id
-    })
-    refreshList()
-    return
-  } else if (item.item_type == 2) {
+const handleCheckChange = (item) => {
+  if (item.item_type == 2 && !props.moveFiles.map((i) => i.id).includes(item.id)) {
     pathList.value.push({
       ...item,
       know_id: activePath.value.know_id
     })
     refreshList()
-    return
   }
-  item.checked = e
 }
 const refreshList = () => {
   loading.value = true
   list.value = []
   var data = {
-    keyword: searchText.value
+    know_id: props.knowId,
+    parent_item_id: activePath.value.id,
+    search_key: searchText.value
   }
-  if (activePath.value.next_type == 1) {
-    data.type = 1
-  } else if (activePath.value.next_type == 2) {
-    data.type = 2
-    data.is_public = activePath.value.is_public
-  } else if (activePath.value.next_type == 3) {
-    data.know_id = activePath.value.know_id
-  } else {
-    data.know_id = activePath.value.know_id
-    data.parent_item_id = activePath.value.id
-  }
-  get_file_list(data)
+  get_know_info(data)
     .then((res) => {
       if (res.code == 200) {
-        list.value = res.data || []
+        list.value = res.data.items || []
         loading.value = false
       }
     })
@@ -241,16 +220,15 @@ const backPath = () => {
   refreshList()
 }
 watch(
-  () => onlineFileVisible.value,
+  () => moveFileVisible.value,
   (newVal) => {
     if (newVal) {
       refreshList()
     } else {
       pathList.value = [
         {
-          title: '知识库',
-          id: 0,
-          level: 0
+          title: props.knowTitle,
+          id: 0
         }
       ]
       list.value = []
@@ -263,15 +241,18 @@ watch(
 )
 onMounted(() => {})
 // 提交
-const submitImport = () => {
-  emits('submitImport', checkedFiles.value)
-  onlineFileVisible.value = false
+const submitMove = () => {
+  emits('submitMove', {
+    to_know_id: props.knowId,
+    to_item_id: activePath.value.id,
+    item_ids: props.moveFiles.map((item) => item.id)
+  })
 }
 </script>
 
 <style scoped lang="scss">
-.online-file-selection-box {
-  :deep(.online-file-selection-box-dialog) {
+.move-file-selection-box {
+  :deep(.move-file-selection-box-dialog) {
     .el-dialog {
       padding: 13px 20px 14px;
       .el-dialog__header {
@@ -329,7 +310,7 @@ const submitImport = () => {
         height: 368px;
         background: #f9f9f9;
         border-radius: 10px;
-        .online-file-box {
+        .move-file-box {
           box-sizing: border-box;
           .path-box {
             padding: 0 20px;
@@ -395,6 +376,9 @@ const submitImport = () => {
               color: var(--default-font-color);
               border-radius: 6px;
               cursor: pointer;
+              &.disabled {
+                opacity: 0.5;
+              }
               &:hover {
                 background: #f3f3f3;
               }

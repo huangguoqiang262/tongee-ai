@@ -193,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeMount, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onBeforeMount, onMounted, onUnmounted } from 'vue'
 import {
   org_organ_user_tree,
   synergia_upload_file,
@@ -211,7 +211,6 @@ import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
 const synergiaUploadVisible = defineModel({ type: Boolean })
-// const emits = defineEmits(['setPermission'])
 // const userInfo = useUserInfo()
 let modifiersRef = ref(null)
 let approversRef = ref(null)
@@ -220,7 +219,7 @@ const props = defineProps({
     type: [String, Number],
     default: ''
   },
-  itemId: {
+  parentItemId: {
     type: [String, Number],
     default: ''
   }
@@ -382,13 +381,18 @@ const handleAdd = () => {
   if (synergiaFormRef.value) {
     synergiaFormRef.value.validate((valid) => {
       if (valid) {
+        if (!synergiaForm.value.file) {
+          // eslint-disable-next-line no-undef
+          ElMessage.warning('请上传文件')
+          return
+        }
         var data = {
           completion_time: parseInt(synergiaForm.value.finishTime / 1000),
           type_id: synergiaForm.value.type_id,
           editors: JSON.stringify(synergiaForm.value.modifiers),
           auditors: JSON.stringify(synergiaForm.value.approvers),
           'file[]': synergiaForm.value.file,
-          parent_item_id: props.itemId,
+          parent_item_id: props.parentItemId,
           knowledge_id: props.knowId
         }
         synergia_upload_file(data).then((res) => {

@@ -201,17 +201,6 @@ const markSelectedNodes = (checkedNodes) => {
       ding_ids.push(checkedNode.ding_id)
     }
   })
-  //  treeData.map((node) => {
-  //     const isSelected = checkedNodes.some((checkedNode) => checkedNode.ding_id === node.ding_id)
-  //     if (isSelected) {
-  //       console.log(isSelected);
-  //       console.log(node.ding_id,66666);
-  //       ding_ids.push(node.ding_id)
-  //     }
-  //     if (node.children && node.children.length > 0) {
-  //       ding_ids = ding_ids.concat(markSelectedNodes(node.children, checkedNodes))
-  //     }
-  //   })
   return ding_ids
 }
 const handleConfirm = () => {

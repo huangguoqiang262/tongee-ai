@@ -31,3 +31,11 @@ export function del_web_log_one(data) {
     data
   })
 }
+//协同历史
+export function synergia_history_list(data) {
+  return request({
+    url: '/collaboration/history_list',
+    method: 'post',
+    data
+  })
+}

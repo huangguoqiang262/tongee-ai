@@ -117,37 +117,45 @@
               <div v-if="activeTab == '3'" class="synergia-box">
                 <div class="statistics-list">
                   <div class="statistics-item">
-                    <div class="value">6</div>
+                    <div class="value">{{ statisticsData.my_files_count || 0 }}</div>
                     <div class="title">我的文件</div>
                     <div class="desc">我发起的协同文件</div>
                   </div>
                   <div class="statistics-item">
-                    <div class="value">5</div>
+                    <div class="value">{{ statisticsData.pending_task_count || 0 }}</div>
                     <div class="title">等待处理</div>
                     <div class="desc">未反馈、未确认、未批准</div>
                   </div>
                   <div class="statistics-item">
-                    <div class="value">2</div>
+                    <div class="value">{{ statisticsData.pending_feedback_count || 0 }}</div>
                     <div class="title">完成协同</div>
                     <div class="desc">已确认或已批准的文件</div>
                   </div>
                   <div class="statistics-item">
-                    <div class="value">90%</div>
+                    <div class="value">{{ statisticsData.avg_progress_percent || 0 }}%</div>
                     <div class="title">平均进度</div>
                     <div class="desc">我的文件平均进度</div>
                   </div>
                 </div>
                 <div class="synergia-list">
-                  <div v-for="item in 6" :key="item" class="list-item">
+                  <div v-for="(item, index) in list" :key="index" class="list-item">
                     <FileSvgShadowIcon class="left-icon" />
                     <div class="center-box">
-                      <div class="title">新增《临床实验报告模板》</div>
-                      <div class="desc">
-                        新增了符合最新法规要求的临床试验报告模板，供所有项目参考使用
+                      <div class="title-box">
+                        <div class="title">{{ item.title }}</div>
+                        <div v-if="item.status == 0" class="status">等待反馈</div>
+                        <div v-else-if="item.status == 1" class="status">协同进行中</div>
+                        <div v-else-if="item.status == 2" class="status">协同审批中</div>
+                        <div v-else-if="item.status == 3" class="status">入库审批中</div>
+                        <div v-else-if="item.status == 4" class="status err-status">已拒绝入库</div>
+                        <div v-else-if="item.status == 5" class="status">已入库</div>
                       </div>
-                      <div class="author author1">张医生·临床部·5天前更新</div>
+                      <div class="desc">
+                        {{ item.path }}
+                      </div>
+                      <div class="author author1">协同人数：5人</div>
                     </div>
-                    <div class="time">18:00</div>
+                    <div class="time">{{ formatTimeFun(item.createtime) }}</div>
                   </div>
                 </div>
               </div>
@@ -241,7 +249,12 @@
 </template>
 
 <script setup>
-import { get_web_log, del_web_log, del_web_log_one } from '@renderer/api/history'
+import {
+  get_web_log,
+  del_web_log,
+  del_web_log_one,
+  synergia_history_list
+} from '@renderer/api/history'
 import { formatTime } from '@renderer/utils/index.js'
 import webpageIcon from '@renderer/assets/webpage-icon.svg'
 import answersIcon from '@renderer/assets/answers-icon.svg'
@@ -271,10 +284,10 @@ let tabs = ref([
     id: '2',
     name: '网页浏览历史'
   },
-  // {
-  //   id: '3',
-  //   name: '协作历史'
-  // }
+  {
+    id: '3',
+    name: '协作历史'
+  }
 ])
 // 获取文件图标
 const getFileIcon = (item) => {
@@ -401,6 +414,7 @@ const tabHandle = (id) => {
   getList()
 }
 const list = ref([])
+const statisticsData = ref({})
 let clearHistory = ref(false)
 let beforeClearChange = () => {
   clearHistory.value = true
@@ -446,6 +460,19 @@ const getList = (load = true) => {
       })
   } else if (activeTab.value == '3') {
     loading.value = false
+    synergia_history_list(data)
+      .then((res) => {
+        if (res.code == 200) {
+          list.value = list.value.concat(res.data.list.data || [])
+          statisticsData.value = res.data.summary || {}
+          pagination.value.total = res.data.list.total
+          pagination.value.page = res.data.list.current_page
+          pagination.value.page_size = res.data.list.per_page
+        }
+      })
+      .finally(() => {
+        loading.value = false
+      })
   }
 }
 let delHistory = ref(false)
@@ -847,9 +874,16 @@ onMounted(() => {
               text-align: center;
               .value {
                 margin-bottom: 6px;
-                font-size: 24px;
+                font-size: 26px;
                 line-height: 32px;
                 font-family: DOUYINSANSBOLD;
+                .unit {
+                  font-size: 20px;
+                  font-weight: normal;
+                  font-family:
+                    PingFangSC,
+                    PingFang SC;
+                }
               }
               .title {
                 margin-bottom: 8px;
@@ -901,11 +935,38 @@ onMounted(() => {
               .center-box {
                 flex: 1;
                 overflow: hidden;
-                .title {
-                  margin-bottom: 4px;
-                  font-size: 14px;
-                  color: var(--default-font-color);
-                  line-height: 22px;
+                .title-box {
+                  display: flex;
+                  align-items: center;
+                  gap: 0 10px;
+                  margin-bottom: 8px;
+                  overflow: hidden;
+                  .title {
+                    max-width: calc(100% - 80px);
+                    font-size: 14px;
+                    color: var(--default-font-color);
+                    line-height: 22px;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    overflow: hidden;
+                  }
+                  .status {
+                    flex-shrink: 0;
+                    box-sizing: border-box;
+                    padding: 0 6px;
+                    font-size: 10px;
+                    color: var(--el-color-primary);
+                    line-height: 14px;
+                    height: 16px;
+                    background: var(--el-color-primary-light-9);
+                    border-radius: 2px;
+                    border: 1px solid var(--el-color-primary);
+                    &.err-status {
+                      color: var(--el-danger-color);
+                      border-color: var(--el-danger-color);
+                      background: var(--el-danger-color-light-9);
+                    }
+                  }
                 }
                 .desc {
                   margin-bottom: 8px;

@@ -419,17 +419,17 @@
                     <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
                     <div class="title">导入网页</div>
                   </div>
-                  <!-- <div
+                  <div
                     v-if="activeRepository.is_public == 1"
                     class="item"
                     @click="beforeUploadFiles('synergia')"
                   >
                     <img class="icon" src="@renderer/assets/popover/synergia-icon.png" alt="" />
                     <div class="title">协同文件</div>
-                  </div> -->
+                  </div>
                 </div>
               </el-popover>
-              <!-- <el-popover
+              <el-popover
                 v-else-if="activeRepository.is_public == 1"
                 ref="repositoryaddPopover"
                 popper-class="custom-repository-popover"
@@ -451,7 +451,7 @@
                     <div class="title">协同文件</div>
                   </div>
                 </div>
-              </el-popover> -->
+              </el-popover>
               <el-popover
                 ref="repositorySortPopover"
                 popper-class="custom-repository-popover"
@@ -1073,16 +1073,24 @@
     <synergia-upload
       v-model="synergiaUploadVisible"
       :know-id="activeRepository.id"
-      :item-id="parentItemId"
+      :parent-item-id="parentItemId"
+      @refresh-list="refreshList"
     >
     </synergia-upload>
     <synergia-look
       v-model="synergiaLookVisible"
       :know-id="activeRepository.id"
-      :tree-data="repositoryMemberTree"
-      :item-id="parentItemId"
+      :item-id="itemId"
+      @refresh-list="refreshList"
     >
     </synergia-look>
+    <MoveFile
+      v-model="moveFileVisible"
+      :know-id="activeRepository.id"
+      :know-title="activeRepository.title"
+      :move-files="activeFiles"
+      @submit-move="submitMove"
+    ></MoveFile>
   </div>
 </template>
 
@@ -1111,6 +1119,7 @@ import deleteIcon from '@renderer/assets/contextMenu/delete-icon.png'
 import canViewIcon from '@renderer/assets/contextMenu/can-view-icon.png'
 import disabledExportIcon from '@renderer/assets/contextMenu/disabled-export-icon.png'
 import cannotViewIcon from '@renderer/assets/contextMenu/cannot-view-icon.png'
+import moveIcon from '@renderer/assets/contextMenu/move-file-icon.png'
 import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
@@ -1157,7 +1166,11 @@ import {
   create_know_website,
   setKnowItemPermission,
   withdraw_join,
-  import_note
+  import_note,
+  changeKnowFilePosition,
+  synergia_simple_feedback,
+  synergia_task_complete,
+  synergia_complete_approve
 } from '@renderer/api/repository'
 import { user_info } from '@renderer/api/user'
 onErrorCaptured((err, instance, info) => {
@@ -1170,6 +1183,22 @@ const props = defineProps({
     default: () => ({})
   }
 })
+let moveFileVisible = ref(false)
+// 确认移动
+const submitMove = (data) => {
+  changeKnowFilePosition({
+    to_item_id: data.to_item_id,
+    item_id: data.item_ids[0],
+    to_know_id: data.to_know_id
+  }).then((res) => {
+    if (res.code == 200) {
+      // eslint-disable-next-line no-undef
+      ElMessage.primary('移动成功')
+      moveFileVisible.value = false
+      refreshList()
+    }
+  })
+}
 // 拖拽相关数据
 const showDragOverlay = ref(false)
 
@@ -1367,6 +1396,21 @@ const downloadFile = (url, fileName) => {
 }
 // 到达详情
 const detailChange = (item) => {
+  if (item.is_collaboration == 1) {
+    addNewTab({
+      icon: getFileIcon(item),
+      title: item.title,
+      url: 'SynergiaDetail',
+      isInternal: true,
+      attrs: {
+        fileUrl: item.info?.url,
+        fileName: item.title,
+        fileId: item.info?.file_key || '',
+        itemId: item.id || ''
+      }
+    })
+    return false
+  }
   if (
     activeRepository.value.user_permission?.is_creator ||
     activeRepository.value.user_permission?.is_manager
@@ -2266,59 +2310,70 @@ const showContextMenu = (e, item) => {
             }
           )
           if (activeFiles.value[0].is_collaboration == 1) {
-            contextMenu.value.actionSheet.splice(-2, 0, {
-              name: '协同管理',
-              icon: synergyIcon,
-              action: 'synergy',
-              children: [
-                {
-                  name: '在线编辑',
-                  icon: synergyEditIcon,
-                  action: 'synergyEdit'
-                },
-                {
-                  name: '查看协同',
-                  icon: synergyLookIcon,
-                  action: 'synergyLook'
-                },
-                {
-                  name: '确认通过',
-                  icon: synergyConfirmIcon,
-                  action: 'synergyConfirm'
-                },
-                {
-                  name: '批准入库',
-                  icon: synergyRatifyIcon,
-                  action: 'synergyRatify'
-                }
-              ]
-            })
+            if (activeFiles.value[0].user_collaboration_status == 0) {
+              contextMenu.value.actionSheet.splice(-2, 0, {
+                name: '协同管理',
+                icon: synergyIcon,
+                action: 'synergy',
+                children: [
+                  {
+                    name: '在线编辑',
+                    icon: synergyEditIcon,
+                    action: 'synergyEdit'
+                  },
+                  {
+                    name: '查看协同',
+                    icon: synergyLookIcon,
+                    action: 'synergyLook'
+                  },
+                  {
+                    name: '确认通过',
+                    icon: synergyConfirmIcon,
+                    action: 'synergyConfirm'
+                  }
+                ]
+              })
+            } else if (activeFiles.value[0].user_collaboration_status == 2) {
+              contextMenu.value.actionSheet.splice(-2, 0, {
+                name: '协同管理',
+                icon: synergyIcon,
+                action: 'synergy',
+                children: [
+                  {
+                    name: '查看协同',
+                    icon: synergyLookIcon,
+                    action: 'synergyLook'
+                  },
+                  {
+                    name: '批准入库',
+                    icon: synergyRatifyIcon,
+                    action: 'synergyRatify'
+                  }
+                ]
+              })
+            } else {
+              contextMenu.value.actionSheet.splice(-2, 0, {
+                name: '协同管理',
+                icon: synergyIcon,
+                action: 'synergy',
+                children: [
+                  {
+                    name: '查看协同',
+                    icon: synergyLookIcon,
+                    action: 'synergyLook'
+                  }
+                ]
+              })
+            }
           }
         }
-        // else if (
-        //   repositoryPermission.value.setting?.permission_type == 2 &&
-        //   activeRepository.value.is_public == 1
-        // ) {
-        //   contextMenu.value.actionSheet.splice(3, 0, {
-        //     name: '内容权限',
-        //     icon: permissionIcon,
-        //     action: 'permission',
-        //     children: [
-        //       {
-        //         name: '可查看、不可导出',
-        //         icon: disabledExportIcon,
-        //         action: 'private'
-        //       },
-        //       {
-        //         name: '不可查看',
-        //         icon: cannotViewIcon,
-        //         action: 'cannotView'
-        //       }
-        //     ]
-        //   })
-        // }
       }
     }
+    contextMenu.value.actionSheet.splice(-3, 0, {
+      name: '移动到',
+      icon: moveIcon,
+      action: 'moveFile'
+    })
   } else {
     item.checked = true
     if (item.permission_type === 1 && repositoryPermission.value.is_public == 1) {
@@ -2343,68 +2398,140 @@ const showContextMenu = (e, item) => {
       activeFiles.value.length === 1 &&
       activeFiles.value[0].is_collaboration == 1
     ) {
-      contextMenu.value.actionSheet.splice(-1, 0, {
-        name: '协同管理',
-        icon: synergyIcon,
-        action: 'synergy',
-        children: [
-          {
-            name: '在线编辑',
-            icon: synergyEditIcon,
-            action: 'synergyEdit'
-          },
-          {
-            name: '查看协同',
-            icon: synergyLookIcon,
-            action: 'synergyLook'
-          },
-          {
-            name: '确认通过',
-            icon: synergyConfirmIcon,
-            action: 'synergyConfirm'
-          },
-          {
-            name: '批准入库',
-            icon: synergyRatifyIcon,
-            action: 'synergyRatify'
-          }
-        ]
-      })
+      if (activeFiles.value[0].user_collaboration_status == 0) {
+        contextMenu.value.actionSheet.splice(-1, 0, {
+          name: '协同管理',
+          icon: synergyIcon,
+          action: 'synergy',
+          children: [
+            {
+              name: '在线编辑',
+              icon: synergyEditIcon,
+              action: 'synergyEdit'
+            },
+            {
+              name: '查看协同',
+              icon: synergyLookIcon,
+              action: 'synergyLook'
+            },
+            {
+              name: '确认通过',
+              icon: synergyConfirmIcon,
+              action: 'synergyConfirm'
+            }
+          ]
+        })
+      } else if (activeFiles.value[0].user_collaboration_status == 2) {
+        contextMenu.value.actionSheet.splice(-1, 0, {
+          name: '协同管理',
+          icon: synergyIcon,
+          action: 'synergy',
+          children: [
+            {
+              name: '查看协同',
+              icon: synergyLookIcon,
+              action: 'synergyLook'
+            },
+            {
+              name: '批准入库',
+              icon: synergyRatifyIcon,
+              action: 'synergyRatify'
+            }
+          ]
+        })
+      } else {
+        contextMenu.value.actionSheet.splice(-1, 0, {
+          name: '协同管理',
+          icon: synergyIcon,
+          action: 'synergy',
+          children: [
+            {
+              name: '查看协同',
+              icon: synergyLookIcon,
+              action: 'synergyLook'
+            }
+          ]
+        })
+      }
     } else if (activeFiles.value.length === 1 && activeFiles.value[0].is_collaboration == 1) {
-      contextMenu.value = {
-        show: true,
-        permission_type: 'cannotView',
-        x: e.clientX,
-        y: e.clientY,
-        actionSheet: [
-          {
-            name: '协同管理',
-            icon: synergyIcon,
-            action: 'synergy',
-            children: [
-              {
-                name: '在线编辑',
-                icon: synergyEditIcon,
-                action: 'synergyEdit'
-              },
-              {
-                name: '查看协同',
-                icon: synergyLookIcon,
-                action: 'synergyLook'
-              },
-              {
-                name: '确认通过',
-                icon: synergyConfirmIcon,
-                action: 'synergyConfirm'
-              },
-              {
-                name: '批准入库',
-                icon: synergyRatifyIcon,
-                action: 'synergyRatify'
-              }
-            ]
-          }
-        ]
+      if (activeFiles.value[0].user_collaboration_status == 0) {
+        contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: '协同管理',
+              icon: synergyIcon,
+              action: 'synergy',
+              children: [
+                {
+                  name: '在线编辑',
+                  icon: synergyEditIcon,
+                  action: 'synergyEdit'
+                },
+                {
+                  name: '查看协同',
+                  icon: synergyLookIcon,
+                  action: 'synergyLook'
+                },
+                {
+                  name: '确认通过',
+                  icon: synergyConfirmIcon,
+                  action: 'synergyConfirm'
+                }
+              ]
+            }
+          ]
+        }
+      } else if (activeFiles.value[0].user_collaboration_status == 2) {
+        contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: '协同管理',
+              icon: synergyIcon,
+              action: 'synergy',
+              children: [
+                {
+                  name: '查看协同',
+                  icon: synergyLookIcon,
+                  action: 'synergyLook'
+                },
+                {
+                  name: '批准入库',
+                  icon: synergyRatifyIcon,
+                  action: 'synergyRatify'
+                }
+              ]
+            }
+          ]
+        }
+      } else {
+        contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: '协同管理',
+              icon: synergyIcon,
+              action: 'synergy',
+              children: [
+                {
+                  name: '查看协同',
+                  icon: synergyLookIcon,
+                  action: 'synergyLook'
+                }
+              ]
+            }
+          ]
+        }
       }
     }
   }
@@ -2561,24 +2688,103 @@ const handleContextMenuAction = ({ action }) => {
         refreshList()
       }
     })
+  } else if (action === 'synergyFeedback') {
+    // 协同反馈
+    // eslint-disable-next-line no-undef
+    ElMessageBox.confirm('确认反馈吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(() => {
+        // 确认反馈
+        synergia_simple_feedback({
+          item_id: activeFiles.value[0].id || ''
+        }).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('反馈成功')
+            refreshList()
+          }
+        })
+      })
+      .catch(() => {})
+    itemId.value = activeFiles.value[0].id
   } else if (action === 'synergyConfirm') {
     // 协同确认
+    // eslint-disable-next-line no-undef
+    ElMessageBox.confirm('确认通过吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(() => {
+        // 确认反馈
+        synergia_task_complete({
+          item_id: activeFiles.value[0].id || ''
+        }).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('通过成功')
+            refreshList()
+          }
+        })
+      })
+      .catch(() => {})
+    itemId.value = activeFiles.value[0].id
   } else if (action === 'synergyEdit') {
     // 协同编辑
+    addNewTab({
+      icon: getFileIcon(activeFiles.value[0]),
+      title: activeFiles.value[0].title,
+      url: 'SynergiaDetail',
+      isInternal: true,
+      attrs: {
+        fileUrl: activeFiles.value[0].info?.url,
+        fileName: activeFiles.value[0].title,
+        fileId: activeFiles.value[0].info?.file_key || '',
+        itemId: activeFiles.value[0].id || ''
+      }
+    })
+    itemId.value = activeFiles.value[0].id
   } else if (action === 'synergyLook') {
     // 协同查看
+    itemId.value = activeFiles.value[0].id
     synergiaLookVisible.value = true
   } else if (action === 'synergyRatify') {
     // 协同批准
+    // eslint-disable-next-line no-undef
+    ElMessageBox.confirm('确认批准入库吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(() => {
+        // 批准入库
+        // 确认反馈
+        synergia_complete_approve({
+          item_id: activeFiles.value[0].id || ''
+        }).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('批准成功')
+            refreshList()
+          }
+        })
+      })
+      .catch(() => {})
+  } else if (action === 'moveFile') {
+    // 移动文件
+    moveFileVisible.value = true
   }
   contextMenu.value.show = false
 }
 const resetChecks = () => {
-  detailFileList.value.map((item) => {
-    if (item.item_type == 2) {
-      item.checked = false
-    }
-  })
+  // detailFileList.value.map((item) => {
+  //   if (item.item_type == 2) {
+  //     item.checked = false
+  //   }
+  // })
 }
 const hideContextMenu = (e) => {
   if (contextMenu.value.show && !e.target.closest('.context-menu')) {

@@ -311,3 +311,51 @@ export function synergia_task_complete(data) {
     data
   })
 }
+// 审批人完成审批
+export function synergia_complete_approve(data) {
+  return request({
+    url: '/collaboration/task_complete_approve',
+    method: 'post',
+    data
+  })
+}
+// 协同入库审批
+export function synergia_audit_in_know(data) {
+  return request({
+    url: '/collaboration/audit_in_know',
+    method: 'post',
+    data
+  })
+}
+// 协同标记已反馈
+export function synergia_simple_feedback(data) {
+  return request({
+    url: '/collaboration/simple_feedback',
+    method: 'post',
+    data
+  })
+}
+// 协同新增协同流程人员
+export function synergia_add_process_user(data) {
+  return request({
+    url: '/collaboration/add_process_user',
+    method: 'post',
+    data
+  })
+}
+// 协同获取项目用户状态
+export function get_project_user_status(data) {
+  return request({
+    url: '/collaboration/get_project_user_status',
+    method: 'post',
+    data
+  })
+}
+// 文件更换知识库或文件夹
+export function changeKnowFilePosition(data) {
+  return request({
+    url: '/intelligence/changeKnowFilePosition',
+    method: 'post',
+    data
+  })
+}
