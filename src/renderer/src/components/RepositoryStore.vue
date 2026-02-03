@@ -1142,6 +1142,7 @@ import synergyEditIcon from '@renderer/assets/contextMenu/synergy-edit-icon.png'
 import synergyConfirmIcon from '@renderer/assets/contextMenu/synergy-confirm-icon.png'
 import synergyLookIcon from '@renderer/assets/contextMenu/synergy-look-icon.png'
 import synergyRatifyIcon from '@renderer/assets/contextMenu/synergy-ratify-icon.png'
+import synergyFeedbackIcon from '@renderer/assets/contextMenu/synergy-feedback-icon.png'
 import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import {
   get_knows,
@@ -2327,6 +2328,11 @@ const showContextMenu = (e, item) => {
                     action: 'synergyLook'
                   },
                   {
+                    name: '确认反馈',
+                    icon: synergyFeedbackIcon,
+                    action: 'synergyFeedback'
+                  },
+                  {
                     name: '确认通过',
                     icon: synergyConfirmIcon,
                     action: 'synergyConfirm'
@@ -2415,6 +2421,11 @@ const showContextMenu = (e, item) => {
               action: 'synergyLook'
             },
             {
+              name: '确认反馈',
+              icon: synergyFeedbackIcon,
+              action: 'synergyFeedback'
+            },
+            {
               name: '确认通过',
               icon: synergyConfirmIcon,
               action: 'synergyConfirm'
@@ -2475,6 +2486,11 @@ const showContextMenu = (e, item) => {
                   name: '查看协同',
                   icon: synergyLookIcon,
                   action: 'synergyLook'
+                },
+                {
+                  name: '确认反馈',
+                  icon: synergyFeedbackIcon,
+                  action: 'synergyFeedback'
                 },
                 {
                   name: '确认通过',
