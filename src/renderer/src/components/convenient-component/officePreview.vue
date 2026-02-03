@@ -120,7 +120,9 @@ const props = defineProps({
     type: String,
     required: true,
     validator: (value) =>
-      ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'ppt', 'pptx'].includes(value.trim().toLowerCase())
+      ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'ppt', 'pptx', 'csv'].includes(
+        value.trim().toLowerCase()
+      )
   },
   // 文件源地址
   src: {

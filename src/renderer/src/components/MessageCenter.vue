@@ -179,7 +179,12 @@
         </div>
         <div v-if="activeTab == '4'" class="synergia-box">
           <div class="synergia-list">
-            <div v-for="(item, index) in synergiaMsgList" :key="index" class="list-item">
+            <div
+              v-for="(item, index) in synergiaMsgList"
+              :key="index"
+              class="list-item"
+              @click="lookSystem(item)"
+            >
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
                 <div class="title-box">
@@ -321,10 +326,19 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted, watchEffect, shallowRef, nextTick } from 'vue'
+import { ref, onMounted, watchEffect, shallowRef, nextTick, inject } from 'vue'
 import FileSvgIcon from '@renderer/assets/file-icon.svg'
 import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
 import InformSvgIcon from '@renderer/assets/inform-icon.svg'
+import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
+import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
+import imgIcon from '@renderer/assets/file-icons/img-icon.png'
+import pdfIcon from '@renderer/assets/file-icons/pdf-icon.png'
+import pptIcon from '@renderer/assets/file-icons/ppt-icon.png'
+import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
+import wordIcon from '@renderer/assets/file-icons/word-icon.png'
+import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 import { formatTime } from '@renderer/utils/index.js'
 import {
   get_system_msg,
@@ -352,6 +366,49 @@ const refuseForm = ref({
 const refuseRules = ref({
   refuseInput: [{ required: true, message: '请输入拒绝原因', trigger: ['blur'] }]
 })
+const addNewTab = inject('addNewTab')
+const lookSystem = (item) => {
+  addNewTab({
+    icon: getFileIcon(item),
+    title: item.process_title,
+    url: 'SynergiaDetail',
+    isInternal: true,
+    attrs: {
+      fileUrl: item.file_edit_url,
+      fileName: item.process_title,
+      fileId: item.file_key,
+      itemId: item.item_id || ''
+    }
+  })
+}
+// 获取文件图标
+const getFileIcon = (item) => {
+  if (item.item_type == 2) {
+    return catalogueIcon
+  } else if (item.item_type == 3) {
+    return webPageIcon
+  }
+  // 根据文件扩展名返回不同的图标
+  const ext = item.file_edit_url?.split('.').pop()?.toLowerCase()
+  const iconMap = {
+    doc: wordIcon,
+    docx: wordIcon,
+    pdf: pdfIcon,
+    xls: excelIcon,
+    xlsx: excelIcon,
+    csv: csvIcon,
+    ppt: pptIcon,
+    pptx: pptIcon,
+    txt: txtIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon,
+    web: webPageIcon
+  }
+
+  return iconMap[ext] || wordIcon
+}
 const submitRefuseForm = (formRef) => {
   formRef.validate((valid) => {
     if (valid) {
