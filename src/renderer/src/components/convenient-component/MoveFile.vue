@@ -243,9 +243,13 @@ onMounted(() => {})
 // 提交
 const submitMove = () => {
   emits('submitMove', {
-    to_know_id: props.knowId,
-    to_item_id: activePath.value.id,
-    item_ids: props.moveFiles.map((item) => item.id)
+    change_items: props.moveFiles.map((item) => {
+      return {
+        item_id: item.id,
+        to_know_id: props.knowId,
+        to_know_item_parent_id: activePath.value.id
+      }
+    })
   })
 }
 </script>

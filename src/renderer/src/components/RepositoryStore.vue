@@ -500,7 +500,14 @@
               <Search />
             </el-icon>
           </div>
-          <div v-if="detailFileList.length" class="list-box">
+          <div
+            v-if="detailFileList.length"
+            class="list-box"
+            @mousedown="handleMouseDown"
+            @mousemove="handleMouseMove"
+            @mouseup="handleMouseUp"
+            @mouseleave="handleMouseLeave"
+          >
             <template v-for="(item, index) in detailFileList" :key="item.id">
               <div
                 v-if="item.item_type == 2"
@@ -1188,9 +1195,7 @@ let moveFileVisible = ref(false)
 // 确认移动
 const submitMove = (data) => {
   changeKnowFilePosition({
-    to_item_id: data.to_item_id,
-    item_id: data.item_ids[0],
-    to_know_id: data.to_know_id
+    change_items: JSON.stringify(data.change_items)
   }).then((res) => {
     if (res.code == 200) {
       // eslint-disable-next-line no-undef
@@ -1398,7 +1403,7 @@ const downloadFile = (url, fileName) => {
 // 到达详情
 const detailChange = (item, e, i) => {
   if (e.shiftKey) {
-    detailFileList.value.map((children,j) => {
+    detailFileList.value.map((children, j) => {
       if (j <= i) {
         children.checked = true
       }
@@ -3208,7 +3213,7 @@ let parentItemId = computed(() => {
 // 点击文件夹
 const dirChange = (item, e, i) => {
   if (e.shiftKey) {
-    detailFileList.value.map((children,j) => {
+    detailFileList.value.map((children, j) => {
       if (j <= i) {
         children.checked = true
       }
@@ -3246,6 +3251,120 @@ watch(
     immediate: true
   }
 )
+//拖拽区域选中
+// 鼠标拖动选择相关变量
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
+const dragEndX = ref(0)
+const dragEndY = ref(0)
+const dragSelectionRect = ref(null)
+
+// 鼠标按下事件
+const handleMouseDown = (e) => {
+  // 只处理左键点击
+  if (e.button !== 0) return
+
+  // 如果点击在checkbox上，不触发拖动选择
+  if (e.target.closest('.checkbox')) return
+
+  isDragging.value = true
+  dragStartX.value = e.clientX
+  dragStartY.value = e.clientY
+  dragEndX.value = e.clientX
+  dragEndY.value = e.clientY
+
+  // 创建选择矩形
+  if (!dragSelectionRect.value) {
+    dragSelectionRect.value = document.createElement('div')
+    dragSelectionRect.value.className = 'drag-selection-rect'
+    dragSelectionRect.value.style.position = 'absolute'
+    dragSelectionRect.value.style.background = 'rgba(64, 158, 255, 0.1)'
+    dragSelectionRect.value.style.border = '1px solid rgba(64, 158, 255, 0.5)'
+    dragSelectionRect.value.style.pointerEvents = 'none'
+    dragSelectionRect.value.style.zIndex = '1000'
+    document.querySelector('.list-box').appendChild(dragSelectionRect.value)
+  }
+}
+
+// 鼠标移动事件
+const handleMouseMove = (e) => {
+  if (!isDragging.value) return
+
+  dragEndX.value = e.clientX
+  dragEndY.value = e.clientY
+
+  // 更新选择矩形位置和大小
+  updateSelectionRect()
+
+  // 检查哪些列表项在选择区域内
+  checkItemsInSelection()
+}
+
+// 鼠标释放事件
+const handleMouseUp = () => {
+  if (!isDragging.value) return
+
+  isDragging.value = false
+
+  // 移除选择矩形
+  if (dragSelectionRect.value) {
+    dragSelectionRect.value.remove()
+    dragSelectionRect.value = null
+  }
+}
+
+// 鼠标离开事件
+const handleMouseLeave = () => {
+  if (isDragging.value) {
+    handleMouseUp()
+  }
+}
+
+// 更新选择矩形
+const updateSelectionRect = () => {
+  if (!dragSelectionRect.value) return
+
+  const listBox = document.querySelector('.list-box')
+  const rect = listBox.getBoundingClientRect()
+  const startX = Math.min(dragStartX.value, dragEndX.value)
+  const startY = Math.min(dragStartY.value, dragEndY.value)
+  const endX = Math.max(dragStartX.value, dragEndX.value)
+  const endY = Math.max(dragStartY.value, dragEndY.value)
+
+  const left = Math.max(startX - rect.left, 0)
+  const top = Math.max(startY - rect.top + 34, 0)
+  const width = Math.min(endX - startX, rect.width - left)
+  const height = Math.min(endY - startY, rect.height - top)
+
+  dragSelectionRect.value.style.left = left + 'px'
+  dragSelectionRect.value.style.top = top + 'px'
+  dragSelectionRect.value.style.width = width + 'px'
+  dragSelectionRect.value.style.height = height + 'px'
+}
+
+// 检查选择区域内的列表项
+const checkItemsInSelection = () => {
+  const listBox = document.querySelector('.list-box')
+  const listItems = listBox.querySelectorAll('.list-item')
+  const startX = Math.min(dragStartX.value, dragEndX.value)
+  const startY = Math.min(dragStartY.value, dragEndY.value)
+  const endX = Math.max(dragStartX.value, dragEndX.value)
+  const endY = Math.max(dragStartY.value, dragEndY.value)
+  listItems.forEach((item, index) => {
+    const itemRect = item.getBoundingClientRect()
+    // 检查item是否在选择区域内
+    const isInSelection =
+      itemRect.left < endX &&
+      itemRect.right > startX &&
+      itemRect.top < endY &&
+      itemRect.bottom > startY
+
+    if (isInSelection && detailFileList.value[index]) {
+      detailFileList.value[index].checked = true
+    }
+  })
+}
 </script>
 
 <style scoped lang="scss">
@@ -3814,7 +3933,7 @@ watch(
       overflow: hidden;
       display: flex;
       flex-direction: column;
-
+      position: relative;
       .list-handle-box {
         flex-shrink: 0;
         width: calc(100% - 20px);
@@ -3928,7 +4047,6 @@ watch(
       .list-box {
         flex: 1;
         overflow: auto;
-
         &::-webkit-scrollbar {
           width: 4px;
           height: 4px;
@@ -3941,6 +4059,15 @@ watch(
           &:hover {
             background-color: #909090;
           }
+        }
+        // 拖动选择矩形样式
+        .drag-selection-rect {
+          position: absolute;
+          background: rgba(64, 158, 255, 0.1);
+          border: 1px solid rgba(64, 158, 255, 0.5);
+          pointer-events: none;
+          z-index: 1000;
+          border-radius: 4px;
         }
 
         .list-item {

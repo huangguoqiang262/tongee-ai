@@ -26,12 +26,13 @@
             </div>
           </div>
         </div>
-        <FilePreview
+        <!-- <FilePreview
           v-if="fileUrl"
           class="center-content"
           :file-url="fileUrl"
           :file-name="fileName"
-        />
+        /> -->
+        <onlyofficePreview v-if="fileUrl" class="center-content" :src="fileUrl" mode="view" />
       </el-splitter-panel>
       <el-splitter-panel v-if="chatVisible" :min="375" :size="375" class="right-box">
         <CommonChat
