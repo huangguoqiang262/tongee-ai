@@ -3,7 +3,7 @@
   <div class="onlyoffice-preview" :style="{ height, width }">
     <DocumentEditor
       :id="id"
-      :document-server-url="props.serverUrl"
+      :document-server-url="serverUrl"
       :config="config"
       :events_onDocumentReady="handleDocumentReady"
       :events_onSave="handleSave"
@@ -30,19 +30,19 @@
 /* eslint-disable */
 import { ref, computed } from 'vue'
 import { DocumentEditor } from '@onlyoffice/document-editor-vue'
+import { useUserInfo } from '@renderer/hooks/checkLogin'
+const userInfo = useUserInfo()
+const serverUrl = ref(import.meta.env.VITE_API_BASE_ONLYOFFICE_URL)
 const props = defineProps({
   // 文档访问 URL（建议用局域网可访问的 http(s) 链接，例如: http://192.168.1.100:3000/files/example.docx）
   src: { type: String, required: true },
-  // OnlyOffice Document Server 地址，不要包含路径尾部，例如: http://192.168.1.100:8080
-  serverUrl: { type: String, required: true },
   // 视图模式: 'view' 或 'edit'（edit 需要文档服务器允许保存并配置回调接口）
   mode: { type: String, default: 'view' },
-  // 可选 JWT（如果你的 Document Server 配置了 JWT 认证）
-  jwt: { type: String, default: '' },
   height: { type: String, default: '100%' },
   width: { type: String, default: '100%' },
   id: { type: String, default: 'onlyoffice-editor-' + Date.now() }
 })
+console.log(props.src,66666);
 
 const emit = defineEmits(['ready', 'error', 'loaded'])
 
@@ -137,19 +137,19 @@ const config = ref({
   type: fileExt.value || 'docx',
   documentType: docType,
   document: {
-    title: fileUrl.split('/').pop(),
-    url: fileUrl,
+    title: props.src.split('/').pop(),
+    url: props.src,
     fileType: fileExt.value || 'docx',
     key: Date.now().toString()
   },
   editorConfig: {
     mode: props.mode === 'edit' ? 'edit' : 'view',
     lang: 'zh-cn',
-    callbackUrl: props.serverUrl // 默认回调为 Document Server，自行在后端实现保存回调接口
+    callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
   },
   user: {
-    id: 'guest',
-    name: 'Guest User'
+    ding_uid: userInfo.value?.ding_uid || '',
+    name: userInfo.value?.name || ''
   }
 })
 const handleDocumentReady = (event) => {

@@ -26,7 +26,7 @@
           <div class="">查看协同</div>
         </div>
         <div class="header-right">
-          <el-button class="refresh-box" size="small">
+          <el-button class="refresh-box" size="small" @click="refresh">
             <el-icon class="refresh-icon" :class="{ refreshLoading: refreshLoading }"
               ><RefreshRight
             /></el-icon>
@@ -40,19 +40,22 @@
           <div class="statistics-title">整体协同进度</div>
           <div class="statistics-list">
             <div class="statistics-item">
-              <div class="value">10</div>
-              <div class="title">协同进度</div>
-              <div class="desc">协同修改人员</div>
+              <div class="value">{{ statisticsData.completed_nums || 0 }}</div>
+              <div class="title">已完成</div>
+              <div class="desc">已确认、批准协同人数</div>
             </div>
             <div class="statistics-item">
-              <div class="value">5</div>
-              <div class="title">已批准</div>
-              <div class="desc">协同批准人</div>
-            </div>
-            <div class="statistics-item">
-              <div class="value">2</div>
+              <div class="value">{{ statisticsData.pending_nums || 0 }}</div>
               <div class="title">待处理</div>
-              <div class="desc">协同人待操作</div>
+              <div class="desc">待处理协同人数</div>
+            </div>
+            <div class="statistics-item">
+              <div class="value">
+                {{ statisticsData.total_time?.hour || 0 }} <span class="unit">h</span>
+                {{ statisticsData.total_time?.minute || 0 }} <span class="unit">min</span>
+              </div>
+              <div class="title">总耗时</div>
+              <div class="desc">文件总耗时</div>
             </div>
           </div>
         </div>
@@ -65,7 +68,7 @@
                   v-model="modifiersSearch"
                   class="input"
                   type="text"
-                  placeholder="搜索修改人员"
+                  placeholder="搜索添加协同人"
                   suffix-icon="Search"
                   @focus="modifiersVisible = true"
                 />
@@ -75,37 +78,54 @@
                   ref="modifiersRef"
                   style="width: 100%"
                   :data="modifiersTreeData"
-                  node-key="ding_id"
+                  node-key="key"
                   :expand-on-click-node="false"
-                  :props="{ class: 'customNodeClass', label: 'name' }"
+                  :props="{ class: 'customNodeClass', label: 'title' }"
                   :filter-node-method="modifiersFilterHandle"
                 >
                   <template #default="{ data }">
-                    <span class="el-tree-node__label">{{ data.name }}</span>
-                    <el-icon class="close-icon" @click="addItem(data)">
+                    <span class="el-tree-node__label">{{ data.title }}</span>
+                    <el-icon
+                      v-if="data.type == 'user' && !data.editor_selected"
+                      class="add-icon"
+                      @click="addModifier(data)"
+                    >
                       <Plus />
+                    </el-icon>
+                    <el-icon
+                      v-else-if="data.type == 'user' && data.editor_selected"
+                      class="add-icon check-icon"
+                    >
+                      <Check />
                     </el-icon>
                   </template>
                 </el-tree>
               </div>
-              <div v-if="synergiaForm.modifiers.length" class="person-list">
-                <div v-for="(tag, i) in synergiaForm.modifiers" :key="i" class="person-item">
-                  <img class="avatar" :src="DefaultAvatar" alt="" />
+              <div v-if="modifiers.length" class="person-list">
+                <div v-for="(tag, i) in modifiers" :key="i" class="person-item">
+                  <img class="avatar" :src="tag.avatar || DefaultAvatar" alt="" />
                   <div class="item-box">
                     <div class="item-top">
-                      <div class="name">李易峰</div>
+                      <div class="name">{{ tag.name }}</div>
                       <div class="status-box">
-                        <div class="status">已反馈</div>
-                        <div class="status">已确认</div>
+                        <div v-if="tag.feedbacked == 1" class="status">已反馈</div>
+                        <div v-else class="status info-status">未反馈</div>
+                        <div v-if="tag.task_status == 1" class="status">已确认</div>
+                        <div v-else class="status info-status">未确认</div>
                       </div>
                     </div>
                     <div class="item-bottom">
-                      <div class="bottom-left">产品经理</div>
+                      <div class="bottom-left">{{ tag.position }}</div>
                       <div class="bottom-right">
                         <div class="progress-box">
-                          <el-progress :show-text="false" :percentage="50" />
+                          <el-progress
+                            :show-text="false"
+                            :percentage="formatTime(tag.end_time_diff, modifiers).percentage"
+                          />
                         </div>
-                        <div class="duration">1小时20分钟</div>
+                        <div class="duration">
+                          {{ formatTime(tag.end_time_diff, modifiers).timeConsuming }}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -124,7 +144,7 @@
                   v-model="approversSearch"
                   class="input"
                   type="text"
-                  placeholder="搜索批准人员"
+                  placeholder="搜索添加批准人"
                   suffix-icon="Search"
                   @focus="approversVisible = true"
                 />
@@ -134,37 +154,42 @@
                   ref="approversRef"
                   style="width: 100%"
                   :data="approversTreeData"
-                  node-key="ding_id"
+                  node-key="key"
                   :expand-on-click-node="false"
-                  :props="{ class: 'customNodeClass', label: 'name' }"
+                  :props="{ class: 'customNodeClass', label: 'title' }"
                   :filter-node-method="approversFilterHandle"
                 >
                   <template #default="{ data }">
-                    <span class="el-tree-node__label">{{ data.name }}</span>
-                    <el-icon class="close-icon" @click="addItem(data)">
+                    <span class="el-tree-node__label">{{ data.title }}</span>
+                    <el-icon v-if="data.type == 'user'" class="add-icon" @click="addApprover(data)">
                       <Plus />
                     </el-icon>
                   </template>
                 </el-tree>
               </div>
-              <div v-if="synergiaForm.approvers.length" class="person-list">
-                <div v-for="(tag, i) in synergiaForm.approvers" :key="i" class="person-item">
-                  <img class="avatar" :src="DefaultAvatar" alt="" />
+              <div v-if="approvers.length" class="person-list">
+                <div v-for="(tag, i) in approvers" :key="i" class="person-item">
+                  <img class="avatar" :src="tag.avatar || DefaultAvatar" alt="" />
                   <div class="item-box">
                     <div class="item-top">
-                      <div class="name">李易峰</div>
+                      <div class="name">{{ tag.name }}</div>
                       <div class="status-box">
-                        <div class="status">已反馈</div>
-                        <div class="status">已确认</div>
+                        <div v-if="tag.task_status == 1" class="status">已确认</div>
+                        <div v-else class="status info-status">未确认</div>
                       </div>
                     </div>
                     <div class="item-bottom">
-                      <div class="bottom-left">产品经理</div>
+                      <div class="bottom-left">{{ tag.position }}</div>
                       <div class="bottom-right">
                         <div class="progress-box">
-                          <el-progress :show-text="false" :percentage="50" />
+                          <el-progress
+                            :show-text="false"
+                            :percentage="formatTime(tag.end_time_diff, approvers).percentage"
+                          />
                         </div>
-                        <div class="duration">1小时20分钟</div>
+                        <div class="duration">
+                          {{ formatTime(tag.end_time_diff, approvers).timeConsuming }}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -183,18 +208,15 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted, watchEffect } from 'vue'
-import cloneDeep from 'lodash.clonedeep'
 // import { useUserInfo } from '@renderer/hooks/checkLogin'
 import DefaultAvatar from '@renderer/assets/default-avatar.png'
-import excelIcon from '@renderer/assets/file-icons/excel-large-icon.png'
-import imgIcon from '@renderer/assets/file-icons/img-large-icon.png'
-import pdfIcon from '@renderer/assets/file-icons/pdf-large-icon.png'
-import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
-import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
-import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
-import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
+import {
+  synergia_process_detail,
+  org_organ_user_tree,
+  synergia_add_process_user
+} from '@renderer/api/repository.js'
 const synergiaLookVisible = defineModel({ type: Boolean })
-// const emits = defineEmits(['setPermission'])
+const emits = defineEmits(['refreshList'])
 // const userInfo = useUserInfo()
 let refreshLoading = ref(true)
 let modifiersRef = ref(null)
@@ -213,120 +235,89 @@ const props = defineProps({
     default: ''
   }
 })
-let synergiaFormRef = ref(null)
-let synergiaForm = ref({
-  finishTime: '',
-  type: '',
-  modifiers: [],
-  approvers: [],
-  file: null
-})
 const modifiersTreeData = ref([])
 const approversTreeData = ref([])
-watchEffect(() => {
-  modifiersTreeData.value = cloneDeep(props.treeData)
-  approversTreeData.value = cloneDeep(props.treeData)
-})
 let modifiersSearch = ref('')
 let approversSearch = ref('')
 let modifiersVisible = ref(false)
+let modifiers = ref([])
+let approvers = ref([])
+let statisticsData = ref({})
 let approversVisible = ref(false)
-let synergiaRules = ref({
-  finishTime: [{ required: true, message: '请选择期待完成时间', trigger: ['blur'] }],
-  type: [{ required: true, message: '请选择文件类型', trigger: ['blur'] }],
-  modifiers: [{ required: true, message: '请选择修改人员', trigger: ['blur'] }],
-  approvers: [{ required: true, message: '请选择批准人员', trigger: ['blur'] }],
-  file: [{ required: true, message: '请上传文件', trigger: ['change'] }]
-})
-let fileTypes = ref([
-  {
-    title: '注册资料',
-    id: '1'
-  },
-  {
-    title: 'DHF资料',
-    id: '2'
-  },
-  {
-    title: 'DMR文件',
-    id: '3'
-  },
-  {
-    title: '体系文件',
-    id: '4'
-  },
-  {
-    title: '其他文件',
-    id: '5'
-  }
-])
-// 获取文件图标
-const getFileIcon = (file) => {
-  // 根据文件扩展名返回不同的图标
-  const ext = file.name?.split('.').pop()?.toLowerCase()
-  const iconMap = {
-    doc: wordIcon,
-    docx: wordIcon,
-    pdf: pdfIcon,
-    xls: excelIcon,
-    xlsx: excelIcon,
-    csv: csvIcon,
-    ppt: pptIcon,
-    pptx: pptIcon,
-    txt: txtIcon,
-    png: imgIcon,
-    jpg: imgIcon,
-    jpeg: imgIcon,
-    gif: imgIcon
-  }
-
-  return iconMap[ext] || wordIcon
+const refresh = () => {
+  refreshLoading.value = true
+  getSynergiaDetail()
+  getTreeData()
 }
-const formatFileSize = (B) => {
-  if (!B) return '0 B'
-  if (B < 1024) {
-    return B + ' B'
-  } else if (B < 1024 * 1024) {
-    return (B / 1024).toFixed(2) + ' KB'
-  } else if (B < 1024 * 1024 * 1024) {
-    return (B / (1024 * 1024)).toFixed(2) + ' MB'
-  } else if (B < 1024 * 1024 * 1024 * 1024) {
-    return (B / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
-  } else {
-    return (B / (1024 * 1024 * 1024 * 1024)).toFixed(2) + ' TB'
-  }
-}
-// 递归标记节点选中状态
-const markSelectedNodes = (checkedNodes, type) => {
-  let ding_ids = []
-  checkedNodes.some((checkedNode) => {
-    if (checkedNode.is_person) {
-      ding_ids.push({
-        ding_id: checkedNode.ding_id,
-        father_id: checkedNode.father_id,
-        name: checkedNode.name
-      })
+// 获取组织人员树
+const getTreeData = () => {
+  org_organ_user_tree({ item_id: props.itemId }).then((res) => {
+    if (res.code == 200) {
+      modifiersTreeData.value = res.data
+      approversTreeData.value = res.data
     }
   })
-  //  treeData.map((node) => {
-  //     const isSelected = checkedNodes.some((checkedNode) => checkedNode.ding_id === node.ding_id)
-  //     if (isSelected) {
-  //       console.log(isSelected);
-  //       console.log(node.ding_id,66666);
-  //       ding_ids.push(node.ding_id)
-  //     }
-  //     if (node.children && node.children.length > 0) {
-  //       ding_ids = ding_ids.concat(markSelectedNodes(node.children, checkedNodes))
-  //     }
-  //   })
-  if (ding_ids.length > 2 && type === '2') {
-    // eslint-disable-next-line no-undef
-    ElMessage.warning('最多只能选择2名批准人员')
-    approversRef.value.setCheckedKeys(ding_ids.slice(0, 2).map((item) => item.ding_id))
-    return ding_ids.slice(0, 2)
-  }
-  return ding_ids
 }
+const formatTime = (targetTime, list) => {
+  var timeObj = {
+    timeConsuming: '0小时0分钟',
+    percentage: 0
+  }
+  if (!targetTime) {
+    return timeObj
+  }
+  // 查找list中end_time_diff最大值
+  var max_diff = Math.max(...list.map((item) => item.end_time_diff))
+  timeObj.percentage = Math.floor((targetTime / max_diff) * 100)
+  var h = Math.floor(targetTime / 60 / 60)
+  var min = Math.ceil((targetTime % 3600) / 60)
+  timeObj.timeConsuming = `${h}小时${min}分钟`
+  return timeObj
+}
+// 获取协同文件详情
+const getSynergiaDetail = () => {
+  synergia_process_detail({
+    know_id: props.knowId,
+    item_id: props.itemId
+  })
+    .then((res) => {
+      modifiers.value = res.data.editors || []
+      approvers.value = res.data.auditors || []
+      statisticsData.value = {
+        pending_nums: res.data.pending_nums,
+        confirm_nums: res.data.confirm_nums,
+        audit_nums: res.data.audit_nums,
+        pending_collaborator_nums: res.data.pending_collaborator_nums,
+        pending_approve_nums: res.data.pending_approve_nums,
+        completed_nums: res.data.completed_nums,
+        total_time: res.data.total_time
+      }
+    })
+    .finally(() => {
+      refreshLoading.value = false
+    })
+}
+watchEffect(() => {
+  if (synergiaLookVisible.value) {
+    getSynergiaDetail()
+    getTreeData()
+  }
+})
+// 标记选中节点
+// const findSelectedNodes = (data, key) => {
+//   function traverse(nodes) {
+//     nodes.map((node, index) => {
+//       if (node[key]) {
+//         nodes.splice(index, 1)
+//       }
+//       if (node.children && node.children.length > 0) {
+//         traverse(node.children)
+//       }
+//     })
+//   }
+
+//   traverse(data)
+// }
 watch(modifiersSearch, (val) => {
   modifiersRef.value?.filter(val)
 })
@@ -355,23 +346,65 @@ const approversFilterHandle = (value, data) => {
   if (!value) return true
   return data.name.includes(value)
 }
-// const getCompleteSelectedTree = (personRef, type) => {
-//   const tempCheckedNodes = personRef.value.getCheckedNodes(false, false)
-//   // 标记选中状态
-//   // const uids = markSelectedNodes(props.treeData, tempCheckedNodes)
-//   const uids = markSelectedNodes(tempCheckedNodes, type)
-//   return uids
-// }
-// const modifiersCheckChange = () => {
-//   synergiaForm.value.modifiers = getCompleteSelectedTree(modifiersRef, '1')
-// }
-// const approversCheckChange = (e) => {
-//   console.log(e);
-
-//   synergiaForm.value.approvers = getCompleteSelectedTree(approversRef, '2')
-// }
-const addItem = (data) => {
-
+// 新增协同人
+const addModifier = (data) => {
+  var params = {
+    item_id: props.itemId,
+    ding_uid: data.ding_uid,
+    dept_id: data.dept_id,
+    position: data.position,
+    user_type: 1
+  }
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm(`确认添加${data.title}为协同人吗？`, '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(() => {
+      synergia_add_process_user(params).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '新增协同人成功'
+          })
+          data.editor_selected = true
+          emits('refreshList')
+        }
+      })
+    })
+    .catch(() => {})
+}
+// 新增批准人
+const addApprover = (data) => {
+  var params = {
+    item_id: props.itemId,
+    ding_uid: data.ding_uid,
+    dept_id: data.dept_id,
+    position: data.position,
+    user_type: 2
+  }
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm(`确认添加${data.title}为批准人吗？`, '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(() => {
+      synergia_add_process_user(params).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '新增批准人成功'
+          })
+          data.auditor_selected = true
+          emits('refreshList')
+        }
+      })
+    })
+    .catch(() => {})
 }
 </script>
 
@@ -468,9 +501,16 @@ const addItem = (data) => {
                 text-align: center;
                 .value {
                   margin-bottom: 6px;
-                  font-size: 24px;
+                  font-size: 26px;
                   line-height: 32px;
                   font-family: DOUYINSANSBOLD;
+                  .unit {
+                    font-size: 20px;
+                    font-weight: normal;
+                    font-family:
+                      PingFangSC,
+                      PingFang SC;
+                  }
                 }
                 .title {
                   margin-bottom: 8px;
@@ -607,7 +647,19 @@ const addItem = (data) => {
                     font-size: 14px;
                     color: var(--default-font-color);
                   }
-
+                  .add-icon {
+                    font-size: 16px;
+                    color: var(--el-color-primary);
+                    transition: all 0.2s ease-in-out;
+                    &:hover {
+                      transform: scale(1.2);
+                    }
+                    &.check-icon {
+                      &:hover {
+                        transform: scale(1);
+                      }
+                    }
+                  }
                   .el-checkbox {
                     order: 2;
                     /* 将checkbox放到最后 */
@@ -661,6 +713,7 @@ const addItem = (data) => {
                   overflow: hidden;
                   gap: 0 10px;
                   .avatar {
+                    object-fit: cover;
                     width: 32px;
                     height: 32px;
                     border-radius: 4px;
@@ -699,6 +752,11 @@ const addItem = (data) => {
                           background: var(--el-color-primary-light-9);
                           border-radius: 2px;
                           border: 1px solid var(--el-color-primary);
+                        }
+                        .info-status {
+                          border-color: #ccc;
+                          color: #909090;
+                          background: #ececec;
                         }
                       }
                     }

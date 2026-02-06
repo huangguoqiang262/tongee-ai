@@ -151,7 +151,8 @@ const addNewTab = (config = {}) => {
     'ImageProductionChat',
     'IntelligentWritingChat',
     'ChatPage',
-    'DocumentDetail'
+    'DocumentDetail',
+    'SynergiaDetail'
   ]
   if (index !== -1 && newTab.isInternal && !whiteList.includes(newTab.url)) {
     tabs.value[index].attrs = newTab.attrs

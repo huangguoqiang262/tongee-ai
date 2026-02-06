@@ -325,6 +325,9 @@ const handleChange = () => {
         color: var(--default-font-color);
         line-height: 20px;
       }
+      :deep(.el-slider__marks-text) {
+        color: var(--default-font-color);
+      }
       :deep(.el-slider__button) {
         width: 16px !important;
         height: 16px !important;

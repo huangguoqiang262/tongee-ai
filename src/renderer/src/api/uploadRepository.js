@@ -2,7 +2,7 @@ import request from '@renderer/utils/request'
 // 创建文件任务
 export function create_folder_task(data) {
   return request({
-    url: '/know/upload/create_folder_task',
+    url: '/know/upload/create_folder_task?t=' + Date.now(),
     method: 'post',
     headers: {
       'Content-Type': 'multipart/form-data'

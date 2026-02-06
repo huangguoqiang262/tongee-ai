@@ -179,19 +179,48 @@
         </div>
         <div v-if="activeTab == '4'" class="synergia-box">
           <div class="synergia-list">
-            <div v-for="item in 6" :key="item" class="list-item">
+            <div
+              v-for="(item, index) in synergiaMsgList"
+              :key="index"
+              class="list-item"
+              @click="lookSystem(item)"
+            >
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
-                <div class="title">新增《临床实验报告模板》</div>
+                <div class="title-box">
+                  <div class="title">{{ item.title }}</div>
+                  <div class="time">{{ formatTimeFun(item.createtime) }}</div>
+                </div>
                 <div class="author">
-                  <span>提交者：张三</span>
-                  <span>地址：www.baidu.com</span>
+                  <span>提交者：{{ item.sender_name }}</span>
+                  <span>地址：{{ item.file_edit_url }}</span>
                 </div>
                 <div class="message-box">
-                  <div class="message-text">
-                    文件已完成协同，现申请文件加入【知识库名称】，是否同意
+                  <div class="message-text" :class="{ 'message-text-err': item.is_refuse == 1 }">
+                    {{ item.content }}
                   </div>
-                  <div class="handle-box">
+                  <!-- <div v-if="item.user_status == 0" class="handle-box">
+                    <el-button class="btn-refuse" size="small" @click="handleRefuse(item)"
+                      >确认反馈</el-button
+                    >
+                    <el-button
+                      class="btn-agree"
+                      type="primary"
+                      size="small"
+                      @click="handleAgree(item)"
+                      >确认通过</el-button
+                    >
+                  </div>
+                  <div v-else-if="item.user_status == 2" class="handle-box">
+                    <el-button
+                      class="btn-agree"
+                      type="primary"
+                      size="small"
+                      @click="handleAgree(item)"
+                      >批准入库</el-button
+                    >
+                  </div> -->
+                  <div v-if="item.user_status == 4 && item.msg_type == 6" class="handle-box">
                     <el-button class="btn-refuse" size="small" @click="handleRefuse(item)"
                       >拒绝</el-button
                     >
@@ -205,7 +234,6 @@
                   </div>
                 </div>
               </div>
-              <div class="time">18:00</div>
             </div>
           </div>
         </div>
@@ -298,17 +326,28 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted, watchEffect, shallowRef, nextTick } from 'vue'
+import { ref, onMounted, watchEffect, shallowRef, nextTick, inject } from 'vue'
 import FileSvgIcon from '@renderer/assets/file-icon.svg'
 import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
 import InformSvgIcon from '@renderer/assets/inform-icon.svg'
+import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
+import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
+import imgIcon from '@renderer/assets/file-icons/img-icon.png'
+import pdfIcon from '@renderer/assets/file-icons/pdf-icon.png'
+import pptIcon from '@renderer/assets/file-icons/ppt-icon.png'
+import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
+import wordIcon from '@renderer/assets/file-icons/word-icon.png'
+import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
+import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 import { formatTime } from '@renderer/utils/index.js'
 import {
   get_system_msg,
   get_file_logs,
   get_list,
-  export_feedback
+  export_feedback,
+  synergia_message_list
 } from '@renderer/api/messageCenter'
+import { synergia_audit_in_know } from '@renderer/api/repository'
 import { feedback_mark } from '@renderer/api/feedback'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText.js'
 let fillColor = 'var(--default-font-color)'
@@ -321,49 +360,117 @@ const props = defineProps({
 const refuseVisible = ref(false)
 const refuseFormRef = ref(null)
 const refuseForm = ref({
-  refuseInput: ''
+  refuseInput: '',
+  item_id: ''
 })
 const refuseRules = ref({
   refuseInput: [{ required: true, message: '请输入拒绝原因', trigger: ['blur'] }]
 })
+const addNewTab = inject('addNewTab')
+const lookSystem = (item) => {
+  addNewTab({
+    icon: getFileIcon(item),
+    title: item.process_title,
+    url: 'SynergiaDetail',
+    isInternal: true,
+    attrs: {
+      fileUrl: item.file_edit_url,
+      fileName: item.process_title,
+      fileId: item.file_key,
+      itemId: item.item_id || ''
+    }
+  })
+}
+// 获取文件图标
+const getFileIcon = (item) => {
+  if (item.item_type == 2) {
+    return catalogueIcon
+  } else if (item.item_type == 3) {
+    return webPageIcon
+  }
+  // 根据文件扩展名返回不同的图标
+  const ext = item.file_edit_url?.split('.').pop()?.toLowerCase()
+  const iconMap = {
+    doc: wordIcon,
+    docx: wordIcon,
+    pdf: pdfIcon,
+    xls: excelIcon,
+    xlsx: excelIcon,
+    csv: csvIcon,
+    ppt: pptIcon,
+    pptx: pptIcon,
+    txt: txtIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon,
+    web: webPageIcon
+  }
+
+  return iconMap[ext] || wordIcon
+}
 const submitRefuseForm = (formRef) => {
   formRef.validate((valid) => {
     if (valid) {
-      console.log('提交拒绝表单', refuseForm.value)
+      var data = {
+        audit_type: 2,
+        item_id: refuseForm.value.item_id,
+        reason: refuseForm.value.refuseInput
+      }
+      synergia_audit_in_know(data).then((res) => {
+        if (res.code == 200) {
+          tabHandle(4)
+          // synergiaMsgList.value.find(
+          //   (item) => item.item_id == refuseForm.value.item_id
+          // ).user_status = 5
+          refuseVisible.value = false
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '拒绝入库成功'
+          })
+        }
+      })
     }
   })
 }
 // 同意入库
 const handleAgree = (item) => {
-  console.log(item)
+  refuseForm.value.item_id = item.item_id
   // eslint-disable-next-line no-undef
-  ElMessageBox.confirm(
-    '确认同意入库吗？',
-    '提示',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
+  ElMessageBox.confirm('确认同意入库吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
     .then(() => {
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'primary',
-        message: '同意入库成功',
+      var data = {
+        audit_type: 1,
+        item_id: refuseForm.value.item_id
+      }
+      synergia_audit_in_know(data).then((res) => {
+        if (res.code == 200) {
+          tabHandle(4)
+          // synergiaMsgList.value.find(
+          //   (item) => item.item_id == refuseForm.value.item_id
+          // ).user_status = 5
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '同意入库成功'
+          })
+        }
       })
     })
-    .catch(() => {
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'info',
-        message: '取消同意入库',
-      })
-    })
+    .catch(() => {})
 }
 // 拒绝入库
 const handleRefuse = (item) => {
+  refuseForm.value.item_id = item.item_id
   refuseVisible.value = true
+  nextTick(() => {
+    refuseFormRef.value.resetFields()
+  })
 }
 let searchVal = ref('')
 let tabs = ref([
@@ -416,12 +523,15 @@ const tabHandle = (id) => {
   feedList.value = []
   fileList.value = []
   systemMsgList.value = []
+  synergiaMsgList.value = []
   if (id == '1') {
     getList()
   } else if (id == '2') {
     getFileList()
   } else if (id == '3') {
     getSystemMsgList()
+  } else if (id == '4') {
+    getSynergiaList()
   }
 }
 const exportFeedback = () => {
@@ -480,9 +590,23 @@ const loadData = () => {
     getFileList()
   } else if (activeTab.value == '3') {
     getSystemMsgList()
+  } else if (activeTab.value == '4') {
+    getSynergiaList()
   }
 }
 const synergiaMsgList = ref([])
+const getSynergiaList = () => {
+  var data = {
+    page: pagination.value.page,
+    page_size: pagination.value.page_size
+  }
+  synergia_message_list(data).then((res) => {
+    synergiaMsgList.value = synergiaMsgList.value.concat(res.data.data || [])
+    pagination.value.total = res.data.total
+    pagination.value.page = res.data.current_page
+    pagination.value.page_size = res.data.per_page
+  })
+}
 const feedList = ref([])
 const getList = () => {
   var data = {
@@ -1018,11 +1142,28 @@ watchEffect(() => {
             .center-box {
               flex: 1;
               overflow: hidden;
-              .title {
-                margin-bottom: 10px;
-                font-size: 14px;
-                color: var(--default-font-color);
-                line-height: 22px;
+              .title-box {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0 10px;
+                margin-bottom: 8px;
+                overflow: hidden;
+                .title {
+                  flex: 1;
+                  font-size: 14px;
+                  color: var(--default-font-color);
+                  line-height: 22px;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                  overflow: hidden;
+                }
+                .time {
+                  flex-shrink: 0;
+                  font-size: 12px;
+                  color: #909090;
+                  line-height: 22px;
+                }
               }
               .author {
                 margin-bottom: 16px;
@@ -1048,6 +1189,9 @@ watchEffect(() => {
                   font-size: 12px;
                   color: var(--default-font-color);
                   line-height: 16px;
+                  &.message-text-err {
+                    color: #ff5151;
+                  }
                 }
                 .handle-box {
                   display: flex;
@@ -1063,12 +1207,6 @@ watchEffect(() => {
                   }
                 }
               }
-            }
-            .time {
-              flex-shrink: 0;
-              font-size: 12px;
-              color: #909090;
-              line-height: 22px;
             }
           }
         }

@@ -429,7 +429,7 @@
                   </div> -->
                 </div>
               </el-popover>
-              <!-- <el-popover
+              <el-popover
                 v-else-if="activeRepository.is_public == 1"
                 ref="repositoryaddPopover"
                 popper-class="custom-repository-popover"
@@ -451,7 +451,7 @@
                     <div class="title">协同文件</div>
                   </div>
                 </div>
-              </el-popover> -->
+              </el-popover>
               <el-popover
                 ref="repositorySortPopover"
                 popper-class="custom-repository-popover"
@@ -500,14 +500,21 @@
               <Search />
             </el-icon>
           </div>
-          <div v-if="detailFileList.length" class="list-box">
-            <template v-for="item in detailFileList" :key="item.id">
+          <div
+            v-if="detailFileList.length"
+            class="list-box"
+            @mousedown="handleMouseDown"
+            @mousemove="handleMouseMove"
+            @mouseup="handleMouseUp"
+            @mouseleave="handleMouseLeave"
+          >
+            <template v-for="(item, index) in detailFileList" :key="item.id">
               <div
                 v-if="item.item_type == 2"
                 class="list-item"
                 :class="{ 'active-repository': item.checked, is_top: item.is_top }"
                 @contextmenu="(e) => showContextMenu(e, item)"
-                @click="dirChange(item)"
+                @click="dirChange(item, $event, index)"
               >
                 <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
                 <!-- <img class="cover-img" :src="getFileIcon(item)" alt="" /> -->
@@ -663,7 +670,7 @@
                     class="list-item"
                     :class="{ 'active-repository': item.checked, is_top: item.is_top }"
                     @contextmenu="(e) => showContextMenu(e, item)"
-                    @click="detailChange(item)"
+                    @click="detailChange(item, $event, index)"
                   >
                     <el-checkbox
                       v-model="item.checked"
@@ -1044,7 +1051,7 @@
       </template>
       <div class="conflict-title">
         监测到当前位置存在以下同名文件{{
-          conflictFiles[0]?.type == 'directory' ? '夹' : ''
+          filesType == 2 ? '夹' : filesType == 3 ? '和文件夹' : ''
         }}，请选择操作
       </div>
       <div class="conflict-box">
@@ -1059,7 +1066,7 @@
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="retainAll">保留全部</el-button>
           <el-button
-            v-if="conflictFiles.length && conflictFiles[0].type != 'directory'"
+            v-if="conflictFiles.length && filesType == 1"
             class="cancel-btn"
             type="primary"
             @click="displace"
@@ -1073,16 +1080,24 @@
     <synergia-upload
       v-model="synergiaUploadVisible"
       :know-id="activeRepository.id"
-      :item-id="parentItemId"
+      :parent-item-id="parentItemId"
+      @refresh-list="refreshList"
     >
     </synergia-upload>
     <synergia-look
       v-model="synergiaLookVisible"
       :know-id="activeRepository.id"
-      :tree-data="repositoryMemberTree"
-      :item-id="parentItemId"
+      :item-id="itemId"
+      @refresh-list="refreshList"
     >
     </synergia-look>
+    <MoveFile
+      v-model="moveFileVisible"
+      :know-id="activeRepository.id"
+      :know-title="activeRepository.title"
+      :move-files="activeFiles"
+      @submit-move="submitMove"
+    ></MoveFile>
   </div>
 </template>
 
@@ -1111,6 +1126,7 @@ import deleteIcon from '@renderer/assets/contextMenu/delete-icon.png'
 import canViewIcon from '@renderer/assets/contextMenu/can-view-icon.png'
 import disabledExportIcon from '@renderer/assets/contextMenu/disabled-export-icon.png'
 import cannotViewIcon from '@renderer/assets/contextMenu/cannot-view-icon.png'
+import moveIcon from '@renderer/assets/contextMenu/move-file-icon.png'
 import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
@@ -1133,6 +1149,7 @@ import synergyEditIcon from '@renderer/assets/contextMenu/synergy-edit-icon.png'
 import synergyConfirmIcon from '@renderer/assets/contextMenu/synergy-confirm-icon.png'
 import synergyLookIcon from '@renderer/assets/contextMenu/synergy-look-icon.png'
 import synergyRatifyIcon from '@renderer/assets/contextMenu/synergy-ratify-icon.png'
+import synergyFeedbackIcon from '@renderer/assets/contextMenu/synergy-feedback-icon.png'
 import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import {
   get_knows,
@@ -1157,7 +1174,11 @@ import {
   create_know_website,
   setKnowItemPermission,
   withdraw_join,
-  import_note
+  import_note,
+  changeKnowFilePosition,
+  synergia_simple_feedback,
+  synergia_task_complete,
+  synergia_complete_approve
 } from '@renderer/api/repository'
 import { user_info } from '@renderer/api/user'
 onErrorCaptured((err, instance, info) => {
@@ -1170,6 +1191,20 @@ const props = defineProps({
     default: () => ({})
   }
 })
+let moveFileVisible = ref(false)
+// 确认移动
+const submitMove = (data) => {
+  changeKnowFilePosition({
+    change_items: JSON.stringify(data.change_items)
+  }).then((res) => {
+    if (res.code == 200) {
+      // eslint-disable-next-line no-undef
+      ElMessage.primary('移动成功')
+      moveFileVisible.value = false
+      refreshList()
+    }
+  })
+}
 // 拖拽相关数据
 const showDragOverlay = ref(false)
 
@@ -1194,14 +1229,10 @@ const handleDragLeave = (event) => {
   }
 }
 
-const handleDrop = (event) => {
+const handleDrop = async (event) => {
   event.preventDefault()
   event.stopPropagation()
   showDragOverlay.value = false
-
-  const files = event.dataTransfer.files
-  if (!files || !files.length) return
-
   if (!activeRepositoryId.value) {
     // eslint-disable-next-line no-undef
     ElMessage.warning('请先选择知识库')
@@ -1216,13 +1247,151 @@ const handleDrop = (event) => {
     ElMessage.warning('当前知识库没有权限上传文件')
     return
   }
+  const items = event.dataTransfer.items
+  const files = [] // 最终会存放所有File对象
+  function traverseFileTree(entry, path = '', isRoot = false, directoryItem = {}) {
+    return new Promise((resolve) => {
+      let exts = [
+        'doc',
+        'xls',
+        'xlsx',
+        'pdf',
+        'txt',
+        'docx',
+        'ppt',
+        'pptx',
+        'csv',
+        'png',
+        'jpg',
+        'jpeg',
+        'gif'
+      ]
+      if (entry.isFile) {
+        entry.file((originalFile) => {
+          // 🔥 关键修改：创建新的File对象，而不是修改原对象
+          const relativePath = path + originalFile.name
+          Object.defineProperty(originalFile, 'webkitRelativePath', {
+            value: relativePath,
+            writable: true,
+            enumerable: true
+          })
+          if (isRoot && exts.includes(originalFile.name.split('.').pop())) {
+            var fileInfo = {
+              file: originalFile,
+              title: originalFile.name,
+              name: originalFile.name,
+              type: 'file',
+              uploadStatus: 'pending'
+            }
+            // 新的File对象会自动拥有webkitRelativePath属性，其值就是我们传入的name
+            files.push(fileInfo)
+            resolve()
+          } else if (exts.includes(originalFile.name.split('.').pop())) {
+            directoryItem.totalCount++
+            directoryItem.size += originalFile.size
+            directoryItem.children.push(originalFile)
+            resolve()
+          } else {
+            resolve()
+          }
+        })
+      } else if (entry.isDirectory) {
+        const dirReader = entry.createReader()
+        dirReader.readEntries((entries) => {
+          let promises = []
+          if (isRoot) {
+            let fileItem = {
+              type: 'directory',
+              name: entry.name,
+              title: entry.name,
+              totalCount: 0,
+              size: 0,
+              children: [],
+              uploadStatus: 'pending'
+            }
+            promises = entries.map((subEntry) =>
+              traverseFileTree(subEntry, path + entry.name + '/', false, fileItem)
+            )
+            Promise.all(promises).then(() => {
+              if (fileItem.children.length) {
+                files.push(fileItem)
+              }
+            })
+          } else {
+            promises = entries.map((subEntry) =>
+              traverseFileTree(subEntry, path + entry.name + '/', false, directoryItem)
+            )
+          }
+          Promise.all(promises).then(resolve)
+        })
+      }
+    })
+  }
+
+  const promises = []
+  for (let item of items) {
+    const entry = item.webkitGetAsEntry()
+    if (entry) promises.push(traverseFileTree(entry, '', true))
+  }
+
+  await Promise.all(promises)
   // 处理拖拽的文件
-  handleDroppedFiles(files)
+  var isAllFile = files.every((file) => file.type == 'file')
+  if (isAllFile && files.length) {
+    handleDroppedFiles(files)
+  } else {
+    tempUploadList.value = []
+    conflictFiles.value = []
+    ReadyUploadList.length = 0
+    if (detailFileList.value.length) {
+      files.map((readingItem) => {
+        tempUploadList.value.push(readingItem)
+        detailFileList.value.some((item) => {
+          if (
+            item.title == readingItem.name &&
+            item.item_type == 2 &&
+            readingItem.type == 'directory'
+          ) {
+            conflictFiles.value.push(readingItem)
+          } else if (
+            item.title == readingItem.name &&
+            item.item_type == 1 &&
+            readingItem.type == 'file'
+          ) {
+            conflictFiles.value.push(readingItem)
+          }
+        })
+      })
+    } else {
+      files.map((readingItem) => {
+        tempUploadList.value.push(readingItem)
+      })
+    }
+    if (conflictFiles.value.length) {
+      conflictVisible.value = true
+      return
+    }
+    if (!tempUploadList.value.length) {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        message: '选择的文件夹为空或文件格式错误',
+        type: 'warning'
+      })
+      return
+    }
+    // 添加目录树到上传列表
+    ReadyUploadList.push(...tempUploadList.value)
+    if (directoryInputRef.value) {
+      directoryInputRef.value.value = ''
+    }
+    // 显示上传对话框
+    uploadVisible.value = true
+  }
 }
 
 // 处理拖拽的文件
 const handleDroppedFiles = (files) => {
-  const validFiles = Array.from(files).filter((file) => {
+  const validFiles = files.filter((file) => {
     const allowedTypes = [
       '.txt',
       '.png',
@@ -1252,7 +1421,7 @@ const handleDroppedFiles = (files) => {
   ReadyUploadList.length = 0
   // 准备上传文件列表
   tempUploadList.value = validFiles.map((file) => ({
-    file: file,
+    file: file.file,
     title: file.name,
     name: file.name,
     type: 'file',
@@ -1366,7 +1535,30 @@ const downloadFile = (url, fileName) => {
   x.send()
 }
 // 到达详情
-const detailChange = (item) => {
+const detailChange = (item, e, i) => {
+  if (e.shiftKey) {
+    detailFileList.value.map((children, j) => {
+      if (j <= i) {
+        children.checked = true
+      }
+    })
+    return
+  }
+  if (item.is_collaboration == 1) {
+    addNewTab({
+      icon: getFileIcon(item),
+      title: item.title,
+      url: 'SynergiaDetail',
+      isInternal: true,
+      attrs: {
+        fileUrl: item.info?.url,
+        fileName: item.title,
+        fileId: item.info?.file_key || '',
+        itemId: item.id || ''
+      }
+    })
+    return
+  }
   if (
     activeRepository.value.user_permission?.is_creator ||
     activeRepository.value.user_permission?.is_manager
@@ -2266,59 +2458,75 @@ const showContextMenu = (e, item) => {
             }
           )
           if (activeFiles.value[0].is_collaboration == 1) {
-            contextMenu.value.actionSheet.splice(-2, 0, {
-              name: '协同管理',
-              icon: synergyIcon,
-              action: 'synergy',
-              children: [
-                {
-                  name: '在线编辑',
-                  icon: synergyEditIcon,
-                  action: 'synergyEdit'
-                },
-                {
-                  name: '查看协同',
-                  icon: synergyLookIcon,
-                  action: 'synergyLook'
-                },
-                {
-                  name: '确认通过',
-                  icon: synergyConfirmIcon,
-                  action: 'synergyConfirm'
-                },
-                {
-                  name: '批准入库',
-                  icon: synergyRatifyIcon,
-                  action: 'synergyRatify'
-                }
-              ]
-            })
+            if (activeFiles.value[0].user_collaboration_status == 0) {
+              contextMenu.value.actionSheet.splice(-2, 0, {
+                name: '协同管理',
+                icon: synergyIcon,
+                action: 'synergy',
+                children: [
+                  {
+                    name: '在线编辑',
+                    icon: synergyEditIcon,
+                    action: 'synergyEdit'
+                  },
+                  {
+                    name: '查看协同',
+                    icon: synergyLookIcon,
+                    action: 'synergyLook'
+                  },
+                  {
+                    name: '确认反馈',
+                    icon: synergyFeedbackIcon,
+                    action: 'synergyFeedback'
+                  },
+                  {
+                    name: '确认通过',
+                    icon: synergyConfirmIcon,
+                    action: 'synergyConfirm'
+                  }
+                ]
+              })
+            } else if (activeFiles.value[0].user_collaboration_status == 2) {
+              contextMenu.value.actionSheet.splice(-2, 0, {
+                name: '协同管理',
+                icon: synergyIcon,
+                action: 'synergy',
+                children: [
+                  {
+                    name: '查看协同',
+                    icon: synergyLookIcon,
+                    action: 'synergyLook'
+                  },
+                  {
+                    name: '批准入库',
+                    icon: synergyRatifyIcon,
+                    action: 'synergyRatify'
+                  }
+                ]
+              })
+            } else {
+              contextMenu.value.actionSheet.splice(-2, 0, {
+                name: '协同管理',
+                icon: synergyIcon,
+                action: 'synergy',
+                children: [
+                  {
+                    name: '查看协同',
+                    icon: synergyLookIcon,
+                    action: 'synergyLook'
+                  }
+                ]
+              })
+            }
           }
         }
-        // else if (
-        //   repositoryPermission.value.setting?.permission_type == 2 &&
-        //   activeRepository.value.is_public == 1
-        // ) {
-        //   contextMenu.value.actionSheet.splice(3, 0, {
-        //     name: '内容权限',
-        //     icon: permissionIcon,
-        //     action: 'permission',
-        //     children: [
-        //       {
-        //         name: '可查看、不可导出',
-        //         icon: disabledExportIcon,
-        //         action: 'private'
-        //       },
-        //       {
-        //         name: '不可查看',
-        //         icon: cannotViewIcon,
-        //         action: 'cannotView'
-        //       }
-        //     ]
-        //   })
-        // }
       }
     }
+    contextMenu.value.actionSheet.splice(-3, 0, {
+      name: '移动到',
+      icon: moveIcon,
+      action: 'moveFile'
+    })
   } else {
     item.checked = true
     if (item.permission_type === 1 && repositoryPermission.value.is_public == 1) {
@@ -2343,68 +2551,150 @@ const showContextMenu = (e, item) => {
       activeFiles.value.length === 1 &&
       activeFiles.value[0].is_collaboration == 1
     ) {
-      contextMenu.value.actionSheet.splice(-1, 0, {
-        name: '协同管理',
-        icon: synergyIcon,
-        action: 'synergy',
-        children: [
-          {
-            name: '在线编辑',
-            icon: synergyEditIcon,
-            action: 'synergyEdit'
-          },
-          {
-            name: '查看协同',
-            icon: synergyLookIcon,
-            action: 'synergyLook'
-          },
-          {
-            name: '确认通过',
-            icon: synergyConfirmIcon,
-            action: 'synergyConfirm'
-          },
-          {
-            name: '批准入库',
-            icon: synergyRatifyIcon,
-            action: 'synergyRatify'
-          }
-        ]
-      })
+      if (activeFiles.value[0].user_collaboration_status == 0) {
+        contextMenu.value.actionSheet.splice(-1, 0, {
+          name: '协同管理',
+          icon: synergyIcon,
+          action: 'synergy',
+          children: [
+            {
+              name: '在线编辑',
+              icon: synergyEditIcon,
+              action: 'synergyEdit'
+            },
+            {
+              name: '查看协同',
+              icon: synergyLookIcon,
+              action: 'synergyLook'
+            },
+            {
+              name: '确认反馈',
+              icon: synergyFeedbackIcon,
+              action: 'synergyFeedback'
+            },
+            {
+              name: '确认通过',
+              icon: synergyConfirmIcon,
+              action: 'synergyConfirm'
+            }
+          ]
+        })
+      } else if (activeFiles.value[0].user_collaboration_status == 2) {
+        contextMenu.value.actionSheet.splice(-1, 0, {
+          name: '协同管理',
+          icon: synergyIcon,
+          action: 'synergy',
+          children: [
+            {
+              name: '查看协同',
+              icon: synergyLookIcon,
+              action: 'synergyLook'
+            },
+            {
+              name: '批准入库',
+              icon: synergyRatifyIcon,
+              action: 'synergyRatify'
+            }
+          ]
+        })
+      } else {
+        contextMenu.value.actionSheet.splice(-1, 0, {
+          name: '协同管理',
+          icon: synergyIcon,
+          action: 'synergy',
+          children: [
+            {
+              name: '查看协同',
+              icon: synergyLookIcon,
+              action: 'synergyLook'
+            }
+          ]
+        })
+      }
     } else if (activeFiles.value.length === 1 && activeFiles.value[0].is_collaboration == 1) {
-      contextMenu.value = {
-        show: true,
-        permission_type: 'cannotView',
-        x: e.clientX,
-        y: e.clientY,
-        actionSheet: [
-          {
-            name: '协同管理',
-            icon: synergyIcon,
-            action: 'synergy',
-            children: [
-              {
-                name: '在线编辑',
-                icon: synergyEditIcon,
-                action: 'synergyEdit'
-              },
-              {
-                name: '查看协同',
-                icon: synergyLookIcon,
-                action: 'synergyLook'
-              },
-              {
-                name: '确认通过',
-                icon: synergyConfirmIcon,
-                action: 'synergyConfirm'
-              },
-              {
-                name: '批准入库',
-                icon: synergyRatifyIcon,
-                action: 'synergyRatify'
-              }
-            ]
-          }
-        ]
+      if (activeFiles.value[0].user_collaboration_status == 0) {
+        contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: '协同管理',
+              icon: synergyIcon,
+              action: 'synergy',
+              children: [
+                {
+                  name: '在线编辑',
+                  icon: synergyEditIcon,
+                  action: 'synergyEdit'
+                },
+                {
+                  name: '查看协同',
+                  icon: synergyLookIcon,
+                  action: 'synergyLook'
+                },
+                {
+                  name: '确认反馈',
+                  icon: synergyFeedbackIcon,
+                  action: 'synergyFeedback'
+                },
+                {
+                  name: '确认通过',
+                  icon: synergyConfirmIcon,
+                  action: 'synergyConfirm'
+                }
+              ]
+            }
+          ]
+        }
+      } else if (activeFiles.value[0].user_collaboration_status == 2) {
+        contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: '协同管理',
+              icon: synergyIcon,
+              action: 'synergy',
+              children: [
+                {
+                  name: '查看协同',
+                  icon: synergyLookIcon,
+                  action: 'synergyLook'
+                },
+                {
+                  name: '批准入库',
+                  icon: synergyRatifyIcon,
+                  action: 'synergyRatify'
+                }
+              ]
+            }
+          ]
+        }
+      } else {
+        contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: '协同管理',
+              icon: synergyIcon,
+              action: 'synergy',
+              children: [
+                {
+                  name: '查看协同',
+                  icon: synergyLookIcon,
+                  action: 'synergyLook'
+                }
+              ]
+            }
+          ]
+        }
       }
     }
   }
@@ -2561,24 +2851,103 @@ const handleContextMenuAction = ({ action }) => {
         refreshList()
       }
     })
+  } else if (action === 'synergyFeedback') {
+    // 协同反馈
+    // eslint-disable-next-line no-undef
+    ElMessageBox.confirm('确认反馈吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(() => {
+        // 确认反馈
+        synergia_simple_feedback({
+          item_id: activeFiles.value[0].id || ''
+        }).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('反馈成功')
+            refreshList()
+          }
+        })
+      })
+      .catch(() => {})
+    itemId.value = activeFiles.value[0].id
   } else if (action === 'synergyConfirm') {
     // 协同确认
+    // eslint-disable-next-line no-undef
+    ElMessageBox.confirm('确认通过吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(() => {
+        // 确认反馈
+        synergia_task_complete({
+          item_id: activeFiles.value[0].id || ''
+        }).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('通过成功')
+            refreshList()
+          }
+        })
+      })
+      .catch(() => {})
+    itemId.value = activeFiles.value[0].id
   } else if (action === 'synergyEdit') {
     // 协同编辑
+    addNewTab({
+      icon: getFileIcon(activeFiles.value[0]),
+      title: activeFiles.value[0].title,
+      url: 'SynergiaDetail',
+      isInternal: true,
+      attrs: {
+        fileUrl: activeFiles.value[0].info?.url,
+        fileName: activeFiles.value[0].title,
+        fileId: activeFiles.value[0].info?.file_key || '',
+        itemId: activeFiles.value[0].id || ''
+      }
+    })
+    itemId.value = activeFiles.value[0].id
   } else if (action === 'synergyLook') {
     // 协同查看
+    itemId.value = activeFiles.value[0].id
     synergiaLookVisible.value = true
   } else if (action === 'synergyRatify') {
     // 协同批准
+    // eslint-disable-next-line no-undef
+    ElMessageBox.confirm('确认批准入库吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(() => {
+        // 批准入库
+        // 确认反馈
+        synergia_complete_approve({
+          item_id: activeFiles.value[0].id || ''
+        }).then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary('批准成功')
+            refreshList()
+          }
+        })
+      })
+      .catch(() => {})
+  } else if (action === 'moveFile') {
+    // 移动文件
+    moveFileVisible.value = true
   }
   contextMenu.value.show = false
 }
 const resetChecks = () => {
-  detailFileList.value.map((item) => {
-    if (item.item_type == 2) {
-      item.checked = false
-    }
-  })
+  // detailFileList.value.map((item) => {
+  //   if (item.item_type == 2) {
+  //     item.checked = false
+  //   }
+  // })
 }
 const hideContextMenu = (e) => {
   if (contextMenu.value.show && !e.target.closest('.context-menu')) {
@@ -2698,6 +3067,20 @@ const beforeUploadFiles = (type) => {
 }
 const ReadyUploadList = reactive([])
 const conflictFiles = ref([])
+const filesType = computed(() => {
+  if (conflictFiles.value.length) {
+    var fileType = conflictFiles.value.every((item) => item.type == 'file')
+    var folderType = conflictFiles.value.every((item) => item.type == 'directory')
+    if (fileType) {
+      return 1
+    } else if (folderType) {
+      return 2
+    } else {
+      return 3
+    }
+  }
+  return 1
+})  // 1 文件 2 文件夹 3 两者都有
 const tempUploadList = ref([])
 const conflictVisible = ref(false)
 const retainAll = () => {
@@ -2805,13 +3188,11 @@ const handleDirectorySelect = (event) => {
   const files = Array.from(event.target.files).filter((file) =>
     exts.includes(file.name.split('.').pop())
   )
-  console.log(files)
-
   if (!files.length) {
     // eslint-disable-next-line no-undef
     ElMessage({
-      message: '选择的文件夹为空或没有文件',
-      type: 'error'
+      message: '选择的文件夹为空或文件格式错误',
+      type: 'warning'
     })
     return
   }
@@ -2828,6 +3209,7 @@ const handleDirectorySelect = (event) => {
   }
   tempUploadList.value = []
   conflictFiles.value = []
+  ReadyUploadList.length = 0
   if (detailFileList.value.length) {
     tempUploadList.value.push(fileItem)
     var flag = detailFileList.value.some(
@@ -2839,7 +3221,6 @@ const handleDirectorySelect = (event) => {
       return
     }
   }
-  ReadyUploadList.length = 0
   // 添加目录树到上传列表
   ReadyUploadList.push(fileItem)
   if (directoryInputRef.value) {
@@ -2976,10 +3357,18 @@ let parentItemId = computed(() => {
   return pathList.value[pathList.value.length - 1].id
 })
 // 点击文件夹
-const dirChange = (e) => {
+const dirChange = (item, e, i) => {
+  if (e.shiftKey) {
+    detailFileList.value.map((children, j) => {
+      if (j <= i) {
+        children.checked = true
+      }
+    })
+    return
+  }
   pathList.value.push({
-    name: e.title,
-    id: e.id
+    name: item.title,
+    id: item.id
   })
 
   refreshList()
@@ -3008,6 +3397,120 @@ watch(
     immediate: true
   }
 )
+//拖拽区域选中
+// 鼠标拖动选择相关变量
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
+const dragEndX = ref(0)
+const dragEndY = ref(0)
+const dragSelectionRect = ref(null)
+
+// 鼠标按下事件
+const handleMouseDown = (e) => {
+  // 只处理左键点击
+  if (e.button !== 0) return
+
+  // 如果点击在checkbox上，不触发拖动选择
+  if (e.target.closest('.checkbox')) return
+
+  isDragging.value = true
+  dragStartX.value = e.clientX
+  dragStartY.value = e.clientY
+  dragEndX.value = e.clientX
+  dragEndY.value = e.clientY
+
+  // 创建选择矩形
+  if (!dragSelectionRect.value) {
+    dragSelectionRect.value = document.createElement('div')
+    dragSelectionRect.value.className = 'drag-selection-rect'
+    dragSelectionRect.value.style.position = 'absolute'
+    dragSelectionRect.value.style.background = 'rgba(64, 158, 255, 0.1)'
+    dragSelectionRect.value.style.border = '1px solid rgba(64, 158, 255, 0.5)'
+    dragSelectionRect.value.style.pointerEvents = 'none'
+    dragSelectionRect.value.style.zIndex = '1000'
+    document.querySelector('.list-box').appendChild(dragSelectionRect.value)
+  }
+}
+
+// 鼠标移动事件
+const handleMouseMove = (e) => {
+  if (!isDragging.value) return
+
+  dragEndX.value = e.clientX
+  dragEndY.value = e.clientY
+
+  // 更新选择矩形位置和大小
+  updateSelectionRect()
+
+  // 检查哪些列表项在选择区域内
+  checkItemsInSelection()
+}
+
+// 鼠标释放事件
+const handleMouseUp = () => {
+  if (!isDragging.value) return
+
+  isDragging.value = false
+
+  // 移除选择矩形
+  if (dragSelectionRect.value) {
+    dragSelectionRect.value.remove()
+    dragSelectionRect.value = null
+  }
+}
+
+// 鼠标离开事件
+const handleMouseLeave = () => {
+  if (isDragging.value) {
+    handleMouseUp()
+  }
+}
+
+// 更新选择矩形
+const updateSelectionRect = () => {
+  if (!dragSelectionRect.value) return
+
+  const listBox = document.querySelector('.list-box')
+  const rect = listBox.getBoundingClientRect()
+  const startX = Math.min(dragStartX.value, dragEndX.value)
+  const startY = Math.min(dragStartY.value, dragEndY.value)
+  const endX = Math.max(dragStartX.value, dragEndX.value)
+  const endY = Math.max(dragStartY.value, dragEndY.value)
+
+  const left = Math.max(startX - rect.left, 0)
+  const top = Math.max(startY - rect.top + 34, 0)
+  const width = Math.min(endX - startX, rect.width - left)
+  const height = Math.min(endY - startY, rect.height - top)
+
+  dragSelectionRect.value.style.left = left + 'px'
+  dragSelectionRect.value.style.top = top + 'px'
+  dragSelectionRect.value.style.width = width + 'px'
+  dragSelectionRect.value.style.height = height + 'px'
+}
+
+// 检查选择区域内的列表项
+const checkItemsInSelection = () => {
+  const listBox = document.querySelector('.list-box')
+  const listItems = listBox.querySelectorAll('.list-item')
+  const startX = Math.min(dragStartX.value, dragEndX.value)
+  const startY = Math.min(dragStartY.value, dragEndY.value)
+  const endX = Math.max(dragStartX.value, dragEndX.value)
+  const endY = Math.max(dragStartY.value, dragEndY.value)
+  listItems.forEach((item, index) => {
+    const itemRect = item.getBoundingClientRect()
+    // 检查item是否在选择区域内
+    const isInSelection =
+      itemRect.left < endX &&
+      itemRect.right > startX &&
+      itemRect.top < endY &&
+      itemRect.bottom > startY
+
+    if (isInSelection && detailFileList.value[index]) {
+      detailFileList.value[index].checked = true
+    }
+  })
+}
 </script>
 
 <style scoped lang="scss">
@@ -3576,7 +4079,7 @@ watch(
       overflow: hidden;
       display: flex;
       flex-direction: column;
-
+      position: relative;
       .list-handle-box {
         flex-shrink: 0;
         width: calc(100% - 20px);
@@ -3690,7 +4193,6 @@ watch(
       .list-box {
         flex: 1;
         overflow: auto;
-
         &::-webkit-scrollbar {
           width: 4px;
           height: 4px;
@@ -3703,6 +4205,15 @@ watch(
           &:hover {
             background-color: #909090;
           }
+        }
+        // 拖动选择矩形样式
+        .drag-selection-rect {
+          position: absolute;
+          background: rgba(64, 158, 255, 0.1);
+          border: 1px solid rgba(64, 158, 255, 0.5);
+          pointer-events: none;
+          z-index: 1000;
+          border-radius: 4px;
         }
 
         .list-item {

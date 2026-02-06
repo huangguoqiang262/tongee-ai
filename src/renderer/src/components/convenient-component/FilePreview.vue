@@ -90,6 +90,7 @@ const props = defineProps({
     default: ''
   }
 })
+
 let imgContainer = ref(null)
 /** 获取后缀名（不带点，小写） */
 const ext = computed(() => {

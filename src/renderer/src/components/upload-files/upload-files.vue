@@ -177,7 +177,7 @@ const uploadStatus = {
 }
 const getUserInfo = () => {
   const userStore = useUserStore()
-  return user_info({}).then((res) => {
+  return user_info({ t: Date.now() }).then((res) => {
     if (res.code == 200) {
       userStore.updateUser(res.data?.user_info)
     }
@@ -334,6 +334,7 @@ const uploadSingleFile = async (fileItem) => {
     formData.append('parent_item_id', props.parentItemId)
     formData.append('same_name_type', fileItem.same_name_type)
     formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
+    formData.append('t', Date.now())
     const xhr = new XMLHttpRequest()
 
     xhr.upload.onprogress = (event) => {
@@ -427,7 +428,8 @@ const getUploadProgress = async (taskId) => {
     const res = await task_list({
       page: 1,
       page_size: 100,
-      task_id: taskId
+      task_id: taskId,
+      t: Date.now()
     })
 
     if (res.data.data && res.data.data.length > 0) {
@@ -448,7 +450,7 @@ const getUploadProgress = async (taskId) => {
             if (taskInfo) {
               clearInterval(taskInfo.interval)
               taskPollingMap.delete(taskId)
-              console.log(`任务 ${taskId} 完成，停止轮询`)
+              // console.log(`任务 ${taskId} 完成，停止轮询`)
             }
           }
         }
@@ -459,7 +461,7 @@ const getUploadProgress = async (taskId) => {
       if (taskInfo) {
         clearInterval(taskInfo.interval)
         taskPollingMap.delete(taskId)
-        console.log(`任务 ${taskId} 不存在，停止轮询`)
+        // console.log(`任务 ${taskId} 不存在，停止轮询`)
       }
     }
     clearSuccessUploadItems()
