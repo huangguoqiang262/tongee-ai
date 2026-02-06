@@ -419,14 +419,14 @@
                     <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
                     <div class="title">导入网页</div>
                   </div>
-                  <div
+                  <!-- <div
                     v-if="activeRepository.is_public == 1"
                     class="item"
                     @click="beforeUploadFiles('synergia')"
                   >
                     <img class="icon" src="@renderer/assets/popover/synergia-icon.png" alt="" />
                     <div class="title">协同文件</div>
-                  </div>
+                  </div> -->
                 </div>
               </el-popover>
               <el-popover
@@ -1051,7 +1051,7 @@
       </template>
       <div class="conflict-title">
         监测到当前位置存在以下同名文件{{
-          conflictFiles[0]?.type == 'directory' ? '夹' : ''
+          filesType == 2 ? '夹' : filesType == 3 ? '和文件夹' : ''
         }}，请选择操作
       </div>
       <div class="conflict-box">
@@ -1066,7 +1066,7 @@
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="retainAll">保留全部</el-button>
           <el-button
-            v-if="conflictFiles.length && conflictFiles[0].type != 'directory'"
+            v-if="conflictFiles.length && filesType == 1"
             class="cancel-btn"
             type="primary"
             @click="displace"
@@ -1229,14 +1229,10 @@ const handleDragLeave = (event) => {
   }
 }
 
-const handleDrop = (event) => {
+const handleDrop = async (event) => {
   event.preventDefault()
   event.stopPropagation()
   showDragOverlay.value = false
-
-  const files = event.dataTransfer.files
-  if (!files || !files.length) return
-
   if (!activeRepositoryId.value) {
     // eslint-disable-next-line no-undef
     ElMessage.warning('请先选择知识库')
@@ -1251,13 +1247,151 @@ const handleDrop = (event) => {
     ElMessage.warning('当前知识库没有权限上传文件')
     return
   }
+  const items = event.dataTransfer.items
+  const files = [] // 最终会存放所有File对象
+  function traverseFileTree(entry, path = '', isRoot = false, directoryItem = {}) {
+    return new Promise((resolve) => {
+      let exts = [
+        'doc',
+        'xls',
+        'xlsx',
+        'pdf',
+        'txt',
+        'docx',
+        'ppt',
+        'pptx',
+        'csv',
+        'png',
+        'jpg',
+        'jpeg',
+        'gif'
+      ]
+      if (entry.isFile) {
+        entry.file((originalFile) => {
+          // 🔥 关键修改：创建新的File对象，而不是修改原对象
+          const relativePath = path + originalFile.name
+          Object.defineProperty(originalFile, 'webkitRelativePath', {
+            value: relativePath,
+            writable: true,
+            enumerable: true
+          })
+          if (isRoot && exts.includes(originalFile.name.split('.').pop())) {
+            var fileInfo = {
+              file: originalFile,
+              title: originalFile.name,
+              name: originalFile.name,
+              type: 'file',
+              uploadStatus: 'pending'
+            }
+            // 新的File对象会自动拥有webkitRelativePath属性，其值就是我们传入的name
+            files.push(fileInfo)
+            resolve()
+          } else if (exts.includes(originalFile.name.split('.').pop())) {
+            directoryItem.totalCount++
+            directoryItem.size += originalFile.size
+            directoryItem.children.push(originalFile)
+            resolve()
+          } else {
+            resolve()
+          }
+        })
+      } else if (entry.isDirectory) {
+        const dirReader = entry.createReader()
+        dirReader.readEntries((entries) => {
+          let promises = []
+          if (isRoot) {
+            let fileItem = {
+              type: 'directory',
+              name: entry.name,
+              title: entry.name,
+              totalCount: 0,
+              size: 0,
+              children: [],
+              uploadStatus: 'pending'
+            }
+            promises = entries.map((subEntry) =>
+              traverseFileTree(subEntry, path + entry.name + '/', false, fileItem)
+            )
+            Promise.all(promises).then(() => {
+              if (fileItem.children.length) {
+                files.push(fileItem)
+              }
+            })
+          } else {
+            promises = entries.map((subEntry) =>
+              traverseFileTree(subEntry, path + entry.name + '/', false, directoryItem)
+            )
+          }
+          Promise.all(promises).then(resolve)
+        })
+      }
+    })
+  }
+
+  const promises = []
+  for (let item of items) {
+    const entry = item.webkitGetAsEntry()
+    if (entry) promises.push(traverseFileTree(entry, '', true))
+  }
+
+  await Promise.all(promises)
   // 处理拖拽的文件
-  handleDroppedFiles(files)
+  var isAllFile = files.every((file) => file.type == 'file')
+  if (isAllFile && files.length) {
+    handleDroppedFiles(files)
+  } else {
+    tempUploadList.value = []
+    conflictFiles.value = []
+    ReadyUploadList.length = 0
+    if (detailFileList.value.length) {
+      files.map((readingItem) => {
+        tempUploadList.value.push(readingItem)
+        detailFileList.value.some((item) => {
+          if (
+            item.title == readingItem.name &&
+            item.item_type == 2 &&
+            readingItem.type == 'directory'
+          ) {
+            conflictFiles.value.push(readingItem)
+          } else if (
+            item.title == readingItem.name &&
+            item.item_type == 1 &&
+            readingItem.type == 'file'
+          ) {
+            conflictFiles.value.push(readingItem)
+          }
+        })
+      })
+    } else {
+      files.map((readingItem) => {
+        tempUploadList.value.push(readingItem)
+      })
+    }
+    if (conflictFiles.value.length) {
+      conflictVisible.value = true
+      return
+    }
+    if (!tempUploadList.value.length) {
+      // eslint-disable-next-line no-undef
+      ElMessage({
+        message: '选择的文件夹为空或文件格式错误',
+        type: 'warning'
+      })
+      return
+    }
+    // 添加目录树到上传列表
+    ReadyUploadList.push(...tempUploadList.value)
+    if (directoryInputRef.value) {
+      directoryInputRef.value.value = ''
+    }
+    // 显示上传对话框
+    uploadVisible.value = true
+  }
 }
 
 // 处理拖拽的文件
 const handleDroppedFiles = (files) => {
-  const validFiles = Array.from(files).filter((file) => {
+  const validFiles = files.filter((file) => {
     const allowedTypes = [
       '.txt',
       '.png',
@@ -1287,7 +1421,7 @@ const handleDroppedFiles = (files) => {
   ReadyUploadList.length = 0
   // 准备上传文件列表
   tempUploadList.value = validFiles.map((file) => ({
-    file: file,
+    file: file.file,
     title: file.name,
     name: file.name,
     type: 'file',
@@ -2933,6 +3067,20 @@ const beforeUploadFiles = (type) => {
 }
 const ReadyUploadList = reactive([])
 const conflictFiles = ref([])
+const filesType = computed(() => {
+  if (conflictFiles.value.length) {
+    var fileType = conflictFiles.value.every((item) => item.type == 'file')
+    var folderType = conflictFiles.value.every((item) => item.type == 'directory')
+    if (fileType) {
+      return 1
+    } else if (folderType) {
+      return 2
+    } else {
+      return 3
+    }
+  }
+  return 1
+})  // 1 文件 2 文件夹 3 两者都有
 const tempUploadList = ref([])
 const conflictVisible = ref(false)
 const retainAll = () => {
@@ -3040,13 +3188,11 @@ const handleDirectorySelect = (event) => {
   const files = Array.from(event.target.files).filter((file) =>
     exts.includes(file.name.split('.').pop())
   )
-  console.log(files)
-
   if (!files.length) {
     // eslint-disable-next-line no-undef
     ElMessage({
-      message: '选择的文件夹为空或没有文件',
-      type: 'error'
+      message: '选择的文件夹为空或文件格式错误',
+      type: 'warning'
     })
     return
   }
@@ -3063,6 +3209,7 @@ const handleDirectorySelect = (event) => {
   }
   tempUploadList.value = []
   conflictFiles.value = []
+  ReadyUploadList.length = 0
   if (detailFileList.value.length) {
     tempUploadList.value.push(fileItem)
     var flag = detailFileList.value.some(
@@ -3074,7 +3221,6 @@ const handleDirectorySelect = (event) => {
       return
     }
   }
-  ReadyUploadList.length = 0
   // 添加目录树到上传列表
   ReadyUploadList.push(fileItem)
   if (directoryInputRef.value) {

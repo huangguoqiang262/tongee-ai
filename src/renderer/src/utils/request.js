@@ -8,7 +8,8 @@ var generateRequestKey = (config = {}) => {
   // params为get请求参数，data为post请求参数
   const { url, method, params, data } = config
   const postData = JSON.stringify(data)
-  return [url, method, params, postData].join('&')
+  const queryString = JSON.stringify(params)
+  return [url, method, queryString, postData].join('&')
 
   // return [method, url, qs.stringify(params), qs.stringify(data)].join('&');
 }

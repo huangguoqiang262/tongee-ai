@@ -284,10 +284,10 @@ let tabs = ref([
     id: '2',
     name: '网页浏览历史'
   },
-  {
-    id: '3',
-    name: '协作历史'
-  }
+  // {
+  //   id: '3',
+  //   name: '协作历史'
+  // }
 ])
 // 获取文件图标
 const getFileIcon = (item) => {

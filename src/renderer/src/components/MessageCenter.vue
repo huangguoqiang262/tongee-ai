@@ -486,10 +486,10 @@ let tabs = ref([
     id: '3',
     name: '系统通知'
   },
-  {
-    id: '4',
-    name: '协作通知'
-  }
+  // {
+  //   id: '4',
+  //   name: '协作通知'
+  // }
 ])
 let feedbackDetailVisible = ref(false)
 let deepData = ref({})
