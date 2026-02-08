@@ -2,6 +2,7 @@
 <template>
   <div class="onlyoffice-preview" :style="{ height, width }">
     <DocumentEditor
+      v-if="fileKey"
       :id="id"
       :document-server-url="serverUrl"
       :config="config"
@@ -28,7 +29,7 @@
 
 <script setup>
 /* eslint-disable */
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { DocumentEditor } from '@onlyoffice/document-editor-vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 const userInfo = useUserInfo()
@@ -40,6 +41,8 @@ const props = defineProps({
   mode: { type: String, default: 'view' },
   height: { type: String, default: '100%' },
   width: { type: String, default: '100%' },
+  fileKey: { type: String, default: '' },
+  fileName: { type: String, default: '' },
   id: { type: String, default: 'onlyoffice-editor-' + Date.now() }
 })
 console.log(props.src,66666);
@@ -137,19 +140,42 @@ const config = ref({
   type: fileExt.value || 'docx',
   documentType: docType,
   document: {
-    title: props.src.split('/').pop(),
+    title: props.fileName||props.src.split('/').pop(),
     url: props.src,
     fileType: fileExt.value || 'docx',
-    key: Date.now().toString()
+    key: props.fileKey
   },
   editorConfig: {
     mode: props.mode === 'edit' ? 'edit' : 'view',
     lang: 'zh-cn',
-    callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
+    callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
   },
   user: {
     ding_uid: userInfo.value?.ding_uid || '',
     name: userInfo.value?.name || ''
+  }
+})
+watchEffect(() => {
+  config.value = {
+    width: '100%',
+    height: '100%',
+    type: fileExt.value || 'docx',
+    documentType: docType,
+    document: {
+      title: props.fileName||props.src.split('/').pop(),
+      url: props.src,
+      fileType: fileExt.value || 'docx',
+      key: props.fileKey
+    },
+    editorConfig: {
+      mode: props.mode === 'edit' ? 'edit' : 'view',
+      lang: 'zh-cn',
+      callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
+    },
+    user: {
+      ding_uid: userInfo.value?.ding_uid || '',
+      name: userInfo.value?.name || ''
+    }
   }
 })
 const handleDocumentReady = (event) => {
