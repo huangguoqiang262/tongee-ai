@@ -147,6 +147,12 @@ const props = defineProps({
     default: () => []
   }
 })
+watch(
+  () => props.knowTitle,
+  (newVal) => {
+    pathList.value[0].title = newVal
+  }
+)
 let moveFileTitle = computed(() => {
   if (props.moveFiles.length == 0) {
     return ''

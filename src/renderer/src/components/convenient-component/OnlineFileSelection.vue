@@ -153,6 +153,7 @@ let pathList = ref([
   {
     title: '知识库',
     id: 0,
+    level: 0,
     next_type: 1
   }
 ])
@@ -250,7 +251,8 @@ watch(
         {
           title: '知识库',
           id: 0,
-          level: 0
+          level: 0,
+          next_type: 1
         }
       ]
       list.value = []
