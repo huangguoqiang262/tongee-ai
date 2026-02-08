@@ -2,9 +2,9 @@ name: Build Electron App
 
 on:
   push:
-    branches: [master]
+    branches: [dev]
   pull_request:
-    branches: [master]
+    branches: [dev]
 
 jobs:
   build-windows:
@@ -41,7 +41,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '22.20.x'
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
