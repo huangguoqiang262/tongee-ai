@@ -213,7 +213,7 @@ const refreshList = () => {
 }
 // 点击返回
 const backPath = () => {
-  if (activePath.value.level == 0) {
+  if (activePath.value.id == 0) {
     return
   }
   pathList.value.pop()
