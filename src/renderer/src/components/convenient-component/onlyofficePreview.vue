@@ -170,12 +170,13 @@ watchEffect(() => {
     editorConfig: {
       mode: props.mode === 'edit' ? 'edit' : 'view',
       lang: 'zh-cn',
-      callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
+      callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '', // 默认回调为 Document Server，自行在后端实现保存回调接口
+      user: {
+        ding_uid: userInfo.value?.ding_uid || '',
+        id: userInfo.value?.ding_uid || '',
+        name: userInfo.value?.name || ''
+      }
     },
-    user: {
-      ding_uid: userInfo.value?.ding_uid || '',
-      name: userInfo.value?.name || ''
-    }
   }
 })
 const handleDocumentReady = (event) => {
