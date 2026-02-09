@@ -7,6 +7,7 @@
       :document-server-url="serverUrl"
       :config="config"
       :events_onDocumentReady="handleDocumentReady"
+      :event_onContextMenuShow="handleContextMenuShow"
       :events_onSave="handleSave"
       :events_onError="handleError"
       :events_onDestroy="handleDestroy"
@@ -232,6 +233,11 @@ const handleDocumentReady = (event) => {
   error.value = false
   emit('ready', event)
   emit('loaded', event)
+}
+// 右键时菜单出现
+const handleContextMenuShow = (event) => {
+  console.log(event);
+
 }
 const handleSave = (event) => {
   // 可选：处理保存事件

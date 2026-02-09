@@ -161,8 +161,18 @@
                 >
                   <template #default="{ data }">
                     <span class="el-tree-node__label">{{ data.title }}</span>
-                    <el-icon v-if="data.type == 'user'" class="add-icon" @click="addApprover(data)">
+                    <el-icon
+                      v-if="data.type == 'user' && !data.auditor_selected"
+                      class="add-icon"
+                      @click="addApprover(data)"
+                    >
                       <Plus />
+                    </el-icon>
+                    <el-icon
+                      v-else-if="data.type == 'user' && data.auditor_selected"
+                      class="add-icon check-icon"
+                    >
+                      <Check />
                     </el-icon>
                   </template>
                 </el-tree>
@@ -371,6 +381,7 @@ const addModifier = (data) => {
           })
           data.editor_selected = true
           emits('refreshList')
+          getSynergiaDetail()
         }
       })
     })
@@ -401,6 +412,7 @@ const addApprover = (data) => {
           })
           data.auditor_selected = true
           emits('refreshList')
+          getSynergiaDetail()
         }
       })
     })
