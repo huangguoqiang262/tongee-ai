@@ -340,11 +340,11 @@ onUnmounted(() => {
 })
 const modifiersFilterHandle = (value, data) => {
   if (!value) return true
-  return data.name.includes(value)
+  return data.title.includes(value)
 }
 const approversFilterHandle = (value, data) => {
   if (!value) return true
-  return data.name.includes(value)
+  return data.title.includes(value)
 }
 // 新增协同人
 const addModifier = (data) => {
