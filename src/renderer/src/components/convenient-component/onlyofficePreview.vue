@@ -12,11 +12,6 @@
       :events_onDestroy="handleDestroy"
       v-bind="$attrs"
     />
-    <div v-if="loading" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">加载中…</div>
-    </div>
-
     <div v-if="error" class="error-overlay">
       <div class="error-message">
         <i class="el-icon-warning"></i>
