@@ -24,7 +24,7 @@
 
 <script setup>
 /* eslint-disable */
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect,watch } from 'vue'
 import { DocumentEditor } from '@onlyoffice/document-editor-vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 const userInfo = useUserInfo()
@@ -40,7 +40,6 @@ const props = defineProps({
   fileName: { type: String, default: '' },
   id: { type: String, default: 'onlyoffice-editor-' + Date.now() }
 })
-console.log(props.src,66666);
 
 const emit = defineEmits(['ready', 'error', 'loaded'])
 
@@ -138,7 +137,7 @@ const config = ref({
     title: props.fileName||props.src.split('/').pop(),
     url: props.src,
     fileType: fileExt.value || 'docx',
-    key: props.fileKey
+    key: Date.now()+''
   },
   editorConfig: {
     mode: props.mode === 'edit' ? 'edit' : 'view',
@@ -150,6 +149,7 @@ const config = ref({
     name: userInfo.value?.name || ''
   }
 })
+
 watchEffect(() => {
   config.value = {
     width: '100%',
@@ -160,12 +160,12 @@ watchEffect(() => {
       title: props.fileName||props.src.split('/').pop(),
       url: props.src,
       fileType: fileExt.value || 'docx',
-      key: props.fileKey
+      key: Date.now()+''
     },
     editorConfig: {
       mode: props.mode === 'edit' ? 'edit' : 'view',
       lang: 'zh-cn',
-      callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '', // 默认回调为 Document Server，自行在后端实现保存回调接口
+      callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL+ '&file_key='+props.fileKey || '', // 默认回调为 Document Server，自行在后端实现保存回调接口
       user: {
         ding_uid: userInfo.value?.ding_uid || '',
         id: userInfo.value?.ding_uid || '',
@@ -173,6 +173,10 @@ watchEffect(() => {
       }
     },
   }
+})
+watch(()=> props.mode,(val)=> {
+ console.log(val);
+
 })
 const handleDocumentReady = (event) => {
   loading.value = false
