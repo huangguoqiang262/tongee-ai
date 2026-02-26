@@ -18,8 +18,11 @@
         <img class="menu-icon" src="@renderer/assets/menu/common-knowledge-icon.png" alt="" />
         <div v-for="item in knowList" :key="item.id" class="sub-menu">
           <div class="sub-menu-item" @click="toKnowledge(item)">
-            <img v-if="item.picurl" class="sub-menu-icon" :src="item.picurl" alt="" />
-            <defaultCoverSvg v-else class="sub-menu-icon" />
+            <el-tooltip effect="light" content="" placement="right">
+              <template #content> {{ item.title }} </template>
+              <img v-if="item.picurl" class="sub-menu-icon" :src="item.picurl" alt="" />
+              <defaultCoverSvg v-else class="sub-menu-icon" />
+            </el-tooltip>
           </div>
         </div>
       </div>

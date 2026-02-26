@@ -232,6 +232,9 @@ export default {
     )
   },
   methods: {
+    againTextChange(text) {
+      this.message.text = text
+    },
     handleChange(configuration) {
       this.$emit('configurationChange', configuration)
     },

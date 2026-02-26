@@ -30,6 +30,7 @@
           :message="message"
           :is-chatting="isChatting"
           @handle-action="handleAction"
+          @again-text="handleAgainText"
         />
       </div>
     </div>
@@ -125,6 +126,11 @@ const props = defineProps({
     default: false
   }
 })
+// 处理再次发送文本
+const handleAgainText = (text) => {
+  if (isChatting.value) return
+  chatInputRef.value.againTextChange(text)
+}
 // 模型默认配置
 const defaultModelConfig = ref({})
 // 模型当前配置

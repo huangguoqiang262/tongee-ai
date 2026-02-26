@@ -193,6 +193,7 @@
             :message="messageItem"
             :is-pre-view="true"
             :is-chatting="isChatting"
+            @again-text="handleAgainText"
           />
         </div>
         <div v-if="feedbackVisible" class="feedback-box">
@@ -347,6 +348,10 @@ let getLoading = ref(false)
 const updateApi = inject('updateApi')
 let isUpdateAvailable = ref(false)
 let appVersion = ref('1.0.0')
+const handleAgainText = (text) => {
+  if (isChatting.value) return
+  message.value.text = text
+}
 // 获取应用版本
 const getAppVersion = async () => {
   getLoading.value = true

@@ -27,6 +27,7 @@
           direction="right"
           :is-chatting="isChatting"
           @handle-action="handleAction"
+          @again-text="handleAgainText"
         />
       </div>
     </div>
@@ -66,6 +67,7 @@
     <div class="search-box">
       <repository-chat-input
         v-if="activeSession"
+        ref="chatInputRef"
         key="input"
         class="message-input"
         :models="models"
@@ -148,6 +150,12 @@ let props = defineProps({
     default: () => []
   }
 })
+const chatInputRef = ref(null)
+// 处理再次发送文本
+const handleAgainText = (text) => {
+  if (isChatting.value) return
+  chatInputRef.value.againTextChange(text)
+}
 // 模型默认配置
 const defaultModelConfig = ref({})
 // 模型当前配置

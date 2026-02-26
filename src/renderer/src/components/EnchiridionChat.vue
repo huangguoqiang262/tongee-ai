@@ -29,6 +29,7 @@
           :message="message"
           :is-chatting="isChatting"
           @handle-action="handleAction"
+          @again-text="handleAgainText"
         />
       </div>
     </div>
@@ -56,6 +57,7 @@
     <div class="search-box">
       <tool-chat-input
         v-if="activeSession.model_name"
+        ref="toolChatInputRef"
         key="input"
         :is-active-tab="isActiveTab"
         class="message-input"
@@ -129,6 +131,12 @@ const props = defineProps({
     default: false
   }
 })
+const toolChatInputRef = ref(null)
+// 处理再次发送文本
+const handleAgainText = (text) => {
+  if (isChatting.value) return
+  toolChatInputRef.value.againTextChange(text)
+}
 // 模型默认配置
 const defaultModelConfig = ref({})
 // 模型当前配置

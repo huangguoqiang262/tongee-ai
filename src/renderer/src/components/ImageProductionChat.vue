@@ -12,6 +12,7 @@
           chat-type="image"
           :is-chatting="isChatting"
           @handle-action="handleAction"
+          @again-text="handleAgainText"
         />
       </div>
     </div>
@@ -91,6 +92,11 @@ const props = defineProps({
     default: false
   }
 })
+// 处理再次发送文本
+const handleAgainText = (text) => {
+  if (isChatting.value) return
+  message.value.text = text
+}
 let previewVisible = ref(false)
 const closePreview = () => {
   previewVisible.value = false

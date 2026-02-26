@@ -90,6 +90,7 @@ const props = defineProps({
   width: { type: String, default: '100%' },
   fileKey: { type: String, default: '' },
   fileName: { type: String, default: '' },
+  download: { type: Boolean, default: false },
   id: { type: String, default: 'onlyoffice-editor-' + Date.now() }
 })
 
@@ -213,7 +214,10 @@ watchEffect(() => {
       title: props.fileName || props.src.split('/').pop(),
       url: props.src,
       fileType: fileExt.value || 'docx',
-      key: Date.now() + ''
+      key: Date.now() + '',
+      permissions: {
+        download: props.download || false
+      }
     },
     editorConfig: {
       mode: props.mode === 'edit' ? 'edit' : 'view',

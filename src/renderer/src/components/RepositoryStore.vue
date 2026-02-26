@@ -50,7 +50,7 @@
             <div class="commom-list" :class="{ 'close-box': closeCommonList }">
               <template v-for="(item, index) in commonCreateList" :key="item.id">
                 <div
-                  v-show="index < 3 || createCommonExpand"
+                  v-show="index < 5 || createCommonExpand"
                   class="item"
                   :class="{ 'active-repository': activeRepositoryId == item.id }"
                   @click="getRepositoryInfo(item.id)"
@@ -63,7 +63,7 @@
                   <div v-if="item.is_prompt == 1" class="dot-dark"></div>
                 </div>
               </template>
-              <div v-if="commonCreateList.length > 3" class="expand" @click="commonExpandChange">
+              <div v-if="commonCreateList.length > 5" class="expand" @click="commonExpandChange">
                 {{ createCommonExpand ? '收起' : '展开' }}
               </div>
             </div>
@@ -83,7 +83,7 @@
             <div class="commom-list" :class="{ 'close-box': closeJoinList }">
               <template v-for="(item, index) in commonJoinList" :key="item.id">
                 <div
-                  v-show="index < 3 || joinCommonExpand"
+                  v-show="index < 10 || joinCommonExpand"
                   class="item"
                   :class="{ 'active-repository': activeRepositoryId == item.id }"
                   @click="getRepositoryInfo(item.id)"
@@ -97,7 +97,7 @@
                 </div>
               </template>
 
-              <div v-if="commonJoinList.length > 3" class="expand" @click="joinExpandChange">
+              <div v-if="commonJoinList.length > 10" class="expand" @click="joinExpandChange">
                 {{ joinCommonExpand ? '收起' : '展开' }}
               </div>
             </div>
@@ -127,7 +127,7 @@
           <div class="personage-list" :class="{ 'close-box': closePersonageList }">
             <template v-for="(item, index) in personalCreateList" :key="item.id">
               <div
-                v-show="index < 3 || personageExpand"
+                v-show="index < 5 || personageExpand"
                 class="item"
                 :class="{ 'active-repository': activeRepositoryId == item.id }"
                 @click="getRepositoryInfo(item.id)"
@@ -146,7 +146,7 @@
                 已使用 {{ userInfo?.space_use_total || '0MB' }}/{{ userInfo?.space || '0GB' }}
               </div>
               <div
-                v-if="personalCreateList.length > 3"
+                v-if="personalCreateList.length > 5"
                 class="expand"
                 @click="personageExpandChange"
               >
@@ -732,6 +732,7 @@
                               >图片</span
                             >
                             <span v-else>{{ item.info?.url.split('.').pop().toUpperCase() }}</span>
+                            <span>{{ item.username || '' }}</span>
                           </div>
                           <div v-if="item.item_type != 3" class="size">
                             {{ formatFileSize(item.total_space) }}
@@ -1554,7 +1555,8 @@ const detailChange = (item, e, i) => {
         fileUrl: item.info?.url,
         fileName: item.title,
         fileId: item.info?.file_key || '',
-        itemId: item.id || ''
+        itemId: item.id || '',
+        download: true
       }
     })
     return
@@ -1579,7 +1581,8 @@ const detailChange = (item, e, i) => {
         attrs: {
           fileUrl: item.info?.url,
           fileName: item.title,
-          fileId: item.info?.file_key || ''
+          fileId: item.info?.file_key || '',
+          download: true
         }
       })
     }
@@ -1600,7 +1603,8 @@ const detailChange = (item, e, i) => {
         attrs: {
           fileUrl: item.info?.url,
           fileName: item.title,
-          fileId: item.info?.file_key || ''
+          fileId: item.info?.file_key || '',
+          download: item.permission_type == 1 ? true : false
         }
       })
     }
@@ -2906,7 +2910,8 @@ const handleContextMenuAction = ({ action }) => {
         fileUrl: activeFiles.value[0].info?.url,
         fileName: activeFiles.value[0].title,
         fileId: activeFiles.value[0].info?.file_key || '',
-        itemId: activeFiles.value[0].id || ''
+        itemId: activeFiles.value[0].id || '',
+        download: true
       }
     })
     itemId.value = activeFiles.value[0].id

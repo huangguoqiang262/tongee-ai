@@ -38,6 +38,7 @@
           :src="fileUrl"
           :file-name="fileName"
           :file-key="fileKey"
+          :download="download"
           :mode="user_status == 0 ? 'edit' : 'view'"
         />
       </el-splitter-panel>
@@ -74,6 +75,7 @@ const props = defineProps({
 let fileUrl = ref('')
 let fileName = ref('')
 let fileKey = ref('')
+let download = ref(false)
 let chatVisible = ref(false)
 let attach_files = ref([
   {
@@ -165,6 +167,7 @@ watchEffect(() => {
   fileUrl.value = props.attrs.fileUrl || ''
   fileName.value = props.attrs.fileName || ''
   fileKey.value = props.attrs.fileId || ''
+  download.value = props.attrs.download || false
   if (props.attrs.itemId) {
     getDetailStatus()
   }

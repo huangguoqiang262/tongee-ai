@@ -422,7 +422,7 @@ const processedReasoning = computed(() => {
     justify-content: space-between;
     align-items: center;
     gap: 0 10px;
-    height: 36px;
+    height: 32px;
     width: 100%;
     overflow: hidden;
     cursor: pointer;

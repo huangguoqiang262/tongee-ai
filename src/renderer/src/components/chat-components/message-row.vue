@@ -62,7 +62,7 @@ const props = defineProps({
 })
 const unfoldCiteFile = ref(false)
 const addNewTab = inject('addNewTab')
-const emit = defineEmits(['newChat', 'handleAction'])
+const emit = defineEmits(['newChat', 'handleAction', 'againText'])
 const localSpread = ref(props.message.spread || false)
 const markdownMessage = ref(null)
 
@@ -288,6 +288,10 @@ const processedReasoning = computed(() => {
       return `资料${id}`
     })
 })
+const againText = (text) => {
+  if (!text) return
+  emit('againText', text)
+}
 </script>
 
 <!-- 整个div是用来调整内部消息的位置，每条消息占的空间都是一整行，然后根据right还是left来调整内部的消息是靠右边还是靠左边 -->
@@ -315,6 +319,7 @@ const processedReasoning = computed(() => {
             :message="props.message.textContent"
             :retrieved-document-list="props.message.retrievedDocumentList"
             :use-annex-list="props.message.use_annex"
+            @click="againText(props.message.textContent)"
           ></MarkdownMessage>
           <div v-if="props.direction != 'right'" class="empty-message">
             {{ props.message.dateline }}
@@ -643,7 +648,7 @@ const processedReasoning = computed(() => {
     justify-content: space-between;
     align-items: center;
     gap: 0 10px;
-    height: 36px;
+    height: 32px;
     width: 100%;
     overflow: hidden;
 
