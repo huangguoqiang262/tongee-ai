@@ -62,7 +62,7 @@ export function formatTime(date) {
 
   const diff = (now - d) / 1000
 
-  if (diff < 30) {
+  if (diff < 120) {
     return '刚刚'
   } else if (diff < 3600) {
     // less 1 hour

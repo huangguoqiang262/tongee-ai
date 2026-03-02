@@ -309,6 +309,8 @@ const getSynergiaDetail = () => {
 }
 watchEffect(() => {
   if (synergiaLookVisible.value) {
+    modifiersSearch.value = ''
+    approversSearch.value = ''
     getSynergiaDetail()
     getTreeData()
   }

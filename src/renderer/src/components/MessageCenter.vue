@@ -192,7 +192,7 @@
                   <div class="time">{{ formatTimeFun(item.createtime) }}</div>
                 </div>
                 <div class="author">
-                  <span>提交者：{{ item.sender_name }}</span>
+                  <span class="author-name">提交者：{{ item.sender_name }}</span>
                   <span>地址：{{ item.file_edit_url }}</span>
                 </div>
                 <div class="message-box">
@@ -1171,8 +1171,12 @@ watchEffect(() => {
                 color: #909090;
                 line-height: 16px;
                 display: flex;
-                align-items: center;
+                // align-items: center;
                 gap: 0 20px;
+                word-break: break-all;
+                .author-name {
+                  flex-shrink: 0;
+                }
               }
               .message-box {
                 box-sizing: border-box;

@@ -347,12 +347,7 @@
                 :show-arrow="false"
               >
                 <template #reference>
-                  <img
-                    class="icon"
-                    src="@renderer/assets/repository/add-file-icon.png"
-                    alt=""
-                    @click="addMenuClick"
-                  />
+                  <img class="icon" src="@renderer/assets/repository/add-file-icon.png" alt="" />
                 </template>
                 <div class="common-handle-box" @click="hidePopover(repositoryaddPopover)">
                   <div class="item" @click="beforeUploadFiles('local-file')">
@@ -438,12 +433,7 @@
                 :show-arrow="false"
               >
                 <template #reference>
-                  <img
-                    class="icon"
-                    src="@renderer/assets/repository/add-file-icon.png"
-                    alt=""
-                    @click="addMenuClick"
-                  />
+                  <img class="icon" src="@renderer/assets/repository/add-file-icon.png" alt="" />
                 </template>
                 <div class="common-handle-box" @click="hidePopover(repositoryaddPopover)">
                   <div class="item" @click="beforeUploadFiles('synergia')">
@@ -516,7 +506,12 @@
                 @contextmenu="(e) => showContextMenu(e, item)"
                 @click="dirChange(item, $event, index)"
               >
-                <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
+                <el-checkbox
+                  v-model="item.checked"
+                  class="checkbox"
+                  size="large"
+                  @click.stop="checkChange(item, $event, index)"
+                />
                 <!-- <img class="cover-img" :src="getFileIcon(item)" alt="" /> -->
                 <catalogueSvgIcon class="cover-img" />
                 <div class="item-right">
@@ -676,7 +671,7 @@
                       v-model="item.checked"
                       class="checkbox"
                       size="large"
-                      @click.stop="contextMenu.show = false"
+                      @click.stop="checkChange(item, $event, index)"
                     />
                     <div class="cover-img-box">
                       <img
@@ -719,20 +714,33 @@
                         <div class="size-or-num-box">
                           <div class="type-box">
                             <img class="icon" :src="getFileIcon(item)" alt="" />
-                            <span v-if="item.item_type == 3" class="web-url">{{
-                              item.info?.web_url
-                            }}</span>
-                            <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
-                            <span
-                              v-else-if="
-                                ['png', 'jpg', 'jpeg', 'gif'].includes(
-                                  item.info?.url.split('.').pop()
-                                )
+                            <template
+                              v-if="
+                                item.progress == 100 ||
+                                (item.is_collaboration == 1 && item.collaboration_status != 5) ||
+                                item.info.vector_status == 2
                               "
-                              >图片</span
                             >
-                            <span v-else>{{ item.info?.url.split('.').pop().toUpperCase() }}</span>
-                            <span>{{ item.username || '' }}</span>
+                              <span v-if="item.item_type == 3" class="web-url">{{
+                                item.info?.web_url
+                              }}</span>
+                              <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
+                              <span
+                                v-else-if="
+                                  ['png', 'jpg', 'jpeg', 'gif'].includes(
+                                    item.info?.url.split('.').pop()
+                                  )
+                                "
+                                >图片</span
+                              >
+                              <span v-else>{{
+                                item.info?.url.split('.').pop().toUpperCase()
+                              }}</span>
+                              <span>{{ item.username || '' }}</span>
+                            </template>
+                            <template v-else>
+                              <span>解析中......{{ item.progress }}%</span>
+                            </template>
                           </div>
                           <div v-if="item.item_type != 3" class="size">
                             {{ formatFileSize(item.total_space) }}
@@ -1109,6 +1117,7 @@ import {
   onMounted,
   onUnmounted,
   watch,
+  watchEffect,
   nextTick,
   inject,
   computed,
@@ -1116,6 +1125,7 @@ import {
 } from 'vue'
 import { on, off } from '@renderer/utils/eventBus'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+import useWebSocket from '@renderer/hooks/useWebSocket'
 import { useUserStore } from '@renderer/stores/user'
 import topIcon from '@renderer/assets/contextMenu/top-icon.png'
 import unstickIcon from '@renderer/assets/contextMenu/unstick-icon.png'
@@ -1535,14 +1545,60 @@ const downloadFile = (url, fileName) => {
   }
   x.send()
 }
+const checkChange = (item, e, i) => {
+  contextMenu.value.show = false
+  if (!item.checked && e.shiftKey && !activeFiles.value.length) {
+    detailFileList.value.map((children, j) => {
+      if (j < i) {
+        children.checked = true
+      }
+    })
+    return
+  } else if (!item.checked && e.shiftKey && activeFiles.value.length) {
+    var lastIndex = detailFileList.value.findLastIndex((children) => {
+      return children.checked
+    })
+    if (lastIndex > -1) {
+      detailFileList.value.map((children, j) => {
+        if (j >= lastIndex && j < i) {
+          children.checked = true
+        }
+      })
+    } else {
+      detailFileList.value.map((children, j) => {
+        if (j < i) {
+          children.checked = true
+        }
+      })
+    }
+  }
+}
 // 到达详情
 const detailChange = (item, e, i) => {
-  if (e.shiftKey) {
+  if (e.shiftKey && !activeFiles.value.length) {
     detailFileList.value.map((children, j) => {
       if (j <= i) {
         children.checked = true
       }
     })
+    return
+  } else if (e.shiftKey && activeFiles.value.length) {
+    var lastIndex = detailFileList.value.findLastIndex((children) => {
+      return children.checked
+    })
+    if (lastIndex > -1) {
+      detailFileList.value.map((children, j) => {
+        if (j >= lastIndex && j <= i) {
+          children.checked = true
+        }
+      })
+    } else {
+      detailFileList.value.map((children, j) => {
+        if (j <= i) {
+          children.checked = true
+        }
+      })
+    }
     return
   }
   if (item.is_collaboration == 1) {
@@ -1888,6 +1944,7 @@ const getRepositoryInfo = (id) => {
       id: 0
     }
   ]
+  detailFileList.value = []
   get_know_info({
     know_id: id,
     parent_item_id: 0,
@@ -2970,9 +3027,6 @@ const handleBlur = () => {
   }
   refreshList()
 }
-const addMenuClick = () => {
-  // console.log('添加文件')
-}
 const sortMenuClick = (item) => {
   sortType.value = item.value
   refreshList()
@@ -3085,7 +3139,7 @@ const filesType = computed(() => {
     }
   }
   return 1
-})  // 1 文件 2 文件夹 3 两者都有
+}) // 1 文件 2 文件夹 3 两者都有
 const tempUploadList = ref([])
 const conflictVisible = ref(false)
 const retainAll = () => {
@@ -3363,12 +3417,30 @@ let parentItemId = computed(() => {
 })
 // 点击文件夹
 const dirChange = (item, e, i) => {
-  if (e.shiftKey) {
+  if (e.shiftKey && !activeFiles.value.length) {
     detailFileList.value.map((children, j) => {
       if (j <= i) {
         children.checked = true
       }
     })
+    return
+  } else if (e.shiftKey && activeFiles.value.length) {
+    var lastIndex = detailFileList.value.findLastIndex((children) => {
+      return children.checked
+    })
+    if (lastIndex > -1) {
+      detailFileList.value.map((children, j) => {
+        if (j >= lastIndex && j <= i) {
+          children.checked = true
+        }
+      })
+    } else {
+      detailFileList.value.map((children, j) => {
+        if (j <= i) {
+          children.checked = true
+        }
+      })
+    }
     return
   }
   pathList.value.push({
@@ -3515,6 +3587,55 @@ const checkItemsInSelection = () => {
       detailFileList.value[index].checked = true
     }
   })
+}
+// socket 信息
+const client_id = ref('')
+const { isConnected, sendMessage } = useWebSocket(import.meta.env.VITE_API_WSS_URL, {
+  onOpen: () => {
+  },
+  onMessage: (data) => {
+    try {
+      let response = JSON.parse(data)
+      if (response.type == 'bind') {
+        client_id.value = response.data
+      } else if (response.type == 'search_progress' && !Array.isArray(response.data)) {
+        disposeSocketMessage(response.data)
+      }
+    } catch (err) {
+      console.log(err)
+    }
+  },
+  onClose: () => {},
+  onError: () => {}
+})
+watchEffect(() => {
+  const socketData = {
+    type: 'search',
+    know_id: activeRepository.value.id,
+    parent_item_id: parentItemId.value, //非必填
+    uniacid: useUserStore().uniacid,
+    client_id: client_id.value,
+    ding_uid: userInfo.value.ding_uid
+  }
+  if (activeRepository.value && activeRepository.value.id) {
+    if (isConnected.value) {
+      sendMessage(JSON.stringify(socketData))
+    }
+  }
+})
+
+const disposeSocketMessage = (data) => {
+  //处理向量化进度  根据返回的数据data的键名是detailFileList中每一项中的info中的file_key  data中每个file_key对应的对象的progress值是进度
+  if (data && detailFileList.value.length) {
+    detailFileList.value.forEach((item) => {
+      if (item.item_type != 2 && data[item.info.file_key]) {
+        item.progress = data[item.info.file_key].progress
+        if (item.progress >= 40 && data[item.info.file_key].icon_url) {
+          item.info.icon = data[item.info.file_key].icon_url
+        }
+      }
+    })
+  }
 }
 </script>
 
@@ -4202,7 +4323,10 @@ const checkItemsInSelection = () => {
           width: 4px;
           height: 4px;
         }
+        // &::-webkit-scrollbar-track {
+        //   background: transparent;
 
+        // }
         &::-webkit-scrollbar-thumb {
           border-radius: 2px;
           background-color: #dddcdc;
@@ -4236,6 +4360,7 @@ const checkItemsInSelection = () => {
             top: 12px;
             right: 10px;
             display: none;
+            outline: none;
           }
 
           &:hover {

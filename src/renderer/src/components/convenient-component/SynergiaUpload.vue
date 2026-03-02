@@ -193,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeMount, onMounted, onUnmounted } from 'vue'
+import { ref, watch, watchEffect, onBeforeMount, onMounted, onUnmounted } from 'vue'
 import {
   org_organ_user_tree,
   synergia_upload_file,
@@ -426,6 +426,12 @@ const handleAdd = () => {
   //   }
   // })
 }
+watchEffect(() => {
+  if (synergiaUploadVisible.value) {
+    modifiersSearch.value = ''
+    approversSearch.value = ''
+  }
+})
 watch(modifiersSearch, (val) => {
   modifiersRef.value?.filter(val)
 })
