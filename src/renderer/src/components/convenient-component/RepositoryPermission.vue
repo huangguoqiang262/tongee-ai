@@ -291,19 +291,6 @@ const submitForm = () => {
           // height: 100%;
           // overflow-y: auto;
           // color: var(--default-font-color);
-          // &::-webkit-scrollbar {
-          //   width: 4px;
-          //   height: 4px;
-          // }
-
-          // &::-webkit-scrollbar-thumb {
-          //   border-radius: 2px;
-          //   background-color: #dddcdc;
-
-          //   &:hover {
-          //     background-color: #909090;
-          //   }
-          // }
           .type-list-box {
             padding: 0 19px;
             background: #f9f9f9;

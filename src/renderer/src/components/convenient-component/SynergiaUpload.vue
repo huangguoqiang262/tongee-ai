@@ -600,19 +600,6 @@ const approversCheckChange = () => {
               .el-tree {
                 padding: 20px 40px 20px 25px;
                 background: #f9f9f9;
-                &::-webkit-scrollbar {
-                  width: 4px;
-                  height: 4px;
-                }
-
-                &::-webkit-scrollbar-thumb {
-                  border-radius: 2px;
-                  background-color: #dddcdc;
-
-                  &:hover {
-                    background-color: #909090;
-                  }
-                }
               }
               .customNodeClass {
                 .el-tree-node__content {

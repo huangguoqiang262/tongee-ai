@@ -579,11 +579,6 @@ defineExpose({
       white-space: nowrap;
       overflow-x: auto;
       gap: 10px;
-      &::-webkit-scrollbar {
-        display: none;
-      }
-      /* 对于IE和Edge的旧版浏览器 */
-      -ms-overflow-style: none;
       border-bottom: 1px solid #efefef;
 
       .attach-item {
@@ -686,13 +681,6 @@ defineExpose({
         border: none;
         box-shadow: none;
         overflow-y: auto;
-        // transition: all 0.3s ease;
-        /* 隐藏滚动条轨道 */
-        // &::-webkit-scrollbar {
-        //   display: none;
-        // }
-        // /* 对于IE和Edge的旧版浏览器 */
-        // -ms-overflow-style: none;
       }
     }
 

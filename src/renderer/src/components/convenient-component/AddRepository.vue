@@ -314,19 +314,6 @@ const submitForm = () => {
           height: 100%;
           overflow-y: auto;
           color: var(--default-font-color);
-          &::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-          }
-
-          &::-webkit-scrollbar-thumb {
-            border-radius: 2px;
-            background-color: #dddcdc;
-
-            &:hover {
-              background-color: #909090;
-            }
-          }
           .el-form-item {
             margin-bottom: 16px;
           }

@@ -1004,17 +1004,6 @@ watchEffect(() => {
         .list-box {
           padding-right: 20px;
           overflow-y: auto;
-          &::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-          }
-          &::-webkit-scrollbar-thumb {
-            border-radius: 2px;
-            background-color: #dddcdc;
-            &:hover {
-              background-color: #909090;
-            }
-          }
           .list-item {
             padding: 20px 0;
             border-bottom: 1px solid #f0f0f0;
@@ -1113,17 +1102,6 @@ watchEffect(() => {
           overflow-y: auto;
           background: #f9f9f9;
           border-radius: 12px;
-          &::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-          }
-          &::-webkit-scrollbar-thumb {
-            border-radius: 2px;
-            background-color: #dddcdc;
-            &:hover {
-              background-color: #909090;
-            }
-          }
           .list-item {
             padding: 20px 0;
             border-bottom: 1px solid #f0f0f0;

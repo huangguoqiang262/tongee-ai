@@ -156,7 +156,7 @@
           </div>
         </div>
       </el-splitter-panel>
-      <el-splitter-panel :size="399" :min="300" class="center-box">
+      <el-splitter-panel :size="399" :min="330" class="center-box">
         <div class="repository-detail-box">
           <el-popover
             v-if="Object.keys(activeRepository).length"
@@ -3591,8 +3591,7 @@ const checkItemsInSelection = () => {
 // socket 信息
 const client_id = ref('')
 const { isConnected, sendMessage } = useWebSocket(import.meta.env.VITE_API_WSS_URL, {
-  onOpen: () => {
-  },
+  onOpen: () => {},
   onMessage: (data) => {
     try {
       let response = JSON.parse(data)
@@ -3678,6 +3677,7 @@ const disposeSocketMessage = (data) => {
     }
   }
 
+  /* 只作用于左侧面板的滚动条 */
   :deep(.left-box) {
     box-sizing: border-box;
     padding: 25px 8px 20px;
@@ -3686,21 +3686,6 @@ const disposeSocketMessage = (data) => {
     max-width: 300px;
     border-right: 1px solid #efefef;
     overflow-y: auto;
-
-    &::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      border-radius: 2px;
-      background-color: #dddcdc;
-
-      &:hover {
-        background-color: #909090;
-      }
-    }
-
     .common-repository-box {
       width: 100%;
       overflow: hidden;
@@ -4059,7 +4044,6 @@ const disposeSocketMessage = (data) => {
   }
 
   :deep(.center-box) {
-    flex-shrink: 0;
     box-sizing: border-box;
     padding: 10px 6px 20px;
     height: 100%;
@@ -4319,22 +4303,6 @@ const disposeSocketMessage = (data) => {
       .list-box {
         flex: 1;
         overflow: auto;
-        &::-webkit-scrollbar {
-          width: 4px;
-          height: 4px;
-        }
-        // &::-webkit-scrollbar-track {
-        //   background: transparent;
-
-        // }
-        &::-webkit-scrollbar-thumb {
-          border-radius: 2px;
-          background-color: #dddcdc;
-
-          &:hover {
-            background-color: #909090;
-          }
-        }
         // 拖动选择矩形样式
         .drag-selection-rect {
           position: absolute;
@@ -4545,7 +4513,9 @@ const disposeSocketMessage = (data) => {
 
   :deep(.right-box) {
     flex: 1;
+    flex-shrink: 0;
     height: 100%;
+    min-width: 375px;
     overflow: hidden;
   }
 

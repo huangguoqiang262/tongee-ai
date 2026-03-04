@@ -710,13 +710,6 @@ const clearAttach = (i) => {
           box-shadow: none;
           border-radius: 12px;
           background: #f9f9f9;
-          // transition: all 0.3s ease;
-          /* 隐藏滚动条轨道 */
-          // &::-webkit-scrollbar {
-          //   display: none;
-          // }
-          // /* 对于IE和Edge的旧版浏览器 */
-          // -ms-overflow-style: none;
         }
       }
       .textarea-actions {
@@ -902,11 +895,6 @@ const clearAttach = (i) => {
       white-space: nowrap;
       overflow-x: auto;
       gap: 10px;
-      &::-webkit-scrollbar {
-        display: none;
-      }
-      /* 对于IE和Edge的旧版浏览器 */
-      -ms-overflow-style: none;
       border-bottom: 1px solid #efefef;
 
       .attach-item {

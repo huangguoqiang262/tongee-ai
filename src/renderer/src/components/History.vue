@@ -710,19 +710,6 @@ onMounted(() => {
           padding: 0 20px;
           overflow-y: auto;
           contain: layout style;
-          &::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-          }
-
-          &::-webkit-scrollbar-thumb {
-            border-radius: 2px;
-            background-color: #dddcdc;
-
-            &:hover {
-              background-color: #909090;
-            }
-          }
           .empty {
             padding-top: 80px;
             height: 425px;
@@ -906,17 +893,6 @@ onMounted(() => {
             background: #f9f9f9;
             border-radius: 12px;
             contain: layout style;
-            &::-webkit-scrollbar {
-              width: 4px;
-              height: 4px;
-            }
-            &::-webkit-scrollbar-thumb {
-              border-radius: 2px;
-              background-color: #dddcdc;
-              &:hover {
-                background-color: #909090;
-              }
-            }
             .list-item {
               padding: 20px 0;
               border-bottom: 1px solid #f0f0f0;

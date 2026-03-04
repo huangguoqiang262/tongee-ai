@@ -867,21 +867,6 @@ onMounted(() => {
     width: 100%;
     padding: 20px;
     overflow-y: auto;
-    &::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    &::-webkit-scrollbar-thumb {
-      border-radius: 2px;
-      background-color: #c1c1c1;
-      transition: all 0.2s ease-in-out;
-      &:hover {
-        background-color: #a8a8a8;
-      }
-    }
     .message-row-box {
       overflow: hidden;
       width: 100%;

@@ -6,6 +6,10 @@
   --el-text-color-regular: var(--default-font-color);
   --el-input-icon-color: var(--primary-color);
   --el-select-input-color: var(--primary-color) !important;
+  --app-scrollbar-size: 4px;
+  --app-scrollbar-radius: 4px;
+  --app-scrollbar-thumb: rgba(193, 193, 193, 0.9);
+  --app-scrollbar-thumb-hover: rgba(160, 160, 160, 0.95);
 }
 html {
   font-size: 12px;
@@ -32,21 +36,60 @@ body {
   font-family: DOUYINSANSBOLD;
   src: url('@renderer/styles/douyinmeihaoti.otf');
 }
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
 .w-e-text-placeholder {
   font-style: normal;
 }
-::-webkit-scrollbar-thumb {
-  border-radius: 2px;
-  background-color: #dddcdc;
-
-  &:hover {
-    background-color: #909090;
-  }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent !important;
 }
+
+*:hover {
+  scrollbar-color: var(--app-scrollbar-thumb) transparent !important;
+}
+
+*::-webkit-scrollbar {
+  width: var(--app-scrollbar-size) !important;
+  height: var(--app-scrollbar-size) !important;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: transparent !important;
+  border-radius: var(--app-scrollbar-radius) !important;
+}
+/* 尽量隐藏所有方向的滚动条按钮 */
+*::-webkit-scrollbar-button {
+  opacity: 0;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background-color: var(--app-scrollbar-thumb) !important;
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+  background-color: var(--app-scrollbar-thumb-hover) !important;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+// ::-webkit-scrollbar {
+//   width: 4px;
+//   height: 4px;
+// }
+// ::-webkit-scrollbar-track {
+//   background: transparent;
+//   transition: background 0.2s ease;
+// }
+// ::-webkit-scrollbar-thumb {
+//   border-radius: 2px;
+//   background-color: #dddcdc;
+//   transition: background-color 0.2s ease;
+// }
 #app {
   display: flex;
   align-items: center;

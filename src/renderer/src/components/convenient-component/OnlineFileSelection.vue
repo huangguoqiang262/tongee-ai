@@ -87,12 +87,13 @@
                         alt=""
                         @error="(e) => (e.target.src = defaultImg)"
                       />
-                      <!-- <img
-                        v-else-if="item.item_type == 2"
-                        :src="item.picurl || catalogueIcon"
-                        alt=""
-                      /> -->
                       <catalogueSvgIcon v-else-if="item.item_type == 2" class="cover-img" />
+                      <img
+                        v-if="item.item_type == 3"
+                        :src="item.file_icon"
+                        alt=""
+                        @error="(e) => (e.target.src = defaultImg)"
+                      />
                       <img
                         v-else-if="item.next_type == 2 && !item.is_public"
                         :src="personageRepositoryIcon"
@@ -142,7 +143,6 @@ import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
 import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
 import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
-// import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import defaultImg from '@renderer/assets/repository/default-img.png'
 import { get_file_list } from '@renderer/api/index'
