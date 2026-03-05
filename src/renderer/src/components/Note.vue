@@ -4,7 +4,7 @@
       <el-splitter-panel :size="332" :min="200" :max="400" class="left-box">
         <div class="common-box">
           <div class="common-box-left">笔记本</div>
-          <div class="square-icon-box" @click="addNotebook">
+          <div class="square-icon-box" @click="addNotebook(true)">
             <img class="square-icon" src="@renderer/assets/repository/add-icon.png" alt="" />
           </div>
         </div>
@@ -363,7 +363,7 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer move-note-footer">
-          <div class="new-note" @click="addNotebook">新建笔记本</div>
+          <div class="new-note" @click="addNotebook(false)">新建笔记本</div>
           <el-button class="cancel-btn" @click="moveNoteVisible = false">取消</el-button>
           <el-button
             class="confirm-btn"
@@ -420,6 +420,7 @@ onErrorCaptured((err, instance, info) => {
 })
 let notebookVisible = ref(false)
 let chatVisible = ref(false)
+let isRefresh = ref(false)
 // 打开对话
 const openChat = () => {
   if (!activeNotebook.value) {
@@ -538,7 +539,8 @@ const submitNotebookForm = async (formRef) => {
     }
   })
 }
-const addNotebook = () => {
+const addNotebook = (refresh = false) => {
+  isRefresh.value = refresh
   notebookVisible.value = true
   nextTick(() => {
     notebookForm.value = {
@@ -907,7 +909,7 @@ const getBookList = () => {
     .then((res) => {
       if (res.code == 200) {
         notebookLists.value = res.data || []
-        if (!activeNotebook.value || !notebookLists.value.length) {
+        if (isRefresh.value) {
           activeNotebook.value = notebookLists.value[0]?.id || ''
           if (activeNotebook.value) {
             getNoteList()
@@ -916,11 +918,23 @@ const getBookList = () => {
             noteLists.value = []
             noteLoading.value = false
           }
+        } else {
+          if (!activeNotebook.value || !notebookLists.value.length) {
+            activeNotebook.value = notebookLists.value[0]?.id || ''
+            if (activeNotebook.value) {
+              getNoteList()
+            } else {
+              activeNotebook.value = ''
+              noteLists.value = []
+              noteLoading.value = false
+            }
+          }
         }
       }
     })
     .finally(() => {
       bookLoading.value = false
+      isRefresh.value = false
     })
 }
 const hideContextMenu = (e) => {

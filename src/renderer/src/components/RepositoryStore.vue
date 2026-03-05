@@ -1555,18 +1555,42 @@ const checkChange = (item, e, i) => {
     })
     return
   } else if (!item.checked && e.shiftKey && activeFiles.value.length) {
-    var lastIndex = detailFileList.value.findLastIndex((children) => {
-      return children.checked
+    // 智能选中范围逻辑：
+    // 1. 如果之前或之后没有选中项，则选中范围为当前项之前的所有项
+    // 2. 如果之前有选中项，则选中范围为当前项到之前选中项之间所有项
+    // 3. 如果之前没有选中项但之后有选中项，则选中范围为当前项到之后选中项之间所有项
+
+    const lastCheckedIndex = detailFileList.value.findLastIndex((children, index) => {
+      return children.checked && index < i
     })
-    if (lastIndex > -1) {
-      detailFileList.value.map((children, j) => {
-        if (j >= lastIndex && j < i) {
+
+    const nextCheckedIndex = detailFileList.value.findIndex((children, index) => {
+      return children.checked && index > i
+    })
+    if (lastCheckedIndex === -1 && nextCheckedIndex === -1) {
+      // 情况1：之前和之后都没有选中项，选中当前项之前的所有项
+      detailFileList.value.forEach((children, j) => {
+        if (j <= i) {
           children.checked = true
         }
       })
-    } else {
-      detailFileList.value.map((children, j) => {
-        if (j < i) {
+    } else if (lastCheckedIndex > -1) {
+      // 情况2：之前有选中项，选中从之前选中项到当前项的范围
+      const startIndex = Math.min(lastCheckedIndex, i)
+      const endIndex = Math.max(lastCheckedIndex, i)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j > startIndex && j < endIndex) {
+          children.checked = true
+        }
+      })
+    } else if (nextCheckedIndex > -1) {
+      // 情况3：之前没有选中项但之后有选中项，选中从当前项到之后选中项的范围
+      const startIndex = Math.min(i, nextCheckedIndex)
+      const endIndex = Math.max(i, nextCheckedIndex)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j > startIndex && j < endIndex) {
           children.checked = true
         }
       })
@@ -1583,18 +1607,42 @@ const detailChange = (item, e, i) => {
     })
     return
   } else if (e.shiftKey && activeFiles.value.length) {
-    var lastIndex = detailFileList.value.findLastIndex((children) => {
-      return children.checked
+    // 智能选中范围逻辑：
+    // 1. 如果之前或之后没有选中项，则选中范围为当前项之前的所有项
+    // 2. 如果之前有选中项，则选中范围为当前项到之前选中项之间所有项
+    // 3. 如果之前没有选中项但之后有选中项，则选中范围为当前项到之后选中项之间所有项
+
+    const lastCheckedIndex = detailFileList.value.findLastIndex((children, index) => {
+      return children.checked && index < i
     })
-    if (lastIndex > -1) {
-      detailFileList.value.map((children, j) => {
-        if (j >= lastIndex && j <= i) {
+
+    const nextCheckedIndex = detailFileList.value.findIndex((children, index) => {
+      return children.checked && index > i
+    })
+    if (lastCheckedIndex === -1 && nextCheckedIndex === -1) {
+      // 情况1：之前和之后都没有选中项，选中当前项之前的所有项
+      detailFileList.value.forEach((children, j) => {
+        if (j <= i) {
           children.checked = true
         }
       })
-    } else {
-      detailFileList.value.map((children, j) => {
-        if (j <= i) {
+    } else if (lastCheckedIndex > -1) {
+      // 情况2：之前有选中项，选中从之前选中项到当前项的范围
+      const startIndex = Math.min(lastCheckedIndex, i)
+      const endIndex = Math.max(lastCheckedIndex, i)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j >= startIndex && j <= endIndex) {
+          children.checked = true
+        }
+      })
+    } else if (nextCheckedIndex > -1) {
+      // 情况3：之前没有选中项但之后有选中项，选中从当前项到之后选中项的范围
+      const startIndex = Math.min(i, nextCheckedIndex)
+      const endIndex = Math.max(i, nextCheckedIndex)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j >= startIndex && j <= endIndex) {
           children.checked = true
         }
       })
@@ -3425,18 +3473,42 @@ const dirChange = (item, e, i) => {
     })
     return
   } else if (e.shiftKey && activeFiles.value.length) {
-    var lastIndex = detailFileList.value.findLastIndex((children) => {
-      return children.checked
+    // 智能选中范围逻辑：
+    // 1. 如果之前或之后没有选中项，则选中范围为当前项之前的所有项
+    // 2. 如果之前有选中项，则选中范围为当前项到之前选中项之间所有项
+    // 3. 如果之前没有选中项但之后有选中项，则选中范围为当前项到之后选中项之间所有项
+
+    const lastCheckedIndex = detailFileList.value.findLastIndex((children, index) => {
+      return children.checked && index < i
     })
-    if (lastIndex > -1) {
-      detailFileList.value.map((children, j) => {
-        if (j >= lastIndex && j <= i) {
+
+    const nextCheckedIndex = detailFileList.value.findIndex((children, index) => {
+      return children.checked && index > i
+    })
+    if (lastCheckedIndex === -1 && nextCheckedIndex === -1) {
+      // 情况1：之前和之后都没有选中项，选中当前项之前的所有项
+      detailFileList.value.forEach((children, j) => {
+        if (j <= i) {
           children.checked = true
         }
       })
-    } else {
-      detailFileList.value.map((children, j) => {
-        if (j <= i) {
+    } else if (lastCheckedIndex > -1) {
+      // 情况2：之前有选中项，选中从之前选中项到当前项的范围
+      const startIndex = Math.min(lastCheckedIndex, i)
+      const endIndex = Math.max(lastCheckedIndex, i)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j >= startIndex && j <= endIndex) {
+          children.checked = true
+        }
+      })
+    } else if (nextCheckedIndex > -1) {
+      // 情况3：之前没有选中项但之后有选中项，选中从当前项到之后选中项的范围
+      const startIndex = Math.min(i, nextCheckedIndex)
+      const endIndex = Math.max(i, nextCheckedIndex)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j >= startIndex && j <= endIndex) {
           children.checked = true
         }
       })
