@@ -1,6 +1,6 @@
 <template>
   <div class="chat-page-box disabled-tools-chat">
-    <img
+    <!-- <img
       v-if="activeSession.messages.length"
       class="chat-clear"
       src="@renderer/assets/chat-icon/clear-icon.png"
@@ -12,7 +12,66 @@
       class="chat-clear"
       src="@renderer/assets/chat-icon/disabled-clear-icon.png"
       alt=""
-    />
+    /> -->
+    <div class="fiexd-box">
+      <div class="icons">
+        <div class="icon-item" @click="addChat">
+          <img class="add-chat-icon" src="@renderer/assets/chat-icon/add-chat-icon.png" alt="" />
+        </div>
+        <div
+          class="icon-item"
+          :class="{ openHistory: historySidebarVisible }"
+          @click="openHistorySidebar"
+        >
+          <img class="history-icon" src="@renderer/assets/chat-icon/history-icon.png" alt="" />
+        </div>
+      </div>
+      <div class="history-sidebar-box" :class="{ visible: historySidebarVisible }">
+        <div class="history-title">问答历史</div>
+        <div v-infinite-scroll="loadHistoryData" class="history-list">
+          <template v-if="historyList.length">
+            <div
+              v-for="(item, i) in historyList"
+              :key="i"
+              class="history-item"
+              @click="switchChat(item)"
+            >
+              <answersIcon class="left-icon" />
+              <div class="history-center-box">
+                <div class="title">{{ item.latest_question?.content || item.title }}</div>
+                <div class="desc">
+                  {{ htmlToText(item.latest_answer?.content || '') }}
+                </div>
+                <!-- <div v-if="!Array.isArray(item.from_origin)" class="souce-box">
+                  <img class="icon" src="@renderer/assets/souce-icon.png" alt="" />
+                  来源：《{{ item.from_origin.fileName }}》
+                </div> -->
+              </div>
+              <div class="time-box">
+                <div class="time">{{ formatTimeFun(item.updatetime) }}</div>
+                <div class="size">
+                  <img
+                    class="icon"
+                    src="@renderer/assets/edit-icon.png"
+                    alt=""
+                    @click.stop="beforeRenameChange(item)"
+                  />
+                  <img
+                    class="icon"
+                    src="@renderer/assets/del-icon1.png"
+                    alt=""
+                    @click.stop="beforeDelChange(item)"
+                  />
+                </div>
+              </div>
+            </div>
+          </template>
+          <div v-else class="empty">
+            <el-empty :image-size="100" description="暂无数据" />
+          </div>
+        </div>
+      </div>
+    </div>
     <div
       v-if="activeSession.messages.length"
       ref="messageListRef"
@@ -27,6 +86,7 @@
           direction="right"
           :is-chatting="isChatting"
           @handle-action="handleAction"
+          @again-text="handleAgainText"
         />
       </div>
     </div>
@@ -66,6 +126,7 @@
     <div class="search-box">
       <repository-chat-input
         v-if="activeSession"
+        ref="chatInputRef"
         key="input"
         class="message-input"
         :models="models"
@@ -107,6 +168,63 @@
       :messages="activeSession.messages"
       @close-preview="closePreview"
     />
+    <!-- 重命名 -->
+    <el-dialog
+      v-model="renameHistory"
+      draggable
+      align-center
+      modal-class="clear-recycled-dialog"
+      width="390"
+    >
+      <template #header>
+        <img class="dialog-header-del-icon" src="@renderer/assets/rename-icon.png" alt="" />
+        <div class="">重命名记录</div>
+      </template>
+      <el-form
+        ref="renameFormRef"
+        :model="renameForm"
+        :rules="renameRules"
+        class="rename-form"
+        @submit.prevent
+      >
+        <el-form-item prop="renameInput" style="margin-bottom: 0">
+          <el-input
+            v-model="renameForm.renameInput"
+            class="rename-input"
+            size="large"
+            placeholder="请输入新名称"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button class="cancel-btn" @click="renameHistory = false">取消</el-button>
+          <el-button class="confirm-btn" type="primary" @click="submitRenameForm(renameFormRef)">
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+    <!-- 删除单条 -->
+    <el-dialog
+      v-model="delHistory"
+      draggable
+      align-center
+      modal-class="clear-recycled-dialog"
+      width="390"
+    >
+      <template #header>
+        <img class="dialog-header-del-icon" src="@renderer/assets/del-icon.png" alt="" />
+        <div class="">确认删除</div>
+      </template>
+      <span>您确定要删除这条历史记录吗？此操作不可撤销！</span>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button class="cancel-btn" @click="delHistory = false">取消</el-button>
+          <el-button class="confirm-btn" type="primary" @click="delHistoryChange"> 确定 </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script setup>
@@ -114,16 +232,21 @@ import { ref, reactive, nextTick, onMounted, watchEffect, watch } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
+import answersIcon from '@renderer/assets/answers-icon.svg'
 import EmptySvgIcon from '@renderer/assets/empty.svg'
 import { SSE } from 'sse.js'
 import { get_type_models } from '@renderer/api/repository.js'
+import { convertToPlainText } from '@renderer/utils/convertToPlainText'
+import { formatTime } from '@renderer/utils/index.js'
 import {
   getChatInfo,
   update_chat,
   get_chat_word,
   chat_feedback,
-  delChatOne,
-  feedbackType
+  feedbackType,
+  know_chat_lists,
+  modifyChatHistory,
+  del_chat
 } from '@renderer/api/chat.js'
 let previewVisible = ref(false)
 let props = defineProps({
@@ -148,6 +271,161 @@ let props = defineProps({
     default: () => []
   }
 })
+const formatTimeFun = (time) => {
+  return formatTime(time)
+}
+const htmlToText = (html) => {
+  return convertToPlainText(html, { maxLength: 100 })
+}
+// 新增对话或者切换会话
+const addChat = (isNewChat = true, chat_key = '') => {
+  var data = {
+    know_id: props.knowId,
+    item_id: props.itemId,
+    chat_type: 2,
+    create_new_chat: isNewChat ? 1 : 0,
+    chat_key: chat_key
+  }
+  stopChat()
+  feedbackVisible.value = false
+  if (!data.know_id) return
+  resetHitory()
+  getChatInfo(data).then(async (res) => {
+    activeSession.value.title = res.data.title || ''
+    activeSession.value.chat_key = res.data.chat_key
+    activeSession.value.know_key = res.data.know_key
+    activeSession.value.model_id = res.data.model_info?.model_id || ''
+    activeSession.value.model_name = res.data.model_info?.model_name
+    activeSession.value.provider_key = res.data.model_info?.provider_key
+    activeSession.value.isNetwork = res.data.is_network ? true : false
+    activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
+    activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
+    activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
+    activeSession.value.enableSearch = res.data.model_info?.net_status || 2
+    // 模型默认配置
+    defaultModelConfig.value = res.data.model_default_set || {
+      frequency_penalty: 0,
+      presence_penalty: 0,
+      seed: 100,
+      temperature: 0.7,
+      top_p: 0.5,
+      vector_shard_number: 10,
+      similarity_threshold: 0.5,
+      context_number: 5,
+      enable_thinking: true
+    }
+    // 模型当前配置
+    modelConfig.value = {
+      frequency_penalty: res.data.frequency_penalty,
+      presence_penalty: res.data.presence_penalty,
+      seed: res.data.seed,
+      temperature: res.data.temperature,
+      top_p: res.data.top_p,
+      vector_shard_number: res.data.vector_shard_number,
+      similarity_threshold: res.data.similarity_threshold,
+      context_number: res.data.context_number,
+      enable_thinking: res.data.enable_thinking
+    }
+    activeSession.value.isNetwork = res.data.is_use_net ? true : false
+    if (activeSession.value.enableSearch == 2) {
+      activeSession.value.isNetwork = false
+    }
+    activeSession.value.messages = []
+    page.value = 1
+    pageSize.value = 10
+    total.value = 0
+    isLoading.value = false
+    debounceTimer.value = null
+    isLoading.value = true
+    isSwitching.value = true
+    await getWordList()
+    isSwitching.value = false
+    isLoading.value = false
+  })
+}
+// 历史记录改名
+let renameHistory = ref(false)
+let renameItem = ref({})
+let beforeRenameChange = (item) => {
+  renameForm.value.renameInput = item.latest_question?.content || ''
+  renameForm.value.chat_words_id = item.latest_question?.id || ''
+  renameHistory.value = true
+  renameItem.value = item
+}
+let renameForm = ref({
+  renameInput: '',
+  chat_words_id: ''
+})
+let renameRules = ref({
+  renameInput: [
+    { required: true, message: '请输入新名称', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (!value.trim().length) {
+          callback(new Error('名称不能为空'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+})
+let renameFormRef = ref(null)
+const submitRenameForm = (FormRef) => {
+  FormRef.validate((valid) => {
+    if (valid) {
+      modifyChatHistory({
+        chat_words_id: renameForm.value.chat_words_id,
+        content: renameForm.value.renameInput
+      }).then((res) => {
+        if (res.code == 200) {
+          renameItem.value.latest_question.content = renameForm.value.renameInput
+          renameHistory.value = false
+          // tabHandle('1')
+          // eslint-disable-next-line no-undef
+          ElMessage.primary('修改成功')
+        }
+      })
+    } else {
+      console.log('表单验证失败')
+    }
+  })
+}
+// 删除历史单条
+let delHistory = ref(false)
+let delItem = ref({})
+let beforeDelChange = (item) => {
+  delHistory.value = true
+  delItem.value = {
+    chat_key: item.chat_key || '',
+    log_id: item.id
+  }
+}
+// 删除单条对话或历史浏览记录
+let delHistoryChange = () => {
+  del_chat({ chat_key: delItem.value.chat_key }).then((res) => {
+    if (res.code == 200) {
+      delHistory.value = false
+      if (activeSession.value.chat_key == delItem.value.chat_key) {
+        addChat()
+      }
+      resetHitory(true)
+      // eslint-disable-next-line no-undef
+      ElMessage.primary('删除成功')
+    }
+  })
+}
+// 切换会话
+const switchChat = (item) => {
+  addChat(false, item.chat_key)
+}
+const chatInputRef = ref(null)
+// 处理再次发送文本
+const handleAgainText = (text) => {
+  if (isChatting.value) return
+  chatInputRef.value.againTextChange(text)
+}
 // 模型默认配置
 const defaultModelConfig = ref({})
 // 模型当前配置
@@ -218,36 +496,84 @@ const activeSession = ref({
   know_modelName: '',
   know_provider_key: ''
 })
-const clearChat = () => {
-  // eslint-disable-next-line no-undef
-  ElMessageBox.confirm('确认清空当前会话吗？', '提示', {
-    confirmButtonText: '确认',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-    .then(() => {
-      delChatOne({ chat_key: activeSession.value.chat_key }).then(async (res) => {
-        if (res.code == 200) {
-          // eslint-disable-next-line no-undef
-          ElMessage({
-            type: 'primary',
-            message: '已清空'
-          })
-          page.value = 1
-          pageSize.value = 10
-          total.value = 0
-          isLoading.value = false
-          debounceTimer.value = null
-          isLoading.value = true
-          isSwitching.value = true
-          await getWordList()
-          isSwitching.value = false
-          isLoading.value = false
-        }
-      })
-    })
-    .catch(() => {})
+const historyList = ref([])
+const historyPagination = ref({
+  page: 1,
+  pageSize: 20,
+  total: 0
+})
+const historySidebarVisible = ref(false)
+const openHistorySidebar = () => {
+  renameHistory.value = false
+  renameItem.value = {}
+  delHistory.value = false
+  delItem.value = {}
+  historyPagination.value = {
+    page: 1,
+    pageSize: 20,
+    total: 0
+  }
+  historyList.value = []
+  historySidebarVisible.value = !historySidebarVisible.value
+  getChatLists()
 }
+const loadHistoryData = () => {
+  if (
+    historyPagination.value.page * historyPagination.value.pageSize >=
+    historyPagination.value.total
+  ) {
+    return
+  }
+  historyPagination.value.page++
+  getChatLists()
+}
+// 获取对话历史列表
+const getChatLists = () => {
+  var data = {
+    page: historyPagination.value.page,
+    page_size: historyPagination.value.pageSize,
+    know_id: props.knowId,
+    item_id: props.itemId
+  }
+  know_chat_lists(data).then((res) => {
+    if (res.code == 200) {
+      historyList.value = historyList.value.concat(res.data.data || [])
+      historyPagination.value.total = res.data.total || 0
+      historyPagination.value.page = res.data.current_page
+      historyPagination.value.pageSize = res.data.per_page
+    }
+  })
+}
+// const clearChat = () => {
+//   // eslint-disable-next-line no-undef
+//   ElMessageBox.confirm('确认清空当前会话吗？', '提示', {
+//     confirmButtonText: '确认',
+//     cancelButtonText: '取消',
+//     type: 'warning'
+//   })
+//     .then(() => {
+//       delChatOne({ chat_key: activeSession.value.chat_key }).then(async (res) => {
+//         if (res.code == 200) {
+//           // eslint-disable-next-line no-undef
+//           ElMessage({
+//             type: 'primary',
+//             message: '已清空'
+//           })
+//           page.value = 1
+//           pageSize.value = 10
+//           total.value = 0
+//           isLoading.value = false
+//           debounceTimer.value = null
+//           isLoading.value = true
+//           isSwitching.value = true
+//           await getWordList()
+//           isSwitching.value = false
+//           isLoading.value = false
+//         }
+//       })
+//     })
+//     .catch(() => {})
+// }
 const handleFeedback = (str) => {
   chat_feedback({ chat_key: activeSession.value.chat_key, feedback: str }).then(() => {
     feedbackVisible.value = false
@@ -484,6 +810,20 @@ const loadMore = async () => {
     container.scrollTop = container.scrollHeight - oldScrollHeight
   })
 }
+const resetHitory = (isClose = false) => {
+  renameHistory.value = false
+  renameItem.value = {}
+  delHistory.value = false
+  historySidebarVisible.value = isClose
+  delItem.value = {}
+  historyPagination.value = {
+    page: 1,
+    pageSize: 20,
+    total: 0
+  }
+  historyList.value = []
+  getChatLists()
+}
 const throttle = ref(null)
 watchEffect(() => {
   selecteFileList.value = props.selecteFileIdList
@@ -501,6 +841,7 @@ watchEffect(() => {
     clearTimeout(throttle.value)
   }
   throttle.value = setTimeout(() => {
+    resetHitory()
     getChatInfo(data).then(async (res) => {
       activeSession.value.title = res.data.title || ''
       activeSession.value.chat_key = res.data.chat_key
@@ -810,13 +1151,67 @@ const stopChat = () => {
 }
 </script>
 <style scoped lang="scss">
+:deep(.clear-recycled-dialog) {
+  .el-dialog {
+    .el-dialog__header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 22px;
+
+      .dialog-header-del-icon {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .el-dialog__body {
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 22px;
+      .rename-input {
+        .el-input__wrapper {
+          background: #f9f9f9;
+          box-shadow: none;
+          &.is-focus {
+            box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+          }
+          .el-input__inner {
+            font-size: 14px;
+            color: var(--default-font-color);
+          }
+        }
+      }
+    }
+
+    .dialog-footer {
+      .cancel-btn,
+      .confirm-btn {
+        height: 36px;
+        width: 80px;
+        border-radius: 8px;
+        border: none;
+        font-size: 14px;
+      }
+
+      .cancel-btn {
+        background: #efefef;
+        color: var(--default-font-color);
+      }
+    }
+  }
+}
 .chat-page-box {
   position: relative;
   flex-shrink: 0;
   box-sizing: border-box;
-  padding: 60px 0px 20px;
+  padding: 40px 0px 20px;
   height: 100%;
-  min-width: 375px;
+  width: 100%;
+  // min-width: 375px;
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -832,27 +1227,218 @@ const stopChat = () => {
     height: 18px;
     cursor: pointer;
   }
+  $sidebar-height: calc(100vh - 62px);
+  .fiexd-box {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    z-index: 1;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    .icons {
+      flex-shrink: 0;
+      margin: 0 10px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0 5px;
+      .icon-item {
+        border-radius: 6px;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        &.openHistory {
+          background: #efefef;
+        }
+        &:hover {
+          background: #efefef;
+        }
+        .add-chat-icon {
+          width: 22px;
+          height: 22px;
+          cursor: pointer;
+        }
+        .history-icon {
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+        }
+      }
+    }
+    .history-sidebar-box {
+      border-left: 1px solid #efefef;
+      height: $sidebar-height;
+      width: 0;
+      background: #f7f8f8;
+      box-sizing: border-box;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: all 0.2s ease-in-out;
+      opacity: 0;
+      &.visible {
+        padding: 10px;
+        width: 100%;
+        opacity: 1;
+      }
+      .history-title {
+        margin-bottom: 10px;
+        width: 100%;
+        font-size: 14px;
+        color: var(--default-font-color);
+      }
+      .history-list {
+        flex: 1;
+        width: 100%;
+        overflow-y: auto;
+        .empty {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: calc($sidebar-height - 80px);
+          width: 100%;
+          font-size: 13px;
+          text-align: center;
+          line-height: 20px;
+          color: #909090;
+        }
+        .history-item {
+          padding: 20px 0;
+          border-bottom: 1px solid #f0f0f0;
+          display: flex;
+          justify-content: space-between;
+          gap: 20px;
+
+          &:last-child {
+            border-bottom: none;
+          }
+          &:hover {
+            .time-box {
+              .size {
+                visibility: visible;
+              }
+            }
+          }
+          .left-icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            color: var(--el-color-primary);
+          }
+
+          .history-center-box {
+            flex: 1;
+            overflow: hidden;
+            .title {
+              margin-bottom: 4px;
+              font-size: 14px;
+              color: var(--default-font-color);
+              line-height: 22px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+
+            .desc {
+              margin-top: 4px;
+              font-size: 12px;
+              color: #909090;
+              line-height: 16px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              &.desc1 {
+                margin-top: 10px;
+              }
+            }
+            .souce-box {
+              margin-top: 8px;
+              font-size: 12px;
+              color: #909090;
+              line-height: 16px;
+              .icon {
+                width: 12px;
+                height: 12px;
+                vertical-align: middle;
+                margin-right: 8px;
+              }
+            }
+            .btns {
+              display: flex;
+              gap: 10px;
+
+              .btn {
+                box-sizing: border-box;
+                min-width: 76px;
+                padding: 5px 8px;
+                font-size: 12px;
+                text-align: center;
+                color: var(--el-color-primary);
+                line-height: 16px;
+                border-radius: 6px;
+                border: 1px solid var(--el-color-primary-light-8);
+                cursor: pointer;
+
+                &:active {
+                  opacity: 0.6;
+                }
+
+                &.btn1 {
+                  color: var(--default-font-color);
+                  border-color: #efefef;
+                }
+
+                &.btn2 {
+                  color: #909090;
+                  border-color: #efefef;
+                }
+              }
+            }
+          }
+
+          .time-box {
+            flex-shrink: 0;
+            font-size: 12px;
+            color: #909090;
+            line-height: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-end;
+            .time {
+              margin-bottom: 4px;
+            }
+            .size {
+              margin-bottom: 1px;
+              display: flex;
+              align-items: center;
+              gap: 16px;
+              visibility: hidden;
+              .icon {
+                flex-shrink: 0;
+                width: 14px;
+                height: 14px;
+                cursor: pointer;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
   .chat-content {
     flex: 1;
     padding: 20px;
     width: 100%;
     margin: 0 auto;
     overflow-y: auto;
-    &::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    &::-webkit-scrollbar-thumb {
-      border-radius: 2px;
-      background-color: #c1c1c1;
-      transition: all 0.2s ease-in-out;
-      &:hover {
-        background-color: #a8a8a8;
-      }
-    }
     .message-rows-box {
       width: 100%;
       max-width: 770px;

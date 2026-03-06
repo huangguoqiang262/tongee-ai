@@ -70,6 +70,7 @@
                   type="text"
                   placeholder="搜索添加协同人"
                   suffix-icon="Search"
+                  :disabled="process_status != 1"
                   @focus="modifiersVisible = true"
                 />
                 <el-divider v-show="modifiersVisible" class="divider" border-style="dashed" />
@@ -146,6 +147,7 @@
                   type="text"
                   placeholder="搜索添加批准人"
                   suffix-icon="Search"
+                  :disabled="!(process_status == 1 || process_status == 2)"
                   @focus="approversVisible = true"
                 />
                 <el-divider v-show="approversVisible" class="divider" border-style="dashed" />
@@ -161,8 +163,18 @@
                 >
                   <template #default="{ data }">
                     <span class="el-tree-node__label">{{ data.title }}</span>
-                    <el-icon v-if="data.type == 'user'" class="add-icon" @click="addApprover(data)">
+                    <el-icon
+                      v-if="data.type == 'user' && !data.auditor_selected"
+                      class="add-icon"
+                      @click="addApprover(data)"
+                    >
                       <Plus />
+                    </el-icon>
+                    <el-icon
+                      v-else-if="data.type == 'user' && data.auditor_selected"
+                      class="add-icon check-icon"
+                    >
+                      <Check />
                     </el-icon>
                   </template>
                 </el-tree>
@@ -221,6 +233,7 @@ const emits = defineEmits(['refreshList'])
 let refreshLoading = ref(true)
 let modifiersRef = ref(null)
 let approversRef = ref(null)
+let process_status = ref(null)
 const props = defineProps({
   treeData: {
     type: Array,
@@ -281,6 +294,7 @@ const getSynergiaDetail = () => {
     item_id: props.itemId
   })
     .then((res) => {
+      process_status.value = res.data.process_status
       modifiers.value = res.data.editors || []
       approvers.value = res.data.auditors || []
       statisticsData.value = {
@@ -299,6 +313,8 @@ const getSynergiaDetail = () => {
 }
 watchEffect(() => {
   if (synergiaLookVisible.value) {
+    modifiersSearch.value = ''
+    approversSearch.value = ''
     getSynergiaDetail()
     getTreeData()
   }
@@ -340,11 +356,11 @@ onUnmounted(() => {
 })
 const modifiersFilterHandle = (value, data) => {
   if (!value) return true
-  return data.name.includes(value)
+  return data.title.includes(value)
 }
 const approversFilterHandle = (value, data) => {
   if (!value) return true
-  return data.name.includes(value)
+  return data.title.includes(value)
 }
 // 新增协同人
 const addModifier = (data) => {
@@ -371,6 +387,7 @@ const addModifier = (data) => {
           })
           data.editor_selected = true
           emits('refreshList')
+          getSynergiaDetail()
         }
       })
     })
@@ -401,6 +418,7 @@ const addApprover = (data) => {
           })
           data.auditor_selected = true
           emits('refreshList')
+          getSynergiaDetail()
         }
       })
     })
@@ -620,19 +638,6 @@ const addApprover = (data) => {
               .el-tree {
                 padding: 20px 40px 20px 25px;
                 background: #f9f9f9;
-                &::-webkit-scrollbar {
-                  width: 4px;
-                  height: 4px;
-                }
-
-                &::-webkit-scrollbar-thumb {
-                  border-radius: 2px;
-                  background-color: #dddcdc;
-
-                  &:hover {
-                    background-color: #909090;
-                  }
-                }
               }
               .customNodeClass {
                 .el-tree-node__content {

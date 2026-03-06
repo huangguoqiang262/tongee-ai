@@ -217,21 +217,6 @@ const handleCheck = (message) => {
     padding: 0 20px 20px;
     width: 100%;
     overflow-y: auto;
-    &::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    &::-webkit-scrollbar-thumb {
-      border-radius: 2px;
-      background-color: #c1c1c1;
-      transition: all 0.2s ease-in-out;
-      &:hover {
-        background-color: #a8a8a8;
-      }
-    }
     .preview-message-row {
       width: 100%;
       max-width: 770px;

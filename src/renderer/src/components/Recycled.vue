@@ -469,19 +469,6 @@ onMounted(() => {
             line-height: 20px;
             color: #909090;
           }
-          &::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-          }
-
-          &::-webkit-scrollbar-thumb {
-            border-radius: 2px;
-            background-color: #dddcdc;
-
-            &:hover {
-              background-color: #909090;
-            }
-          }
 
           .list-item {
             padding: 20px 0;

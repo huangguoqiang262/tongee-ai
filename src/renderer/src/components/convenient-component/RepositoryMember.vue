@@ -335,19 +335,6 @@ const handleCheckChange = () => {
               padding: 0 19px;
               height: 100%;
               overflow-y: auto;
-              &::-webkit-scrollbar {
-                width: 4px;
-                height: 4px;
-              }
-
-              &::-webkit-scrollbar-thumb {
-                border-radius: 2px;
-                background-color: #dddcdc;
-
-                &:hover {
-                  background-color: #909090;
-                }
-              }
               .member-header {
                 position: sticky;
                 left: 0;
@@ -464,19 +451,6 @@ const handleCheckChange = () => {
                 background: transparent;
                 height: calc(100% - 110px);
                 overflow-y: auto;
-                &::-webkit-scrollbar {
-                  width: 4px;
-                  height: 4px;
-                }
-
-                &::-webkit-scrollbar-thumb {
-                  border-radius: 2px;
-                  background-color: #dddcdc;
-
-                  &:hover {
-                    background-color: #909090;
-                  }
-                }
               }
               .empty {
                 height: 260px;

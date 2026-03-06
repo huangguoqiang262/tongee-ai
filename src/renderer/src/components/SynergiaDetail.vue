@@ -32,7 +32,15 @@
           :file-url="fileUrl"
           :file-name="fileName"
         /> -->
-        <onlyofficePreview v-if="fileUrl" class="center-content" :src="fileUrl" mode="view" />
+        <onlyofficePreview
+          v-if="fileUrl && loading"
+          class="center-content"
+          :src="fileUrl"
+          :file-name="fileName"
+          :file-key="fileKey"
+          :download="download"
+          :mode="user_status == 0 ? 'edit' : 'view'"
+        />
       </el-splitter-panel>
       <el-splitter-panel v-if="chatVisible" :min="375" :size="375" class="right-box">
         <CommonChat
@@ -64,8 +72,11 @@ const props = defineProps({
     default: false
   }
 })
+let loading = ref(false)
 let fileUrl = ref('')
 let fileName = ref('')
+let fileKey = ref('')
+let download = ref(false)
 let chatVisible = ref(false)
 let attach_files = ref([
   {
@@ -77,11 +88,16 @@ let attach_files = ref([
 ])
 let user_status = ref(null)
 const getDetailStatus = () => {
-  get_project_user_status({ item_id: props.attrs.itemId }).then((res) => {
-    if (res.code == 200) {
-      user_status.value = res.data.user_status
-    }
-  })
+  loading.value = false
+  get_project_user_status({ item_id: props.attrs.itemId })
+    .then((res) => {
+      if (res.code == 200) {
+        user_status.value = res.data.user_status
+      }
+    })
+    .finally(() => {
+      loading.value = true
+    })
 }
 // 确认反馈
 const confirmFeedback = () => {
@@ -156,6 +172,8 @@ const openChat = () => {
 watchEffect(() => {
   fileUrl.value = props.attrs.fileUrl || ''
   fileName.value = props.attrs.fileName || ''
+  fileKey.value = props.attrs.fileId || ''
+  download.value = props.attrs.download || false
   if (props.attrs.itemId) {
     getDetailStatus()
   }

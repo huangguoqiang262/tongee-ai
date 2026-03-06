@@ -30,6 +30,7 @@
           :hide-attach-files="hideAttachFiles"
           :is-chatting="isChatting"
           @handle-action="handleAction"
+          @again-text="handleAgainText"
         />
       </div>
     </div>
@@ -57,6 +58,7 @@
     <div class="search-box">
       <chat-input
         v-if="activeSession.model_name"
+        ref="chatInputRef"
         key="input"
         :is-active-tab="isActiveTab"
         class="message-input"
@@ -130,6 +132,12 @@ const props = defineProps({
     default: ''
   }
 })
+const chatInputRef = ref(null)
+// 处理再次发送文本
+const handleAgainText = (text) => {
+  if (isChatting.value) return
+  chatInputRef.value.againTextChange(text)
+}
 // 模型默认配置
 const defaultModelConfig = ref({})
 // 模型当前配置
@@ -853,21 +861,6 @@ onMounted(() => {
     width: 100%;
     margin: 0 auto;
     overflow-y: auto;
-    &::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    &::-webkit-scrollbar-thumb {
-      border-radius: 2px;
-      background-color: #c1c1c1;
-      transition: all 0.2s ease-in-out;
-      &:hover {
-        background-color: #a8a8a8;
-      }
-    }
     .message-row-box {
       overflow: hidden;
       width: 100%;

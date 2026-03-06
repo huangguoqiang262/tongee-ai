@@ -386,20 +386,6 @@ const emit = defineEmits([
   max-height: 300px;
   overflow-y: auto;
   padding: 8px 0;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-  }
 }
 
 .dropdown-tab {

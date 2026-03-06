@@ -359,3 +359,12 @@ export function changeKnowFilePosition(data) {
     data
   })
 }
+// 用户知识库列表-移动文件
+export function getKnowFolders(data) {
+  return request({
+    url: '/intelligence/getKnowFolders',
+    method: 'post',
+    data
+  })
+}
+

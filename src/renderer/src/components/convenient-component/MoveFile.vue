@@ -72,7 +72,9 @@
                   class="file-item"
                   :class="{
                     disabled:
-                      item.item_type == 1 || props.moveFiles.map((i) => i.id).includes(item.id)
+                      item.item_type == 1 ||
+                      props.moveFiles.map((i) => i.id).includes(item.id) ||
+                      props.moveFiles.map((i) => i.parent_id).includes(item.id)
                   }"
                   @click="handleCheckChange(item)"
                 >
@@ -80,12 +82,18 @@
                     <div class="content-left">
                       <img
                         v-if="item.item_type == 1"
-                        :src="item.info?.icon"
+                        :src="item.file_icon"
                         alt=""
                         @error="(e) => (e.target.src = defaultImg)"
                       />
                       <catalogueSvgIcon v-else-if="item.item_type == 2" class="cover-img" />
-                      <!-- <img
+                      <img
+                        v-if="item.item_type == 3"
+                        :src="item.file_icon"
+                        alt=""
+                        @error="(e) => (e.target.src = defaultImg)"
+                      />
+                      <img
                         v-else-if="item.next_type == 2 && !item.is_public"
                         :src="personageRepositoryIcon"
                         alt=""
@@ -98,7 +106,7 @@
                       <template v-else-if="item.next_type == 3">
                         <img v-if="item.picurl" :src="item.picurl" alt="" />
                         <defaultCoverSvg v-else class="cover-img" />
-                      </template> -->
+                      </template>
                       <div class="title">
                         {{ item.title }}
                       </div>
@@ -115,7 +123,14 @@
         <div class="is_checked"></div>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="close">取消</el-button>
-          <el-button class="confirm-btn" type="primary" @click="submitMove"> 移动至此 </el-button>
+          <el-button
+            class="confirm-btn"
+            :disabled="!activePath?.know_id"
+            type="primary"
+            @click="submitMove"
+          >
+            移动至此
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -124,13 +139,12 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
-// import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
-// import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
-// import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
-// import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
+import commonRepositoryIcon from '@renderer/assets/repository/common-repository-icon.png'
+import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
+import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import defaultImg from '@renderer/assets/repository/default-img.png'
-import { get_know_info } from '@renderer/api/repository'
+import { getKnowFolders } from '@renderer/api/repository'
 const moveFileVisible = defineModel({ type: Boolean })
 const list = ref([])
 const props = defineProps({
@@ -147,12 +161,6 @@ const props = defineProps({
     default: () => []
   }
 })
-watch(
-  () => props.knowTitle,
-  (newVal) => {
-    pathList.value[0].title = newVal
-  }
-)
 let moveFileTitle = computed(() => {
   if (props.moveFiles.length == 0) {
     return ''
@@ -165,8 +173,10 @@ let moveFileTitle = computed(() => {
 const emits = defineEmits(['submitMove'])
 let pathList = ref([
   {
-    title: props.knowTitle,
-    id: 0
+    title: '知识库',
+    id: 0,
+    level: 0,
+    next_type: 1
   }
 ])
 let activePath = computed(() => {
@@ -190,7 +200,24 @@ const removeItemsAfterIndex = (array, index) => {
   return array
 }
 const handleCheckChange = (item) => {
-  if (item.item_type == 2 && !props.moveFiles.map((i) => i.id).includes(item.id)) {
+  if (item.next_type == 1 || item.next_type == 2) {
+    pathList.value.push({
+      ...item
+    })
+    refreshList()
+    return
+  } else if (item.next_type == 3) {
+    pathList.value.push({
+      ...item,
+      know_id: item.id
+    })
+    refreshList()
+    return
+  } else if (
+    item.item_type == 2 &&
+    !props.moveFiles.map((i) => i.id).includes(item.id) &&
+    !props.moveFiles.map((i) => i.parent_id).includes(item.id)
+  ) {
     pathList.value.push({
       ...item,
       know_id: activePath.value.know_id
@@ -202,14 +229,23 @@ const refreshList = () => {
   loading.value = true
   list.value = []
   var data = {
-    know_id: props.knowId,
-    parent_item_id: activePath.value.id,
-    search_key: searchText.value
+    keyword: searchText.value
   }
-  get_know_info(data)
+  if (activePath.value.next_type == 1) {
+    data.type = 1
+  } else if (activePath.value.next_type == 2) {
+    data.type = 2
+    data.is_public = activePath.value.is_public
+  } else if (activePath.value.next_type == 3) {
+    data.know_id = activePath.value.know_id
+  } else {
+    data.know_id = activePath.value.know_id
+    data.parent_item_id = activePath.value.id
+  }
+  getKnowFolders(data)
     .then((res) => {
       if (res.code == 200) {
-        list.value = res.data.items || []
+        list.value = res.data || []
         loading.value = false
       }
     })
@@ -233,8 +269,10 @@ watch(
     } else {
       pathList.value = [
         {
-          title: props.knowTitle,
-          id: 0
+          title: '知识库',
+          id: 0,
+          level: 0,
+          next_type: 1
         }
       ]
       list.value = []
@@ -248,12 +286,13 @@ watch(
 onMounted(() => {})
 // 提交
 const submitMove = () => {
+  if (!activePath.value.know_id) return
   emits('submitMove', {
     change_items: props.moveFiles.map((item) => {
       return {
         item_id: item.id,
-        to_know_id: props.knowId,
-        to_know_item_parent_id: activePath.value.id
+        to_know_id: activePath.value.know_id,
+        to_know_item_parent_id: activePath.value.next_type == 3 ? 0 : activePath.value.id
       }
     })
   })

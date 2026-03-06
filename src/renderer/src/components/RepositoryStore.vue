@@ -50,7 +50,7 @@
             <div class="commom-list" :class="{ 'close-box': closeCommonList }">
               <template v-for="(item, index) in commonCreateList" :key="item.id">
                 <div
-                  v-show="index < 3 || createCommonExpand"
+                  v-show="index < 5 || createCommonExpand"
                   class="item"
                   :class="{ 'active-repository': activeRepositoryId == item.id }"
                   @click="getRepositoryInfo(item.id)"
@@ -63,7 +63,7 @@
                   <div v-if="item.is_prompt == 1" class="dot-dark"></div>
                 </div>
               </template>
-              <div v-if="commonCreateList.length > 3" class="expand" @click="commonExpandChange">
+              <div v-if="commonCreateList.length > 5" class="expand" @click="commonExpandChange">
                 {{ createCommonExpand ? '收起' : '展开' }}
               </div>
             </div>
@@ -83,7 +83,7 @@
             <div class="commom-list" :class="{ 'close-box': closeJoinList }">
               <template v-for="(item, index) in commonJoinList" :key="item.id">
                 <div
-                  v-show="index < 3 || joinCommonExpand"
+                  v-show="index < 10 || joinCommonExpand"
                   class="item"
                   :class="{ 'active-repository': activeRepositoryId == item.id }"
                   @click="getRepositoryInfo(item.id)"
@@ -97,7 +97,7 @@
                 </div>
               </template>
 
-              <div v-if="commonJoinList.length > 3" class="expand" @click="joinExpandChange">
+              <div v-if="commonJoinList.length > 10" class="expand" @click="joinExpandChange">
                 {{ joinCommonExpand ? '收起' : '展开' }}
               </div>
             </div>
@@ -127,7 +127,7 @@
           <div class="personage-list" :class="{ 'close-box': closePersonageList }">
             <template v-for="(item, index) in personalCreateList" :key="item.id">
               <div
-                v-show="index < 3 || personageExpand"
+                v-show="index < 5 || personageExpand"
                 class="item"
                 :class="{ 'active-repository': activeRepositoryId == item.id }"
                 @click="getRepositoryInfo(item.id)"
@@ -146,7 +146,7 @@
                 已使用 {{ userInfo?.space_use_total || '0MB' }}/{{ userInfo?.space || '0GB' }}
               </div>
               <div
-                v-if="personalCreateList.length > 3"
+                v-if="personalCreateList.length > 5"
                 class="expand"
                 @click="personageExpandChange"
               >
@@ -156,7 +156,7 @@
           </div>
         </div>
       </el-splitter-panel>
-      <el-splitter-panel :size="399" :min="300" class="center-box">
+      <el-splitter-panel :size="399" :min="330" class="center-box">
         <div class="repository-detail-box">
           <el-popover
             v-if="Object.keys(activeRepository).length"
@@ -347,12 +347,7 @@
                 :show-arrow="false"
               >
                 <template #reference>
-                  <img
-                    class="icon"
-                    src="@renderer/assets/repository/add-file-icon.png"
-                    alt=""
-                    @click="addMenuClick"
-                  />
+                  <img class="icon" src="@renderer/assets/repository/add-file-icon.png" alt="" />
                 </template>
                 <div class="common-handle-box" @click="hidePopover(repositoryaddPopover)">
                   <div class="item" @click="beforeUploadFiles('local-file')">
@@ -419,14 +414,14 @@
                     <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
                     <div class="title">导入网页</div>
                   </div>
-                  <!-- <div
+                  <div
                     v-if="activeRepository.is_public == 1"
                     class="item"
                     @click="beforeUploadFiles('synergia')"
                   >
                     <img class="icon" src="@renderer/assets/popover/synergia-icon.png" alt="" />
                     <div class="title">协同文件</div>
-                  </div> -->
+                  </div>
                 </div>
               </el-popover>
               <el-popover
@@ -438,12 +433,7 @@
                 :show-arrow="false"
               >
                 <template #reference>
-                  <img
-                    class="icon"
-                    src="@renderer/assets/repository/add-file-icon.png"
-                    alt=""
-                    @click="addMenuClick"
-                  />
+                  <img class="icon" src="@renderer/assets/repository/add-file-icon.png" alt="" />
                 </template>
                 <div class="common-handle-box" @click="hidePopover(repositoryaddPopover)">
                   <div class="item" @click="beforeUploadFiles('synergia')">
@@ -516,7 +506,12 @@
                 @contextmenu="(e) => showContextMenu(e, item)"
                 @click="dirChange(item, $event, index)"
               >
-                <el-checkbox v-model="item.checked" class="checkbox" size="large" @click.stop="" />
+                <el-checkbox
+                  v-model="item.checked"
+                  class="checkbox"
+                  size="large"
+                  @click.stop="checkChange(item, $event, index)"
+                />
                 <!-- <img class="cover-img" :src="getFileIcon(item)" alt="" /> -->
                 <catalogueSvgIcon class="cover-img" />
                 <div class="item-right">
@@ -676,7 +671,7 @@
                       v-model="item.checked"
                       class="checkbox"
                       size="large"
-                      @click.stop="contextMenu.show = false"
+                      @click.stop="checkChange(item, $event, index)"
                     />
                     <div class="cover-img-box">
                       <img
@@ -719,19 +714,33 @@
                         <div class="size-or-num-box">
                           <div class="type-box">
                             <img class="icon" :src="getFileIcon(item)" alt="" />
-                            <span v-if="item.item_type == 3" class="web-url">{{
-                              item.info?.web_url
-                            }}</span>
-                            <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
-                            <span
-                              v-else-if="
-                                ['png', 'jpg', 'jpeg', 'gif'].includes(
-                                  item.info?.url.split('.').pop()
-                                )
+                            <template
+                              v-if="
+                                item.progress == 100 ||
+                                (item.is_collaboration == 1 && item.collaboration_status != 5) ||
+                                item.info.vector_status == 2
                               "
-                              >图片</span
                             >
-                            <span v-else>{{ item.info?.url.split('.').pop().toUpperCase() }}</span>
+                              <span v-if="item.item_type == 3" class="web-url">{{
+                                item.info?.web_url
+                              }}</span>
+                              <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
+                              <span
+                                v-else-if="
+                                  ['png', 'jpg', 'jpeg', 'gif'].includes(
+                                    item.info?.url.split('.').pop()
+                                  )
+                                "
+                                >图片</span
+                              >
+                              <span v-else>{{
+                                item.info?.url.split('.').pop().toUpperCase()
+                              }}</span>
+                              <span>{{ item.username || '' }}</span>
+                            </template>
+                            <template v-else>
+                              <span>解析中......{{ item.progress }}%</span>
+                            </template>
                           </div>
                           <div v-if="item.item_type != 3" class="size">
                             {{ formatFileSize(item.total_space) }}
@@ -1108,6 +1117,7 @@ import {
   onMounted,
   onUnmounted,
   watch,
+  watchEffect,
   nextTick,
   inject,
   computed,
@@ -1115,6 +1125,7 @@ import {
 } from 'vue'
 import { on, off } from '@renderer/utils/eventBus'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+import useWebSocket from '@renderer/hooks/useWebSocket'
 import { useUserStore } from '@renderer/stores/user'
 import topIcon from '@renderer/assets/contextMenu/top-icon.png'
 import unstickIcon from '@renderer/assets/contextMenu/unstick-icon.png'
@@ -1534,14 +1545,108 @@ const downloadFile = (url, fileName) => {
   }
   x.send()
 }
+const checkChange = (item, e, i) => {
+  contextMenu.value.show = false
+  if (!item.checked && e.shiftKey && !activeFiles.value.length) {
+    detailFileList.value.map((children, j) => {
+      if (j < i) {
+        children.checked = true
+      }
+    })
+    return
+  } else if (!item.checked && e.shiftKey && activeFiles.value.length) {
+    // 智能选中范围逻辑：
+    // 1. 如果之前或之后没有选中项，则选中范围为当前项之前的所有项
+    // 2. 如果之前有选中项，则选中范围为当前项到之前选中项之间所有项
+    // 3. 如果之前没有选中项但之后有选中项，则选中范围为当前项到之后选中项之间所有项
+
+    const lastCheckedIndex = detailFileList.value.findLastIndex((children, index) => {
+      return children.checked && index < i
+    })
+
+    const nextCheckedIndex = detailFileList.value.findIndex((children, index) => {
+      return children.checked && index > i
+    })
+    if (lastCheckedIndex === -1 && nextCheckedIndex === -1) {
+      // 情况1：之前和之后都没有选中项，选中当前项之前的所有项
+      detailFileList.value.forEach((children, j) => {
+        if (j <= i) {
+          children.checked = true
+        }
+      })
+    } else if (lastCheckedIndex > -1) {
+      // 情况2：之前有选中项，选中从之前选中项到当前项的范围
+      const startIndex = Math.min(lastCheckedIndex, i)
+      const endIndex = Math.max(lastCheckedIndex, i)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j > startIndex && j < endIndex) {
+          children.checked = true
+        }
+      })
+    } else if (nextCheckedIndex > -1) {
+      // 情况3：之前没有选中项但之后有选中项，选中从当前项到之后选中项的范围
+      const startIndex = Math.min(i, nextCheckedIndex)
+      const endIndex = Math.max(i, nextCheckedIndex)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j > startIndex && j < endIndex) {
+          children.checked = true
+        }
+      })
+    }
+  }
+}
 // 到达详情
 const detailChange = (item, e, i) => {
-  if (e.shiftKey) {
+  if (e.shiftKey && !activeFiles.value.length) {
     detailFileList.value.map((children, j) => {
       if (j <= i) {
         children.checked = true
       }
     })
+    return
+  } else if (e.shiftKey && activeFiles.value.length) {
+    // 智能选中范围逻辑：
+    // 1. 如果之前或之后没有选中项，则选中范围为当前项之前的所有项
+    // 2. 如果之前有选中项，则选中范围为当前项到之前选中项之间所有项
+    // 3. 如果之前没有选中项但之后有选中项，则选中范围为当前项到之后选中项之间所有项
+
+    const lastCheckedIndex = detailFileList.value.findLastIndex((children, index) => {
+      return children.checked && index < i
+    })
+
+    const nextCheckedIndex = detailFileList.value.findIndex((children, index) => {
+      return children.checked && index > i
+    })
+    if (lastCheckedIndex === -1 && nextCheckedIndex === -1) {
+      // 情况1：之前和之后都没有选中项，选中当前项之前的所有项
+      detailFileList.value.forEach((children, j) => {
+        if (j <= i) {
+          children.checked = true
+        }
+      })
+    } else if (lastCheckedIndex > -1) {
+      // 情况2：之前有选中项，选中从之前选中项到当前项的范围
+      const startIndex = Math.min(lastCheckedIndex, i)
+      const endIndex = Math.max(lastCheckedIndex, i)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j >= startIndex && j <= endIndex) {
+          children.checked = true
+        }
+      })
+    } else if (nextCheckedIndex > -1) {
+      // 情况3：之前没有选中项但之后有选中项，选中从当前项到之后选中项的范围
+      const startIndex = Math.min(i, nextCheckedIndex)
+      const endIndex = Math.max(i, nextCheckedIndex)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j >= startIndex && j <= endIndex) {
+          children.checked = true
+        }
+      })
+    }
     return
   }
   if (item.is_collaboration == 1) {
@@ -1554,7 +1659,8 @@ const detailChange = (item, e, i) => {
         fileUrl: item.info?.url,
         fileName: item.title,
         fileId: item.info?.file_key || '',
-        itemId: item.id || ''
+        itemId: item.id || '',
+        download: true
       }
     })
     return
@@ -1579,7 +1685,8 @@ const detailChange = (item, e, i) => {
         attrs: {
           fileUrl: item.info?.url,
           fileName: item.title,
-          fileId: item.info?.file_key || ''
+          fileId: item.info?.file_key || '',
+          download: true
         }
       })
     }
@@ -1600,7 +1707,8 @@ const detailChange = (item, e, i) => {
         attrs: {
           fileUrl: item.info?.url,
           fileName: item.title,
-          fileId: item.info?.file_key || ''
+          fileId: item.info?.file_key || '',
+          download: item.permission_type == 1 ? true : false
         }
       })
     }
@@ -1884,6 +1992,7 @@ const getRepositoryInfo = (id) => {
       id: 0
     }
   ]
+  detailFileList.value = []
   get_know_info({
     know_id: id,
     parent_item_id: 0,
@@ -2906,7 +3015,8 @@ const handleContextMenuAction = ({ action }) => {
         fileUrl: activeFiles.value[0].info?.url,
         fileName: activeFiles.value[0].title,
         fileId: activeFiles.value[0].info?.file_key || '',
-        itemId: activeFiles.value[0].id || ''
+        itemId: activeFiles.value[0].id || '',
+        download: true
       }
     })
     itemId.value = activeFiles.value[0].id
@@ -2964,9 +3074,6 @@ const handleBlur = () => {
     isSearching.value = false
   }
   refreshList()
-}
-const addMenuClick = () => {
-  // console.log('添加文件')
 }
 const sortMenuClick = (item) => {
   sortType.value = item.value
@@ -3080,7 +3187,7 @@ const filesType = computed(() => {
     }
   }
   return 1
-})  // 1 文件 2 文件夹 3 两者都有
+}) // 1 文件 2 文件夹 3 两者都有
 const tempUploadList = ref([])
 const conflictVisible = ref(false)
 const retainAll = () => {
@@ -3358,12 +3465,54 @@ let parentItemId = computed(() => {
 })
 // 点击文件夹
 const dirChange = (item, e, i) => {
-  if (e.shiftKey) {
+  if (e.shiftKey && !activeFiles.value.length) {
     detailFileList.value.map((children, j) => {
       if (j <= i) {
         children.checked = true
       }
     })
+    return
+  } else if (e.shiftKey && activeFiles.value.length) {
+    // 智能选中范围逻辑：
+    // 1. 如果之前或之后没有选中项，则选中范围为当前项之前的所有项
+    // 2. 如果之前有选中项，则选中范围为当前项到之前选中项之间所有项
+    // 3. 如果之前没有选中项但之后有选中项，则选中范围为当前项到之后选中项之间所有项
+
+    const lastCheckedIndex = detailFileList.value.findLastIndex((children, index) => {
+      return children.checked && index < i
+    })
+
+    const nextCheckedIndex = detailFileList.value.findIndex((children, index) => {
+      return children.checked && index > i
+    })
+    if (lastCheckedIndex === -1 && nextCheckedIndex === -1) {
+      // 情况1：之前和之后都没有选中项，选中当前项之前的所有项
+      detailFileList.value.forEach((children, j) => {
+        if (j <= i) {
+          children.checked = true
+        }
+      })
+    } else if (lastCheckedIndex > -1) {
+      // 情况2：之前有选中项，选中从之前选中项到当前项的范围
+      const startIndex = Math.min(lastCheckedIndex, i)
+      const endIndex = Math.max(lastCheckedIndex, i)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j >= startIndex && j <= endIndex) {
+          children.checked = true
+        }
+      })
+    } else if (nextCheckedIndex > -1) {
+      // 情况3：之前没有选中项但之后有选中项，选中从当前项到之后选中项的范围
+      const startIndex = Math.min(i, nextCheckedIndex)
+      const endIndex = Math.max(i, nextCheckedIndex)
+
+      detailFileList.value.forEach((children, j) => {
+        if (j >= startIndex && j <= endIndex) {
+          children.checked = true
+        }
+      })
+    }
     return
   }
   pathList.value.push({
@@ -3511,6 +3660,54 @@ const checkItemsInSelection = () => {
     }
   })
 }
+// socket 信息
+const client_id = ref('')
+const { isConnected, sendMessage } = useWebSocket(import.meta.env.VITE_API_WSS_URL, {
+  onOpen: () => {},
+  onMessage: (data) => {
+    try {
+      let response = JSON.parse(data)
+      if (response.type == 'bind') {
+        client_id.value = response.data
+      } else if (response.type == 'search_progress' && !Array.isArray(response.data)) {
+        disposeSocketMessage(response.data)
+      }
+    } catch (err) {
+      console.log(err)
+    }
+  },
+  onClose: () => {},
+  onError: () => {}
+})
+watchEffect(() => {
+  const socketData = {
+    type: 'search',
+    know_id: activeRepository.value.id,
+    parent_item_id: parentItemId.value, //非必填
+    uniacid: useUserStore().uniacid,
+    client_id: client_id.value,
+    ding_uid: userInfo.value.ding_uid
+  }
+  if (activeRepository.value && activeRepository.value.id) {
+    if (isConnected.value) {
+      sendMessage(JSON.stringify(socketData))
+    }
+  }
+})
+
+const disposeSocketMessage = (data) => {
+  //处理向量化进度  根据返回的数据data的键名是detailFileList中每一项中的info中的file_key  data中每个file_key对应的对象的progress值是进度
+  if (data && detailFileList.value.length) {
+    detailFileList.value.forEach((item) => {
+      if (item.item_type != 2 && data[item.info.file_key]) {
+        item.progress = data[item.info.file_key].progress
+        if (item.progress >= 40 && data[item.info.file_key].icon_url) {
+          item.info.icon = data[item.info.file_key].icon_url
+        }
+      }
+    })
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -3552,6 +3749,7 @@ const checkItemsInSelection = () => {
     }
   }
 
+  /* 只作用于左侧面板的滚动条 */
   :deep(.left-box) {
     box-sizing: border-box;
     padding: 25px 8px 20px;
@@ -3560,21 +3758,6 @@ const checkItemsInSelection = () => {
     max-width: 300px;
     border-right: 1px solid #efefef;
     overflow-y: auto;
-
-    &::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      border-radius: 2px;
-      background-color: #dddcdc;
-
-      &:hover {
-        background-color: #909090;
-      }
-    }
-
     .common-repository-box {
       width: 100%;
       overflow: hidden;
@@ -3933,7 +4116,6 @@ const checkItemsInSelection = () => {
   }
 
   :deep(.center-box) {
-    flex-shrink: 0;
     box-sizing: border-box;
     padding: 10px 6px 20px;
     height: 100%;
@@ -4193,19 +4375,6 @@ const checkItemsInSelection = () => {
       .list-box {
         flex: 1;
         overflow: auto;
-        &::-webkit-scrollbar {
-          width: 4px;
-          height: 4px;
-        }
-
-        &::-webkit-scrollbar-thumb {
-          border-radius: 2px;
-          background-color: #dddcdc;
-
-          &:hover {
-            background-color: #909090;
-          }
-        }
         // 拖动选择矩形样式
         .drag-selection-rect {
           position: absolute;
@@ -4231,6 +4400,7 @@ const checkItemsInSelection = () => {
             top: 12px;
             right: 10px;
             display: none;
+            outline: none;
           }
 
           &:hover {
@@ -4415,7 +4585,9 @@ const checkItemsInSelection = () => {
 
   :deep(.right-box) {
     flex: 1;
+    flex-shrink: 0;
     height: 100%;
+    min-width: 375px;
     overflow: hidden;
   }
 

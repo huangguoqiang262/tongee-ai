@@ -479,6 +479,7 @@ const submitImport = async () => {
             ElMessage.primary('导入成功')
             refreshList()
             emits('submitImport')
+            emit('refresh-note-list')
           }
         })
         .finally(() => {

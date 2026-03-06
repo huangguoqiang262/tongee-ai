@@ -534,19 +534,6 @@ onMounted(() => {
     .list-box {
       flex: 1;
       overflow-y: auto;
-      &::-webkit-scrollbar {
-        width: 4px;
-        height: 4px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        border-radius: 2px;
-        background-color: #dddcdc;
-
-        &:hover {
-          background-color: #909090;
-        }
-      }
       .empty {
         height: 100%;
         width: 100%;

@@ -193,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeMount, onMounted, onUnmounted } from 'vue'
+import { ref, watch, watchEffect, onBeforeMount, onMounted, onUnmounted } from 'vue'
 import {
   org_organ_user_tree,
   synergia_upload_file,
@@ -426,6 +426,12 @@ const handleAdd = () => {
   //   }
   // })
 }
+watchEffect(() => {
+  if (synergiaUploadVisible.value) {
+    modifiersSearch.value = ''
+    approversSearch.value = ''
+  }
+})
 watch(modifiersSearch, (val) => {
   modifiersRef.value?.filter(val)
 })
@@ -462,9 +468,11 @@ const getCompleteSelectedTree = (personRef, type) => {
 }
 const modifiersCheckChange = () => {
   synergiaForm.value.modifiers = getCompleteSelectedTree(modifiersRef, '1')
+  synergiaFormRef.value.validateField('modifiers')
 }
 const approversCheckChange = () => {
   synergiaForm.value.approvers = getCompleteSelectedTree(approversRef, '2')
+  synergiaFormRef.value.validateField('approvers')
 }
 </script>
 
@@ -594,19 +602,6 @@ const approversCheckChange = () => {
               .el-tree {
                 padding: 20px 40px 20px 25px;
                 background: #f9f9f9;
-                &::-webkit-scrollbar {
-                  width: 4px;
-                  height: 4px;
-                }
-
-                &::-webkit-scrollbar-thumb {
-                  border-radius: 2px;
-                  background-color: #dddcdc;
-
-                  &:hover {
-                    background-color: #909090;
-                  }
-                }
               }
               .customNodeClass {
                 .el-tree-node__content {

@@ -232,6 +232,9 @@ export default {
     )
   },
   methods: {
+    againTextChange(text) {
+      this.message.text = text
+    },
     handleChange(configuration) {
       this.$emit('configurationChange', configuration)
     },
@@ -735,11 +738,6 @@ export default {
         white-space: nowrap;
         overflow-x: auto;
         gap: 10px;
-        &::-webkit-scrollbar {
-          display: none;
-        }
-        /* 对于IE和Edge的旧版浏览器 */
-        -ms-overflow-style: none;
         .attach-item {
           flex-shrink: 0;
           position: relative;
@@ -830,12 +828,6 @@ export default {
           outline: none;
           box-shadow: none;
           color: #221815;
-          /* 隐藏滚动条轨道 */
-          &::-webkit-scrollbar {
-            display: none;
-          }
-          /* 对于IE和Edge的旧版浏览器 */
-          -ms-overflow-style: none;
           &::placeholder {
             color: #909090;
             font-size: 14px;

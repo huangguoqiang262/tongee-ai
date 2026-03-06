@@ -138,3 +138,11 @@ export function text_to_image_call(data) {
     data
   })
 }
+// 知识库对话记录列表
+export function know_chat_lists(data) {
+  return request({
+    url: '/chat/know_chat_lists',
+    method: 'post',
+    data
+  })
+}
