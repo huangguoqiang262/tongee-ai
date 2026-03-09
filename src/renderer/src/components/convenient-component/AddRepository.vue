@@ -118,7 +118,7 @@
 <script setup>
 import cloneDeep from 'lodash.clonedeep'
 import { useUserStore } from '@renderer/stores/user'
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { know_types } from '@renderer/api/repository'
 import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import personageRepositoryIcon from '@renderer/assets/repository/personage-repository-icon.png'
@@ -151,11 +151,12 @@ const getKnowTypes = () => {
     }
   })
 }
-onMounted(() => {
-  getKnowTypes()
-})
+// onMounted(() => {
+//   getKnowTypes()
+// })
 watch(repositoryVisible, (newVal) => {
   if (newVal) {
+    getKnowTypes()
     const deepRepository = cloneDeep(props.repository)
     if (deepRepository && props.submitType != 'create' && Object.keys(deepRepository).length) {
       form.value = {

@@ -158,7 +158,9 @@ const refreshData = () => {
 onBeforeMount(() => {
   getList()
   intervalId.value = setInterval(() => {
-    getList()
+    if (userInfo.value.id) {
+      getList()
+    }
   }, 10000)
 })
 onUnmounted(() => {
