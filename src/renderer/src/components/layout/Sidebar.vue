@@ -101,7 +101,7 @@ const handleClick = (item) => {
   }
   if (item.url == 'Management') {
     addNewTab({
-      url: 'http://192.168.11.241?t=' + Date.now(),
+      url: 'https://tangji.baguatan.cn?t=' + Date.now(),
       title: item.name,
       icon: item.icon,
       isInternal: false
