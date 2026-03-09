@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Tray, Menu, MenuItem, protocol, dialog } f
 // 在文件顶部添加导入
 import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
+import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // import icon from '../../resources/icon.png?asset'
 let mainWindow = null // 全局窗口变量
@@ -218,6 +219,9 @@ app.whenReady().then(() => {
   autoUpdater.requestHeaders = { insecure: 'true' } // 跳过证书验证
   autoUpdater.autoInstallOnAppQuit = false
   autoUpdater.autoDownload = false
+  let updateRetryCount = 0
+  const maxUpdateRetries = 3
+  const updaterCacheDir = join(app.getPath('userData'), 'tongee-app-updater')
   // 更新事件处理
   autoUpdater.on('update-available', ({ version }) => {
     mainWindow.webContents.send('update-status', {
@@ -237,9 +241,40 @@ app.whenReady().then(() => {
   })
 
   autoUpdater.on('update-downloaded', () => {
+    updateRetryCount = 0 // 重置重试计数
     mainWindow.webContents.send('update-status', {
       stage: 'downloaded'
     })
+  })
+
+  autoUpdater.on('error', (error) => {
+    console.error('Update error:', error)
+    if (updateRetryCount < maxUpdateRetries) {
+      updateRetryCount++
+      console.log(`Retrying update download (${updateRetryCount}/${maxUpdateRetries})`)
+      // 清空缓存目录中的下载文件
+      try {
+        if (fs.existsSync(updaterCacheDir)) {
+          const files = fs.readdirSync(updaterCacheDir)
+          files.forEach(file => {
+            const filePath = join(updaterCacheDir, file)
+            if (fs.statSync(filePath).isFile()) {
+              fs.unlinkSync(filePath)
+            }
+          })
+        }
+      } catch (err) {
+        console.error('Error clearing cache:', err)
+      }
+      setTimeout(() => {
+        autoUpdater.downloadUpdate()
+      }, 2000) // 2秒后重试
+    } else {
+      mainWindow.webContents.send('update-status', {
+        stage: 'error',
+        error: error.message
+      })
+    }
   })
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
