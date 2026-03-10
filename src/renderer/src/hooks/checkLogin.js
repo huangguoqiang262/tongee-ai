@@ -31,3 +31,11 @@ export function useUserInfo() {
   })
   return userInfo
 }
+export function useMsgTips() {
+  const userStore = useUserStore()
+  const msgTips = ref(userStore.msgtips)
+  watchEffect(() => {
+    msgTips.value = userStore.msgtips
+  })
+  return msgTips
+}

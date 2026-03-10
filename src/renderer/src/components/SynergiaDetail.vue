@@ -39,7 +39,7 @@
           :file-name="fileName"
           :file-key="fileKey"
           :download="download"
-          :mode="user_status == 0 ? 'edit' : 'view'"
+          :mode="user_status == 0 || (is_creator == 1 && status == 1) ? 'edit' : 'view'"
         />
       </el-splitter-panel>
       <el-splitter-panel v-if="chatVisible" :min="375" :size="375" class="right-box">
@@ -87,12 +87,16 @@ let attach_files = ref([
   }
 ])
 let user_status = ref(null)
+let status = ref(1)
+let is_creator = ref(0)
 const getDetailStatus = () => {
   loading.value = false
   get_project_user_status({ item_id: props.attrs.itemId })
     .then((res) => {
       if (res.code == 200) {
         user_status.value = res.data.user_status
+        status.value = res.data.status
+        is_creator.value = res.data.is_creator
       }
     })
     .finally(() => {
