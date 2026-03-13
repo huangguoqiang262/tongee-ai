@@ -116,6 +116,11 @@
               </div>
               <div v-if="activeTab == '3'" class="synergia-box">
                 <div class="statistics-list">
+                  <div class="statistics-item actives">
+                    <div class="value">{{ allFiles || 0 }}</div>
+                    <div class="title">全部文件</div>
+                    <div class="desc">全部协同文件</div>
+                  </div>
                   <div class="statistics-item">
                     <div class="value">{{ statisticsData.my_files_count || 0 }}</div>
                     <div class="title">我的文件</div>
@@ -270,7 +275,7 @@ import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import { chat_lists, del_chat, del_all_chat, modifyChatHistory } from '@renderer/api/chat'
-import { ref, onMounted, inject, onErrorCaptured } from 'vue'
+import { ref, onMounted, inject, computed, onErrorCaptured } from 'vue'
 onErrorCaptured((err, instance, info) => {
   console.error('组件捕获到错误:', err, info)
   return false // 阻止继续向上传播错误
@@ -415,6 +420,13 @@ const tabHandle = (id) => {
 }
 const list = ref([])
 const statisticsData = ref({})
+const allFiles = computed(() => {
+  return (
+    (statisticsData.value?.my_files_count || 0) +
+    (statisticsData.value?.pending_task_count || 0) +
+    (statisticsData.value?.pending_feedback_count || 0)
+  )
+})
 let clearHistory = ref(false)
 let beforeClearChange = () => {
   clearHistory.value = true
@@ -848,7 +860,7 @@ onMounted(() => {
           .statistics-list {
             box-sizing: border-box;
             margin-bottom: 10px;
-            padding: 20px 48px;
+            padding: 20px 0px;
             width: 100%;
             height: 120px;
             background: #f9f9f9;
@@ -857,8 +869,18 @@ onMounted(() => {
             align-items: center;
             .statistics-item {
               flex-shrink: 0;
-              width: 25%;
+              width: 20%;
               text-align: center;
+              // 添加高亮聚光灯效果 锥形
+              &.actives {
+                color: var(--el-color-primary);
+                .title {
+                  color: var(--el-color-primary);
+                }
+                .desc {
+                  color: var(--el-color-primary-light-3);
+                }
+              }
               .value {
                 margin-bottom: 6px;
                 font-size: 26px;

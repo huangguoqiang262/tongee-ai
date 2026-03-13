@@ -790,7 +790,7 @@ watchEffect(() => {
       color: var(--default-font-color);
       line-height: 22px;
       overflow: hidden;
-      height: 660px;
+      height: 600px;
       background: #f9f9f9;
       border-radius: 10px;
       .detail-box {

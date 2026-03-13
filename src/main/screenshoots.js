@@ -377,13 +377,13 @@ export const initScreenshoots = () => {
   })
 
   // // esc取消
-  globalShortcut.register('esc', () => {
-    if (screenshots.$win?.isFocused()) {
-      screenshots.endCapture()
-      // 重置截图状态
-      screenshots.isCapturing = false
-      // 发送取消事件到渲染进程
-      ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
-    }
-  })
+  // globalShortcut.register('esc', () => {
+  //   if (screenshots.$win?.isFocused()) {
+  //     screenshots.endCapture()
+  //     // 重置截图状态
+  //     screenshots.isCapturing = false
+  //     // 发送取消事件到渲染进程
+  //     ensureFocusAndSend('screenshot-cancel', null, process.platform === 'darwin' ? 400 : 100)
+  //   }
+  // })
 }

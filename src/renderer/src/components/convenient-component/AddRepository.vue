@@ -281,6 +281,7 @@ const submitForm = () => {
     .el-dialog {
       padding: 17px 10px 14px;
       height: 736px;
+      max-height: 92vh;
       display: flex;
       flex-direction: column;
 
@@ -307,8 +308,8 @@ const submitForm = () => {
         font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
-        overflow: hidden;
-
+        // overflow: hidden;
+        overflow: auto;
         .form-box {
           box-sizing: border-box;
           padding: 0 30px;
