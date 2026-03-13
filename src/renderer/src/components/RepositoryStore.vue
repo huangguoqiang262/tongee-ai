@@ -2614,18 +2614,38 @@ const showContextMenu = (e, item) => {
                 ]
               })
             } else {
-              contextMenu.value.actionSheet.splice(-2, 0, {
-                name: '协同管理',
-                icon: synergyIcon,
-                action: 'synergy',
-                children: [
-                  {
-                    name: '查看协同',
-                    icon: synergyLookIcon,
-                    action: 'synergyLook'
-                  }
-                ]
-              })
+              if (activeFiles.value[0].is_collaboration_creator == 1 && activeFiles.value[0].collaboration_status == 1) {
+                contextMenu.value.actionSheet.splice(-2, 0, {
+                  name: '协同管理',
+                  icon: synergyIcon,
+                  action: 'synergy',
+                  children: [
+                    {
+                      name: '在线编辑',
+                      icon: synergyEditIcon,
+                      action: 'synergyEdit'
+                    },
+                    {
+                      name: '查看协同',
+                      icon: synergyLookIcon,
+                      action: 'synergyLook'
+                    }
+                  ]
+                })
+              }else {
+                contextMenu.value.actionSheet.splice(-2, 0, {
+                  name: '协同管理',
+                  icon: synergyIcon,
+                  action: 'synergy',
+                  children: [
+                    {
+                      name: '查看协同',
+                      icon: synergyLookIcon,
+                      action: 'synergyLook'
+                    }
+                  ]
+                })
+              }
             }
           }
         }
@@ -2707,18 +2727,38 @@ const showContextMenu = (e, item) => {
           ]
         })
       } else {
-        contextMenu.value.actionSheet.splice(-1, 0, {
-          name: '协同管理',
-          icon: synergyIcon,
-          action: 'synergy',
-          children: [
-            {
-              name: '查看协同',
-              icon: synergyLookIcon,
-              action: 'synergyLook'
-            }
-          ]
-        })
+        if (activeFiles.value[0].is_collaboration_creator == 1 && activeFiles.value[0].collaboration_status == 1) {
+                contextMenu.value.actionSheet.splice(-1, 0, {
+                  name: '协同管理',
+                  icon: synergyIcon,
+                  action: 'synergy',
+                  children: [
+                    {
+                      name: '在线编辑',
+                      icon: synergyEditIcon,
+                      action: 'synergyEdit'
+                    },
+                    {
+                      name: '查看协同',
+                      icon: synergyLookIcon,
+                      action: 'synergyLook'
+                    }
+                  ]
+                })
+              }else {
+                contextMenu.value.actionSheet.splice(-1, 0, {
+                  name: '协同管理',
+                  icon: synergyIcon,
+                  action: 'synergy',
+                  children: [
+                    {
+                      name: '查看协同',
+                      icon: synergyLookIcon,
+                      action: 'synergyLook'
+                    }
+                  ]
+                })
+              }
       }
     } else if (activeFiles.value.length === 1 && activeFiles.value[0].is_collaboration == 1) {
       if (activeFiles.value[0].user_collaboration_status == 0) {
@@ -2784,26 +2824,54 @@ const showContextMenu = (e, item) => {
           ]
         }
       } else {
-        contextMenu.value = {
-          show: true,
-          permission_type: 'cannotView',
-          x: e.clientX,
-          y: e.clientY,
-          actionSheet: [
-            {
-              name: '协同管理',
-              icon: synergyIcon,
-              action: 'synergy',
-              children: [
+        if (activeFiles.value[0].is_collaboration_creator == 1 && activeFiles.value[0].collaboration_status == 1) {
+            contextMenu.value = {
+              show: true,
+              permission_type: 'cannotView',
+              x: e.clientX,
+              y: e.clientY,
+              actionSheet: [
                 {
-                  name: '查看协同',
-                  icon: synergyLookIcon,
-                  action: 'synergyLook'
+                  name: '协同管理',
+                  icon: synergyIcon,
+                  action: 'synergy',
+                  children: [
+                    {
+                      name: '在线编辑',
+                      icon: synergyEditIcon,
+                      action: 'synergyEdit'
+                    },
+                    {
+                      name: '查看协同',
+                      icon: synergyLookIcon,
+                      action: 'synergyLook'
+                    }
+                  ]
                 }
               ]
             }
-          ]
-        }
+          }else {
+            contextMenu.value = {
+              show: true,
+              permission_type: 'cannotView',
+              x: e.clientX,
+              y: e.clientY,
+              actionSheet: [
+                {
+                  name: '协同管理',
+                  icon: synergyIcon,
+                  action: 'synergy',
+                  children: [
+                    {
+                      name: '查看协同',
+                      icon: synergyLookIcon,
+                      action: 'synergyLook'
+                    }
+                  ]
+                }
+              ]
+            }
+          }
       }
     }
   }

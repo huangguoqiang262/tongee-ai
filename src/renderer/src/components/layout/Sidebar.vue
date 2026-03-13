@@ -34,6 +34,7 @@
         class="menu-item"
         @click="handleClick(item)"
       >
+        <div v-if="item.url == 'MessageCenter' && msgTips.total > 0" class="dot"></div>
         <el-tooltip effect="light" content="" placement="right">
           <template #content> {{ item.name }} </template>
           <img class="menu-icon" :src="item.icon" alt="" />
@@ -46,7 +47,9 @@
 <script setup>
 import { ref, inject, onBeforeMount, onUnmounted } from 'vue'
 import { getIndexLeftKnowList } from '@renderer/api/repository'
-import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+import { unread_count } from '@renderer/api/messageCenter'
+import { useCheckLogin, useUserInfo, useMsgTips } from '@renderer/hooks/checkLogin'
+import { useUserStore } from '@renderer/stores/user'
 import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
 import managementIcon from '@renderer/assets/menu/management-icon.png'
@@ -95,6 +98,7 @@ const recordMenuList = ref([
   }
 ])
 const userInfo = useUserInfo()
+const msgTips = useMsgTips()
 const handleClick = (item) => {
   if (!useCheckLogin().value) {
     return
@@ -141,6 +145,41 @@ const handleClick = (item) => {
 }
 const intervalId = ref(null)
 const knowList = ref([])
+const userStore = useUserStore()
+const getUnreadCount = () => {
+  unread_count()
+    .then((res) => {
+      if (res.code == 200) {
+        var obj = {
+          total: 0,
+          details: {
+            1: 0, // 知识库反馈
+            2: 0, // 文件更新
+            3: 0, // 系统通知\
+            4: 0 // 协同通知
+          }
+        }
+        obj.total = res.data.total
+        res.data.details.forEach((item) => {
+          if (obj.details[item.type] !== undefined) {
+            obj.details[item.type] = item.count
+          }
+        })
+        userStore.updateTips(obj)
+      }
+    })
+    .catch(() => {
+      userStore.updateTips({
+        total: 0,
+        details: {
+          1: 0, // 知识库反馈
+          2: 0, // 文件更新
+          3: 0, // 系统通知\
+          4: 0 // 协同通知
+        }
+      })
+    })
+}
 const getList = () => {
   getIndexLeftKnowList()
     .then((res) => {
@@ -157,9 +196,11 @@ const refreshData = () => {
 }
 onBeforeMount(() => {
   getList()
+  getUnreadCount()
   intervalId.value = setInterval(() => {
     if (userInfo.value.id) {
       getList()
+      getUnreadCount()
     }
   }, 10000)
 })
@@ -296,6 +337,7 @@ defineExpose({
     width: 40px;
     app-region: none;
     .menu-item {
+      position: relative;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -314,6 +356,15 @@ defineExpose({
       }
       &:hover {
         background: #e0e0e0;
+      }
+      .dot {
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ff5151;
       }
     }
   }

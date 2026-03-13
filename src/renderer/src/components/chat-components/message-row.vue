@@ -270,15 +270,22 @@ const download = (index, images) => {
 const rotateCiteFile = () => {
   unfoldCiteFile.value = !unfoldCiteFile.value
 }
-// 过滤相同url的文件
-// const filterSameUrl = computed(() => {
-//   let files = [...props.message.retrievedDocumentList, ...props.message.use_annex]
-//   const urlMap = {}
-//   files.forEach((file) => {
-//     urlMap[file.full_path] = file
-//   })
-//   return Object.values(urlMap)
-// })
+// 合并相同fileId的文件  将引用的段落合并
+const mergeDocumentList = computed(() => {
+  let files = [...props.message.retrievedDocumentList, ...props.message.use_annex]
+  const urlMap = {}
+  files.forEach((file) => {
+    var sort = ''
+    if (urlMap[file.fileId]) {
+      sort = file.sort ? file.sort.split('.')[0] + '' : ''
+      urlMap[file.fileId].sort = urlMap[file.fileId].sort + '、' + sort
+    } else {
+      sort = file.sort ? file.sort.split('.')[0] + '' : ''
+      urlMap[file.fileId] = { ...file, sort: sort }
+    }
+  })
+  return Object.values(urlMap)
+})
 const processedReasoning = computed(() => {
   return props.message?.reasoningContentText
     .replace(/`?\[\s?kno_(\d+)\s?\]`?/g, (match, id) => {
@@ -396,14 +403,9 @@ const againText = (text) => {
         }"
       >
         <div class="message-content" :class="{ 'no-line-number': !props.lineNumber }">
-          <div
-            v-if="props.message.retrievedDocumentList.length || props.message.use_annex.length"
-            class="file-list"
-          >
+          <div v-if="mergeDocumentList.length" class="file-list">
             <div class="file-label" @click="rotateCiteFile">
-              找到了{{
-                props.message.retrievedDocumentList.length + props.message.use_annex.length
-              }}个资料
+              找到了{{ mergeDocumentList.length }}个资料
               <img
                 class="rotate"
                 :style="{ transform: unfoldCiteFile ? 'rotate(180deg)' : '' }"
@@ -413,17 +415,17 @@ const againText = (text) => {
             </div>
             <div v-show="unfoldCiteFile" class="file-content-box">
               <div
-                v-for="file in props.message.retrievedDocumentList"
+                v-for="file in mergeDocumentList"
                 :key="file.fileId"
                 class="file-item"
                 @click="retrievedDocumen(file)"
               >
                 <div class="file-name">
                   {{ file.fileName }}
-                  <span class="file-sort">{{ '第' + file.sort + '段落' }}</span>
+                  <!-- <span class="file-sort">{{ '第' + file.sort + '段落' }}</span> -->
                 </div>
               </div>
-              <div
+              <!-- <div
                 v-for="file in props.message.use_annex"
                 :key="file.fileId"
                 class="file-item"
@@ -431,9 +433,9 @@ const againText = (text) => {
               >
                 <div class="file-name">
                   {{ file.fileName }}
-                  <span class="file-sort">{{ '第' + file.sort + '段落' }}</span>
+                  <span class="file-sort">{{ '第' + file.sort?.split('.')[0] + '段落' }}</span>
                 </div>
-              </div>
+              </div> -->
             </div>
           </div>
           <!-- 如果消息的内容为空则显示加载动画 -->
@@ -648,10 +650,9 @@ const againText = (text) => {
     justify-content: space-between;
     align-items: center;
     gap: 0 10px;
-    height: 32px;
+    min-height: 32px;
     width: 100%;
     overflow: hidden;
-
     cursor: pointer;
     &:nth-last-child(1) {
       margin-bottom: 0;
@@ -665,7 +666,7 @@ const againText = (text) => {
       max-width: 100%;
       font-size: 14px;
       line-height: 20px;
-      color: #8b8b8b;
+      color: var(--el-color-primary-light-3);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

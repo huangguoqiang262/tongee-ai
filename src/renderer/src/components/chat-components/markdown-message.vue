@@ -14,7 +14,9 @@
       popper-class="knowledge-popover"
     >
       <div class="knowledge-popover-content" @click="toKnowledge(currentDocumentInfo)">
-        <div class="knowledge-popover-title">所在段落（{{ currentDocumentInfo?.sort }}）</div>
+        <div class="knowledge-popover-title">
+          所在段落（{{ currentDocumentInfo?.sort.split('.')[0] }}）
+        </div>
         <div class="knowledge-popover-content">
           {{ htmlToText(currentDocumentInfo?.documentContent || '') }}
         </div>

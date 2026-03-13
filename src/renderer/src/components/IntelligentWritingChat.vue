@@ -349,7 +349,8 @@ const handleSendMessage = async (message) => {
       topP: modelConfig.value.top_p,
       vectorShardNumber: modelConfig.value.vector_shard_number,
       similarityThreshold: modelConfig.value.similarity_threshold,
-      enableThinking: modelConfig.value.enable_thinking
+      enableThinking: modelConfig.value.enable_thinking,
+      maxCompletionTokens:1000
     },
     knowledgeBaseParamsList: mentionedList.value.map((item) => {
       return {

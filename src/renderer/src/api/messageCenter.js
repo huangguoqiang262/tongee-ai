@@ -39,3 +39,12 @@ export function synergia_message_list(data) {
     data
   })
 }
+// 获取是否有消息通知
+export function unread_count(data) {
+  return request({
+    url: 'user/unread_count',
+    method: 'post',
+    data
+  })
+}
+

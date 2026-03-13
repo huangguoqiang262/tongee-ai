@@ -214,7 +214,6 @@ const createJWT = async (json, secret) => {
   return encodedHeader + '.' + encodedPayload + '.' + hash
 }
 let users = {
-  ding_uid: cloneDeep(userInfo.value?.ding_uid || ''),
   id: cloneDeep(userInfo.value?.ding_uid || ''),
   name: cloneDeep(userInfo.value?.name || '')
 }
@@ -233,10 +232,18 @@ const config = ref({
   editorConfig: {
     mode: props.mode === 'edit' ? 'edit' : 'view',
     lang: 'zh-cn',
+    customization: {
+      autosave: true,
+      forcesave: true,
+    },
+    coEditing: {
+      mode: 'fast',
+      change: true
+    },
     callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
   },
   user: {
-    ding_uid: userInfo.value?.ding_uid || '',
+    id: userInfo.value?.ding_uid || '',
     name: userInfo.value?.name || ''
   }
 })
@@ -250,7 +257,7 @@ watchEffect(() => {
       title: props.fileName || props.src.split('/').pop(),
       url: props.src,
       fileType: fileExt.value || 'docx',
-      key: props.fileKey,
+      key: props.fileKey || '',
       permissions: {
         download: props.download || false
       }
@@ -258,6 +265,14 @@ watchEffect(() => {
     editorConfig: {
       mode: props.mode === 'edit' ? 'edit' : 'view',
       lang: 'zh-cn',
+      customization: {
+        autosave: true,
+        forcesave: true,
+      },
+      coEditing: {
+        mode: 'fast',
+        change: true
+      },
       callbackUrl:
         import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey || '', // 默认回调为 Document Server，自行在后端实现保存回调接口
       user: users
@@ -273,7 +288,7 @@ watchEffect(() => {
   //       title: props.fileName || props.src.split('/').pop(),
   //       url: props.src+'?t=' + t,
   //       fileType: fileExt.value || 'docx',
-  //       key: props.fileKey,
+  //       key: props.fileKey || '',
   //       permissions: {
   //         download: props.download || false
   //       }
@@ -281,6 +296,14 @@ watchEffect(() => {
   //     editorConfig: {
   //       mode: props.mode === 'edit' ? 'edit' : 'view',
   //       lang: 'zh-cn',
+  //       customization: {
+  //         autosave: true,
+  //         forcesave: true,
+  //       },
+  //       coEditing: {
+  //         mode: 'fast',
+  //         change: true
+  //       },
   //       callbackUrl:
   //         import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey ||
   //         '', // 默认回调为 Document Server，自行在后端实现保存回调接口

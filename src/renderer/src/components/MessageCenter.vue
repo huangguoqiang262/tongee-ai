@@ -10,6 +10,7 @@
           :class="{ 'active-tab': tab.id == activeTab }"
           @click="tabHandle(tab.id)"
         >
+          <div v-if="msgTips?.details[tab.id]" class="dot"></div>
           {{ tab.name }}
         </div>
       </div>
@@ -339,6 +340,7 @@ import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
+import { useMsgTips } from '@renderer/hooks/checkLogin'
 import { formatTime } from '@renderer/utils/index.js'
 import {
   get_system_msg,
@@ -367,6 +369,7 @@ const refuseRules = ref({
   refuseInput: [{ required: true, message: '请输入拒绝原因', trigger: ['blur'] }]
 })
 const addNewTab = inject('addNewTab')
+const msgTips = useMsgTips()
 const lookSystem = (item) => {
   addNewTab({
     icon: getFileIcon(item),
@@ -897,6 +900,7 @@ watchEffect(() => {
       flex-wrap: wrap;
       gap: 20px 40px;
       .tab-item {
+        position: relative;
         flex-shrink: 0;
         font-size: 14px;
         color: #555555;
@@ -906,6 +910,15 @@ watchEffect(() => {
         will-change: color, font-size, font-weight;
         backface-visibility: hidden;
         perspective: 100px;
+        .dot {
+          position: absolute;
+          top: 1px;
+          right: -10px;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #ff5151;
+        }
         &.active-tab {
           color: var(--el-color-primary);
           font-size: 16px;
