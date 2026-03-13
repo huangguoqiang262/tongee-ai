@@ -2,7 +2,7 @@
 <template>
   <div class="onlyoffice-preview" :style="{ height, width }">
     <DocumentEditor
-      v-if="fileKey && !isImage"
+      v-if="fileKey && !isImage && config.token"
       :id="onlyofficePreviewId"
       :document-server-url="serverUrl"
       :config="config"

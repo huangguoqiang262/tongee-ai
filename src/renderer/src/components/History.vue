@@ -187,7 +187,7 @@
                         <div class="desc">
                           {{ item.path }}
                         </div>
-                        <div class="author author1">协同人数：5人</div>
+                        <div class="author author1">协同人数：{{ item.person_count || 0 }}人</div>
                       </div>
                       <div class="time">{{ formatTimeFun(item.createtime) }}</div>
                     </div>

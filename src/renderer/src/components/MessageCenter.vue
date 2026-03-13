@@ -128,7 +128,8 @@
                 <div class="desc desc-hide">{{ htmlToText(item.content) }}</div>
                 <div class="author">
                   提交者：{{ item.username || ''
-                  }}{{ item.user_dept ? '(' + item.dept_name + ')' : '' }}
+                  }}
+                  <!-- {{ item.dept_name ? '(' + item.dept_name + ')' : '' }} -->
                 </div>
                 <div class="btns">
                   <div v-if="item.status == 0" class="btn" @click="markHandle(item)">
@@ -150,11 +151,15 @@
             <div v-for="item in fileList" :key="item.id" class="list-item">
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
-                <div class="title">新增《临床实验报告模板》</div>
-                <div class="desc">新增了符合最新法规要求的临床试验报告模板，供所有项目参考使用</div>
-                <div class="author author1">张医生·临床部·5天前更新</div>
+                <div class="title">{{ item.title || '' }}</div>
+                <div class="desc">{{ item.desc || '' }}</div>
+                <div class="author author1">
+                  {{ item.user_name || '' }} ·
+                  <!-- {{ item.user_dept ? '(' + item.user_dept + ')' : '' }} · -->
+                  {{ item.word_time }}前更新
+                </div>
               </div>
-              <div class="time">18:00</div>
+              <div class="time">{{ formatTimeFun(item.createtime) }}</div>
             </div>
           </div>
           <div v-else class="empty">
