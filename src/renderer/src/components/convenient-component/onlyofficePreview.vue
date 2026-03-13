@@ -278,42 +278,42 @@ watchEffect(() => {
       user: users
     }
   }
-  // createJWT(
-  //   {
-  //     width: '100%',
-  //     height: '100%',
-  //     type: fileExt.value || 'docx',
-  //     documentType: docType(fileExt.value),
-  //     document: {
-  //       title: props.fileName || props.src.split('/').pop(),
-  //       url: props.src+'?t=' + t,
-  //       fileType: fileExt.value || 'docx',
-  //       key: props.fileKey || '',
-  //       permissions: {
-  //         download: props.download || false
-  //       }
-  //     },
-  //     editorConfig: {
-  //       mode: props.mode === 'edit' ? 'edit' : 'view',
-  //       lang: 'zh-cn',
-  //       customization: {
-  //         autosave: true,
-  //         forcesave: true,
-  //       },
-  //       coEditing: {
-  //         mode: 'fast',
-  //         change: true
-  //       },
-  //       callbackUrl:
-  //         import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey ||
-  //         '', // 默认回调为 Document Server，自行在后端实现保存回调接口
-  //       user: users
-  //     }
-  //   },
-  //   onlyofficeSecret
-  // ).then((token) => {
-  //   config.value.token = token
-  // })
+  createJWT(
+    {
+      width: '100%',
+      height: '100%',
+      type: fileExt.value || 'docx',
+      documentType: docType(fileExt.value),
+      document: {
+        title: props.fileName || props.src.split('/').pop(),
+        url: props.src+'?t=' + t,
+        fileType: fileExt.value || 'docx',
+        key: props.fileKey || '',
+        permissions: {
+          download: props.download || false
+        }
+      },
+      editorConfig: {
+        mode: props.mode === 'edit' ? 'edit' : 'view',
+        lang: 'zh-cn',
+        customization: {
+          autosave: true,
+          forcesave: true,
+        },
+        coEditing: {
+          mode: 'fast',
+          change: true
+        },
+        callbackUrl:
+          import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey ||
+          '', // 默认回调为 Document Server，自行在后端实现保存回调接口
+        user: users
+      }
+    },
+    onlyofficeSecret
+  ).then((token) => {
+    config.value.token = token
+  })
 })
 const handleDocumentReady = (event) => {
   loading.value = false

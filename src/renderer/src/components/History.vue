@@ -116,22 +116,38 @@
               </div>
               <div v-if="activeTab == '3'" class="synergia-box">
                 <div class="statistics-list">
-                  <div class="statistics-item actives">
-                    <div class="value">{{ allFiles || 0 }}</div>
+                  <div
+                    class="statistics-item"
+                    :class="{ actives: search_type == 0 }"
+                    @click="searchTypeChange(0)"
+                  >
+                    <div class="value">{{ statisticsData.total || 0 }}</div>
                     <div class="title">全部文件</div>
                     <div class="desc">全部协同文件</div>
                   </div>
-                  <div class="statistics-item">
+                  <div
+                    class="statistics-item"
+                    :class="{ actives: search_type == 1 }"
+                    @click="searchTypeChange(1)"
+                  >
                     <div class="value">{{ statisticsData.my_files_count || 0 }}</div>
                     <div class="title">我的文件</div>
                     <div class="desc">我发起的协同文件</div>
                   </div>
-                  <div class="statistics-item">
+                  <div
+                    class="statistics-item"
+                    :class="{ actives: search_type == 2 }"
+                    @click="searchTypeChange(2)"
+                  >
                     <div class="value">{{ statisticsData.pending_task_count || 0 }}</div>
                     <div class="title">等待处理</div>
                     <div class="desc">未反馈、未确认、未批准</div>
                   </div>
-                  <div class="statistics-item">
+                  <div
+                    class="statistics-item"
+                    :class="{ actives: search_type == 3 }"
+                    @click="searchTypeChange(3)"
+                  >
                     <div class="value">{{ statisticsData.pending_feedback_count || 0 }}</div>
                     <div class="title">完成协同</div>
                     <div class="desc">已确认或已批准的文件</div>
@@ -142,25 +158,42 @@
                     <div class="desc">我的文件平均进度</div>
                   </div>
                 </div>
+
                 <div class="synergia-list">
-                  <div v-for="(item, index) in list" :key="index" class="list-item">
-                    <FileSvgShadowIcon class="left-icon" />
-                    <div class="center-box">
-                      <div class="title-box">
-                        <div class="title">{{ item.title }}</div>
-                        <div v-if="item.status == 0" class="status">等待反馈</div>
-                        <div v-else-if="item.status == 1" class="status">协同进行中</div>
-                        <div v-else-if="item.status == 2" class="status">协同审批中</div>
-                        <div v-else-if="item.status == 3" class="status">入库审批中</div>
-                        <div v-else-if="item.status == 4" class="status err-status">已拒绝入库</div>
-                        <div v-else-if="item.status == 5" class="status">已入库</div>
+                  <el-select
+                    v-model="process_type"
+                    class="typeList-box"
+                    :options="fileTypes"
+                    :props="{ label: 'title', value: 'id' }"
+                    placeholder="请选择类型"
+                    clearable
+                    @change="tabHandle('3')"
+                  />
+                  <template v-if="list.length">
+                    <div v-for="(item, index) in list" :key="index" class="list-item">
+                      <FileSvgShadowIcon class="left-icon" />
+                      <div class="center-box">
+                        <div class="title-box">
+                          <div class="title">{{ item.title }}</div>
+                          <div v-if="item.status == 0" class="status">等待反馈</div>
+                          <div v-else-if="item.status == 1" class="status">协同进行中</div>
+                          <div v-else-if="item.status == 2" class="status">协同审批中</div>
+                          <div v-else-if="item.status == 3" class="status">入库审批中</div>
+                          <div v-else-if="item.status == 4" class="status err-status">
+                            已拒绝入库
+                          </div>
+                          <div v-else-if="item.status == 5" class="status">已入库</div>
+                        </div>
+                        <div class="desc">
+                          {{ item.path }}
+                        </div>
+                        <div class="author author1">协同人数：5人</div>
                       </div>
-                      <div class="desc">
-                        {{ item.path }}
-                      </div>
-                      <div class="author author1">协同人数：5人</div>
+                      <div class="time">{{ formatTimeFun(item.createtime) }}</div>
                     </div>
-                    <div class="time">{{ formatTimeFun(item.createtime) }}</div>
+                  </template>
+                  <div v-else class="empty">
+                    <el-empty :image-size="120" description="暂无数据" />
                   </div>
                 </div>
               </div>
@@ -275,7 +308,8 @@ import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import { chat_lists, del_chat, del_all_chat, modifyChatHistory } from '@renderer/api/chat'
-import { ref, onMounted, inject, computed, onErrorCaptured } from 'vue'
+import { synergia_type_list } from '@renderer/api/repository'
+import { ref, onMounted, inject, onErrorCaptured } from 'vue'
 onErrorCaptured((err, instance, info) => {
   console.error('组件捕获到错误:', err, info)
   return false // 阻止继续向上传播错误
@@ -420,16 +454,24 @@ const tabHandle = (id) => {
 }
 const list = ref([])
 const statisticsData = ref({})
-const allFiles = computed(() => {
-  return (
-    (statisticsData.value?.my_files_count || 0) +
-    (statisticsData.value?.pending_task_count || 0) +
-    (statisticsData.value?.pending_feedback_count || 0)
-  )
-})
 let clearHistory = ref(false)
 let beforeClearChange = () => {
   clearHistory.value = true
+}
+const fileTypes = ref([])
+const process_type = ref('')
+const search_type = ref(0)
+const searchTypeChange = (i) => {
+  search_type.value = i
+  tabHandle('3')
+}
+// 获取类型列表
+const getTypeList = () => {
+  synergia_type_list({}).then((res) => {
+    if (res.code == 200) {
+      fileTypes.value = [{ id: '', title: '全部' }, ...res.data]
+    }
+  })
 }
 const loadData = () => {
   if (pagination.value.page * pagination.value.page_size >= pagination.value.total) {
@@ -472,7 +514,12 @@ const getList = (load = true) => {
       })
   } else if (activeTab.value == '3') {
     loading.value = false
-    synergia_history_list(data)
+    var synergiaData = {
+      ...data,
+      process_type: process_type.value,
+      search_type: search_type.value
+    }
+    synergia_history_list(synergiaData)
       .then((res) => {
         if (res.code == 200) {
           list.value = list.value.concat(res.data.list.data || [])
@@ -569,8 +616,6 @@ let renameRules = ref({
 })
 let renameFormRef = ref(null)
 const submitRenameForm = (FormRef) => {
-  console.log(FormRef)
-
   FormRef.validate((valid) => {
     if (valid) {
       modifyChatHistory({
@@ -591,6 +636,7 @@ const submitRenameForm = (FormRef) => {
   })
 }
 onMounted(() => {
+  getTypeList()
   getList()
 })
 </script>
@@ -906,6 +952,14 @@ onMounted(() => {
                 color: #909090;
               }
             }
+          }
+          .typeList-box {
+            position: sticky;
+            top: 10px;
+            right: 0px;
+            margin: 10px 0 5px auto;
+            display: block;
+            width: 210px;
           }
           .synergia-list {
             box-sizing: border-box;

@@ -1103,6 +1103,8 @@ watchEffect(() => {
         }
       }
       .synergia-box {
+        box-sizing: border-box;
+        padding: 10px 0;
         height: 100%;
         overflow: hidden;
         display: flex;

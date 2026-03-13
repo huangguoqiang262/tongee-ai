@@ -193,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, watch, watchEffect, onBeforeMount, onMounted, onUnmounted } from 'vue'
+import { ref, watch, watchEffect, onMounted, onUnmounted } from 'vue'
 import {
   org_organ_user_tree,
   synergia_upload_file,
@@ -253,11 +253,6 @@ const getTreeData = () => {
     }
   })
 }
-// 组件挂载前获取组织人员树
-onBeforeMount(() => {
-  getTypeList()
-  getTreeData()
-})
 let modifiersSearch = ref('')
 let approversSearch = ref('')
 let modifiersVisible = ref(false)
@@ -430,6 +425,8 @@ watchEffect(() => {
   if (synergiaUploadVisible.value) {
     modifiersSearch.value = ''
     approversSearch.value = ''
+    getTypeList()
+    getTreeData()
   }
 })
 watch(modifiersSearch, (val) => {
