@@ -367,4 +367,11 @@ export function getKnowFolders(data) {
     data
   })
 }
-
+// 删除协同成员
+export function del_process_user(data) {
+  return request({
+    url: '/collaboration/del_process_user',
+    method: 'post',
+    data
+  })
+}

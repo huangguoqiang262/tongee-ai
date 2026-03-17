@@ -103,7 +103,19 @@
                 </el-tree>
               </div>
               <div v-if="modifiers.length" class="person-list">
-                <div v-for="(tag, i) in modifiers" :key="i" class="person-item">
+                <div
+                  v-for="(tag, i) in modifiers"
+                  :key="i"
+                  class="person-item"
+                  :class="{ visiable: modifiers.length > 1 && process_status == 1 }"
+                >
+                  <img
+                    v-if="modifiers.length > 1"
+                    class="del-icon"
+                    src="@renderer/assets/del-icon1.png"
+                    alt=""
+                    @click="removePerson(tag, 1)"
+                  />
                   <img class="avatar" :src="tag.avatar || DefaultAvatar" alt="" />
                   <div class="item-box">
                     <div class="item-top">
@@ -180,7 +192,21 @@
                 </el-tree>
               </div>
               <div v-if="approvers.length" class="person-list">
-                <div v-for="(tag, i) in approvers" :key="i" class="person-item">
+                <div
+                  v-for="(tag, i) in approvers"
+                  :key="i"
+                  class="person-item"
+                  :class="{
+                    visiable: approvers.length > 1 && (process_status == 1 || process_status == 2)
+                  }"
+                >
+                  <img
+                    v-if="approvers.length > 1"
+                    class="del-icon"
+                    src="@renderer/assets/del-icon1.png"
+                    alt=""
+                    @click="removePerson(tag, 2)"
+                  />
                   <img class="avatar" :src="tag.avatar || DefaultAvatar" alt="" />
                   <div class="item-box">
                     <div class="item-top">
@@ -225,7 +251,8 @@ import DefaultAvatar from '@renderer/assets/default-avatar.png'
 import {
   synergia_process_detail,
   org_organ_user_tree,
-  synergia_add_process_user
+  synergia_add_process_user,
+  del_process_user
 } from '@renderer/api/repository.js'
 const synergiaLookVisible = defineModel({ type: Boolean })
 const emits = defineEmits(['refreshList'])
@@ -415,6 +442,38 @@ const addApprover = (data) => {
           ElMessage({
             type: 'primary',
             message: '新增批准人成功'
+          })
+          data.auditor_selected = true
+          emits('refreshList')
+          getSynergiaDetail()
+        }
+      })
+    })
+    .catch(() => {})
+}
+// 删除协同、批准人  task_type 1 协同 2 批准
+const removePerson = (data, task_type) => {
+  console.log(data);
+
+  var params = {
+    item_id: props.itemId,
+    task_user_id: data.ding_uid,
+    task_dept_id: data.dept_id,
+    task_type
+  }
+  // eslint-disable-next-line no-undef
+  ElMessageBox.confirm(`确认删除协同人${data.name}吗？`, '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(() => {
+      del_process_user(params).then((res) => {
+        if (res.code == 200) {
+          // eslint-disable-next-line no-undef
+          ElMessage({
+            type: 'primary',
+            message: '操作成功'
           })
           data.auditor_selected = true
           emits('refreshList')
@@ -707,6 +766,7 @@ const addApprover = (data) => {
                 flex-wrap: wrap;
                 gap: 10px 5px;
                 .person-item {
+                  position: relative;
                   box-sizing: border-box;
                   padding: 16px 20px;
                   height: 76px;
@@ -717,6 +777,22 @@ const addApprover = (data) => {
                   align-items: center;
                   overflow: hidden;
                   gap: 0 10px;
+                  &.visiable {
+                    &:hover {
+                      .del-icon {
+                        display: block;
+                      }
+                    }
+                  }
+                  .del-icon {
+                    display: none;
+                    position: absolute;
+                    right: 16px;
+                    top: 16px;
+                    width: 18px;
+                    height: 18px;
+                    cursor: pointer;
+                  }
                   .avatar {
                     object-fit: cover;
                     width: 32px;

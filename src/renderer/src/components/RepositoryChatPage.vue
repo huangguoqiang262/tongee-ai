@@ -455,6 +455,7 @@ const closePreview = () => {
 }
 let messageListRef = ref(null)
 let isChatting = ref(false)
+const evtSource = ref(null)
 const onlineNoteVisible = ref(false)
 const submitImport = () => {
   markDownText.value = ''
@@ -810,6 +811,10 @@ const loadMore = async () => {
     container.scrollTop = container.scrollHeight - oldScrollHeight
   })
 }
+const stopChat = () => {
+  isChatting.value = false
+  evtSource.value?.close()
+}
 const resetHitory = (isClose = false) => {
   renameHistory.value = false
   renameItem.value = {}
@@ -916,7 +921,6 @@ onMounted(() => {
   getFeedbackType()
 })
 const attach_file = ref([])
-const evtSource = ref(null)
 const selectModel = (model) => {
   if (model) {
     activeSession.value.model_name = model.split('/')[0]
@@ -1146,10 +1150,6 @@ const uploadedAttachment = (file) => {
 }
 const clearAttach = () => {
   attach_file.value = []
-}
-const stopChat = () => {
-  isChatting.value = false
-  evtSource.value?.close()
 }
 </script>
 <style scoped lang="scss">
