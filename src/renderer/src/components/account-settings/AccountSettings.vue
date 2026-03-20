@@ -483,8 +483,8 @@ let passwordForm = ref({
 let toFeedback = () => {
   addNewTab({
     icon: feedbackIcon,
-    title: '反馈中心',
-    url: 'FeedbackCenter',
+    title: '系统反馈',
+    url: 'SystemFeedback',
     backgroundColor: 'var(--primary-bg-color)',
     isInternal: true,
     attrs: {}

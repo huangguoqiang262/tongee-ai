@@ -30,7 +30,7 @@
             <div class="title">欢迎登录</div>
             <div class="sub-title">糖源因你，智慧积累每天多一点</div>
           </div>
-          <div class="tabs">
+          <!-- <div class="tabs">
             <div
               v-for="(item, index) in tabs"
               :key="index"
@@ -40,7 +40,7 @@
             >
               {{ item.title }}
             </div>
-          </div>
+          </div> -->
           <el-form
             ref="loginFormRef"
             label-position="top"
@@ -261,14 +261,14 @@ const loginForm = reactive({
   uniqid: ''
 })
 
-const switchType = ref('msg_code')
+const switchType = ref('password')
 const puzzle = ref(false)
 const codeTime = ref(0)
 const codeTitle = ref('获取验证码')
-const tabs = ref([
-  { id: 'msg_code', title: '验证码登录' },
-  { id: 'password', title: '账号密码登录' }
-])
+// const tabs = ref([
+//   { id: 'msg_code', title: '验证码登录' },
+//   { id: 'password', title: '账号密码登录' }
+// ])
 
 const loginRules = {
   mobile: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
@@ -328,23 +328,23 @@ const backLogin = () => {
   })
 }
 
-const switchChange = (item) => {
-  switchType.value = item.id
-  if (switchType.value == 'password') {
-    var rememberPasswordData = JSON.parse(localStorage.getItem('rememberPassword'))
-    if (rememberPasswordData) {
-      loginForm.mobile = rememberPasswordData.mobile
-      loginForm.password = rememberPasswordData.password
-      rememberPassword.value = true
-    }
-  } else {
-    loginForm.mobile = ''
-    loginForm.password = ''
-  }
-  nextTick(() => {
-    loginFormRef.value?.resetFields()
-  })
-}
+// const switchChange = (item) => {
+//   switchType.value = item.id
+//   if (switchType.value == 'password') {
+//     var rememberPasswordData = JSON.parse(localStorage.getItem('rememberPassword'))
+//     if (rememberPasswordData) {
+//       loginForm.mobile = rememberPasswordData.mobile
+//       loginForm.password = rememberPasswordData.password
+//       rememberPassword.value = true
+//     }
+//   } else {
+//     loginForm.mobile = ''
+//     loginForm.password = ''
+//   }
+//   nextTick(() => {
+//     loginFormRef.value?.resetFields()
+//   })
+// }
 
 const validata = () => {
   const mPattern = /^1[345789]\d{9}$/

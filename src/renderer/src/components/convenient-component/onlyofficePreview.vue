@@ -65,13 +65,13 @@
         <div class="zoom-info">{{ Math.round(scale * 100) }}%</div>
       </div>
     </div>
-    <div v-if="error" class="error-overlay">
+    <!-- <div v-if="error" class="error-overlay">
       <div class="error-message">
         <i class="el-icon-warning"></i>
         <p>文档预览错误</p>
         <p>{{ errorMessage }}</p>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 

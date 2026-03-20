@@ -199,7 +199,7 @@
                 </div>
                 <div class="author">
                   <span class="author-name">提交者：{{ item.sender_name }}</span>
-                  <span>地址：{{ item.file_edit_url }}</span>
+                  <span>位置：{{ item.know_name || '' }}{{ '/' + item.file_position }}</span>
                 </div>
                 <div class="message-box">
                   <div class="message-text" :class="{ 'message-text-err': item.is_refuse == 1 }">

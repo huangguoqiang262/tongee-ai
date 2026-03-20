@@ -827,6 +827,7 @@ const resetHitory = (isClose = false) => {
     total: 0
   }
   historyList.value = []
+  stopChat()
   getChatLists()
 }
 const throttle = ref(null)
@@ -839,7 +840,6 @@ watchEffect(() => {
     item_id: props.itemId,
     chat_type: 2
   }
-  stopChat()
   feedbackVisible.value = false
   if (!data.know_id) return
   // 添加节流，避免频繁请求

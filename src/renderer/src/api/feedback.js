@@ -56,3 +56,19 @@ export function get_usually_questions(data) {
     data
   })
 }
+// 系统反馈类型
+export function system_feedback_type(data) {
+  return request({
+    url: '/system_feedback/type_tree',
+    method: 'post',
+    data
+  })
+}
+// 系统反馈添加反馈
+export function system_feedback_add(data) {
+  return request({
+    url: '/system_feedback/add',
+    method: 'post',
+    data
+  })
+}

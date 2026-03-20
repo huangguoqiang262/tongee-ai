@@ -76,6 +76,7 @@ import Maintain from './Maintain.vue'
 import DocumentDetail from './DocumentDetail.vue'
 import UpdateLog from './UpdateLog.vue'
 import SynergiaDetail from './SynergiaDetail.vue'
+import SystemFeedback from './SystemFeedback.vue'
 const internalComponents = {
   SearchHome,
   NotFound,
@@ -95,7 +96,8 @@ const internalComponents = {
   Maintain,
   DocumentDetail,
   UpdateLog,
-  SynergiaDetail
+  SynergiaDetail,
+  SystemFeedback
 }
 const isValidInternalUrl = (url) => {
   return Object.keys(internalComponents).includes(url)
