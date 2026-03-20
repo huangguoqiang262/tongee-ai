@@ -152,11 +152,11 @@
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
                 <div class="title">{{ item.title || '' }}</div>
-                <div class="desc">{{ item.desc || '' }}</div>
+                <div class="desc">{{ item.content || '' }}</div>
                 <div class="author author1">
                   {{ item.user_name || '' }} ·
                   <!-- {{ item.user_dept ? '(' + item.user_dept + ')' : '' }} · -->
-                  {{ item.word_time }}前更新
+                  {{ formatDayFun(item.createtime) }}更新
                 </div>
               </div>
               <div class="time">{{ formatTimeFun(item.createtime) }}</div>
@@ -346,7 +346,7 @@ import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 import { useMsgTips } from '@renderer/hooks/checkLogin'
-import { formatTime } from '@renderer/utils/index.js'
+import { formatTime, formatDay } from '@renderer/utils/index.js'
 import {
   get_system_msg,
   get_file_logs,
@@ -511,6 +511,9 @@ const handleCreated = (editor) => {
 }
 const formatTimeFun = (time) => {
   return formatTime(time)
+}
+const formatDayFun = (time) => {
+  return formatDay(time)
 }
 let pagination = ref({
   page: 1,

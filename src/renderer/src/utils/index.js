@@ -52,8 +52,7 @@ export function parseTime(time, cFormat) {
 }
 
 /**
- * @param {number} time
- * @param {string} option
+ * @param {string} date 时间字符串
  * @returns {string}
  */
 export function formatTime(date) {
@@ -74,7 +73,29 @@ export function formatTime(date) {
   }
   return date.split(' ')[0]
 }
+/**
+ * @param {string} date 时间字符串
+ * @returns {string}
+ */
+export function formatDay(date) {
+  const d = new Date(date).getTime()
+  const now = Date.now()
 
+  const diff = (now - d) / 1000
+
+  if (diff < 120) {
+    return '刚刚'
+  } else if (diff < 3600) {
+    // less 1 hour
+    return Math.ceil(diff / 60) + '分钟前'
+  } else if (diff < 3600 * 24) {
+    return Math.ceil(diff / 3600) + '小时前'
+  } else if (diff < 3600 * 24 * 2) {
+    return '1天前'
+  } else {
+    return Math.ceil(diff / (3600 * 24)) + '天前'
+  }
+}
 /**
  * @param {string} url
  * @returns {Object}
