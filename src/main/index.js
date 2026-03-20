@@ -213,7 +213,7 @@ app.whenReady().then(() => {
 
   autoUpdater.setFeedURL({
     provider: 'generic',
-    url: 'https://tangji.baguatan.cn/updates',
+    url: 'http://192.168.11.241/updates',
     channel: 'latest' // 明确指定更新通道
   })
   autoUpdater.requestHeaders = { insecure: 'true' } // 跳过证书验证
