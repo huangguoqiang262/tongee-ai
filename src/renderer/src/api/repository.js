@@ -129,6 +129,14 @@ export function apply_know_agree(data) {
     data
   })
 }
+// 拒绝申请人员加入知识库
+export function apply_know_refuse(data) {
+  return request({
+    url: '/intelligence/apply_know_refuse',
+    method: 'post',
+    data
+  })
+}
 // 知识库申请未读数
 export function know_apply_number(data) {
   return request({

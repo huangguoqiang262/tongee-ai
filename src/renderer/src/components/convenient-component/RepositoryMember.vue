@@ -75,7 +75,14 @@
                   <img :src="item.avatar || DefaultAvatar" alt="" class="member-avatar" />
                   <div class="member-name">{{ item.name }}</div>
                 </div>
-                <div class="item-right">
+                <div class="item-right handle-btn-box">
+                  <el-button
+                    class="confirm-btn"
+                    size="small"
+                    type="danger"
+                    @click="handleRefuse(item)"
+                    >拒绝添加</el-button
+                  >
                   <el-button
                     class="confirm-btn"
                     size="small"
@@ -215,6 +222,15 @@ const handleConfirm = () => {
 const handleAdd = (item) => {
   emits('setPermission', {
     type: 'allowable',
+    data: {
+      join_id: item.id
+    }
+  })
+}
+// 处理拒绝添加成员
+const handleRefuse = (item) => {
+  emits('setPermission', {
+    type: 'refuse',
     data: {
       join_id: item.id
     }
@@ -392,6 +408,18 @@ const handleCheckChange = () => {
                 .item-right {
                   flex-shrink: 0;
                   width: 124px;
+                  &.handle-btn-box {
+                    width: fit-content;
+                    display: flex;
+                    align-items: center;
+                    .confirm-btn {
+                      width: 72px;
+                      margin: 0 10px 0 10px;
+                      &:nth-last-of-type(1) {
+                        margin: 0;
+                      }
+                    }
+                  }
                   .creator {
                     width: 100%;
                     padding: 0 12px;
@@ -408,7 +436,7 @@ const handleCheckChange = () => {
                     display: block;
                     width: 82px;
                     height: 26px;
-                    margin: 0 10px 0 auto;
+                    margin: 0 10px 0 0;
                   }
                 }
               }

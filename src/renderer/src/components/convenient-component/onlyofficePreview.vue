@@ -227,7 +227,7 @@ const config = ref({
     title: props.fileName || props.src.split('/').pop(),
     url: props.src,
     fileType: fileExt.value || 'docx',
-    key: props.fileKey || ''
+    key: t + '' || ''
   },
   editorConfig: {
     mode: props.mode === 'edit' ? 'edit' : 'view',
@@ -257,7 +257,7 @@ watchEffect(() => {
       title: props.fileName || props.src.split('/').pop(),
       url: props.src,
       fileType: fileExt.value || 'docx',
-      key: props.fileKey || '',
+      key: t + '' || '',
       permissions: {
         download: props.download || false
       }
@@ -288,7 +288,7 @@ watchEffect(() => {
         title: props.fileName || props.src.split('/').pop(),
         url: props.src+'?t=' + t,
         fileType: fileExt.value || 'docx',
-        key: props.fileKey || '',
+        key: t + '' || '',
         permissions: {
           download: props.download || false
         }
