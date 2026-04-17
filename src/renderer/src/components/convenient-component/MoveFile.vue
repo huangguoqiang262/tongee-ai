@@ -72,9 +72,7 @@
                   class="file-item"
                   :class="{
                     disabled:
-                      item.item_type == 1 ||
-                      props.moveFiles.map((i) => i.id).includes(item.id) ||
-                      props.moveFiles.map((i) => i.parent_id).includes(item.id)
+                      item.item_type == 1 || props.moveFiles.map((i) => i.id).includes(item.id)
                   }"
                   @click="handleCheckChange(item)"
                 >
@@ -213,11 +211,7 @@ const handleCheckChange = (item) => {
     })
     refreshList()
     return
-  } else if (
-    item.item_type == 2 &&
-    !props.moveFiles.map((i) => i.id).includes(item.id) &&
-    !props.moveFiles.map((i) => i.parent_id).includes(item.id)
-  ) {
+  } else if (item.item_type == 2 && !props.moveFiles.map((i) => i.id).includes(item.id)) {
     pathList.value.push({
       ...item,
       know_id: activePath.value.know_id
