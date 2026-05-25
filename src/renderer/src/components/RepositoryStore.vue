@@ -3802,8 +3802,11 @@ const disposeSocketMessage = (data) => {
   if (data && detailFileList.value.length) {
     detailFileList.value.forEach((item) => {
       if (item.item_type != 2 && data[item.info.file_key]) {
-        item.progress = data[item.info.file_key].progress
-        if (item.progress >= 40 && data[item.info.file_key].icon_url) {
+        item.progress = data[item.info.file_key]?.progress || 0
+        item.info.ai_desc = data[item.info.file_key].ai_desc || ''
+        item.info.title = data[item.info.file_key].title
+        if (data[item.info.file_key].icon_url) {
+          // if (item.progress >= 40 && data[item.info.file_key].icon_url) {
           item.info.icon = data[item.info.file_key].icon_url
         }
       }
