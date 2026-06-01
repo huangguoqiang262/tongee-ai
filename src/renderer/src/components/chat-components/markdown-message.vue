@@ -15,7 +15,8 @@
     >
       <div class="knowledge-popover-content" @click="toKnowledge(currentDocumentInfo)">
         <div class="knowledge-popover-title">
-          所在段落（{{ currentDocumentInfo?.sort.split('.')[0] }}）
+          {{ currentDocumentInfo?.fileName }}
+          <!-- 所在段落（{{ currentDocumentInfo?.sort.split('.')[0] }}） -->
         </div>
         <div class="knowledge-popover-content">
           {{ htmlToText(currentDocumentInfo?.documentContent || '') }}
@@ -23,7 +24,7 @@
         <div class="knowledge-popover-footer">
           <img class="icon" :src="getFileIcon(currentDocumentInfo)" alt="" />
           <span>{{ currentDocumentInfo?.fileUrl?.split('.').pop()?.toUpperCase() }}</span>
-          <span class="knowledge-popover-filename">{{ currentDocumentInfo?.fileName }}</span>
+          <!-- <span class="knowledge-popover-filename">{{ currentDocumentInfo?.fileName }}</span> -->
         </div>
       </div>
     </el-popover>
@@ -96,36 +97,76 @@ let triggerElement = ref(null)
 const currentKnowledgeId = ref(null)
 const currentDocumentInfo = ref(null)
 
+// 合并相同fileId的文件，将引用的段落合并，每个文件保留children子数组
+// 父级sort用于展示合并后的段落号（如"3、5"），children中每条保留原始sort不变
+const mergeDocumentList = computed(() => {
+  let files = [...props.retrievedDocumentList, ...props.useAnnexList]
+  const urlMap = {}
+  files.forEach((file) => {
+    const sortVal = file.sort ? file.sort.split('.')[0] + '' : ''
+    if (urlMap[file.fileId]) {
+      urlMap[file.fileId].sort = urlMap[file.fileId].sort + '、' + sortVal
+      // children保留原始file数据，sort保持原样
+      urlMap[file.fileId].children.push({ ...file })
+    } else {
+      urlMap[file.fileId] = { ...file, sort: sortVal, children: [{ ...file }] }
+    }
+  })
+  return Object.values(urlMap)
+})
+
+// 根据原始index和数据源类型查找该记录在合并文档列表中的文件索引和children中的段落索引
+// sourceType: 'kno' 对应 retrievedDocumentList，'ann' 对应 useAnnexList
+const findDocPosition = (knowledgeId, sourceType) => {
+  if (!mergeDocumentList.value || mergeDocumentList.value.length === 0) {
+    return { fileIndex: -1, childIndex: -1, doc: null }
+  }
+  const targetIndex = parseInt(knowledgeId)
+  const targetList = sourceType === 'ann' ? props.useAnnexList : props.retrievedDocumentList
+  // 先在该数据源中找到原始记录，获取它的唯一标识（用fileId+index组合区分）
+  const originDoc = targetList.find((doc) => doc.index === targetIndex)
+  if (!originDoc) {
+    return { fileIndex: -1, childIndex: -1, doc: null }
+  }
+  // 在合并后的文档列表中，用 fileId 和 index 双重匹配
+  for (let fileIdx = 0; fileIdx < mergeDocumentList.value.length; fileIdx++) {
+    const file = mergeDocumentList.value[fileIdx]
+    for (let childIdx = 0; childIdx < file.children.length; childIdx++) {
+      const child = file.children[childIdx]
+      if (child.fileId === originDoc.fileId && child.index === targetIndex) {
+        return { fileIndex: fileIdx, childIndex: childIdx, doc: child }
+      }
+    }
+  }
+  return { fileIndex: -1, childIndex: -1, doc: null }
+}
+
 // 处理消息内容，将[kno_数字] 或[ kno_数字 ]或`[kno_数字]`或`[ kno_数字 ]`格式转换为HTML  我还想将[eqm_1]或[ eqm_1 ]替换为按钮
 // 带空格的也要匹配
 const processedMessage = computed(() => {
   return props.message
     .replace(/`?\[\s?kno_(\d+)\s?\]`?/g, (match, id) => {
-      return `<span class="knowledge-tag" data-knowledge-id="${id}">${id}</span>`
+      const { fileIndex } = findDocPosition(id, 'kno')
+      return `<span class="knowledge-tag" data-knowledge-id="${id}" data-file-index="${fileIndex}">${fileIndex >= 0 ? fileIndex + 1 : id}</span>`
     })
     .replace(/`?\[\s?ann_(\d+)\s?\]`?/g, (match, id) => {
-      return `<span class="ann-tag" data-ann-id="${id}">${id}</span>`
+      const { fileIndex } = findDocPosition(id, 'ann')
+      return `<span class="ann-tag" data-ann-id="${id}" data-file-index="${fileIndex}">${fileIndex >= 0 ? fileIndex + 1 : id}</span>`
     })
     .replace(/`?\[\s?eqm_(\d+)\s?\]`?/g, (match, id) => {
       return `<span class="equipment-tag" data-equipment-id="${id}">查看</span>`
     })
 })
 
-// 根据知识库ID获取文档信息
+// 根据知识库ID获取文档信息（kno_标签）
 const getDocumentInfo = (knowledgeId) => {
-  if (!props.retrievedDocumentList || props.retrievedDocumentList.length === 0) {
-    return null
-  }
-  // 在文档列表中查找匹配的知识库文档
-  return props.retrievedDocumentList.find((doc) => doc.index === parseInt(knowledgeId))
+  const { doc } = findDocPosition(knowledgeId, 'kno')
+  return doc
 }
-// 根据引用文件库ID获取文档信息
+// 根据引用文件库ID获取文档信息（ann_标签）
 const getAnnexInfo = (annexId) => {
-  if (!props.useAnnexList || props.useAnnexList.length === 0) {
-    return null
-  }
-  // 在引用文档列表中查找匹配的知识库文档
-  return props.useAnnexList.find((doc) => doc.index === parseInt(annexId))
+  const { doc } = findDocPosition(annexId, 'ann')
+  return doc
 }
 // 显示弹窗
 const showPopover = (targetTag) => {
@@ -158,7 +199,9 @@ const toKnowledge = (item) => {
     attrs: {
       fileUrl: item.fileUrl,
       fileName: item.fileName,
-      fileId: item.fileId || ''
+      fileId: item.fileId || '',
+      note_id: item.note_id,
+      notebook_id: item.notebook_id,
     }
   })
   triggerElement.value = null
@@ -276,6 +319,9 @@ onUnmounted(() => {
     font-size: 14px;
     color: var(--default-font-color);
     line-height: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .knowledge-popover-content {
     max-height: 300px;

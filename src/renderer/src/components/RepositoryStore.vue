@@ -1,17 +1,11 @@
 <template>
-  <div
-    class="repository-box"
-    @click="resetChecks"
-    @dragenter="handleDragEnter"
-    @dragover="handleDragOver"
-    @dragleave="handleDragLeave"
-    @drop="handleDrop"
-  >
+  <div class="repository-box" @click="resetChecks" @dragenter="handleDragEnter" @dragover="handleDragOver"
+    @dragleave="handleDragLeave" @drop="handleDrop">
     <div v-show="showDragOverlay" class="drag-overlay">
       <div class="drag-overlay-content">
         <div class="drag-text">拖拽文件到这里</div>
         <div class="drag-type">
-          支持.doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif等格式
+          支持.doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.mp4等格式
         </div>
       </div>
     </div>
@@ -20,11 +14,7 @@
         <div class="common-repository-box">
           <div class="common-box">
             <div class="common-box-left">
-              <img
-                class="icon"
-                src="@renderer/assets/repository/common-repository-icon.png"
-                alt=""
-              />
+              <img class="icon" src="@renderer/assets/repository/common-repository-icon.png" alt="" />
               公共知识库
             </div>
             <div class="square-icon-box" @click="squaretabChange">
@@ -35,12 +25,8 @@
           <div class="my-create-box">
             <div class="lable-box" @click="closeCommonChange">
               <div class="label-box-left">
-                <img
-                  class="icon"
-                  :class="{ 'rotate-icon': closeCommonList }"
-                  src="@renderer/assets/repository/down-icon.png"
-                  alt=""
-                />
+                <img class="icon" :class="{ 'rotate-icon': closeCommonList }"
+                  src="@renderer/assets/repository/down-icon.png" alt="" />
                 我的创建
               </div>
               <div class="add-icon-box" @click.stop="beforeAddRepository('common')">
@@ -49,12 +35,8 @@
             </div>
             <div class="commom-list" :class="{ 'close-box': closeCommonList }">
               <template v-for="(item, index) in commonCreateList" :key="item.id">
-                <div
-                  v-show="index < 5 || createCommonExpand"
-                  class="item"
-                  :class="{ 'active-repository': activeRepositoryId == item.id }"
-                  @click="getRepositoryInfo(item.id)"
-                >
+                <div v-show="index < 5 || createCommonExpand" class="item"
+                  :class="{ 'active-repository': activeRepositoryId == item.id }" @click="getRepositoryInfo(item.id)">
                   <div class="icon-box">
                     <img v-if="item.picurl" class="icon" :src="item.picurl" alt="" />
                     <defaultCoverSvg v-else class="icon" />
@@ -71,23 +53,15 @@
           <div class="my-create-box">
             <div class="lable-box">
               <div class="label-box-left" @click="closeJoinChange">
-                <img
-                  class="icon"
-                  :class="{ 'rotate-icon': closeJoinList }"
-                  src="@renderer/assets/repository/down-icon.png"
-                  alt=""
-                />
+                <img class="icon" :class="{ 'rotate-icon': closeJoinList }"
+                  src="@renderer/assets/repository/down-icon.png" alt="" />
                 我的加入
               </div>
             </div>
             <div class="commom-list" :class="{ 'close-box': closeJoinList }">
               <template v-for="(item, index) in commonJoinList" :key="item.id">
-                <div
-                  v-show="index < 10 || joinCommonExpand"
-                  class="item"
-                  :class="{ 'active-repository': activeRepositoryId == item.id }"
-                  @click="getRepositoryInfo(item.id)"
-                >
+                <div v-show="index < 10 || joinCommonExpand" class="item"
+                  :class="{ 'active-repository': activeRepositoryId == item.id }" @click="getRepositoryInfo(item.id)">
                   <div class="icon-box">
                     <img v-if="item.picurl" class="icon" :src="item.picurl" alt="" />
                     <defaultCoverSvg v-else class="icon" />
@@ -107,18 +81,10 @@
         <div class="personage-repository-box">
           <div class="personage-box">
             <div class="personage-box-left" @click="closePersonageChange">
-              <img
-                class="personage-icon"
-                src="@renderer/assets/repository/personage-repository-icon.png"
-                alt=""
-              />
+              <img class="personage-icon" src="@renderer/assets/repository/personage-repository-icon.png" alt="" />
               个人知识库
-              <img
-                class="icon"
-                :class="{ 'rotate-icon': closePersonageList }"
-                src="@renderer/assets/repository/down-icon.png"
-                alt=""
-              />
+              <img class="icon" :class="{ 'rotate-icon': closePersonageList }"
+                src="@renderer/assets/repository/down-icon.png" alt="" />
             </div>
             <div class="add-icon-box" @click.stop="beforeAddRepository('personage')">
               <img class="add-icon" src="@renderer/assets/repository/add-icon.png" alt="" />
@@ -126,12 +92,8 @@
           </div>
           <div class="personage-list" :class="{ 'close-box': closePersonageList }">
             <template v-for="(item, index) in personalCreateList" :key="item.id">
-              <div
-                v-show="index < 5 || personageExpand"
-                class="item"
-                :class="{ 'active-repository': activeRepositoryId == item.id }"
-                @click="getRepositoryInfo(item.id)"
-              >
+              <div v-show="index < 5 || personageExpand" class="item"
+                :class="{ 'active-repository': activeRepositoryId == item.id }" @click="getRepositoryInfo(item.id)">
                 <div class="icon-box">
                   <img v-if="item.picurl" class="icon" :src="item.picurl" alt="" />
                   <defaultCoverSvg v-else class="icon" />
@@ -145,11 +107,7 @@
               <div class="space-box" :class="{ dangerColor: compareSpace() }">
                 已使用 {{ userInfo?.space_use_total || '0MB' }}/{{ userInfo?.space || '0GB' }}
               </div>
-              <div
-                v-if="personalCreateList.length > 5"
-                class="expand"
-                @click="personageExpandChange"
-              >
+              <div v-if="personalCreateList.length > 5" class="expand" @click="personageExpandChange">
                 {{ personageExpand ? '收起' : '展开' }}
               </div>
             </div>
@@ -158,15 +116,9 @@
       </el-splitter-panel>
       <el-splitter-panel :size="399" :min="330" class="center-box">
         <div class="repository-detail-box">
-          <el-popover
-            v-if="Object.keys(activeRepository).length"
-            ref="repositoryPopover"
-            popper-class="custom-repository-popover"
-            trigger="click"
-            placement="bottom-start"
-            :show-arrow="false"
-            @show="getUnreadApplyNumber"
-          >
+          <el-popover v-if="Object.keys(activeRepository).length" ref="repositoryPopover"
+            popper-class="custom-repository-popover" trigger="click" placement="bottom-start" :show-arrow="false"
+            @show="getUnreadApplyNumber">
             <template #reference>
               <div class="handle">
                 <img class="more-icon" src="@renderer/assets/repository/more-icon.png" alt="" />
@@ -174,13 +126,11 @@
               </div>
             </template>
             <div class="common-handle-box" @click="hidePopover(repositoryPopover)">
-              <template
-                v-if="
-                  activeRepository.is_public == 1 &&
-                  (activeRepository.user_permission?.is_manager == 1 ||
-                    activeRepository.user_permission?.is_creator == 1)
-                "
-              >
+              <template v-if="
+                activeRepository.is_public == 1 &&
+                (activeRepository.user_permission?.is_manager == 1 ||
+                  activeRepository.user_permission?.is_creator == 1)
+              ">
                 <div class="item" @click="beforeEditRepository">
                   <img class="icon" src="@renderer/assets/repository/zlxg-icon.png" alt="" />
                   <div class="title">资料修改</div>
@@ -217,13 +167,11 @@
                   <div class="title">删除知识库</div>
                 </div>
               </template>
-              <template
-                v-else-if="
-                  activeRepository.is_public == 1 &&
-                  activeRepository.user_permission?.is_manager == 0 &&
-                  activeRepository.user_permission?.is_creator == 0
-                "
-              >
+              <template v-else-if="
+                activeRepository.is_public == 1 &&
+                activeRepository.user_permission?.is_manager == 0 &&
+                activeRepository.user_permission?.is_creator == 0
+              ">
                 <div class="item" @click="beforeRepositoryFeedback">
                   <img class="icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
                   <div class="title">反馈</div>
@@ -246,11 +194,7 @@
                   <img class="icon" src="@renderer/assets/repository/kjfw-icon.png" alt="" />
                   <div class="title">添加快捷访问</div>
                 </div>
-                <div
-                  v-if="activeRepository.is_default != 1"
-                  class="item"
-                  @click="beforeDeleteRepository"
-                >
+                <div v-if="activeRepository.is_default != 1" class="item" @click="beforeDeleteRepository">
                   <img class="icon" src="@renderer/assets/repository/del-icon.png" alt="" />
                   <div class="title">删除知识库</div>
                 </div>
@@ -259,33 +203,19 @@
           </el-popover>
           <div v-if="Object.keys(activeRepository).length" class="detail-box">
             <div class="top" @click="beforeEditRepository">
-              <img
-                v-if="activeRepository.picurl"
-                class="cover-img"
-                :src="activeRepository.picurl"
-                alt=""
-              />
+              <img v-if="activeRepository.picurl" class="cover-img" :src="activeRepository.picurl" alt="" />
               <defaultCoverSvg v-else class="cover-img" />
               <div class="top-right">
                 <div class="title">{{ activeRepository.title }}</div>
                 <div class="top-right-bottom">
                   <div class="author-or-num-box">
-                    <img
-                      class="avatar"
-                      :src="activeRepository.create_user?.avatar || defaultAvatar"
-                      alt=""
-                    />
+                    <img class="avatar" :src="activeRepository.create_user?.avatar || defaultAvatar" alt="" />
                     <div class="author-name">{{ activeRepository.create_user?.name }}</div>
                     <div class="vertical-line"></div>
                     <div class="num">{{ activeRepository.content_count }}个内容</div>
                   </div>
                   <div class="management-box" @click.stop="">
-                    <MultiAvatar
-                      :avatars="activeRepository.manager_avatars"
-                      :size="18"
-                      :max-count="5"
-                      :spacing="-5"
-                    />
+                    <MultiAvatar :avatars="activeRepository.manager_avatars" :size="18" :max-count="5" :spacing="-5" />
                   </div>
                 </div>
               </div>
@@ -318,13 +248,8 @@
             <div class="path-box">
               <!-- <span>内容</span> -->
               <!-- <div class="path-box"> -->
-              <div
-                v-for="(item, index) in pathList"
-                :key="index"
-                class="path-item"
-                :class="{ active: index === pathList.length - 1 }"
-                @click="pathChange(index)"
-              >
+              <div v-for="(item, index) in pathList" :key="index" class="path-item"
+                :class="{ active: index === pathList.length - 1 }" @click="pathChange(index)">
                 <el-icon v-if="index !== 0" class="icon">
                   <ArrowRight />
                 </el-icon>
@@ -333,19 +258,13 @@
               <!-- </div> -->
             </div>
             <div class="icons">
-              <el-popover
-                v-if="
-                  (activeRepository.is_public == 1 &&
-                    (activeRepository.user_permission?.is_manager == 1 ||
-                      activeRepository.user_permission?.is_creator == 1)) ||
-                  activeRepository.is_public == 0
-                "
-                ref="repositoryaddPopover"
-                popper-class="custom-repository-popover"
-                trigger="click"
-                placement="bottom-start"
-                :show-arrow="false"
-              >
+              <el-popover v-if="
+                (activeRepository.is_public == 1 &&
+                  (activeRepository.user_permission?.is_manager == 1 ||
+                    activeRepository.user_permission?.is_creator == 1)) ||
+                activeRepository.is_public == 0
+              " ref="repositoryaddPopover" popper-class="custom-repository-popover" trigger="click"
+                placement="bottom-start" :show-arrow="false">
                 <template #reference>
                   <img class="icon" src="@renderer/assets/repository/add-file-icon.png" alt="" />
                 </template>
@@ -370,13 +289,8 @@
                   />
                   <div class="title">目录文件夹</div>
                 </div> -->
-                  <el-popover
-                    ref="repositoryNotePopover"
-                    popper-class="custom-repository-popover"
-                    trigger="hover"
-                    placement="right-start"
-                    :show-arrow="false"
-                  >
+                  <el-popover ref="repositoryNotePopover" popper-class="custom-repository-popover" trigger="hover"
+                    placement="right-start" :show-arrow="false">
                     <template #reference>
                       <div class="item">
                         <img class="icon" src="@renderer/assets/popover/note-icon.png" alt="" />
@@ -388,19 +302,11 @@
                     </template>
                     <div class="common-handle-box" @click="hidePopover(repositoryNotePopover)">
                       <div class="item" @click="beforeUploadFiles('createNote')">
-                        <img
-                          class="icon"
-                          src="@renderer/assets/repository/new-note-icon.png"
-                          alt=""
-                        />
+                        <img class="icon" src="@renderer/assets/repository/new-note-icon.png" alt="" />
                         <div class="title">新建笔记</div>
                       </div>
                       <div class="item" @click="beforeUploadFiles('importNotes')">
-                        <img
-                          class="icon"
-                          src="@renderer/assets/repository/import-notes-icon.png"
-                          alt=""
-                        />
+                        <img class="icon" src="@renderer/assets/repository/import-notes-icon.png" alt="" />
                         <div class="title">导入笔记</div>
                       </div>
                     </div>
@@ -414,24 +320,14 @@
                     <img class="icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
                     <div class="title">导入网页</div>
                   </div>
-                  <div
-                    v-if="activeRepository.is_public == 1"
-                    class="item"
-                    @click="beforeUploadFiles('synergia')"
-                  >
+                  <div v-if="activeRepository.is_public == 1" class="item" @click="beforeUploadFiles('synergia')">
                     <img class="icon" src="@renderer/assets/popover/synergia-icon.png" alt="" />
                     <div class="title">协同文件</div>
                   </div>
                 </div>
               </el-popover>
-              <el-popover
-                v-else-if="activeRepository.is_public == 1"
-                ref="repositoryaddPopover"
-                popper-class="custom-repository-popover"
-                trigger="click"
-                placement="bottom-start"
-                :show-arrow="false"
-              >
+              <el-popover v-else-if="activeRepository.is_public == 1" ref="repositoryaddPopover"
+                popper-class="custom-repository-popover" trigger="click" placement="bottom-start" :show-arrow="false">
                 <template #reference>
                   <img class="icon" src="@renderer/assets/repository/add-file-icon.png" alt="" />
                 </template>
@@ -442,24 +338,14 @@
                   </div>
                 </div>
               </el-popover>
-              <el-popover
-                ref="repositorySortPopover"
-                popper-class="custom-repository-popover"
-                trigger="click"
-                placement="bottom-start"
-                :show-arrow="false"
-              >
+              <el-popover ref="repositorySortPopover" popper-class="custom-repository-popover" trigger="click"
+                placement="bottom-start" :show-arrow="false">
                 <template #reference>
                   <img class="icon" src="@renderer/assets/repository/sort-icon.png" alt="" />
                 </template>
                 <div class="common-handle-box" @click="hidePopover(repositorySortPopover)">
-                  <div
-                    v-for="item in sortList"
-                    :key="item.value"
-                    class="item"
-                    :class="{ active: item.value == sortType }"
-                    @click="sortMenuClick(item)"
-                  >
+                  <div v-for="item in sortList" :key="item.value" class="item"
+                    :class="{ active: item.value == sortType }" @click="sortMenuClick(item)">
                     <div class="title">{{ item.label }}</div>
                     <el-icon class="check-icon">
                       <Check />
@@ -468,130 +354,58 @@
                 </div>
               </el-popover>
 
-              <img
-                class="icon"
-                src="@renderer/assets/repository/search-icon.png"
-                alt=""
-                @click="searchMenuClick"
-              />
+              <img class="icon" src="@renderer/assets/repository/search-icon.png" alt="" @click="searchMenuClick" />
             </div>
           </div>
           <div v-show="isSearching" class="search-box">
-            <el-input
-              ref="searchBoxRef"
-              v-model="searchText"
-              class="search-input"
-              placeholder="搜索"
-              clearable
-              @blur="handleBlur"
-              @keyup.enter="handleBlur"
-            />
+            <el-input ref="searchBoxRef" v-model="searchText" class="search-input" placeholder="搜索" clearable
+              @blur="handleBlur" @keyup.enter="handleBlur" />
             <el-icon class="search-icon">
               <Search />
             </el-icon>
           </div>
-          <div
-            v-if="detailFileList.length"
-            class="list-box"
-            @mousedown="handleMouseDown"
-            @mousemove="handleMouseMove"
-            @mouseup="handleMouseUp"
-            @mouseleave="handleMouseLeave"
-          >
+          <div v-if="detailFileList.length" class="list-box" @mousedown="handleMouseDown" @mousemove="handleMouseMove"
+            @mouseup="handleMouseUp" @mouseleave="handleMouseLeave">
             <template v-for="(item, index) in detailFileList" :key="item.id">
-              <div
-                v-if="item.item_type == 2"
-                class="list-item"
+              <div v-if="item.item_type == 2" class="list-item"
                 :class="{ 'active-repository': item.checked, is_top: item.is_top }"
-                @contextmenu="(e) => showContextMenu(e, item)"
-                @click="dirChange(item, $event, index)"
-              >
-                <el-checkbox
-                  v-model="item.checked"
-                  class="checkbox"
-                  size="large"
-                  @click.stop="checkChange(item, $event, index)"
-                />
+                @contextmenu="(e) => showContextMenu(e, item)" @click="dirChange(item, $event, index)">
+                <el-checkbox v-model="item.checked" class="checkbox" size="large"
+                  @click.stop="checkChange(item, $event, index)" />
                 <!-- <img class="cover-img" :src="getFileIcon(item)" alt="" /> -->
                 <catalogueSvgIcon class="cover-img" />
                 <div class="item-right">
                   <div v-if="!item.isCreated" class="title">
                     <!-- 将字符串分割为每个字符 -->
                     <template v-if="item.title">
-                      <span
-                        v-for="(text, i) in item.title"
-                        :key="i"
-                        :class="{ 'active-filter': searchText && searchText.includes(text) }"
-                        >{{ text }}</span
-                      >
+                      <span v-for="(text, i) in item.title" :key="i"
+                        :class="{ 'active-filter': searchText && searchText.includes(text) }">{{ text }}</span>
                     </template>
                   </div>
                   <div v-else class="title" @click.stop="">
-                    <el-input
-                      v-model="item.title"
-                      autofocus
-                      class="create-input"
-                      placeholder="请输入文件夹名称"
-                      @keyup.enter="createOrRename(item)"
-                      @blur="createOrRename(item)"
-                      @click.stop=""
-                    />
+                    <el-input v-model="item.title" autofocus class="create-input" placeholder="请输入文件夹名称"
+                      @keyup.enter="createOrRename(item)" @blur="createOrRename(item)" @click.stop="" />
                   </div>
                   <div class="item-right-bottom">
                     <div class="size-or-num-box">
                       <div class="num">{{ item.file_count }}个内容</div>
                       <div class="vertical-line"></div>
                       <div class="size">{{ formatFileSize(item.total_space) }}</div>
-                      <el-popover
-                        v-if="item.tags"
-                        popper-class="abstract-box-popover"
-                        placement="right-start"
-                      >
+                      <el-popover v-if="item.tags" popper-class="abstract-box-popover" placement="right-start">
                         <template #reference>
                           <div class="tags">
-                            <div
-                              v-for="tag in item.tags.split(',')"
-                              :key="tag"
-                              class="tag"
-                              :class="{ activeTag: tag == searchText }"
-                            >
-                              <svg
-                                class="icon"
-                                width="10px"
-                                height="10px"
-                                viewBox="0 0 10 10"
-                                version="1.1"
-                                xmlns="http://www.w3.org/2000/svg"
-                                xmlns:xlink="http://www.w3.org/1999/xlink"
-                              >
-                                <g
-                                  id="页面-1"
-                                  stroke="none"
-                                  stroke-width="1"
-                                  fill="none"
-                                  fill-rule="evenodd"
-                                >
-                                  <g
-                                    id="公共知识库—文件设置"
-                                    transform="translate(-460, -471)"
-                                    :fill="
-                                      tag == searchText ? 'var(--el-color-primary)' : '#909090'
-                                    "
-                                    fill-rule="nonzero"
-                                  >
+                            <div v-for="tag in item.tags.split(',')" :key="tag" class="tag"
+                              :class="{ activeTag: tag == searchText }">
+                              <svg class="icon" width="10px" height="10px" viewBox="0 0 10 10" version="1.1"
+                                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                  <g id="公共知识库—文件设置" transform="translate(-460, -471)" :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'
+                                    " fill-rule="nonzero">
                                     <g id="标签" transform="translate(460, 471)">
-                                      <rect
-                                        id="矩形"
-                                        opacity="0"
-                                        x="0"
-                                        y="0"
-                                        width="10"
-                                        height="10"
-                                      ></rect>
-                                      <path
-                                        id="形状结合"
-                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
-                                      ></path>
+                                      <rect id="矩形" opacity="0" x="0" y="0" width="10" height="10"></rect>
+                                      <path id="形状结合"
+                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z">
+                                      </path>
                                     </g>
                                   </g>
                                 </g>
@@ -602,49 +416,18 @@
                         </template>
                         <div class="abstract-box">
                           <div v-if="item.tags" class="tag-box folder-tag-box">
-                            <div
-                              v-for="tag in item.tags.split(',')"
-                              :key="tag"
-                              class="tag"
-                              :class="{ activeTag: tag == searchText }"
-                            >
-                              <svg
-                                class="icon"
-                                width="10px"
-                                height="10px"
-                                viewBox="0 0 10 10"
-                                version="1.1"
-                                xmlns="http://www.w3.org/2000/svg"
-                                xmlns:xlink="http://www.w3.org/1999/xlink"
-                              >
-                                <g
-                                  id="页面-1"
-                                  stroke="none"
-                                  stroke-width="1"
-                                  fill="none"
-                                  fill-rule="evenodd"
-                                >
-                                  <g
-                                    id="公共知识库—文件设置"
-                                    transform="translate(-460, -471)"
-                                    :fill="
-                                      tag == searchText ? 'var(--el-color-primary)' : '#909090'
-                                    "
-                                    fill-rule="nonzero"
-                                  >
+                            <div v-for="tag in item.tags.split(',')" :key="tag" class="tag"
+                              :class="{ activeTag: tag == searchText }">
+                              <svg class="icon" width="10px" height="10px" viewBox="0 0 10 10" version="1.1"
+                                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                  <g id="公共知识库—文件设置" transform="translate(-460, -471)" :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'
+                                    " fill-rule="nonzero">
                                     <g id="标签" transform="translate(460, 471)">
-                                      <rect
-                                        id="矩形"
-                                        opacity="0"
-                                        x="0"
-                                        y="0"
-                                        width="10"
-                                        height="10"
-                                      ></rect>
-                                      <path
-                                        id="形状结合"
-                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
-                                      ></path>
+                                      <rect id="矩形" opacity="0" x="0" y="0" width="10" height="10"></rect>
+                                      <path id="形状结合"
+                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z">
+                                      </path>
                                     </g>
                                   </g>
                                 </g>
@@ -661,78 +444,51 @@
               </div>
               <el-popover v-else popper-class="abstract-box-popover" placement="right-start">
                 <template #reference>
-                  <div
-                    class="list-item"
-                    :class="{ 'active-repository': item.checked, is_top: item.is_top }"
-                    @contextmenu="(e) => showContextMenu(e, item)"
-                    @click="detailChange(item, $event, index)"
-                  >
-                    <el-checkbox
-                      v-model="item.checked"
-                      class="checkbox"
-                      size="large"
-                      @click.stop="checkChange(item, $event, index)"
-                    />
+                  <div class="list-item" :class="{ 'active-repository': item.checked, is_top: item.is_top }"
+                    @contextmenu="(e) => showContextMenu(e, item)" @click="detailChange(item, $event, index)">
+                    <el-checkbox v-model="item.checked" class="checkbox" size="large"
+                      @click.stop="checkChange(item, $event, index)" />
                     <div class="cover-img-box">
-                      <img
-                        class="cover-img cover-file-img"
-                        :src="item.info?.icon"
-                        alt=""
-                        @error="(e) => (e.target.src = defaultImg)"
-                      />
-                      <img
-                        v-if="item.is_collaboration == 1"
-                        class="is-synergia-icon"
-                        src="@renderer/assets/repository/isSynergia-icon.png"
-                        alt=""
-                      />
+                      <img class="cover-img cover-file-img" :src="item.info?.icon" alt="" @error="(e) => {
+                        if (item.info?.file_type == 'video') {
+                          e.target.src = videoDefaultIcon
+                        } else {
+                          e.target.src = defaultImg
+                        }
+                      }" />
+                      <img v-if="item.is_collaboration == 1" class="is-synergia-icon"
+                        src="@renderer/assets/repository/isSynergia-icon.png" alt="" />
                     </div>
                     <div class="item-right">
                       <div v-if="!item.isCreated" class="title">
                         <!-- 将字符串分割为每个字符 -->
                         <template v-if="item.title">
-                          <span
-                            v-for="(text, i) in item.title"
-                            :key="i"
-                            :class="{ 'active-filter': searchText && searchText.includes(text) }"
-                            >{{ text }}</span
-                          >
+                          <span v-for="(text, i) in item.title" :key="i"
+                            :class="{ 'active-filter': searchText && searchText.includes(text) }">{{ text }}</span>
                         </template>
                       </div>
                       <div v-else class="title">
-                        <el-input
-                          v-model="item.title"
-                          autofocus
-                          class="create-input"
-                          placeholder="请输入文件名称"
-                          @click.stop=""
-                          @keyup.enter="createOrRename(item)"
-                          @blur="createOrRename(item)"
-                        />
+                        <el-input v-model="item.title" autofocus class="create-input" placeholder="请输入文件名称"
+                          @click.stop="" @keyup.enter="createOrRename(item)" @blur="createOrRename(item)" />
                       </div>
                       <div class="item-right-bottom">
                         <div class="size-or-num-box">
                           <div class="type-box">
                             <img class="icon" :src="getFileIcon(item)" alt="" />
-                            <template
-                              v-if="
-                                item.progress == 100 ||
-                                (item.is_collaboration == 1 && item.collaboration_status != 5) ||
-                                item.info.vector_status == 2
-                              "
-                            >
+                            <template v-if="
+                              item.progress == 100 ||
+                              (item.is_collaboration == 1 && item.collaboration_status != 5) ||
+                              item.info.vector_status == 2 || item.info?.file_type == 'video'
+                            ">
                               <span v-if="item.item_type == 3" class="web-url">{{
                                 item.info?.web_url
                               }}</span>
                               <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
-                              <span
-                                v-else-if="
-                                  ['png', 'jpg', 'jpeg', 'gif'].includes(
-                                    item.info?.url.split('.').pop()
-                                  )
-                                "
-                                >图片</span
-                              >
+                              <span v-else-if="
+                                ['png', 'jpg', 'jpeg', 'gif'].includes(
+                                  item.info?.url.split('.').pop()
+                                )
+                              ">图片</span>
                               <span v-else>{{
                                 item.info?.url.split('.').pop().toUpperCase()
                               }}</span>
@@ -746,49 +502,18 @@
                             {{ formatFileSize(item.total_space) }}
                           </div>
                           <div v-if="item.tags" class="tags">
-                            <div
-                              v-for="tag in item.tags.split(',')"
-                              :key="tag"
-                              class="tag"
-                              :class="{ activeTag: tag == searchText }"
-                            >
-                              <svg
-                                class="icon"
-                                width="10px"
-                                height="10px"
-                                viewBox="0 0 10 10"
-                                version="1.1"
-                                xmlns="http://www.w3.org/2000/svg"
-                                xmlns:xlink="http://www.w3.org/1999/xlink"
-                              >
-                                <g
-                                  id="页面-1"
-                                  stroke="none"
-                                  stroke-width="1"
-                                  fill="none"
-                                  fill-rule="evenodd"
-                                >
-                                  <g
-                                    id="公共知识库—文件设置"
-                                    transform="translate(-460, -471)"
-                                    :fill="
-                                      tag == searchText ? 'var(--el-color-primary)' : '#909090'
-                                    "
-                                    fill-rule="nonzero"
-                                  >
+                            <div v-for="tag in item.tags.split(',')" :key="tag" class="tag"
+                              :class="{ activeTag: tag == searchText }">
+                              <svg class="icon" width="10px" height="10px" viewBox="0 0 10 10" version="1.1"
+                                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                  <g id="公共知识库—文件设置" transform="translate(-460, -471)" :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'
+                                    " fill-rule="nonzero">
                                     <g id="标签" transform="translate(460, 471)">
-                                      <rect
-                                        id="矩形"
-                                        opacity="0"
-                                        x="0"
-                                        y="0"
-                                        width="10"
-                                        height="10"
-                                      ></rect>
-                                      <path
-                                        id="形状结合"
-                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
-                                      ></path>
+                                      <rect id="矩形" opacity="0" x="0" y="0" width="10" height="10"></rect>
+                                      <path id="形状结合"
+                                        d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z">
+                                      </path>
                                     </g>
                                   </g>
                                 </g>
@@ -807,40 +532,18 @@
                   <div class="time">上传时间：{{ item.createtime }}</div>
                   <div class="abstract-desc">{{ item.info?.ai_desc || '该内容暂未生成摘要' }}</div>
                   <div v-if="item.tags" class="tag-box">
-                    <div
-                      v-for="tag in item.tags.split(',')"
-                      :key="tag"
-                      class="tag"
-                      :class="{ activeTag: tag == searchText }"
-                    >
-                      <svg
-                        class="icon"
-                        width="10px"
-                        height="10px"
-                        viewBox="0 0 10 10"
-                        version="1.1"
-                        xmlns="http://www.w3.org/2000/svg"
-                        xmlns:xlink="http://www.w3.org/1999/xlink"
-                      >
-                        <g
-                          id="页面-1"
-                          stroke="none"
-                          stroke-width="1"
-                          fill="none"
-                          fill-rule="evenodd"
-                        >
-                          <g
-                            id="公共知识库—文件设置"
-                            transform="translate(-460, -471)"
-                            :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'"
-                            fill-rule="nonzero"
-                          >
+                    <div v-for="tag in item.tags.split(',')" :key="tag" class="tag"
+                      :class="{ activeTag: tag == searchText }">
+                      <svg class="icon" width="10px" height="10px" viewBox="0 0 10 10" version="1.1"
+                        xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                          <g id="公共知识库—文件设置" transform="translate(-460, -471)"
+                            :fill="tag == searchText ? 'var(--el-color-primary)' : '#909090'" fill-rule="nonzero">
                             <g id="标签" transform="translate(460, 471)">
                               <rect id="矩形" opacity="0" x="0" y="0" width="10" height="10"></rect>
-                              <path
-                                id="形状结合"
-                                d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z"
-                              ></path>
+                              <path id="形状结合"
+                                d="M4.72912109,0.631083672 C5.08123484,0.630842764 5.41901861,0.770507547 5.66814453,1.0193457 L8.98954102,4.34078125 C9.50836914,4.85960938 9.50836914,5.70087891 8.98954102,6.21974609 L6.21858398,8.99083984 C5.96946835,9.23996695 5.63158816,9.37992606 5.27927734,9.37992606 C4.92696653,9.37992606 4.58908634,9.23996695 4.3399707,8.99083984 L1.01741211,5.66818359 C0.768169231,5.41905401 0.62807603,5.081133 0.627939453,4.72873047 L0.627939453,1.95847656 C0.627939453,1.22469727 1.22339844,0.631474609 1.95703125,0.631474609 Z M4.72890625,1.25550705 L1.95699219,1.25589844 C1.77035936,1.25550705 1.59124181,1.32940156 1.4590819,1.4611805 C1.32692198,1.59295944 1.25255732,1.77186305 1.25236328,1.95849609 L1.25236328,4.72871094 C1.25263471,4.91556449 1.32707852,5.0946666 1.45933594,5.22666016 L4.78171875,8.54930664 C4.91370316,8.68131617 5.09272751,8.75548047 5.27939941,8.75548047 C5.46607132,8.75548047 5.64509567,8.68131617 5.77708008,8.54930664 L8.54804687,5.77821289 C8.82294054,5.5031496 8.82280937,5.05732336 8.54775391,4.78242187 L5.22632812,1.46110352 C5.09442013,1.32920813 4.9154432,1.25523292 4.72890625,1.25550705 Z M3.75001953,2.5 C4.44033203,2.5 5.0000293,3.05961914 5.0000293,3.7499707 C5.0000293,4.44032227 4.44041016,4.9999707 3.7500293,4.9999707 C3.05964844,4.9999707 2.5,4.44039063 2.5,3.75000977 C2.5,3.05962891 3.05963867,2.5 3.75001953,2.5 Z M3.87202707,3.13643743 C3.57930468,3.07821575 3.2862193,3.2348829 3.17201528,3.51062482 C3.05781126,3.78636674 3.15429718,4.10438262 3.40246446,4.27018119 C3.65063174,4.43597977 3.98135976,4.40338212 4.19238281,4.19232422 C4.31003924,4.0752721 4.37601844,3.91600142 4.37557838,3.75000977 C4.37557838,3.45155346 4.16474947,3.19465911 3.87202707,3.13643743 Z">
+                              </path>
                             </g>
                           </g>
                         </g>
@@ -858,41 +561,24 @@
         </div>
       </el-splitter-panel>
       <el-splitter-panel :min="375" class="right-box">
-        <RepositoryChatPage
-          :know-id="activeRepository.id"
-          :item-id="parentItemId"
-          :selecte-file-id-list="selecteFileIdList"
-          :repository-name="activeRepository.title"
-          :questions="activeRepository.questions"
-        />
+        <RepositoryChatPage :know-id="activeRepository.id" :item-id="parentItemId"
+          :selecte-file-id-list="selecteFileIdList" :repository-name="activeRepository.title"
+          :questions="activeRepository.questions" />
       </el-splitter-panel>
     </el-splitter>
 
-    <HandleContextMenu
-      :show="contextMenu.show"
-      :x="contextMenu.x"
-      :y="contextMenu.y"
-      :permission-type="contextMenu.permission_type"
-      :action-sheet="contextMenu.actionSheet"
-      @action="handleContextMenuAction"
-    />
-    <UploadFiles
-      v-model="uploadVisible"
-      :ready-upload-list="ReadyUploadList"
-      :knowledge-id="activeRepositoryId"
-      :knowledge-path="
-        activeRepository.title +
+    <HandleContextMenu :show="contextMenu.show" :x="contextMenu.x" :y="contextMenu.y"
+      :permission-type="contextMenu.permission_type" :action-sheet="contextMenu.actionSheet"
+      @action="handleContextMenuAction" />
+    <UploadFiles v-model="uploadVisible" :ready-upload-list="ReadyUploadList" :knowledge-id="activeRepositoryId"
+      :knowledge-path="activeRepository.title +
         (pathList.length > 1 ? '/' : '') +
         pathList
           .filter((item) => item.id)
           .map((item) => item.name)
           .join('/')
-      "
-      :parent-item-id="parentItemId"
-      @close="closeUploadDialog"
-      @refresh-list="refreshList"
-      @before-upload-files="beforeUploadFiles"
-    />
+        " :parent-item-id="parentItemId" @close="closeUploadDialog" @refresh-list="refreshList"
+      @before-upload-files="beforeUploadFiles" />
     <!-- <el-upload
       v-show="false"
       ref="elUploadRef"
@@ -903,45 +589,25 @@
     >
       <button ref="uploadBtnRef"></button>
     </el-upload> -->
-    <input
-      v-show="false"
-      ref="uploadBtnRef"
-      type="file"
-      multiple
-      accept=".txt,.png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-      :onchange="handleSelectChange"
-    />
-    <el-dialog
-      v-model="importWebVisible"
-      draggable
-      align-center
-      modal-class="import-web-dialog"
-      width="390"
-    >
+    <input v-show="false" ref="uploadBtnRef" type="file" multiple accept=".txt,.png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4,.avi,
+      .mov,
+      .wmv,
+      .flv,
+      .mkv,
+      .rmvb,
+      .webm,
+      .3gp,
+      .mpeg,
+      .mpg" :onchange="handleSelectChange" />
+    <el-dialog v-model="importWebVisible" draggable align-center modal-class="import-web-dialog" width="390">
       <template #header>
-        <img
-          class="dialog-header-del-icon"
-          src="@renderer/assets/popover/web-page-icon.png"
-          alt=""
-        />
+        <img class="dialog-header-del-icon" src="@renderer/assets/popover/web-page-icon.png" alt="" />
         <div class="title">导入网页</div>
       </template>
-      <el-form
-        ref="webFormRef"
-        :model="webForm"
-        :rules="webRules"
-        class="rename-form"
-        @submit.prevent
-      >
+      <el-form ref="webFormRef" :model="webForm" :rules="webRules" class="rename-form" @submit.prevent>
         <el-form-item prop="urls" style="margin-bottom: 0">
-          <el-input
-            v-model="webForm.urls"
-            class="rename-input"
-            size="large"
-            resize="none"
-            type="textarea"
-            placeholder="请输入网址"
-          />
+          <el-input v-model="webForm.urls" class="rename-input" size="large" resize="none" type="textarea"
+            placeholder="请输入网址" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -953,30 +619,13 @@
         </div>
       </template>
     </el-dialog>
-    <el-dialog
-      v-model="editTagVisible"
-      draggable
-      align-center
-      modal-class="import-web-dialog"
-      width="390"
-    >
+    <el-dialog v-model="editTagVisible" draggable align-center modal-class="import-web-dialog" width="390">
       <template #header>
-        <img
-          class="dialog-header-del-icon"
-          src="@renderer/assets/contextMenu/edit-icon.png"
-          alt=""
-        />
+        <img class="dialog-header-del-icon" src="@renderer/assets/contextMenu/edit-icon.png" alt="" />
         <div class="title">编辑标签</div>
       </template>
-      <el-input-tag
-        v-model="tagList"
-        tag-type="primary"
-        size="large"
-        tag-effect="light"
-        placeholder="输入标签"
-        @add-tag="addTagChange"
-        @remove-tag="removeTagChange"
-      >
+      <el-input-tag v-model="tagList" tag-type="primary" size="large" tag-effect="light" placeholder="输入标签"
+        @add-tag="addTagChange" @remove-tag="removeTagChange">
         <template #tag="{ value }">
           <div class="flex items-center">
             <span>{{ value }}</span>
@@ -986,13 +635,9 @@
       <div v-if="hasedTagList.length" class="hased-tag-box">
         <div class="hased-label">我的标签</div>
         <div class="hased-list">
-          <el-tag
-            v-for="item in hasedTagList"
-            :key="item.id"
-            :type="item.type"
-            @click="checkTagChange(item)"
-            >{{ item.name }}</el-tag
-          >
+          <el-tag v-for="item in hasedTagList" :key="item.id" :type="item.type" @click="checkTagChange(item)">{{
+            item.name
+          }}</el-tag>
         </div>
       </div>
       <template #footer>
@@ -1003,55 +648,28 @@
       </template>
     </el-dialog>
     <!-- 添加仓库弹窗 -->
-    <AddRepository
-      v-model="addRepositoryVisible"
-      :type="repositoryType"
-      :repository="activeRepository"
-      :submit-type="submitRepositoryType"
-      @close="closeAddRepositoryDialog"
-      @submit-repository="submitRepository"
-    />
+    <AddRepository v-model="addRepositoryVisible" :type="repositoryType" :repository="activeRepository"
+      :submit-type="submitRepositoryType" @close="closeAddRepositoryDialog" @submit-repository="submitRepository" />
     <!-- 知识库权限弹窗 -->
-    <RepositoryPermission
-      v-model="repositoryPermissionVisible"
-      :permission="repositoryPermission"
-      @close="closeRepositoryPermissionDialog"
-      @set-permission="setRepositoryPermission"
-    />
+    <RepositoryPermission v-model="repositoryPermissionVisible" :permission="repositoryPermission"
+      @close="closeRepositoryPermissionDialog" @set-permission="setRepositoryPermission" />
     <!-- 知识库成员弹窗 -->
-    <RepositoryMember
-      v-model="repositoryMemberVisible"
-      :member-list="repositoryMemberList"
-      :unread-apply-number="unreadApplyNumber"
-      :apply-list="repositoryMemberApplyList"
-      :tree-data="repositoryMemberTree"
-      @close="closeRepositoryMemberDialog"
-      @set-permission="setRepositoryMemberPermission"
-    />
-    <input
-      ref="directoryInputRef"
-      type="file"
-      webkitdirectory
-      directory
-      accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif"
-      multiple
-      style="display: none"
-      @change="handleDirectorySelect"
-    />
-    <take-notes
-      v-model="onlineNoteVisible"
-      import-type="repository"
-      @submit-import="submitImport"
-    />
-    <el-dialog
-      v-model="conflictVisible"
-      class="custom-transition-dialog"
-      width="460"
-      align-center
-      :close-on-click-modal="false"
-      :show-close="false"
-      transition="dialog-bounce"
-    >
+    <RepositoryMember v-model="repositoryMemberVisible" :member-list="repositoryMemberList"
+      :unread-apply-number="unreadApplyNumber" :apply-list="repositoryMemberApplyList" :tree-data="repositoryMemberTree"
+      @close="closeRepositoryMemberDialog" @set-permission="setRepositoryMemberPermission" />
+    <input ref="directoryInputRef" type="file" webkitdirectory directory accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.mp4,.avi,
+      .mov,
+      .wmv,
+      .flv,
+      .mkv,
+      .rmvb,
+      .webm,
+      .3gp,
+      .mpeg,
+      .mpg" multiple style="display: none" @change="handleDirectorySelect" />
+    <take-notes v-model="onlineNoteVisible" import-type="repository" @submit-import="submitImport" />
+    <el-dialog v-model="conflictVisible" class="custom-transition-dialog" width="460" align-center
+      :close-on-click-modal="false" :show-close="false" transition="dialog-bounce">
       <template #header>
         <el-icon style="font-size: 20px; color: #e6a23c">
           <WarnTriangleFilled />
@@ -1074,39 +692,21 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button class="cancel-btn" @click="retainAll">保留全部</el-button>
-          <el-button
-            v-if="conflictFiles.length && filesType == 1"
-            class="cancel-btn"
-            type="primary"
-            @click="displace"
-          >
+          <el-button v-if="conflictFiles.length && filesType == 1" class="cancel-btn" type="primary" @click="displace">
             替换
           </el-button>
           <el-button class="cancel-btn" @click="cancelConflict">取消</el-button>
         </div>
       </template>
     </el-dialog>
-    <synergia-upload
-      v-model="synergiaUploadVisible"
-      :know-id="activeRepository.id"
-      :parent-item-id="parentItemId"
-      @refresh-list="refreshList"
-    >
+    <synergia-upload v-model="synergiaUploadVisible" :know-id="activeRepository.id" :parent-item-id="parentItemId"
+      @refresh-list="refreshList">
     </synergia-upload>
-    <synergia-look
-      v-model="synergiaLookVisible"
-      :know-id="activeRepository.id"
-      :item-id="itemId"
-      @refresh-list="refreshList"
-    >
+    <synergia-look v-model="synergiaLookVisible" :know-id="activeRepository.id" :item-id="itemId"
+      @refresh-list="refreshList">
     </synergia-look>
-    <MoveFile
-      v-model="moveFileVisible"
-      :know-id="activeRepository.id"
-      :know-title="activeRepository.title"
-      :move-files="activeFiles"
-      @submit-move="submitMove"
-    ></MoveFile>
+    <MoveFile v-model="moveFileVisible" :know-id="activeRepository.id" :know-title="activeRepository.title"
+      :move-files="activeFiles" @submit-move="submitMove"></MoveFile>
   </div>
 </template>
 
@@ -1142,6 +742,8 @@ import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-icon.png'
+import videoIcon from '@renderer/assets/file-icons/video-icon.png'
+import videoDefaultIcon from '@renderer/assets/file-icons/video-large-icon.png'
 import pdfIcon from '@renderer/assets/file-icons/pdf-icon.png'
 import pptIcon from '@renderer/assets/file-icons/ppt-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
@@ -1276,7 +878,18 @@ const handleDrop = async (event) => {
         'png',
         'jpg',
         'jpeg',
-        'gif'
+        'gif',
+        'mp4',
+        'avi',
+        'mov',
+        'wmv',
+        'flv',
+        'mkv',
+        'rmvb',
+        'webm',
+        '3gp',
+        'mpeg',
+        'mpg'
       ]
       if (entry.isFile) {
         entry.file((originalFile) => {
@@ -1417,7 +1030,18 @@ const handleDroppedFiles = (files) => {
       '.xls',
       '.xlsx',
       '.ppt',
-      '.pptx'
+      '.pptx',
+      '.mp4',
+      '.avi',
+      '.mov',
+      '.wmv',
+      '.flv',
+      '.mkv',
+      '.rmvb',
+      '.webm',
+      '.3gp',
+      '.mpeg',
+      '.mpg'
     ]
     const fileExt = '.' + file.name.split('.').pop().toLowerCase()
     return allowedTypes.includes(fileExt)
@@ -1661,7 +1285,10 @@ const detailChange = (item, e, i) => {
         fileName: item.title,
         fileId: item.info?.file_key || '',
         itemId: item.id || '',
-        download: true
+        download: true,
+        note_id: item.note_id,
+        notebook_id: item.notebook_id,
+        is_create_user: item.is_create_user
       }
     })
     return
@@ -1671,47 +1298,105 @@ const detailChange = (item, e, i) => {
     activeRepository.value.user_permission?.is_manager
   ) {
     if (item.item_type == 3) {
+      // addNewTab({
+      //   icon: item.info?.icon,
+      //   title: item.title,
+      //   url: item.info?.web_url,
+      //   isInternal: false
+      // })
       addNewTab({
-        icon: item.info?.icon,
-        title: item.title,
-        url: item.info?.web_url,
-        isInternal: false
+          icon: item.info?.logo || getFileIcon(item),
+          title: item.title,
+          url: 'DocumentDetail',
+          isInternal: true,
+          attrs: {
+            fileUrl: item.info?.url,
+            fileName: item.title,
+            fileId: item.info?.file_key || '',
+            download: false,
+            webUrl: item.info?.web_url
+          }
       })
     } else {
-      addNewTab({
-        icon: getFileIcon(item),
-        title: item.title,
-        url: 'DocumentDetail',
-        isInternal: true,
-        attrs: {
-          fileUrl: item.info?.url,
-          fileName: item.title,
-          fileId: item.info?.file_key || '',
-          download: true
-        }
-      })
+      if (item.is_create_user && item.note_id && item.notebook_id) {
+        addNewTab({
+          title: '笔记',
+          url: 'Note',
+          icon: noteIcon,
+          isInternal: true,
+          attrs: {
+            note_id: item.note_id,
+            notebook_id: item.notebook_id,
+          }
+        })
+      } else {
+        addNewTab({
+          icon: getFileIcon(item),
+          title: item.title,
+          url: 'DocumentDetail',
+          isInternal: true,
+          attrs: {
+            fileUrl: item.info?.url,
+            fileName: item.title,
+            fileId: item.info?.file_key || '',
+            download: true,
+            note_id: item.note_id,
+            notebook_id: item.notebook_id,
+            is_create_user: item.is_create_user
+          }
+        })
+      }
     }
   } else if (item.permission_type == 1 || item.permission_type == 2) {
     if (item.item_type == 3) {
+      // addNewTab({
+      //   icon: item.info?.icon,
+      //   title: item.title,
+      //   url: item.info?.web_url,
+      //   isInternal: false
+      // })
       addNewTab({
-        icon: item.info?.icon,
-        title: item.title,
-        url: item.info?.web_url,
-        isInternal: false
+          icon: item.info?.logo || getFileIcon(item),
+          title: item.title,
+          url: 'DocumentDetail',
+          isInternal: true,
+          attrs: {
+            fileUrl: item.info?.url,
+            fileName: item.title,
+            fileId: item.info?.file_key || '',
+            download: false,
+            webUrl: item.info?.web_url
+          }
       })
     } else {
-      addNewTab({
-        icon: getFileIcon(item),
-        title: item.title,
-        url: 'DocumentDetail',
-        isInternal: true,
-        attrs: {
-          fileUrl: item.info?.url,
-          fileName: item.title,
-          fileId: item.info?.file_key || '',
-          download: item.permission_type == 1 ? true : false
-        }
-      })
+      if (item.is_create_user && item.note_id && item.notebook_id) {
+        addNewTab({
+          title: '笔记',
+          url: 'Note',
+          icon: noteIcon,
+          isInternal: true,
+          attrs: {
+            note_id: item.note_id,
+            notebook_id: item.notebook_id,
+          }
+        })
+      } else {
+        addNewTab({
+          icon: getFileIcon(item),
+          title: item.title,
+          url: 'DocumentDetail',
+          isInternal: true,
+          attrs: {
+            fileUrl: item.info?.url,
+            fileName: item.title,
+            fileId: item.info?.file_key || '',
+            download: item.permission_type == 1 ? true : false,
+            note_id: item.note_id,
+            notebook_id: item.notebook_id,
+            is_create_user: item.is_create_user
+          }
+        })
+      }
     }
   } else {
     // eslint-disable-next-line no-undef
@@ -2113,7 +1798,7 @@ const beforeDeleteRepository = () => {
         }
       })
     })
-    .catch(() => {})
+    .catch(() => { })
 }
 // 退出知识库
 const beforeQuitRepository = () => {
@@ -2149,7 +1834,7 @@ const beforeQuitRepository = () => {
         }
       })
     })
-    .catch(() => {})
+    .catch(() => { })
 }
 // 知识库权限弹窗
 let repositoryPermissionVisible = ref(false)
@@ -2329,7 +2014,7 @@ const setRepositoryMemberPermission = (permission) => {
           }
         })
       })
-      .catch(() => {})
+      .catch(() => { })
   }
   // repositoryMemberVisible.value = false
 }
@@ -2385,7 +2070,18 @@ const createOrRename = (item) => {
         'xlsx',
         'csv',
         'ppt',
-        'pptx'
+        'pptx',
+        'mp4',
+        'avi',
+        'mov',
+        'wmv',
+        'flv',
+        'mkv',
+        'rmvb',
+        'webm',
+        '3gp',
+        'mpeg',
+        'mpg'
       ]
       let fileExt = data.new_name.split('.').pop().toLowerCase()
       if (!allowedTypes.includes(fileExt)) {
@@ -2964,7 +2660,18 @@ const handleContextMenuAction = ({ action }) => {
           'xlsx',
           'csv',
           'ppt',
-          'pptx'
+          'pptx',
+          'mp4',
+          'avi',
+          'mov',
+          'wmv',
+          'flv',
+          'mkv',
+          'rmvb',
+          'webm',
+          '3gp',
+          'mpeg',
+          'mpg'
         ]
         let fileExt = activeFiles.value[0].title.split('.').pop().toLowerCase()
         if (allowedTypes.includes(fileExt)) {
@@ -3028,7 +2735,7 @@ const handleContextMenuAction = ({ action }) => {
             loadingInstance.close()
           })
       })
-      .catch(() => {})
+      .catch(() => { })
   } else if (action === 'canView') {
     // 可查看、导出
     setKnowItemPermission({
@@ -3082,7 +2789,7 @@ const handleContextMenuAction = ({ action }) => {
           }
         })
       })
-      .catch(() => {})
+      .catch(() => { })
     itemId.value = activeFiles.value[0].id
   } else if (action === 'synergyConfirm') {
     // 协同确认
@@ -3104,7 +2811,7 @@ const handleContextMenuAction = ({ action }) => {
           }
         })
       })
-      .catch(() => {})
+      .catch(() => { })
     itemId.value = activeFiles.value[0].id
   } else if (action === 'synergyEdit') {
     // 协同编辑
@@ -3147,7 +2854,7 @@ const handleContextMenuAction = ({ action }) => {
           }
         })
       })
-      .catch(() => {})
+      .catch(() => { })
   } else if (action === 'moveFile') {
     // 移动文件
     moveFileVisible.value = true
@@ -3392,7 +3099,18 @@ const handleDirectorySelect = (event) => {
     'png',
     'jpg',
     'jpeg',
-    'gif'
+    'gif',
+    'mp4',
+    'avi',
+    'mov',
+    'wmv',
+    'flv',
+    'mkv',
+    'rmvb',
+    'webm',
+    '3gp',
+    'mpeg',
+    'mpg'
   ]
   const files = Array.from(event.target.files).filter((file) =>
     exts.includes(file.name.split('.').pop())
@@ -3500,9 +3218,19 @@ const getFileIcon = (item) => {
     jpg: imgIcon,
     jpeg: imgIcon,
     gif: imgIcon,
-    web: webPageIcon
+    web: webPageIcon,
+    mp4: videoIcon,
+    avi: videoIcon,
+    mov: videoIcon,
+    wmv: videoIcon,
+    flv: videoIcon,
+    mkv: videoIcon,
+    rmvb: videoIcon,
+    webm: videoIcon,
+    '3gp': videoIcon,
+    mpeg: videoIcon,
+    mpg: videoIcon
   }
-
   return iconMap[ext] || wordIcon
 }
 // copy获取文件图标
@@ -3528,7 +3256,18 @@ const getFileIcon1 = (item) => {
     jpg: imgIcon,
     jpeg: imgIcon,
     gif: imgIcon,
-    web: webPageIcon
+    web: webPageIcon,
+    mp4: videoIcon,
+    avi: videoIcon,
+    mov: videoIcon,
+    wmv: videoIcon,
+    flv: videoIcon,
+    mkv: videoIcon,
+    rmvb: videoIcon,
+    webm: videoIcon,
+    '3gp': videoIcon,
+    mpeg: videoIcon,
+    mpg: videoIcon
   }
 
   return iconMap[ext] || wordIcon
@@ -3765,7 +3504,7 @@ const checkItemsInSelection = () => {
 // socket 信息
 const client_id = ref('')
 const { isConnected, sendMessage } = useWebSocket(import.meta.env.VITE_API_WSS_URL, {
-  onOpen: () => {},
+  onOpen: () => { },
   onMessage: (data) => {
     try {
       let response = JSON.parse(data)
@@ -3778,8 +3517,8 @@ const { isConnected, sendMessage } = useWebSocket(import.meta.env.VITE_API_WSS_U
       console.log(err)
     }
   },
-  onClose: () => {},
-  onError: () => {}
+  onClose: () => { },
+  onError: () => { }
 })
 watchEffect(() => {
   const socketData = {
@@ -3863,6 +3602,7 @@ const disposeSocketMessage = (data) => {
     max-width: 300px;
     border-right: 1px solid #efefef;
     overflow-y: auto;
+
     .common-repository-box {
       width: 100%;
       overflow: hidden;
@@ -3897,6 +3637,7 @@ const disposeSocketMessage = (data) => {
           align-items: center;
           justify-content: center;
           cursor: pointer;
+
           // border-radius: 4px;
           .square-icon {
             display: block;
@@ -4203,6 +3944,7 @@ const disposeSocketMessage = (data) => {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
+
             &.dangerColor {
               color: #ff5151;
             }
@@ -4367,6 +4109,7 @@ const disposeSocketMessage = (data) => {
       display: flex;
       flex-direction: column;
       position: relative;
+
       .list-handle-box {
         flex-shrink: 0;
         width: calc(100% - 20px);
@@ -4480,6 +4223,7 @@ const disposeSocketMessage = (data) => {
       .list-box {
         flex: 1;
         overflow: auto;
+
         // 拖动选择矩形样式
         .drag-selection-rect {
           position: absolute;
@@ -4527,9 +4271,11 @@ const disposeSocketMessage = (data) => {
               display: block;
             }
           }
+
           .cover-img-box {
             position: relative;
           }
+
           .cover-img {
             display: block;
             width: 40px;
@@ -4542,6 +4288,7 @@ const disposeSocketMessage = (data) => {
               border: 1px solid #efefef;
             }
           }
+
           .is-synergia-icon {
             position: absolute;
             bottom: 0px;
@@ -4550,6 +4297,7 @@ const disposeSocketMessage = (data) => {
             height: 12px;
             z-index: 9;
           }
+
           .item-right {
             flex: 1;
             overflow: hidden;
@@ -4565,9 +4313,11 @@ const disposeSocketMessage = (data) => {
               -webkit-line-clamp: 2;
               overflow: hidden;
               text-overflow: ellipsis;
+
               .active-filter {
                 color: var(--el-color-primary);
               }
+
               .create-input {
                 width: calc(100% - 30px);
                 height: 100%;
@@ -4617,6 +4367,7 @@ const disposeSocketMessage = (data) => {
                   color: #909090;
                   line-height: 12px;
                 }
+
                 .type-box {
                   display: flex;
                   align-items: center;
@@ -4630,7 +4381,8 @@ const disposeSocketMessage = (data) => {
                     /* 在 flex 容器中允许此项按比例收缩并显示省略号 */
                     display: block;
                     flex: 1;
-                    min-width: 0; /* 允许在 flex 中正确收缩 */
+                    min-width: 0;
+                    /* 允许在 flex 中正确收缩 */
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     overflow: hidden;
@@ -4643,6 +4395,7 @@ const disposeSocketMessage = (data) => {
                     height: 10px;
                   }
                 }
+
                 .tags {
                   flex: 1;
                   min-width: 50px;
@@ -4658,9 +4411,11 @@ const disposeSocketMessage = (data) => {
                     font-size: 10px;
                     color: #909090;
                     line-height: 12px;
+
                     &.activeTag {
                       color: var(--el-color-primary);
                     }
+
                     &:nth-last-of-type(1) {
                       margin-right: 0;
                     }
@@ -4772,6 +4527,7 @@ const disposeSocketMessage = (data) => {
       }
 
       .dialog-footer {
+
         .cancel-btn,
         .confirm-btn {
           height: 36px;
@@ -4839,6 +4595,7 @@ const disposeSocketMessage = (data) => {
       }
 
       .dialog-footer {
+
         .cancel-btn,
         .confirm-btn {
           height: 36px;
@@ -4887,6 +4644,7 @@ const disposeSocketMessage = (data) => {
 
   .abstract-box {
     width: 100%;
+
     .abstract-title {
       margin-bottom: 14px;
       font-size: 14px;
@@ -4907,15 +4665,18 @@ const disposeSocketMessage = (data) => {
       color: #646464;
       line-height: 24px;
     }
+
     .tag-box {
       padding: 10px 0 0;
       display: flex;
       align-items: center;
       flex-wrap: wrap;
       gap: 10px;
+
       &.folder-tag-box {
         padding: 0;
       }
+
       .tag {
         display: inline-flex;
         align-items: center;
@@ -4923,9 +4684,11 @@ const disposeSocketMessage = (data) => {
         font-size: 12px;
         color: #909090;
         line-height: 14px;
+
         &.activeTag {
           color: var(--el-color-primary);
         }
+
         .icon {
           transform: translateY(1px);
           vertical-align: middle;

@@ -4,7 +4,7 @@
       <el-splitter-panel min="50%" class="center-box" :class="{ 'mr-chat': chatVisible }">
         <div class="center-head">
           <div class="title">{{ fileName }}</div>
-          <div class="right-handle-box">
+          <div v-if="!IS_VIDEO" class="right-handle-box">
             <div v-if="!chatVisible" class="open-chat" @click="openChat">
               <img class="logo" src="@renderer/assets/logo.png" alt="" />
               问问糖源
@@ -17,30 +17,37 @@
           :file-url="fileUrl"
           :file-name="fileName"
         /> -->
-        <onlyofficePreview
-          v-if="fileUrl"
-          class="center-content"
-          :src="fileUrl"
-          :file-name="fileName"
-          :file-key="fileKey"
-          :download="download"
-          :mode="'view'"
-        />
+        <div v-if="IS_VIDEO" id="video-player"></div>
+        <template v-else>
+          <onlyofficePreview v-if="fileUrl && !IS_NOTE && !IS_WEB" class="center-content" :src="fileUrl" :file-name="fileName"
+            :file-key="fileKey" :download="download" :mode="'view'" />
+          <div v-if="IS_NOTE" class="note-box">
+            <div class="note-content">
+              <v-md-preview :text="noteInfo.content"></v-md-preview>
+            </div>
+          </div>
+          <div v-else-if="IS_WEB" class="note-box">
+              <webview class="note-content" allowpopups :src="webUrl"></webview>
+          </div>
+        </template>
       </el-splitter-panel>
       <el-splitter-panel v-if="chatVisible" :min="375" :size="375" class="right-box">
-        <CommonChat
-          :is-active-tab="props.isActiveTab"
-          :attach-files="attach_files"
-          :chat-key="props.attrs.chat_key"
-          @close-chat="chatVisible = false"
-        />
+        <CommonChat :is-active-tab="props.isActiveTab" :attach-files="attach_files" :chat-key="props.attrs.chat_key"
+          @close-chat="chatVisible = false" />
       </el-splitter-panel>
     </el-splitter>
   </div>
 </template>
 
 <script setup>
-import { ref, watchEffect } from 'vue'
+import Player from 'xgplayer';
+import 'xgplayer/dist/index.min.css';
+import { I18N } from 'xgplayer'
+import ZH from 'xgplayer/es/lang/zh-cn'
+import { nextTick, ref, watchEffect } from 'vue'
+import { get_note_info } from '@renderer/api/note'
+// 启用中文
+I18N.use(ZH)
 const props = defineProps({
   attrs: {
     type: Object,
@@ -56,6 +63,12 @@ let fileName = ref('')
 let fileKey = ref('')
 let download = ref(false)
 let chatVisible = ref(false)
+let IS_VIDEO = ref(false) //如果是视频，则使用xgplayer播放器 只做播放  不能进行问一问
+let IS_NOTE = ref(false)
+let note_id = ref('')
+let noteInfo = ref({})
+let IS_WEB = ref(false)
+let webUrl = ref('')
 let attach_files = ref([
   {
     title: props.attrs.fileName,
@@ -66,11 +79,49 @@ let attach_files = ref([
 const openChat = () => {
   chatVisible.value = true
 }
+const getNote = () => {
+  get_note_info({ note_id: note_id.value }).then(res => {
+    if (res.code == 200) {
+      noteInfo.value = res.data
+    }
+  })
+}
 watchEffect(() => {
   fileUrl.value = props.attrs.fileUrl || ''
   fileName.value = props.attrs.fileName || ''
   fileKey.value = props.attrs.fileId || ''
   download.value = props.attrs.download || false
+  var allowedTypes = ['.mp4',
+    '.avi',
+    '.mov',
+    '.wmv',
+    '.flv',
+    '.mkv',
+    '.rmvb',
+    '.webm',
+    '.3gp',
+    '.mpeg',
+    '.mpg']
+  const fileExt = '.' + fileUrl.value.split('.').pop().toLowerCase()
+  if (allowedTypes.includes(fileExt)) {
+    IS_VIDEO.value = true
+    nextTick(() => {
+      let player = new Player({
+        id: 'video-player',
+        url: fileUrl.value,
+        height: '100%',
+        width: '100%',
+      });
+    })
+  } else if (props.attrs.note_id) {
+    note_id.value = props.attrs.note_id
+    IS_NOTE.value = true
+    getNote()
+  } else if (props.attrs.webUrl) {
+    IS_WEB.value = true
+    webUrl.value = props.attrs.webUrl
+  }
+
 })
 </script>
 <style scoped lang="scss">
@@ -81,6 +132,7 @@ watchEffect(() => {
   align-content: start;
   overflow: hidden;
   background: var(--primary-bg-color);
+
   :deep(.center-box) {
     flex: 1;
     min-width: 50%;
@@ -91,9 +143,11 @@ watchEffect(() => {
     overflow: hidden;
     background: #fff;
     border-radius: 0 12px 12px 0;
+
     &.mr-chat {
       margin-right: 5px;
     }
+
     .center-head {
       flex-shrink: 0;
       width: 100%;
@@ -105,6 +159,7 @@ watchEffect(() => {
       gap: 6px;
       background: #fff;
       overflow: hidden;
+
       .title {
         flex: 1;
         font-size: 16px;
@@ -173,10 +228,11 @@ watchEffect(() => {
         }
       }
     }
+
     .center-content {
       flex: 1;
       user-select: text;
-      height: 100%;
+      width: 100%;
       overflow-y: auto;
       margin: 0 auto;
       font-size: 14px;
@@ -185,7 +241,31 @@ watchEffect(() => {
       border-radius: 12px;
       // box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.1);
     }
+
+    .note-box {
+      flex: 1;
+      user-select: text;
+      width: 100%;
+      overflow: hidden;
+      margin: 0 auto;
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 22px;
+      border-radius: 12px;
+
+      .note-content {
+        overflow-y: auto;
+        height: 100%;
+        width: 100%;
+      }
+    }
+
+    #video-player {
+      flex: 1;
+      width: 100%;
+    }
   }
+
   :deep(.right-box) {
     flex: 1;
     height: 100%;

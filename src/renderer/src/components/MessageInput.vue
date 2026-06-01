@@ -856,7 +856,7 @@ export default {
       if (this.message.text.trim().length) {
         // 判断是否是网址
         var reg =
-          /^(((ht|f)tps?):\/\/)?([^!@#$%^&*?.\s-]([^!@#$%^&*?.\s]{0,63}[^!@#$%^&*?.\s])?\.)+[a-z]{2,6}\/?/
+          /^(((ht|f)tps?):\/\/)([^!@#$%^&*?.\s-]([^!@#$%^&*?.\s]{0,63}[^!@#$%^&*?.\s])?\.)+[a-z]{2,6}\/?/
         if (reg.test(this.message.text)) {
           this.replaceActiveTab({
             title: this.message.text,

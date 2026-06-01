@@ -109,7 +109,9 @@ const retrievedDocumen = (file) => {
     attrs: {
       fileUrl: file.fileUrl,
       fileName: file.fileName,
-      fileId: file.fileId || ''
+      fileId: file.fileId || '',
+      note_id: file.note_id,
+      notebook_id: file.notebook_id,
     }
   })
 }
@@ -127,7 +129,9 @@ const lookOver = (file, type = 1) => {
       attrs: {
         fileUrl: file.full_path,
         fileName: file.title,
-        fileId: file.fileId || ''
+        fileId: file.fileId || '',
+        note_id: file.note_id,
+        notebook_id: file.notebook_id,
       }
     })
   } else {
@@ -139,7 +143,9 @@ const lookOver = (file, type = 1) => {
       attrs: {
         fileUrl: file.url,
         fileName: file.filename,
-        fileId: file.fileId || ''
+        fileId: file.fileId || '',
+        note_id: file.note_id,
+        notebook_id: file.notebook_id,
       }
     })
   }
@@ -270,18 +276,18 @@ const download = (index, images) => {
 const rotateCiteFile = () => {
   unfoldCiteFile.value = !unfoldCiteFile.value
 }
-// 合并相同fileId的文件  将引用的段落合并
+// 合并相同fileId的文件  将引用的段落合并，每个文件保留children子数组记录各段落
+// 父级sort用于展示合并后的段落号（如"3、5"），children中每条保留原始sort不变
 const mergeDocumentList = computed(() => {
   let files = [...props.message.retrievedDocumentList, ...props.message.use_annex]
   const urlMap = {}
   files.forEach((file) => {
-    var sort = ''
+    const sortVal = file.sort ? file.sort.split('.')[0] + '' : ''
     if (urlMap[file.fileId]) {
-      sort = file.sort ? file.sort.split('.')[0] + '' : ''
-      urlMap[file.fileId].sort = urlMap[file.fileId].sort + '、' + sort
+      urlMap[file.fileId].sort = urlMap[file.fileId].sort + '、' + sortVal
+      urlMap[file.fileId].children.push({ ...file })
     } else {
-      sort = file.sort ? file.sort.split('.')[0] + '' : ''
-      urlMap[file.fileId] = { ...file, sort: sort }
+      urlMap[file.fileId] = { ...file, sort: sortVal, children: [{ ...file }] }
     }
   })
   return Object.values(urlMap)

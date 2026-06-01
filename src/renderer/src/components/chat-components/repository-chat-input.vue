@@ -77,7 +77,7 @@
               <div class="value-label">{{ item.desc }}</div>
             </el-option>
           </el-select>
-          <template v-if="enableSearch == 1">
+          <!-- <template v-if="enableSearch == 1">
             <div class="line"></div>
             <div
               class="networking"
@@ -87,7 +87,7 @@
               联网
               <div class="circle-icon"></div>
             </div>
-          </template>
+          </template> -->
         </div>
         <div class="btn-box">
           <el-popover
