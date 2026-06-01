@@ -312,7 +312,8 @@ const addChat = (isNewChat = true, chat_key = '') => {
       vector_shard_number: 10,
       similarity_threshold: 0.5,
       context_number: 5,
-      enable_thinking: true
+      enable_thinking: true,
+      scene_id: 0
     }
     // 模型当前配置
     modelConfig.value = {
@@ -324,7 +325,8 @@ const addChat = (isNewChat = true, chat_key = '') => {
       vector_shard_number: res.data.vector_shard_number,
       similarity_threshold: res.data.similarity_threshold,
       context_number: res.data.context_number,
-      enable_thinking: res.data.enable_thinking
+      enable_thinking: res.data.enable_thinking,
+      scene_id: res.data.scene_id
     }
     activeSession.value.isNetwork = res.data.is_use_net ? true : false
     if (activeSession.value.enableSearch == 2) {
@@ -1021,7 +1023,8 @@ watchEffect(() => {
         vector_shard_number: 10,
         similarity_threshold: 0.5,
         context_number: 5,
-        enable_thinking: true
+        enable_thinking: true,
+        scene_id: 0
       }
       // 模型当前配置
       modelConfig.value = {
@@ -1033,7 +1036,8 @@ watchEffect(() => {
         vector_shard_number: res.data.vector_shard_number,
         similarity_threshold: res.data.similarity_threshold,
         context_number: res.data.context_number,
-        enable_thinking: res.data.enable_thinking
+        enable_thinking: res.data.enable_thinking,
+        scene_id: res.data.scene_id
       }
       // activeSession.value.isNetwork = res.data.is_use_net ? true : false
       activeSession.value.isNetwork =  false
@@ -1143,7 +1147,8 @@ const handleSendMessage = async (message) => {
       vectorShardNumber: modelConfig.value.vector_shard_number,
       similarityThreshold: modelConfig.value.similarity_threshold,
       enableThinking: modelConfig.value.enable_thinking,
-      maxCompletionTokens:1000
+      maxCompletionTokens:1000,
+      sceneId: modelConfig.value.scene_id || ''
     },
     knowledgeBaseParamsList: [
       {

@@ -688,7 +688,7 @@ const handleSendMessage = async (message) => {
       enableSearch: activeSession.value.isNetwork,
       temperature: activeSession.value.temperature,
       generateQuestions: activeSession.value.generateQuestions,
-      maxCompletionTokens:1000
+      maxCompletionTokens:1000,
     },
     knowledgeBaseParamsList: [
       {

@@ -235,7 +235,8 @@ const props = defineProps({
       vector_shard_number: 10,
       similarity_threshold: 0.5,
       context_number: 5,
-      enable_thinking: true
+      enable_thinking: true,
+      scene_id: 0
     })
   },
   // 模型当前配置
@@ -250,7 +251,8 @@ const props = defineProps({
       vector_shard_number: 10,
       similarity_threshold: 0.5,
       context_number: 5,
-      enable_thinking: true
+      enable_thinking: true,
+      scene_id: 0
     })
   }
 })
@@ -262,7 +264,7 @@ const currentView = ref('list')
 
 // 场景列表
 const sceneList = ref([])
-const selectedSceneId = ref(null)
+const selectedSceneId = ref(props.modelConfig.scene_id)
 const loading = ref(false)
 const saving = ref(false)
 
@@ -282,7 +284,8 @@ const configuration = ref({
   vector_shard_number: 10,
   similarity_threshold: 0.5,
   context_number: 5,
-  enable_thinking: true
+  enable_thinking: true,
+  scene_id: 0
 })
 
 // ---------- 滑块标记 ----------
@@ -331,7 +334,7 @@ const fetchSceneList = async () => {
 // ---------- 视图切换 ----------
 const switchToCreate = () => {
   // 重置表单为当前配置或默认值
-  configuration.value = { ...props.modelConfig }
+  configuration.value = { ...props.config }
   sceneName.value = ''
   sceneDescription.value = ''
   sceneLogo.value = ''
@@ -357,15 +360,16 @@ const handleSelectScene = (scene) => {
   selectedSceneId.value = scene.id
   // 提取配置参数返回，保持与原来 @change 返回的一致
   const configParams = {
-    frequency_penalty: scene.frequency_penalty ?? props.config.frequency_penalty,
-    presence_penalty: scene.presence_penalty ?? props.config.presence_penalty,
-    seed: scene.seed ?? props.config.seed,
-    temperature: scene.temperature ?? props.config.temperature,
-    top_p: scene.top_p ?? props.config.top_p,
-    vector_shard_number: scene.vector_shard_number ?? props.config.vector_shard_number,
-    similarity_threshold: scene.similarity_threshold ?? props.config.similarity_threshold,
-    context_number: scene.context_number ?? props.config.context_number,
-    enable_thinking: scene.enable_thinking ?? props.config.enable_thinking
+    frequency_penalty: scene.params.frequency_penalty ?? props.config.frequency_penalty,
+    presence_penalty: scene.params.presence_penalty ?? props.config.presence_penalty,
+    seed: scene.params.seed ?? props.config.seed,
+    temperature: scene.params.temperature ?? props.config.temperature,
+    top_p: scene.params.top_p ?? props.config.top_p,
+    vector_shard_number: scene.params.vector_shard_number ?? props.config.vector_shard_number,
+    similarity_threshold: scene.params.similarity_threshold ?? props.config.similarity_threshold,
+    context_number: scene.params.context_number ?? props.config.context_number,
+    enable_thinking: scene.params.enable_thinking ?? props.config.enable_thinking,
+    scene_id: scene.id ?? 0
   }
   emits('change', configParams)
 }
@@ -377,15 +381,15 @@ const handleEditScene = (scene) => {
   sceneDescription.value = scene.description || ''
   sceneLogo.value = scene.logo || ''
   configuration.value = {
-    frequency_penalty: scene.frequency_penalty ?? props.config.frequency_penalty,
-    presence_penalty: scene.presence_penalty ?? props.config.presence_penalty,
-    seed: scene.seed ?? props.config.seed,
-    temperature: scene.temperature ?? props.config.temperature,
-    top_p: scene.top_p ?? props.config.top_p,
-    vector_shard_number: scene.vector_shard_number ?? props.config.vector_shard_number,
-    similarity_threshold: scene.similarity_threshold ?? props.config.similarity_threshold,
-    context_number: scene.context_number ?? props.config.context_number,
-    enable_thinking: scene.enable_thinking ?? props.config.enable_thinking
+    frequency_penalty: scene.params.frequency_penalty ?? props.config.frequency_penalty,
+    presence_penalty: scene.params.presence_penalty ?? props.config.presence_penalty,
+    seed: scene.params.seed ?? props.config.seed,
+    temperature: scene.params.temperature ?? props.config.temperature,
+    top_p: scene.params.top_p ?? props.config.top_p,
+    vector_shard_number: scene.params.vector_shard_number ?? props.config.vector_shard_number,
+    similarity_threshold: scene.params.similarity_threshold ?? props.config.similarity_threshold,
+    context_number: scene.params.context_number ?? props.config.context_number,
+    enable_thinking: scene.params.enable_thinking ?? props.config.enable_thinking
   }
   updateMarks()
   currentView.value = 'create'
