@@ -821,7 +821,7 @@ const handleSendMessage = async (message) => {
   // 添加明确的关闭监听
   evtSource.value.addEventListener('abort', () => {
     // if (!responseMessage.textContent) {
-    //   responseMessage.textContent = '已取消回答'
+    //   responseMessage.textContent = ''
     // }
     isChatting.value = false
   })
@@ -961,7 +961,7 @@ const resumeUnfinishedResponse = () => {
   })
   evtSource.value.addEventListener('abort', () => {
     // if (!lastMessage.textContent) {
-    //   lastMessage.textContent = '已取消回答'
+    //   lastMessage.textContent = ''
     // }
     isChatting.value = false
   })

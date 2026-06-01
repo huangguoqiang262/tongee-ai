@@ -456,7 +456,7 @@ const againText = (text) => {
             :reasoning-content-text="props.message.reasoningContentText"
             :loading-text="
               props.message.textContent
-                ? props.message.textContent == '已取消回答'
+                ? props.message.textContent == '用户已取消'
                   ? '已取消'
                   : '已思考完成'
                 : '思考中'

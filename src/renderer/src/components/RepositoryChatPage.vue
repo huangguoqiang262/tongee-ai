@@ -633,7 +633,7 @@ const getWordList = () => {
           if (item.msg_type == 'ASSISTANT') {
             list.push({
               type: 'ASSISTANT',
-              textContent: item.content || '已取消回答',
+              textContent: item.content || '',
               sessionId: item.chat_key,
               medias: [],
               dateline: item.createtime,
@@ -722,7 +722,7 @@ const loadData = async () => {
             if (item.msg_type == 'ASSISTANT') {
               list.push({
                 type: 'ASSISTANT',
-                textContent: item.content || '已取消回答',
+                textContent: item.content || '',
                 sessionId: item.chat_key,
                 medias: [],
                 dateline: item.createtime,
@@ -926,8 +926,6 @@ const resumeUnfinishedResponse = () => {
     lastMsg.char_id = stopResponse.endId || ''
   })
   evtSource.value.addEventListener('reconnect_null', (data) => {
-    console.log(8989898989)
-
     isChatting.value = false
     evtSource.value?.close()
   })
@@ -960,7 +958,7 @@ const resumeUnfinishedResponse = () => {
   // 添加明确的关闭监听
   evtSource.value.addEventListener('abort', () => {
     // if (!lastMsg.textContent) {
-    //   lastMsg.textContent = '已取消回答'
+    //   lastMsg.textContent = ''
     // }
     isChatting.value = false
   })
@@ -1292,7 +1290,7 @@ const handleSendMessage = async (message) => {
   // 添加明确的关闭监听
   evtSource.value.addEventListener('abort', () => {
     // if (!responseMessage.textContent) {
-    //   responseMessage.textContent = '已取消回答'
+    //   responseMessage.textContent = ''
     // }
     isChatting.value = false
   })

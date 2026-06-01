@@ -313,7 +313,6 @@ const updateMarks = () => {
 watchEffect(() => {
   configuration.value = { ...props.modelConfig }
   selectedSceneId.value = props.modelConfig.scene_id
-  console.log('configuration.value', configuration.value)
   updateMarks()
 })
 
