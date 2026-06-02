@@ -102,7 +102,7 @@
   </div>
 </template>
 <script setup>
-import { reactive, ref, onMounted, nextTick, watchEffect } from 'vue'
+import { reactive, ref, onMounted, onUnmounted, nextTick, watchEffect } from 'vue'
 import {
   getChatInfo,
   update_chat,
@@ -971,6 +971,9 @@ onMounted(() => {
   })
   getFeedbackType()
   // createChat()
+})
+onUnmounted(() => {
+  stopChat()
 })
 </script>
 <style scoped lang="scss">

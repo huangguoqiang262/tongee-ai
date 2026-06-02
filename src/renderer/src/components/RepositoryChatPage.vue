@@ -228,7 +228,7 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, nextTick, onMounted, watchEffect, watch } from 'vue'
+import { ref, reactive, nextTick, onMounted, onUnmounted, watchEffect, watch } from 'vue'
 import { useUserStore } from '@renderer/stores/user'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import MessageRow from '@renderer/components/chat-components/message-row.vue'
@@ -832,7 +832,9 @@ const stopChat = (isUserStop = false) => {
   isChatting.value = false
   evtSource.value?.close()
 }
-
+onUnmounted(() => {
+  stopChat()
+})
 // 恢复未完成的回答（每次加载历史后调用，由后端判断是否有后续内容）
 const tryResumeChat = () => {
   resumeUnfinishedResponse()

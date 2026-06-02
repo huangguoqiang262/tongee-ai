@@ -328,7 +328,7 @@
 </template>
 
 <script setup>
-import { ref, inject, reactive, nextTick, onMounted } from 'vue'
+import { ref, inject, reactive, nextTick, onMounted, onUnmounted } from 'vue'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { edit_user, logout } from '@renderer/api/user'
 import { useUserStore, useToolBarStore } from '@renderer/stores/user'
@@ -425,6 +425,9 @@ let defaultModel = ref({})
 onMounted(() => {
   getAppVersion()
   getModels()
+})
+onUnmounted(() => {
+  stopChat()
 })
 // 获取模型列表
 const getModels = () => {
