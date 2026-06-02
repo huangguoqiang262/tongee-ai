@@ -82,7 +82,7 @@
         @mention-change="handleMentionSelect"
         @send="handleSendMessage"
         @uploaded-attachment="uploadedAttachment"
-        @stop-chat="stopChat"
+        @stop-chat="stopChat(true)"
         @configuration-change="handleConfigurationChange"
       >
       </chat-input>
@@ -102,7 +102,7 @@
   </div>
 </template>
 <script setup>
-import { reactive, ref, inject, onMounted, nextTick } from 'vue'
+import { reactive, ref, inject, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   getChatInfo,
   update_chat,
@@ -339,7 +339,8 @@ const handleSendMessage = async (message) => {
       vectorShardNumber: modelConfig.value.vector_shard_number,
       similarityThreshold: modelConfig.value.similarity_threshold,
       enableThinking: modelConfig.value.enable_thinking,
-      maxCompletionTokens:1000
+      maxCompletionTokens:1000,
+      sceneId: modelConfig.value.scene_id || ''
     },
     knowledgeBaseParamsList: mentionedList.value.map((item) => {
       return {
@@ -356,7 +357,7 @@ const handleSendMessage = async (message) => {
     },
     annexParamList: [...tempAttachs]
   }
-  evtSource.value = new SSE(import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/basic-chat', {
+  evtSource.value = new SSE(import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/chat', {
     withCredentials: false, // 跨域请求时是否携带cookie凭证 zhaoxin TODO
     // 禁用自动启动，需要调用stream()方法才能发起请求
     start: false,
@@ -428,7 +429,7 @@ const handleSendMessage = async (message) => {
     // chatMessage.total_tokens = response.promptToken
     // responseMessage.completion_tokens = response.completionTokens
     // responseMessage.total_tokens = response.completionTokens
-    responseMessage.issueContentText = response.issueContentText || ''
+    // responseMessage.issueContentText = response.issueContentText || ''
     // }
     // 滚动到底部
     await nextTick(() => {
@@ -479,9 +480,9 @@ const handleSendMessage = async (message) => {
   })
   // 添加明确的关闭监听
   evtSource.value.addEventListener('abort', () => {
-    if (!responseMessage.textContent) {
-      responseMessage.textContent = '已取消回答'
-    }
+    // if (!responseMessage.textContent) {
+    //   responseMessage.textContent = ''
+    // }
     isChatting.value = false
   })
   // 调用stream，发起请求。
@@ -495,9 +496,156 @@ const handleSendMessage = async (message) => {
 const uploadedAttachment = (files) => {
   attach_files.value = files
 }
-const stopChat = () => {
+const stopChat = (isUserStop = false) => {
+  // 主动暂停（用户点击停止按钮）：调用后端暂停接口
+  if (isUserStop && isChatting.value) {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/stop')
+    xhr.setRequestHeader('Content-Type', 'application/json')
+    xhr.send(JSON.stringify({ sessionId: activeSession.value.chat_key, otherParams: {
+      dingUid: userInfo.value.ding_uid,
+      uniacid: userStore.uniacid
+    }}))
+    isChatting.value = false
+    return false
+  }
+
   isChatting.value = false
   evtSource.value?.close()
+}
+
+// 恢复未完成的回答（每次加载历史后调用，由后端判断是否有后续内容）
+const tryResumeChat = () => {
+  resumeUnfinishedResponse()
+}
+// 续传未完成的回答（调用后端流式接口，后端会通过事件告知是否有后续内容）
+const resumeUnfinishedResponse = () => {
+  if (isChatting.value) return
+  const messages = activeSession.value.messages
+  const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null
+  if (!lastMsg || lastMsg.type != 'ASSISTANT') return false
+  isChatting.value = true
+  // 使用续传接口（后端流式返回后续内容）
+  evtSource.value = new SSE(import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/reconnect', {
+    withCredentials: false,
+    start: false,
+    payload: JSON.stringify({
+      sessionId: activeSession.value.chat_key,
+    }),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+
+  evtSource.value.addEventListener('document', async (event) => {
+    const response = JSON.parse(event.data)
+    lastMsg.retrievedDocumentList = response || []
+  })
+  evtSource.value.addEventListener('file', async (event) => {
+    const response = JSON.parse(event.data)
+    lastMsg.file_info = response || []
+  })
+  evtSource.value.addEventListener('annex', async (event) => {
+    const response = JSON.parse(event.data)
+    lastMsg.use_annex = response || []
+  })
+  evtSource.value.addEventListener('message', async (event) => {
+
+    try {
+      const response = JSON.parse(event.data)
+
+      if (response.contentText || response.reasoningContentText) {
+        if (response.reasoningContentText) {
+          //匹配过滤掉\n、<think>、</think> 用正则|| 替换  排除[^\n\n]
+          function filterText(str) {
+            // 1. 替换标签
+            str = str.replace(/<\/?think>/g, '')
+
+            // 2. 替换单独的 \n（保留 \n\n）
+            str = str.replace(/\n/g, (match, offset, s) => {
+              const prev = s[offset - 1]
+              const next = s[offset + 1]
+              return prev === '\n' || next === '\n' ? '\n' : ''
+            })
+
+            return str
+          }
+          lastMsg.reasoningContentText += filterText(response.reasoningContentText)
+        }
+        lastMsg.textContent += response.contentText || ''
+      }
+
+      // if (response.finished) {
+      //   isChatting.value = false
+        // lastMsg.issueContentText = response.issueContentText || lastMsg.issueContentText || ''
+      //   lastMsg.char_id = response.endId || ''
+      //   evtSource.value?.close()
+      // }
+
+      // 滚动到底部
+      await nextTick(() => {
+        const container = messageListRef.value
+        if (container) {
+          const isAtBottom =
+            container.scrollTop + container.clientHeight >= container.scrollHeight - 80
+          if (isAtBottom) {
+            container.scrollTo({
+              top: container.scrollHeight,
+              behavior: 'smooth'
+            })
+          }
+        }
+      })
+    } catch (err) {
+      console.error('解析续传响应失败:', err)
+    }
+  })
+  // 添加明确的关闭监听
+  evtSource.value.addEventListener('stop', (event) => {
+    let stopResponse = JSON.parse(event.data)
+    isChatting.value = false
+    lastMsg.char_id = stopResponse.endId || ''
+  })
+  evtSource.value.addEventListener('reconnect_null', (data) => {
+    isChatting.value = false
+    evtSource.value?.close()
+  })
+  evtSource.value.addEventListener('error', (error) => {
+    var errData
+    try {
+      errData = error.data
+        ? JSON.parse(error.data)
+        : {
+            message: '系统错误，请稍后再试'
+          }
+    } catch (err) {
+      console.log(err)
+
+      errData = {
+        message: '系统错误，请稍后再试'
+      }
+    }
+    // eslint-disable-next-line no-undef
+    ElMessage({
+      type: 'error',
+      message: errData.message
+    })
+    if (!lastMsg.textContent) {
+      lastMsg.textContent = errData.message
+    }
+    isChatting.value = false
+  })
+
+  // 添加明确的关闭监听
+  evtSource.value.addEventListener('abort', () => {
+    // if (!lastMsg.textContent) {
+    //   lastMsg.textContent = ''
+    // }
+    isChatting.value = false
+  })
+
+  evtSource.value.stream()
 }
 const lastScrollTop = ref(0)
 const page = ref(1)
@@ -547,7 +695,7 @@ const getWordList = () => {
           if (item.msg_type == 'ASSISTANT') {
             list.push({
               type: 'ASSISTANT',
-              textContent: item.content || '已取消回答',
+              textContent: item.content || '',
               sessionId: item.chat_key,
               medias: [],
               dateline: item.createtime,
@@ -636,7 +784,7 @@ const loadData = async () => {
             if (item.msg_type == 'ASSISTANT') {
               list.push({
                 type: 'ASSISTANT',
-                textContent: item.content || '已取消回答',
+                textContent: item.content || '',
                 sessionId: item.chat_key,
                 medias: [],
                 dateline: item.createtime,
@@ -769,7 +917,8 @@ const createChat = () => {
       vector_shard_number: 10,
       similarity_threshold: 0.5,
       context_number: 5,
-      enable_thinking: true
+      enable_thinking: true,
+      scene_id: 0
     }
     // 模型当前配置
     modelConfig.value = {
@@ -781,7 +930,8 @@ const createChat = () => {
       vector_shard_number: res.data.vector_shard_number,
       similarity_threshold: res.data.similarity_threshold,
       context_number: res.data.context_number,
-      enable_thinking: res.data.enable_thinking
+      enable_thinking: res.data.enable_thinking,
+      scene_id: res.data.scene_id
     }
     // activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
     // activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
@@ -804,7 +954,10 @@ const createChat = () => {
     if (!chat_key.value) {
       handleSendMessage({ text: props.attrs?.message_text })
     } else {
-      getWordList()
+      getWordList().then(() => {
+        // 每次加载历史后尝试恢复会话
+        tryResumeChat()
+      })
     }
   })
 }
@@ -818,6 +971,9 @@ onMounted(() => {
   })
   getFeedbackType()
   createChat()
+})
+onUnmounted(() => {
+  stopChat()
 })
 </script>
 <style scoped lang="scss">

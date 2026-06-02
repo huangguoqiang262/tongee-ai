@@ -415,7 +415,9 @@ const openChat = (item) => {
         chat_key: item.chat_key,
         fileUrl: item.file_add_info?.url,
         fileName: item.file_add_info?.title || item.title,
-        fileId: item.file_key || ''
+        fileId: item.file_key || '',
+        note_id: item.note_id,
+        notebook_id: item.notebook_id,
       }
     })
   }

@@ -146,3 +146,35 @@ export function know_chat_lists(data) {
     data
   })
 }
+// 获取场景列表
+export function scene_list(data) {
+  return request({
+    url: '/scene/list',
+    method: 'post',
+    data
+  })
+}
+// 创建自定义场景
+export function scene_create(data) {
+  return request({
+    url: '/scene/create',
+    method: 'post',
+    data
+  })
+}
+// 编辑自定义场景
+export function scene_update(data) {
+  return request({
+    url: '/scene/update',
+    method: 'post',
+    data
+  })
+}
+// 删除自定义场景
+export function scene_del(data) {
+  return request({
+    url: '/scene/del',
+    method: 'post',
+    data
+  })
+}

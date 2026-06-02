@@ -387,7 +387,7 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
-import { ref, onMounted, computed, onUnmounted, nextTick, onErrorCaptured } from 'vue'
+import { ref, onMounted, computed, onUnmounted, nextTick, onErrorCaptured, watch } from 'vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import {
   note_list,
@@ -414,6 +414,18 @@ import renameIcon from '@renderer/assets/contextMenu/rename-icon.png'
 import deleteIcon from '@renderer/assets/contextMenu/delete-icon.png'
 import imgSvgIcon from '@renderer/assets/notebook/img-icon.svg'
 import linkSvgIcon from '@renderer/assets/notebook/link-icon.svg'
+
+const props = defineProps({
+  attrs: {
+    type: Object,
+    default: () => ({})
+  },
+  isActiveTab: {
+    type: Boolean,
+    default: false
+  }
+})
+
 onErrorCaptured((err, instance, info) => {
   console.error('组件捕获到错误:', err, info)
   return false // 阻止继续向上传播错误
@@ -892,7 +904,7 @@ const handleContextMenuAction = ({ action }) => {
 let noteLoading = ref(true)
 const getNoteList = () => {
   noteLoading.value = true
-  note_list({ notebook_id: activeNotebook.value, title: searchValue.value })
+  return note_list({ notebook_id: activeNotebook.value, title: searchValue.value })
     .then((res) => {
       if (res.code == 200) {
         noteLists.value = res.data || []
@@ -905,7 +917,7 @@ const getNoteList = () => {
 let bookLoading = ref(true)
 const getBookList = () => {
   bookLoading.value = true
-  notebook_list({ title: searchValue.value })
+  return notebook_list({ title: searchValue.value })
     .then((res) => {
       if (res.code == 200) {
         notebookLists.value = res.data || []
@@ -974,9 +986,61 @@ onUnmounted(() => {
 })
 onMounted(() => {
   document.addEventListener('click', hideContextMenu)
-  getBookList()
   on('refresh-note-list', refreshNoteList)
+
+  if (props.attrs.note_id) {
+    openTargetNote(props.attrs.note_id, props.attrs.notebook_id)
+  } else {
+    getBookList()
+  }
 })
+
+// watch 整个 attrs 对象引用（而非 note_id），因为 addNewTab 每次都会传入新的 attrs 对象，
+// 即使 note_id 相同，对象引用变化也能触发，从而解决同一笔记连续打开检测不到的问题
+watch(
+  () => props.attrs,
+  (newAttrs) => {
+    if (newAttrs && newAttrs.note_id) {
+      openTargetNote(newAttrs.note_id, newAttrs.notebook_id)
+    }
+  }
+)
+
+// 定位并打开目标笔记
+const openTargetNote = (targetNoteId, targetNotebookId) => {
+  // 笔记本列表为空时先加载
+  if (!notebookLists.value.length) {
+    getBookList().then(() => waitAndOpen(targetNoteId, targetNotebookId))
+    return
+  }
+  waitAndOpen(targetNoteId, targetNotebookId)
+}
+
+const waitAndOpen = (targetNoteId, targetNotebookId) => {
+  let retry = 0
+  const tryOpen = () => {
+    retry++
+    if (noteLoading.value || !notebookLists.value.length) {
+      if (retry < 30) { setTimeout(tryOpen, 150) }
+      return
+    }
+    // 切到目标笔记本
+    const needSwitch = targetNotebookId &&
+      targetNotebookId !== activeNotebook.value &&
+      notebookLists.value.find((nb) => nb.id === targetNotebookId)
+    if (needSwitch) {
+      activeNotebook.value = targetNotebookId
+      getNoteList().then(() => {
+        const targetNote = noteLists.value.find((n) => n.id === targetNoteId)
+        if (targetNote) beforeEditNote(targetNote)
+      })
+    } else {
+      const targetNote = noteLists.value.find((n) => n.id === targetNoteId)
+      if (targetNote) beforeEditNote(targetNote)
+    }
+  }
+  tryOpen()
+}
 </script>
 
 <style scoped lang="scss">

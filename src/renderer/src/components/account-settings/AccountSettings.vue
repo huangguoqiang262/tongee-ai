@@ -215,7 +215,7 @@
         <div v-if="resultVisible" class="feedback-result">感谢您对糖源ai的反馈</div>
       </div>
       <div class="quiz-box">
-        <div v-if="isChatting" class="stop-chat-box" @click="stopChat">
+        <div v-if="isChatting" class="stop-chat-box" @click="stopChat(true)">
           <img class="stop-icon" src="@renderer/assets/chat-icon/stop-icon.png" alt="" />
           停止回答
         </div>
@@ -328,7 +328,7 @@
 </template>
 
 <script setup>
-import { ref, inject, reactive, nextTick, onMounted } from 'vue'
+import { ref, inject, reactive, nextTick, onMounted, onUnmounted } from 'vue'
 import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
 import { edit_user, logout } from '@renderer/api/user'
 import { useUserStore, useToolBarStore } from '@renderer/stores/user'
@@ -425,6 +425,9 @@ let defaultModel = ref({})
 onMounted(() => {
   getAppVersion()
   getModels()
+})
+onUnmounted(() => {
+  stopChat()
 })
 // 获取模型列表
 const getModels = () => {
@@ -592,6 +595,8 @@ const createChat = () => {
       activeSession.value.isNetwork = false
     }
     activeSession.value.messages = []
+    // 每次加载历史后尝试恢复会话
+    // tryResumeChat()
   })
 }
 let isChatting = ref(false)
@@ -686,7 +691,7 @@ const handleSendMessage = async (message) => {
       enableSearch: activeSession.value.isNetwork,
       temperature: activeSession.value.temperature,
       generateQuestions: activeSession.value.generateQuestions,
-      maxCompletionTokens:1000
+      maxCompletionTokens:1000,
     },
     knowledgeBaseParamsList: [
       {
@@ -704,7 +709,7 @@ const handleSendMessage = async (message) => {
     },
     annexParamList: []
   }
-  evtSource.value = new SSE(import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/basic-chat', {
+  evtSource.value = new SSE(import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/chat', {
     withCredentials: false, // 跨域请求时是否携带cookie凭证 zhaoxin TODO
     // 禁用自动启动，需要调用stream()方法才能发起请求
     start: false,
@@ -767,15 +772,15 @@ const handleSendMessage = async (message) => {
       responseMessage.textContent += response.contentText
     }
 
-    if (response.finished) {
-      isChatting.value = false
-      // evtSource.value.close()
-      // chatMessage.prompt_tokens = response.promptToken
-      // chatMessage.total_tokens = response.promptToken
-      // responseMessage.completion_tokens = response.completionTokens
-      // responseMessage.total_tokens = response.completionTokens
-      responseMessage.issueContentText = response.issueContentText || ''
-    }
+    // if (response.finished) {
+    //   isChatting.value = false
+    //   // evtSource.value.close()
+    //   // chatMessage.prompt_tokens = response.promptToken
+    //   // chatMessage.total_tokens = response.promptToken
+    //   // responseMessage.completion_tokens = response.completionTokens
+    //   // responseMessage.total_tokens = response.completionTokens
+    // responseMessage.issueContentText = response.issueContentText || ''
+    // }
     // 滚动到底部
     await nextTick(() => {
       const container = messageListRef.value
@@ -818,9 +823,9 @@ const handleSendMessage = async (message) => {
   })
   // 添加明确的关闭监听
   evtSource.value.addEventListener('abort', () => {
-    if (!responseMessage.textContent) {
-      responseMessage.textContent = '已取消回答'
-    }
+    // if (!responseMessage.textContent) {
+    //   responseMessage.textContent = ''
+    // }
     isChatting.value = false
   })
   // 调用stream，发起请求。
@@ -831,9 +836,139 @@ const handleSendMessage = async (message) => {
     messageListRef.value ? messageListRef.value.scrollTo(0, messageListRef.value.scrollHeight) : ''
   })
 }
-const stopChat = () => {
+const stopChat = (isUserStop = false) => {
+  if (isUserStop && isChatting.value) {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/stop')
+    xhr.setRequestHeader('Content-Type', 'application/json')
+    xhr.send(JSON.stringify({ sessionId: activeSession.value.chat_key, otherParams: {
+      dingUid: userInfo.value.ding_uid,
+      uniacid: userStore.uniacid
+    }}))
+    isChatting.value = false
+    return false
+  }
   isChatting.value = false
   evtSource.value?.close()
+}
+// 尝试恢复未完成的会话
+const tryResumeChat = () => {
+  if (isChatting.value) return
+  // 检查最后一条消息是否未完成
+  const messages = activeSession.value.messages
+  if (messages.length === 0) return
+  const lastMessage = messages[messages.length - 1]
+  if (lastMessage.type === 'ASSISTANT' && !lastMessage.char_id) {
+    resumeUnfinishedResponse()
+  }
+}
+// 恢复未完成的回答
+const resumeUnfinishedResponse = () => {
+  const messages = activeSession.value.messages
+  const lastMessage =   messages.length > 0 ? messages[messages.length - 1] : null
+  if (!lastMessage || lastMessage.type != 'ASSISTANT') return false
+  evtSource.value = new SSE(import.meta.env.VITE_API_BASE_AI_URL + '/ai/chat-dialogue/reconnect', {
+    withCredentials: false,
+    start: false,
+    payload: JSON.stringify({
+      sessionId: activeSession.value.chat_key
+    }),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  isChatting.value = true
+  evtSource.value.addEventListener('document', async (event) => {
+    const response = JSON.parse(event.data)
+    lastMessage.retrievedDocumentList = response || []
+  })
+  evtSource.value.addEventListener('file', async (event) => {
+    const response = JSON.parse(event.data)
+    lastMessage.file_info = response || []
+  })
+  evtSource.value.addEventListener('annex', async (event) => {
+    const response = JSON.parse(event.data)
+    lastMessage.use_annex = response || []
+  })
+  evtSource.value.addEventListener('message', async (event) => {
+    try {
+      const response = JSON.parse(event.data)
+      if (response.contentText || response.reasoningContentText) {
+        if (response.reasoningContentText) {
+          function filterText(str) {
+            str = str.replace(/<\/?think>/g, '')
+            str = str.replace(/\n/g, (match, offset, s) => {
+              const prev = s[offset - 1]
+              const next = s[offset + 1]
+              return prev === '\n' || next === '\n' ? '\n' : ''
+            })
+            return str
+          }
+          lastMessage.reasoningContentText = (lastMessage.reasoningContentText || '') + filterText(response.reasoningContentText)
+        }
+        lastMessage.textContent += response.contentText || ''
+      }
+      // if (response.finished) {
+      //   isChatting.value = false
+      //   lastMessage.char_id = response.endId || ''
+      // lastMessage.issueContentText = response.issueContentText || ''
+      //   evtSource.value?.close()
+      // }
+      await nextTick(() => {
+        const container = messageListRef.value
+        if (container) {
+          const isAtBottom =
+            container.scrollTop + container.clientHeight >= container.scrollHeight - 80
+          if (isAtBottom) {
+            container.scrollTo({
+              top: container.scrollHeight,
+              behavior: 'smooth'
+            })
+          }
+        }
+      })
+    } catch (err) {
+      console.error('解析续传响应失败:', err)
+    }
+  })
+  // 添加明确的关闭监听
+  evtSource.value.addEventListener('stop', (event) => {
+    let stopResponse = JSON.parse(event.data)
+    isChatting.value = false
+    lastMessage.char_id = stopResponse.endId || ''
+  })
+  evtSource.value.addEventListener('reconnect_null', (data) => {
+    isChatting.value = false
+    evtSource.value?.close()
+  })
+  evtSource.value.addEventListener('error', (error) => {
+    let errData
+    try {
+      errData = error.data
+        ? JSON.parse(error.data)
+        : { message: '系统错误，请稍后再试' }
+    } catch (err) {
+      console.log(err)
+      errData = { message: '系统错误，请稍后再试' }
+    }
+    // eslint-disable-next-line no-undef
+    ElMessage({
+      type: 'error',
+      message: errData.message
+    })
+    if (!lastMessage.textContent) {
+      lastMessage.textContent = errData.message
+    }
+    isChatting.value = false
+  })
+  evtSource.value.addEventListener('abort', () => {
+    // if (!lastMessage.textContent) {
+    //   lastMessage.textContent = ''
+    // }
+    isChatting.value = false
+  })
+  evtSource.value.stream()
 }
 const submitpasswordForm = async (formRef) => {
   formRef.validate((valid) => {
