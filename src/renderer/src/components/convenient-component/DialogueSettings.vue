@@ -146,7 +146,7 @@
             size="small"
             :min="0"
             :step="0.1"
-            :max="2"
+            :max="1"
             :marks="temperatureMarks"
           />
         </div>
@@ -155,7 +155,7 @@
           <el-slider
             v-model="configuration.top_p"
             size="small"
-            :min="0.1"
+            :min="0"
             :step="0.1"
             :max="1"
             :marks="topPMarks"
@@ -303,8 +303,8 @@ const updateMarks = () => {
   frequencyPenaltyMarks.value = { '-2': '-2.0', [cfg.frequency_penalty]: '默认', 2: '2.0' }
   presencePenaltyMarks.value = { '-2': '-2.0', [cfg.presence_penalty]: '默认', 2: '2.0' }
   seedMarks.value = { '-1': '-1', [cfg.seed]: '默认', 2048: '2048' }
-  temperatureMarks.value = { 0: '0', [cfg.temperature]: '默认', 2: '2' }
-  topPMarks.value = { 0.1: '0.1', [cfg.top_p]: '默认', 1: '1' }
+  temperatureMarks.value = { 0: '0', [cfg.temperature]: '默认', 1: '1' }
+  topPMarks.value = { 0: '0', [cfg.top_p]: '默认', 1: '1' }
   vectorShardNumberMarks.value = { 0: '0', [cfg.vector_shard_number]: '默认', 100: '100' }
   similarityThresholdMarks.value = { 0: '0', [cfg.similarity_threshold]: '默认', 1.0: '1.0' }
   contextNumberMarks.value = { 0: '0', [cfg.context_number]: '默认', 30: '30' }
