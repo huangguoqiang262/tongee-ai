@@ -380,7 +380,7 @@ const handleEditScene = (scene) => {
   editingSceneId.value = scene.id
   sceneName.value = scene.name || ''
   sceneDescription.value = scene.description || ''
-  sceneLogo.value = scene.logo || ''
+  sceneLogo.value = scene.image || ''
   configuration.value = {
     frequency_penalty: scene.params.frequency_penalty ?? props.config.frequency_penalty,
     presence_penalty: scene.params.presence_penalty ?? props.config.presence_penalty,
@@ -430,8 +430,10 @@ const handleSaveScene = async () => {
     const params = {
       name: sceneName.value.trim(),
       description: sceneDescription.value.trim(),
-      logo: sceneLogo.value.trim(),
-      ...configuration.value
+      image: sceneLogo.value.trim(),
+      params: {
+        ...configuration.value
+      }
     }
     if (editingSceneId.value) {
       // 编辑模式
