@@ -373,6 +373,7 @@ const handleSelectScene = (scene) => {
     scene_id: scene.id ?? 0
   }
   emits('change', configParams)
+  handleClose()
 }
 
 // ---------- 编辑场景 ----------
