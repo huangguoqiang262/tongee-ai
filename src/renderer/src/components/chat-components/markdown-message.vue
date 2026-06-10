@@ -21,9 +21,14 @@
         <div class="knowledge-popover-content">
           {{ htmlToText(currentDocumentInfo?.documentContent || '') }}
         </div>
-        <div class="knowledge-popover-footer">
+        <div v-if="currentDocumentInfo.note_id == 0 || !currentDocumentInfo.note_id" class="knowledge-popover-footer">
           <img class="icon" :src="getFileIcon(currentDocumentInfo)" alt="" />
           <span>{{ currentDocumentInfo?.fileUrl?.split('.').pop()?.toUpperCase() }}</span>
+          <!-- <span class="knowledge-popover-filename">{{ currentDocumentInfo?.fileName }}</span> -->
+        </div>
+        <div v-else class="knowledge-popover-footer">
+          <img class="icon" :src="getFileIcon(currentDocumentInfo)" alt="" />
+          <span>笔记</span>
           <!-- <span class="knowledge-popover-filename">{{ currentDocumentInfo?.fileName }}</span> -->
         </div>
       </div>
@@ -41,6 +46,7 @@ import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
+import noteIcon from '@renderer/assets/file-icons/note-large-icon.png'
 const props = defineProps({
   message: {
     type: String,
@@ -68,8 +74,17 @@ const getFileIcon = (item) => {
   if (!item || !item.fileName) {
     return ''
   }
-  // 根据文件扩展名返回不同的图标
-  const ext = item.fileUrl?.split('.').pop()?.toLowerCase()
+ // 根据文件扩展名返回不同的图标
+  let ext = ''
+  if (item.full_path) {
+    ext = item.full_path?.split('.').pop()?.toLowerCase()
+  } else if (item.fileUrl) {
+    ext = item.fileUrl?.split('.').pop()?.toLowerCase()
+  } else if (item.note_id && item.note_id != 0) {
+    ext = 'note'
+  } else {
+    ext = item.url?.split('.').pop()?.toLowerCase()
+  }
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -83,7 +98,8 @@ const getFileIcon = (item) => {
     png: imgIcon,
     jpg: imgIcon,
     jpeg: imgIcon,
-    gif: imgIcon
+    gif: imgIcon,
+    note: noteIcon
   }
 
   return iconMap[ext] || wordIcon
@@ -96,7 +112,6 @@ const popoverRef = ref(null)
 let triggerElement = ref(null)
 const currentKnowledgeId = ref(null)
 const currentDocumentInfo = ref(null)
-
 // 合并相同fileId的文件，将引用的段落合并，每个文件保留children子数组
 // 父级sort用于展示合并后的段落号（如"3、5"），children中每条保留原始sort不变
 const mergeDocumentList = computed(() => {

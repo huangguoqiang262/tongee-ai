@@ -159,7 +159,14 @@ const addNewTab = (config = {}) => {
     activeTabId.value = tabs.value[index].id
     return
   }
-  tabs.value.push(newTab)
+
+  const activeIndex = tabs.value.findIndex((tab) => tab.id === activeTabId.value)
+  if (activeIndex !== -1) {
+    tabs.value.splice(activeIndex + 1, 0, newTab)
+  } else {
+    tabs.value.push(newTab)
+  }
+
   activeTabId.value = newTab.id
   updateAddressBar()
 

@@ -483,7 +483,8 @@
                               <span v-if="item.item_type == 3" class="web-url">{{
                                 item.info?.web_url
                               }}</span>
-                              <span v-else-if="item.info?.url.split('.').pop() == 'txt'">文本</span>
+                              <span v-else-if="item.info?.url.split('.').pop() == 'txt' && (!item.note_id || item.note_id == 0)">文本</span>
+                              <span v-else-if="item.note_id && item.note_id != 0">笔记</span>
                               <span v-else-if="
                                 ['png', 'jpg', 'jpeg', 'gif'].includes(
                                   item.info?.url.split('.').pop()
@@ -757,6 +758,7 @@ import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 import defaultImg from '@renderer/assets/repository/default-img.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
+import noteSmallIcon from '@renderer/assets/notebook/notebook-small.png'
 import synergyIcon from '@renderer/assets/contextMenu/synergy-icon.png'
 import synergyEditIcon from '@renderer/assets/contextMenu/synergy-edit-icon.png'
 import synergyConfirmIcon from '@renderer/assets/contextMenu/synergy-confirm-icon.png'
@@ -3201,6 +3203,8 @@ const getFileIcon = (item) => {
     return catalogueIcon
   } else if (item.item_type == 3) {
     return webPageIcon
+  } else if (item.note_id && item.note_id != 0) {
+    return noteSmallIcon
   }
   // 根据文件扩展名返回不同的图标
   const ext = item.info?.url?.split('.').pop()?.toLowerCase()
@@ -3239,6 +3243,8 @@ const getFileIcon1 = (item) => {
     return catalogueIcon
   } else if (item.item_type == 3) {
     return webPageIcon
+  }  else if (item.note_id && item.note_id != 0) {
+    return noteSmallIcon
   }
   // 根据文件扩展名返回不同的图标
   const ext = item.title?.split('.').pop()?.toLowerCase()

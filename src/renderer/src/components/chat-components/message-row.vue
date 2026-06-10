@@ -9,6 +9,7 @@ import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
+import noteIcon from '@renderer/assets/file-icons/note-large-icon.png'
 const props = defineProps({
   //是否正在对话
   isChatting: {
@@ -179,6 +180,8 @@ const getFileIcon = (item) => {
     ext = item.full_path?.split('.').pop()?.toLowerCase()
   } else if (item.fileUrl) {
     ext = item.fileUrl?.split('.').pop()?.toLowerCase()
+  } else if (item.note_id && item.note_id != 0) {
+    ext = 'note'
   } else {
     ext = item.url?.split('.').pop()?.toLowerCase()
   }
@@ -194,7 +197,8 @@ const getFileIcon = (item) => {
     png: imgIcon,
     jpg: imgIcon,
     jpeg: imgIcon,
-    gif: imgIcon
+    gif: imgIcon,
+    note: noteIcon
   }
 
   return iconMap[ext] || wordIcon
@@ -421,13 +425,13 @@ const againText = (text) => {
             </div>
             <div v-show="unfoldCiteFile" class="file-content-box">
               <div
-                v-for="file in mergeDocumentList"
+                v-for="(file, fileIndex) in mergeDocumentList"
                 :key="file.fileId"
                 class="file-item"
                 @click="retrievedDocumen(file)"
               >
                 <div class="file-name">
-                  {{ file.fileName }}
+                  {{fileIndex+1 }}.{{ file.fileName }}
                   <!-- <span class="file-sort">{{ '第' + file.sort + '段落' }}</span> -->
                 </div>
               </div>

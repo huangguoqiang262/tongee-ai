@@ -113,7 +113,7 @@ watchEffect(() => {
         width: '100%',
       });
     })
-  } else if (props.attrs.note_id) {
+  } else if (props.attrs.note_id && props.attrs.note_id != 0) {
     note_id.value = props.attrs.note_id
     IS_NOTE.value = true
     getNote()

@@ -9,6 +9,7 @@ import pptIcon from '@renderer/assets/file-icons/ppt-large-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-large-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-large-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-large-icon.png'
+import noteIcon from '@renderer/assets/file-icons/note-large-icon.png'
 const props = defineProps({
   direction: {
     type: String,
@@ -96,6 +97,9 @@ const getFileIcon1 = (item) => {
 const getFileIcon = (item) => {
   // 根据文件扩展名返回不同的图标
   const ext = item.full_path?.split('.').pop()?.toLowerCase()
+  if (item.note_id && item.note_id != 0) {
+    ext = 'note'
+  }
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -109,7 +113,8 @@ const getFileIcon = (item) => {
     png: imgIcon,
     jpg: imgIcon,
     jpeg: imgIcon,
-    gif: imgIcon
+    gif: imgIcon,
+    note: noteIcon
   }
 
   return iconMap[ext] || wordIcon
@@ -150,6 +155,22 @@ const formatFileSize = (kb) => {
 const rotateCiteFile = () => {
   unfoldCiteFile.value = !unfoldCiteFile.value
 }
+// 合并相同fileId的文件  将引用的段落合并，每个文件保留children子数组记录各段落
+// 父级sort用于展示合并后的段落号（如"3、5"），children中每条保留原始sort不变
+const mergeDocumentList = computed(() => {
+  let files = [...props.message.retrievedDocumentList, ...props.message.use_annex]
+  const urlMap = {}
+  files.forEach((file) => {
+    const sortVal = file.sort ? file.sort.split('.')[0] + '' : ''
+    if (urlMap[file.fileId]) {
+      urlMap[file.fileId].sort = urlMap[file.fileId].sort + '、' + sortVal
+      urlMap[file.fileId].children.push({ ...file })
+    } else {
+      urlMap[file.fileId] = { ...file, sort: sortVal, children: [{ ...file }] }
+    }
+  })
+  return Object.values(urlMap)
+})
 const processedReasoning = computed(() => {
   return props.message?.reasoningContentText
     .replace(/`?\[\s?kno_(\d+)\s?\]`?/g, (match, id) => {
@@ -246,40 +267,40 @@ const processedReasoning = computed(() => {
           }"
         >
           <div class="message-content" :class="{ 'no-line-number': !props.lineNumber }">
-            <div
-              v-if="props.message.retrievedDocumentList.length || props.message.use_annex.length"
-              class="file-list"
-            >
-              <div class="file-label" @click="rotateCiteFile">
-                找到了{{
-                  props.message.retrievedDocumentList.length + props.message.use_annex.length
-                }}个资料
-                <img
-                  class="rotate"
-                  :style="{ transform: unfoldCiteFile ? 'rotate(180deg)' : '' }"
-                  src="@renderer/assets/down-icon.png"
-                  alt=""
-                />
-              </div>
-              <div v-show="unfoldCiteFile" class="file-content-box">
-                <div
-                  v-for="file in props.message.retrievedDocumentList"
-                  :key="file.fileId"
-                  class="file-item"
-                >
-                  <div class="file-name">
-                    {{ file.fileName }}
-                    <span class="file-sort">{{ '第' + file.sort + '段落' }}</span>
-                  </div>
-                </div>
-                <div v-for="file in props.message.use_annex" :key="file.fileId" class="file-item">
-                  <div class="file-name">
-                    {{ file.fileName }}
-                    <span class="file-sort">{{ '第' + file.sort + '段落' }}</span>
-                  </div>
-                </div>
-              </div>
+            <div v-if="mergeDocumentList.length" class="file-list">
+            <div class="file-label" @click="rotateCiteFile">
+              找到了{{ mergeDocumentList.length }}个资料
+              <img
+                class="rotate"
+                :style="{ transform: unfoldCiteFile ? 'rotate(180deg)' : '' }"
+                src="@renderer/assets/down-icon.png"
+                alt=""
+              />
             </div>
+            <div v-show="unfoldCiteFile" class="file-content-box">
+              <div
+                v-for="(file, fileIndex) in mergeDocumentList"
+                :key="file.fileId"
+                class="file-item"
+              >
+                <div class="file-name">
+                  {{ fileIndex+1 }}.{{ file.fileName }}
+                  <!-- <span class="file-sort">{{ '第' + file.sort + '段落' }}</span> -->
+                </div>
+              </div>
+              <!-- <div
+                v-for="file in props.message.use_annex"
+                :key="file.fileId"
+                class="file-item"
+                @click="retrievedDocumen(file)"
+              >
+                <div class="file-name">
+                  {{ file.fileName }}
+                  <span class="file-sort">{{ '第' + file.sort?.split('.')[0] + '段落' }}</span>
+                </div>
+              </div> -->
+            </div>
+          </div>
             <!-- 如果消息的内容为空则显示加载动画 -->
             <TextLoading
               v-if="
@@ -439,6 +460,7 @@ const processedReasoning = computed(() => {
       font-size: 14px;
       line-height: 20px;
       color: #8b8b8b;
+      color: var(--el-color-primary-light-3);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
