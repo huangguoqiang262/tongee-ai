@@ -260,7 +260,7 @@ const closeTab = (tabId, e) => {
   if (activeTabId.value === tabId) {
     if (tabs.value.length > 1) {
       // 优先激活右侧标签，如果没有则激活左侧
-      activeTabId.value = tabs.value[index + 1]?.id || tabs.value[index - 1]?.id
+      activeTabId.value =  tabs.value[index - 1]?.id || tabs.value[index + 1]?.id 
     }
   }
 
