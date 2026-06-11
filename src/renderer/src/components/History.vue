@@ -8,7 +8,7 @@
             <img class="filter-icon" src="@renderer/assets/refresh-icon.png" alt="" />
             刷新
           </div>
-          <div class="export-box" @click="beforeClearChange">清空记录</div>
+          <div class="export-box" :class="{'disabledClass': activeTab == '3'}" @click="beforeClearChange">清空记录</div>
         </div>
       </div>
       <div class="tabs">
@@ -458,6 +458,11 @@ const list = ref([])
 const statisticsData = ref({})
 let clearHistory = ref(false)
 let beforeClearChange = () => {
+  if (activeTab.value == '3') {
+    // eslint-disable-next-line no-undef
+      ElMessage.warning('协作历史不支持清空')
+    return
+  }
   clearHistory.value = true
 }
 const fileTypes = ref([])
@@ -720,7 +725,10 @@ onMounted(() => {
           font-size: 12px;
           color: #fff;
           cursor: pointer;
-
+          &.disabledClass {
+            background: #e5e5e5;
+            color: #999;
+          }
           &:active {
             opacity: 0.6;
           }
