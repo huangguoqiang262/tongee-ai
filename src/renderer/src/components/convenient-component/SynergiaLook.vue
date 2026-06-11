@@ -453,7 +453,6 @@ const addApprover = (data) => {
 }
 // 删除协同、批准人  task_type 1 协同 2 批准
 const removePerson = (data, task_type) => {
-  console.log(data);
 
   var params = {
     item_id: props.itemId,

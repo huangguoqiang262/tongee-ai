@@ -865,7 +865,6 @@ const handleScroll = (event) => {
   }
 }
 const handleMentionSelect = (Mentions) => {
-  console.log(Mentions, '@')
   mentionedList.value = Mentions
 }
 // 防抖函数
