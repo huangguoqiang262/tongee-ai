@@ -21,7 +21,7 @@
         <div class="knowledge-popover-content">
           {{ htmlToText(currentDocumentInfo?.documentContent || '') }}
         </div>
-        <div v-if="currentDocumentInfo.note_id == 0 || !currentDocumentInfo.note_id" class="knowledge-popover-footer">
+        <div v-if="currentDocumentInfo?.note_id == 0 || !currentDocumentInfo?.note_id" class="knowledge-popover-footer">
           <img class="icon" :src="getFileIcon(currentDocumentInfo)" alt="" />
           <span>{{ currentDocumentInfo?.fileUrl?.split('.').pop()?.toUpperCase() }}</span>
           <!-- <span class="knowledge-popover-filename">{{ currentDocumentInfo?.fileName }}</span> -->
@@ -80,11 +80,12 @@ const getFileIcon = (item) => {
     ext = item.full_path?.split('.').pop()?.toLowerCase()
   } else if (item.fileUrl) {
     ext = item.fileUrl?.split('.').pop()?.toLowerCase()
-  } else if (item.note_id && item.note_id != 0) {
-    ext = 'note'
   } else {
     ext = item.url?.split('.').pop()?.toLowerCase()
   }
+  if (item.note_id && item.note_id != 0) {
+    ext = 'note'
+  } 
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -215,8 +216,8 @@ const toKnowledge = (item) => {
       fileUrl: item.fileUrl,
       fileName: item.fileName,
       fileId: item.fileId || '',
-      note_id: item.note_id,
-      notebook_id: item.notebook_id,
+      note_id: item.note_id || 0,
+      notebook_id: item.notebook_id || 0,
     }
   })
   triggerElement.value = null

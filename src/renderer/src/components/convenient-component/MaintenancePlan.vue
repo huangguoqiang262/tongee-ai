@@ -338,7 +338,7 @@ const customUpload = (fileItem) => {
   xhr.send(formData)
 }
 const hideContextMenu = (e) => {
-  if (contextMenu.value.show && !e.target.closest('.context-menu')) {
+  if (contextMenu.value.show && !e.target.closest('.handleContextMenu')) {
     contextMenu.value.show = false
   }
 }

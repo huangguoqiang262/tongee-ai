@@ -180,11 +180,12 @@ const getFileIcon = (item) => {
     ext = item.full_path?.split('.').pop()?.toLowerCase()
   } else if (item.fileUrl) {
     ext = item.fileUrl?.split('.').pop()?.toLowerCase()
-  } else if (item.note_id && item.note_id != 0) {
-    ext = 'note'
   } else {
     ext = item.url?.split('.').pop()?.toLowerCase()
   }
+  if (item.note_id && item.note_id != 0) {
+    ext = 'note'
+  } 
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,

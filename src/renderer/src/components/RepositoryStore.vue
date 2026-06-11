@@ -735,6 +735,7 @@ import renameIcon from '@renderer/assets/contextMenu/rename-icon.png'
 import permissionIcon from '@renderer/assets/contextMenu/permission-icon.png'
 import exportIcon from '@renderer/assets/contextMenu/export-icon.png'
 import deleteIcon from '@renderer/assets/contextMenu/delete-icon.png'
+import openLocationIcon from '@renderer/assets/contextMenu/open-location-icon.png'
 import canViewIcon from '@renderer/assets/contextMenu/can-view-icon.png'
 import disabledExportIcon from '@renderer/assets/contextMenu/disabled-export-icon.png'
 import cannotViewIcon from '@renderer/assets/contextMenu/cannot-view-icon.png'
@@ -1522,6 +1523,7 @@ onUnmounted(() => {
 })
 onMounted(async () => {
   document.addEventListener('click', hideContextMenu)
+
   if (useCheckLogin().value) {
     await getUserInfo()
   }
@@ -2058,7 +2060,7 @@ const createOrRename = (item) => {
       item_id: item.id,
       new_name: item.title
     }
-    if (item.item_type == 1) {
+    if (item.item_type == 1 && !(item.note_id && item.note_id != 0)) {
       const allowedTypes = [
         'txt',
         'png',
@@ -2172,7 +2174,6 @@ const showContextMenu = (e, item) => {
   if (!item.checked) {
     resetChecks()
   }
-
   if (
     activeRepository.value.user_permission?.is_creator ||
     activeRepository.value.user_permission?.is_manager
@@ -2376,12 +2377,20 @@ const showContextMenu = (e, item) => {
           }
         }
       }
+      if (isSearching.value && searchText.value.trim()) {
+        contextMenu.value.actionSheet.push({
+          name: '打开所在位置',
+          icon: openLocationIcon,
+          action: 'openLocation'
+        })
+      }
     }
     contextMenu.value.actionSheet.splice(-3, 0, {
       name: '移动到',
       icon: moveIcon,
       action: 'moveFile'
     })
+    
   } else {
     item.checked = true
     if (item.permission_type === 1 && repositoryPermission.value.is_public == 1) {
@@ -2605,6 +2614,27 @@ const showContextMenu = (e, item) => {
           }
         }
       }
+    }
+    if (activeFiles.value.length === 1 && isSearching.value && searchText.value.trim() && contextMenu.value.show) {
+      contextMenu.value.actionSheet.push({
+        name: '打开所在位置',
+        icon: openLocationIcon,
+        action: 'openLocation'
+      })
+    } else if (activeFiles.value.length === 1 && isSearching.value && searchText.value.trim() && !contextMenu.value.show) {
+      contextMenu.value = {
+          show: true,
+          permission_type: 'cannotView',
+          x: e.clientX,
+          y: e.clientY,
+          actionSheet: [
+            {
+              name: '打开所在位置',
+              icon: openLocationIcon,
+              action: 'openLocation'
+            }
+          ]
+        }
     }
   }
 }
@@ -2860,6 +2890,31 @@ const handleContextMenuAction = ({ action }) => {
   } else if (action === 'moveFile') {
     // 移动文件
     moveFileVisible.value = true
+  } else if (action === 'openLocation') {
+    // 打开所在位置 - 退出搜索并定位到该文件的父目录
+    if (activeFiles.value.length > 0) {
+      // 先读取数据，再清空搜索状态
+      const targetFile = activeFiles.value[0]
+      pathList.value = [
+        {
+          name: '内容',
+          id: 0
+        }
+      ]
+      if (targetFile.item_path_info && targetFile.item_path_info.length > 1) {
+        targetFile.item_path_info.forEach((item, index) => {
+          if (index < targetFile.item_path_info.length - 1) {
+            pathList.value.push({
+              name: item.title,
+              id: item.id
+            })
+          }
+        })
+      }
+    }
+    searchText.value = ''
+    isSearching.value = false
+    refreshList()
   }
   contextMenu.value.show = false
 }
@@ -2871,7 +2926,7 @@ const resetChecks = () => {
   // })
 }
 const hideContextMenu = (e) => {
-  if (contextMenu.value.show && !e.target.closest('.context-menu')) {
+  if (contextMenu.value.show && !e.target.closest('.handleContextMenu')) {
     contextMenu.value.show = false
   }
   resetChecks()
@@ -2884,7 +2939,12 @@ const handleBlur = () => {
   if (!searchText.value.trim()) {
     isSearching.value = false
   }
-  refreshList()
+  var timer = setTimeout(() => {
+    clearTimeout(timer)
+      // 右键菜单显示时不刷新列表，避免覆盖 checked 状态
+    if (contextMenu.value.show) return
+    refreshList()
+  }, 300);
 }
 const sortMenuClick = (item) => {
   sortType.value = item.value
@@ -3295,16 +3355,6 @@ let pathList = ref([
     name: '内容',
     id: 0
   }
-  // {
-  //   name: '个人知识库',
-  //   id: 'personal',
-  //   level: 1
-  // },
-  // {
-  //   name: '公共知识库',
-  //   id: 'public',
-  //   level: 1
-  // }
 ])
 // parentItemId 知识库文件父级id
 let parentItemId = computed(() => {
@@ -3362,11 +3412,16 @@ const dirChange = (item, e, i) => {
     }
     return
   }
-  pathList.value.push({
-    name: item.title,
-    id: item.id
-  })
+  if (isSearching.value && searchText.value.trim()) {
+    return
+  }
 
+  if (parentItemId.value != item.id) {
+      pathList.value.push({
+      name: item.title,
+      id: item.id
+    })
+  }
   refreshList()
 }
 const pathChange = (i) => {
