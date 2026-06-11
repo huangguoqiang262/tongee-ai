@@ -324,6 +324,11 @@ const fetchSceneList = async () => {
     const res = await scene_list({})
     if (res.data) {
       sceneList.value = res.data.list || res.data || []
+      sceneList.value.some(item => {
+        if(item.id == selectedSceneId.value) {
+          handleSelectScene(item, false)
+        }
+      })
     }
   } catch (err) {
     console.error('获取场景列表失败:', err)
@@ -357,7 +362,7 @@ const handleClose = () => {
 }
 
 // ---------- 选择场景 ----------
-const handleSelectScene = (scene) => {
+const handleSelectScene = (scene, isClose = true) => {
   selectedSceneId.value = scene.id
   // 提取配置参数返回，保持与原来 @change 返回的一致
   const configParams = {
@@ -373,7 +378,9 @@ const handleSelectScene = (scene) => {
     scene_id: scene.id ?? 0
   }
   emits('change', configParams)
-  handleClose()
+  if (isClose) {
+    handleClose()
+  }
 }
 
 // ---------- 编辑场景 ----------
