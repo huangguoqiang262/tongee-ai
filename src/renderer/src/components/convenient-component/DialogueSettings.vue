@@ -179,7 +179,7 @@
             size="small"
             :min="0"
             :step="0.1"
-            :max="1.0"
+            :max="3.0"
             :marks="similarityThresholdMarks"
           />
         </div>
@@ -306,7 +306,7 @@ const updateMarks = () => {
   temperatureMarks.value = { 0: '0', [cfg.temperature]: '默认', 1: '1' }
   topPMarks.value = { 0: '0', [cfg.top_p]: '默认', 1: '1' }
   vectorShardNumberMarks.value = { 0: '0', [cfg.vector_shard_number]: '默认', 100: '100' }
-  similarityThresholdMarks.value = { 0: '0', [cfg.similarity_threshold]: '默认', 1.0: '1.0' }
+  similarityThresholdMarks.value = { 0: '0', [cfg.similarity_threshold]: '默认', 3.0: '3.0' }
   contextNumberMarks.value = { 0: '0', [cfg.context_number]: '默认', 30: '30' }
 }
 
