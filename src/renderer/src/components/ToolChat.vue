@@ -923,6 +923,15 @@ watchEffect(() => {
       activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
       activeSession.value.enableSearch = res.data.model_info?.net_status || 2
       activeSession.value.isNetwork = res.data.is_use_net ? true : false
+      if (props.noteId && props.noteId > 0 && res.data.note_info) {
+        var  tempFile = {
+          fileId: res.data.note_info.file_key,
+          fileName: res.data.note_info.title,
+          fileUrl: res.data.note_info.url,
+          id: props.noteId
+        }
+        selecteFileList.value = [tempFile]
+      }
       if (activeSession.value.enableSearch == 2) {
         activeSession.value.isNetwork = false
       }
