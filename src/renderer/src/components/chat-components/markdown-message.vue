@@ -160,18 +160,55 @@ const findDocPosition = (knowledgeId, sourceType) => {
 // 处理消息内容，将[kno_数字] 或[ kno_数字 ]或`[kno_数字]`或`[ kno_数字 ]`格式转换为HTML  我还想将[eqm_1]或[ eqm_1 ]替换为按钮
 // 带空格的也要匹配
 const processedMessage = computed(() => {
-  return props.message
-    .replace(/`?\[\s?kno_(\d+)\s?\]`?/g, (match, id) => {
-      const { fileIndex } = findDocPosition(id, 'kno')
-      return `<span class="knowledge-tag" data-knowledge-id="${id}" data-file-index="${fileIndex}">${fileIndex >= 0 ? fileIndex + 1 : id}</span>`
-    })
-    .replace(/`?\[\s?ann_(\d+)\s?\]`?/g, (match, id) => {
-      const { fileIndex } = findDocPosition(id, 'ann')
-      return `<span class="ann-tag" data-ann-id="${id}" data-file-index="${fileIndex}">${fileIndex >= 0 ? fileIndex + 1 : id}</span>`
-    })
-    .replace(/`?\[\s?eqm_(\d+)\s?\]`?/g, (match, id) => {
-      return `<span class="equipment-tag" data-equipment-id="${id}">查看</span>`
-    })
+  // 处理 kno_ 标签：相邻且 fileIndex 相同的，只保留第一个，后面的替换为空
+  let result = props.message.replace(/`?\[\s?kno_(\d+)\s?\]`?/g, (match, id, offset, str) => {
+    const { fileIndex } = findDocPosition(id, 'kno')
+    const replacement = `<span class="knowledge-tag" data-knowledge-id="${id}" data-file-index="${fileIndex}">${fileIndex >= 0 ? fileIndex + 1 : id}</span>`
+
+    // 检查前面是否紧邻一个 fileIndex 相同的 kno_ 标签（包括已替换的 <span> 和未替换的原始标签）
+    const before = str.substring(0, offset)
+    // 匹配前面末尾已替换的 knowledge-tag span 或原始 kno_ 标签
+    const tailMatch = before.match(/(<span class="knowledge-tag"[^>]*data-file-index="(\d+)"[^>]*>[^<]*<\/span>|`?\[\s?kno_(\d+)\s?\]`?)\s*$/)
+    if (tailMatch) {
+      const prevFileIndex = tailMatch[2] !== undefined ? parseInt(tailMatch[2]) : (tailMatch[3] !== undefined ? findDocPosition(tailMatch[3], 'kno').fileIndex : -1)
+      if (prevFileIndex === fileIndex) {
+        return ''
+      }
+    }
+    return replacement
+  })
+
+  // 处理 ann_ 标签：相邻且 fileIndex 相同的，只保留第一个，后面的替换为空
+  result = result.replace(/`?\[\s?ann_(\d+)\s?\]`?/g, (match, id, offset, str) => {
+    const { fileIndex } = findDocPosition(id, 'ann')
+    const replacement = `<span class="ann-tag" data-ann-id="${id}" data-file-index="${fileIndex}">${fileIndex >= 0 ? fileIndex + 1 : id}</span>`
+
+    const before = str.substring(0, offset)
+    const tailMatch = before.match(/(<span class="ann-tag"[^>]*data-file-index="(\d+)"[^>]*>[^<]*<\/span>|`?\[\s?ann_(\d+)\s?\]`?)\s*$/)
+    if (tailMatch) {
+      const prevFileIndex = tailMatch[2] !== undefined ? parseInt(tailMatch[2]) : (tailMatch[3] !== undefined ? findDocPosition(tailMatch[3], 'ann').fileIndex : -1)
+      if (prevFileIndex === fileIndex) {
+        return ''
+      }
+    }
+    return replacement
+  })
+
+  // 处理 eqm_ 标签：相邻且 id 相同的，只保留第一个，后面的替换为空
+  result = result.replace(/`?\[\s?eqm_(\d+)\s?\]`?/g, (match, id, offset, str) => {
+    const replacement = `<span class="equipment-tag" data-equipment-id="${id}">查看</span>`
+
+    const before = str.substring(0, offset)
+    const tailMatch = before.match(/(<span class="equipment-tag"[^>]*data-equipment-id="(\d+)"[^>]*>[^<]*<\/span>|`?\[\s?eqm_(\d+)\s?\]`?)\s*$/)
+    if (tailMatch) {
+      const prevId = tailMatch[2] !== undefined ? tailMatch[2] : tailMatch[3]
+      if (prevId === id) {
+        return ''
+      }
+    }
+    return replacement
+  })
+  return result
 })
 
 // 根据知识库ID获取文档信息（kno_标签）
