@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import LoginComponent from './Login.vue'
+import { emit } from '@renderer/utils/eventBus'
 
 let currentInstance = null
 
@@ -7,6 +8,7 @@ export function showLoginModel() {
   if (currentInstance) {
     return
   }
+  emit('login-success')
   // 创建div容器
   const container = document.createElement('div')
   document.body.appendChild(container)

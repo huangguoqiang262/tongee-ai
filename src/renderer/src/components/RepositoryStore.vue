@@ -1097,8 +1097,8 @@ const compareSpace = () => {
   // 比较用户空间和已使用空间  space_use_total、space 为字符串类型(例 1MB 1GB) 须转换为数字类型进行比较
   // 正则匹配字母部分识别单位 然后进行转换对比
   const spaceRegex = /(\d+)([A-Za-z]+)/
-  const spaceMatch = userInfo.value.space.match(spaceRegex)
-  const usedSpaceMatch = userInfo.value.space_use_total.match(spaceRegex)
+  const spaceMatch = userInfo.value?.space?.match(spaceRegex)
+  const usedSpaceMatch = userInfo.value?.space_use_total?.match(spaceRegex)
   if (spaceMatch && usedSpaceMatch) {
     // 保留两位小数
     const spaceValue = parseFloat(spaceMatch[1])
