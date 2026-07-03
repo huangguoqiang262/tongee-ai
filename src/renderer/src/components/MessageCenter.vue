@@ -3,13 +3,8 @@
     <div class="square">
       <div class="page-title">消息中心</div>
       <div class="tabs">
-        <div
-          v-for="tab in tabs"
-          :key="tab.id"
-          class="tab-item"
-          :class="{ 'active-tab': tab.id == activeTab }"
-          @click="tabHandle(tab.id)"
-        >
+        <div v-for="tab in tabs" :key="tab.id" class="tab-item" :class="{ 'active-tab': tab.id == activeTab }"
+          @click="tabHandle(tab.id)">
           <div v-if="msgTips?.details[tab.id]" class="dot"></div>
           {{ tab.name }}
         </div>
@@ -18,44 +13,19 @@
         <div v-if="activeTab == '1'" class="repository-box">
           <div class="head">
             <div class="search-box">
-              <el-input
-                v-model="searchVal"
-                clearable
-                class="search-input"
-                placeholder="搜索反馈内容"
-                :suffix-icon="searchVal ? '' : Search"
-                @change="tabHandle(1)"
-              />
+              <el-input v-model="searchVal" clearable class="search-input" placeholder="搜索反馈内容"
+                :suffix-icon="searchVal ? '' : Search" @change="tabHandle(1)" />
             </div>
             <div class="right-head-box">
-              <el-tooltip
-                ref="datePickerTooltip"
-                placement="bottom-end"
-                effect="light"
-                trigger="click"
-              >
+              <el-tooltip ref="datePickerTooltip" placement="bottom-end" effect="light" trigger="click">
                 <template #content>
-                  <el-date-picker
-                    v-model="dateValue"
-                    :teleported="false"
-                    format="YYYY/MM/DD"
-                    value-format="YYYY-MM-DD"
-                    type="daterange"
-                    range-separator="至"
-                    start-placeholder="开始时间"
-                    end-placeholder="结束时间"
-                    @change="changeDate"
-                  />
+                  <el-date-picker v-model="dateValue" :teleported="false" format="YYYY/MM/DD" value-format="YYYY-MM-DD"
+                    type="daterange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间"
+                    @change="changeDate" />
                 </template>
                 <div class="filter-box" :class="{ active: dateValue && dateValue.length > 0 }">
-                  <svg
-                    width="14px"
-                    height="14px"
-                    viewBox="0 0 14 14"
-                    version="1.1"
-                    xmlns="http://www.w3.org/2000/svg"
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                  >
+                  <svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1" xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink">
                     <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                       <g id="消息中心—知识库反馈" transform="translate(-1282, -244)">
                         <rect fill="#FAFAFA" x="0" y="0" width="1920" height="1080"></rect>
@@ -65,48 +35,14 @@
                             <rect id="矩形" x="0" y="0" width="1920" height="1080"></rect>
                           </g>
                         </g>
-                        <rect
-                          id="矩形备份-18"
-                          fill="#FFFFFF"
-                          x="68"
-                          y="52"
-                          width="1842"
-                          height="1018"
-                          rx="16"
-                        ></rect>
-                        <rect
-                          id="矩形"
-                          fill="#F9F9F9"
-                          x="534"
-                          y="214"
-                          width="910"
-                          height="490"
-                          rx="12"
-                        ></rect>
-                        <rect
-                          id="矩形备份-3"
-                          stroke="#EFEFEF"
-                          x="1268.5"
-                          y="238.5"
-                          width="69"
-                          height="25"
-                          rx="6"
-                        ></rect>
+                        <rect id="矩形备份-18" fill="#FFFFFF" x="68" y="52" width="1842" height="1018" rx="16"></rect>
+                        <rect id="矩形" fill="#F9F9F9" x="534" y="214" width="910" height="490" rx="12"></rect>
+                        <rect id="矩形备份-3" stroke="#EFEFEF" x="1268.5" y="238.5" width="69" height="25" rx="6"></rect>
                         <g id="245筛选过滤" transform="translate(1282, 244)" fill-rule="nonzero">
-                          <rect
-                            id="矩形"
-                            fill="#000000"
-                            opacity="0"
-                            x="0"
-                            y="0"
-                            width="14"
-                            height="14"
-                          ></rect>
-                          <path
-                            id="路径"
+                          <rect id="矩形" fill="#000000" opacity="0" x="0" y="0" width="14" height="14"></rect>
+                          <path id="路径"
                             d="M11.9546875,2.996875 L7.875,7.8859375 L7.875,10.7296875 C7.875,10.7953125 7.8421875,10.8609375 7.7984375,10.9046875 L6.4859375,11.9765625 C6.34375,12.096875 6.125,11.9875 6.125,11.8015625 L6.125,7.8859375 L2.0453125,2.996875 C1.925,2.8546875 2.0234375,2.6359375 2.209375,2.6359375 L11.7796875,2.6359375 C11.965625,2.6359375 12.075,2.8546875 11.9546875,2.996875 Z"
-                            :fill="fillColor"
-                          ></path>
+                            :fill="fillColor"></path>
                         </g>
                       </g>
                     </g>
@@ -148,7 +84,7 @@
         </div>
         <div v-if="activeTab == '2'" class="repository-box">
           <div v-if="fileList.length" v-infinite-scroll="loadData" class="list-box">
-            <div v-for="item in fileList" :key="item.id" class="list-item">
+            <div v-for="item in fileList" :key="item.id" class="list-item file-item" @click="openFile(item)">
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
                 <div class="title">{{ item.title || '' }}</div>
@@ -185,12 +121,7 @@
         </div>
         <div v-if="activeTab == '4'" class="synergia-box">
           <div class="synergia-list">
-            <div
-              v-for="(item, index) in synergiaMsgList"
-              :key="index"
-              class="list-item"
-              @click="lookSystem(item)"
-            >
+            <div v-for="(item, index) in synergiaMsgList" :key="index" class="list-item" @click="lookSystem(item)">
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
                 <div class="title-box">
@@ -227,16 +158,8 @@
                     >
                   </div> -->
                   <div v-if="item.user_status == 4 && item.msg_type == 6" class="handle-box">
-                    <el-button class="btn-refuse" size="small" @click="handleRefuse(item)"
-                      >拒绝</el-button
-                    >
-                    <el-button
-                      class="btn-agree"
-                      type="primary"
-                      size="small"
-                      @click="handleAgree(item)"
-                      >同意</el-button
-                    >
+                    <el-button class="btn-refuse" size="small" @click="handleRefuse(item)">拒绝</el-button>
+                    <el-button class="btn-agree" type="primary" size="small" @click="handleAgree(item)">同意</el-button>
                   </div>
                 </div>
               </div>
@@ -245,32 +168,16 @@
         </div>
       </div>
     </div>
-    <el-dialog
-      v-model="feedbackDetailVisible"
-      :close-on-click-modal="false"
-      align-center
-      :show-close="true"
-      destroy-on-close
-      modal-class="feedback-detail-box-dialog"
-      width="850"
-    >
+    <el-dialog v-model="feedbackDetailVisible" :close-on-click-modal="false" align-center :show-close="true"
+      destroy-on-close modal-class="feedback-detail-box-dialog" width="850">
       <template #header>
         <div class="head-left">
-          <img
-            class="dialog-header-del-icon"
-            src="@renderer/assets/repository/fk-icon.png"
-            alt=""
-          />
+          <img class="dialog-header-del-icon" src="@renderer/assets/repository/fk-icon.png" alt="" />
           <div class="">反馈详情</div>
         </div>
       </template>
       <div class="detail-box">
-        <Toolbar
-          v-show="false"
-          :default-config="defaultConfig"
-          :editor="editorRef"
-          mode="default"
-        />
+        <Toolbar v-show="false" :default-config="defaultConfig" :editor="editorRef" mode="default" />
         <div class="title-input">
           {{ '关于' + deepData.type_name + '的' + (deepData.sug_or_pb == 1 ? '问题' : '建议') }}
         </div>
@@ -281,41 +188,18 @@
           <div class="doc-type">文档类别：{{ deepData.doc_type_name || '' }}</div>
           <div class="feekback-type">反馈分类：{{ deepData.type_name || '' }}</div>
         </div>
-        <Editor
-          v-model="deepData.content"
-          class="editor-content"
-          mode="default"
-          @on-created="handleCreated"
-        />
+        <Editor v-model="deepData.content" class="editor-content" mode="default" @on-created="handleCreated" />
       </div>
     </el-dialog>
-    <el-dialog
-      v-model="refuseVisible"
-      draggable
-      align-center
-      modal-class="refuse-dialog"
-      width="390"
-    >
+    <el-dialog v-model="refuseVisible" draggable align-center modal-class="refuse-dialog" width="390">
       <template #header>
         <img class="dialog-header-del-icon" src="@renderer/assets/refuse-icon.png" alt="" />
         <div class="">拒绝原因</div>
       </template>
-      <el-form
-        ref="refuseFormRef"
-        :model="refuseForm"
-        :rules="refuseRules"
-        class="rename-form"
-        @submit.prevent
-      >
+      <el-form ref="refuseFormRef" :model="refuseForm" :rules="refuseRules" class="rename-form" @submit.prevent>
         <el-form-item prop="refuseInput" style="margin-bottom: 0">
-          <el-input
-            v-model="refuseForm.refuseInput"
-            type="textarea"
-            resize="none"
-            class="refuse-input"
-            size="large"
-            placeholder="请输入拒绝原因"
-          />
+          <el-input v-model="refuseForm.refuseInput" type="textarea" resize="none" class="refuse-input" size="large"
+            placeholder="请输入拒绝原因" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -331,7 +215,7 @@
 </template>
 
 <script setup>
-import { Search } from '@element-plus/icons-vue'
+import { ElementPlus, Search } from '@element-plus/icons-vue'
 import { ref, onMounted, watchEffect, shallowRef, nextTick, inject } from 'vue'
 import FileSvgIcon from '@renderer/assets/file-icon.svg'
 import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
@@ -345,6 +229,7 @@ import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
+import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
 import { useMsgTips } from '@renderer/hooks/checkLogin'
 import { formatTime, formatDay } from '@renderer/utils/index.js'
 import {
@@ -361,7 +246,7 @@ let fillColor = 'var(--default-font-color)'
 const props = defineProps({
   attrs: {
     type: Object,
-    default: () => {}
+    default: () => { }
   }
 })
 const refuseVisible = ref(false)
@@ -386,6 +271,47 @@ const lookSystem = (item) => {
       fileName: item.process_title,
       fileId: item.file_key,
       itemId: item.item_id || ''
+    }
+  })
+}
+// 打开更新文件或文件夹
+const openFile = (item) => {
+  if (item.extra_data?.file_status == 1) {
+    if (item.extra_data?.type == 'folder') {
+      toKnowledge(item.extra_data)
+    } else if (item.extra_data?.type == 'file') {
+      var tempFile = {
+        item_type: 1,
+        file_edit_url: item.extra_data.url
+      }
+      addNewTab({
+        icon: getFileIcon(tempFile),
+        title: item.extra_data.title,
+        url: 'DocumentDetail',
+        isInternal: true,
+        attrs: {
+          fileUrl: item.extra_data.url,
+          fileName: item.extra_data.title,
+          fileId: item.file_key,
+        }
+      })
+    }
+  } else {
+    // eslint-disable-next-line no-undef
+    ElMessage.error(item.extra_data?.file_message || '文件或文件夹不存在')
+  }
+}
+//进入知识库
+const toKnowledge = (item) => {
+  addNewTab({
+    url: 'RepositoryStore',
+    title: '知识库',
+    icon: repositoryIcon,
+    isInternal: true,
+    attrs: {
+      RepositoryId: item.know_id,
+      item_path_info: item.item_path_info,
+      randomId: item.know_id + '-' + Math.random().toString(36).substring(2)
     }
   })
 }
@@ -470,7 +396,7 @@ const handleAgree = (item) => {
         }
       })
     })
-    .catch(() => {})
+    .catch(() => { })
 }
 // 拒绝入库
 const handleRefuse = (item) => {
@@ -694,14 +620,17 @@ watchEffect(() => {
       font-size: 14px;
       color: var(--default-font-color);
       line-height: 22px;
+
       .refuse-input {
         height: 140px;
+
         .el-textarea__inner {
           height: 100%;
           background: #f9f9f9;
           box-shadow: none;
           font-size: 14px;
           color: var(--default-font-color);
+
           &.is-focus {
             box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
           }
@@ -710,6 +639,7 @@ watchEffect(() => {
     }
 
     .dialog-footer {
+
       .cancel-btn,
       .confirm-btn {
         height: 36px;
@@ -726,9 +656,11 @@ watchEffect(() => {
     }
   }
 }
+
 :deep(.feedback-detail-box-dialog) {
   .el-dialog {
     padding: 13px 20px 14px;
+
     .el-dialog__header {
       padding-bottom: 13px;
       display: flex;
@@ -739,28 +671,34 @@ watchEffect(() => {
       font-size: 14px;
       color: var(--default-font-color);
       line-height: 22px;
+
       .head-left {
         display: flex;
         align-items: center;
         gap: 10px;
+
         .dialog-header-del-icon {
           width: 16px;
           height: 16px;
         }
       }
+
       .head-right {
         display: flex;
         align-items: center;
         gap: 20px;
+
         .close-icon {
           color: #737475;
           font-size: 18px;
           cursor: pointer;
           transition: all 0.2s linear;
+
           &:hover {
             color: var(--el-color-primary);
           }
         }
+
         .open-chat {
           flex-shrink: 0;
           display: flex;
@@ -787,6 +725,7 @@ watchEffect(() => {
             height: 16px;
           }
         }
+
         .save {
           flex-shrink: 0;
           width: 20px;
@@ -804,16 +743,19 @@ watchEffect(() => {
       height: 600px;
       background: #f9f9f9;
       border-radius: 10px;
+
       .detail-box {
         box-sizing: border-box;
         width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
+
         .w-e-toolbar {
           flex-shrink: 0;
           background: transparent !important;
         }
+
         .title-input {
           flex-shrink: 0;
           width: calc(100% - 10px);
@@ -823,17 +765,20 @@ watchEffect(() => {
           font-weight: 600;
           color: var(--default-font-color);
         }
+
         .type-box {
           padding: 10px;
           display: flex;
           gap: 10px 30px;
           flex-wrap: wrap;
+
           .doc-type,
           .feekback-type {
             font-size: 14px;
             color: var(--default-font-color);
           }
         }
+
         .status {
           margin-bottom: 10px;
           width: 48px;
@@ -845,17 +790,21 @@ watchEffect(() => {
           text-align: center;
           color: var(--el-color-primary);
         }
+
         .status-err {
           background: var(--el-color-danger-light-9);
           color: var(--el-color-danger);
         }
+
         .editor-content {
           flex: 1;
           padding: 0 5px;
           background: transparent !important;
           overflow: hidden;
+
           .w-e-text-container {
             background: transparent !important;
+
             .w-e-text-placeholder {
               color: #909090;
             }
@@ -863,6 +812,7 @@ watchEffect(() => {
         }
       }
     }
+
     .el-dialog__footer {
       .dialog-footer {
         display: flex;
@@ -875,6 +825,7 @@ watchEffect(() => {
     }
   }
 }
+
 .message-center-box {
   box-sizing: border-box;
   padding: 50px 20px 10px;
@@ -883,6 +834,7 @@ watchEffect(() => {
   background-color: #fff;
   border-radius: 12px;
   overflow: hidden;
+
   .square {
     width: 100%;
     max-width: 910px;
@@ -891,6 +843,7 @@ watchEffect(() => {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+
     .page-title {
       flex-shrink: 0;
       margin-bottom: 40px;
@@ -899,6 +852,7 @@ watchEffect(() => {
       color: var(--default-font-color);
       line-height: 30px;
     }
+
     .tabs {
       margin-bottom: 20px;
       flex-shrink: 0;
@@ -907,6 +861,7 @@ watchEffect(() => {
       align-items: center;
       flex-wrap: wrap;
       gap: 20px 40px;
+
       .tab-item {
         position: relative;
         flex-shrink: 0;
@@ -918,6 +873,7 @@ watchEffect(() => {
         will-change: color, font-size, font-weight;
         backface-visibility: hidden;
         perspective: 100px;
+
         .dot {
           position: absolute;
           top: 1px;
@@ -927,6 +883,7 @@ watchEffect(() => {
           border-radius: 50%;
           background: #ff5151;
         }
+
         &.active-tab {
           color: var(--el-color-primary);
           font-size: 16px;
@@ -934,9 +891,11 @@ watchEffect(() => {
         }
       }
     }
+
     .content-box {
       flex: 1;
       overflow: hidden;
+
       .empty {
         margin: 30px auto 100px;
         font-size: 13px;
@@ -944,6 +903,7 @@ watchEffect(() => {
         text-align: center;
         line-height: 20px;
       }
+
       .repository-box {
         max-height: 100%;
         width: 100%;
@@ -954,6 +914,7 @@ watchEffect(() => {
         display: flex;
         flex-direction: column;
         overflow: hidden;
+
         .head {
           flex-shrink: 0;
           padding-top: 20px;
@@ -962,6 +923,7 @@ watchEffect(() => {
           display: flex;
           justify-content: space-between;
           align-items: center;
+
           .search-box {
             .search-input {
               :deep(.el-input__wrapper) {
@@ -970,6 +932,7 @@ watchEffect(() => {
                 width: 280px;
                 padding-left: 20px;
                 font-size: 14px;
+
                 .el-input__inner {
                   color: var(--default-font-color);
                   height: 32px;
@@ -977,10 +940,12 @@ watchEffect(() => {
               }
             }
           }
+
           .right-head-box {
             display: flex;
             align-items: center;
             gap: 10px;
+
             .filter-box {
               width: 70px;
               height: 26px;
@@ -993,18 +958,22 @@ watchEffect(() => {
               font-size: 12px;
               color: var(--default-font-color);
               cursor: pointer;
+
               &:active {
                 opacity: 0.8;
               }
+
               &.active {
                 color: var(--el-color-primary);
                 border-color: var(--el-color-primary-light-8);
               }
+
               .filter-icon {
                 width: 14px;
                 height: 14px;
               }
             }
+
             .export-box {
               width: 76px;
               height: 26px;
@@ -1016,65 +985,81 @@ watchEffect(() => {
               font-size: 12px;
               color: #fff;
               cursor: pointer;
+
               &:active {
                 opacity: 0.8;
               }
             }
           }
         }
+
         .list-box {
           padding-right: 20px;
           overflow-y: auto;
+
           .list-item {
             padding: 20px 0;
             border-bottom: 1px solid #f0f0f0;
             display: flex;
             justify-content: space-between;
             gap: 20px;
+            &.file-item {
+              cursor: pointer;
+            }
             &:last-child {
               border-bottom: none;
             }
+
             .left-icon {
               flex-shrink: 0;
               width: 20px;
               height: 20px;
               color: var(--el-color-primary);
             }
+
             .center-box {
               flex: 1;
               overflow: hidden;
+
               .title {
                 margin-bottom: 4px;
                 font-size: 14px;
                 color: var(--default-font-color);
                 line-height: 22px;
               }
+
               .desc {
                 margin-bottom: 8px;
                 font-size: 12px;
                 color: #909090;
                 line-height: 16px;
+
                 &.desc-hide {
                   overflow: hidden;
                   text-overflow: ellipsis;
                   white-space: nowrap;
                 }
+
                 &.desc1 {
                   margin-bottom: 0;
                 }
               }
+
               .author {
                 margin-bottom: 10px;
                 font-size: 12px;
                 color: #909090;
                 line-height: 16px;
+
                 &.author1 {
                   margin-bottom: 0;
                 }
               }
+
               .btns {
                 display: flex;
                 gap: 10px;
+
                 .btn {
                   box-sizing: border-box;
                   min-width: 76px;
@@ -1086,13 +1071,16 @@ watchEffect(() => {
                   border-radius: 6px;
                   border: 1px solid var(--el-color-primary-light-8);
                   cursor: pointer;
+
                   &:active {
                     opacity: 0.8;
                   }
+
                   &.btn1 {
                     color: var(--default-font-color);
                     border-color: #efefef;
                   }
+
                   &.btn2 {
                     color: #909090;
                     border-color: #efefef;
@@ -1101,6 +1089,7 @@ watchEffect(() => {
                 }
               }
             }
+
             .time {
               flex-shrink: 0;
               font-size: 12px;
@@ -1110,6 +1099,7 @@ watchEffect(() => {
           }
         }
       }
+
       .synergia-box {
         box-sizing: border-box;
         padding: 10px 0;
@@ -1118,6 +1108,7 @@ watchEffect(() => {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+
         .synergia-list {
           box-sizing: border-box;
           width: 100%;
@@ -1125,24 +1116,29 @@ watchEffect(() => {
           overflow-y: auto;
           background: #f9f9f9;
           border-radius: 12px;
+
           .list-item {
             padding: 20px 0;
             border-bottom: 1px solid #f0f0f0;
             display: flex;
             justify-content: space-between;
             gap: 20px;
+            cursor: pointer;
             &:last-child {
               border-bottom: none;
             }
+
             .left-icon {
               flex-shrink: 0;
               width: 20px;
               height: 20px;
               color: var(--el-color-primary);
             }
+
             .center-box {
               flex: 1;
               overflow: hidden;
+
               .title-box {
                 display: flex;
                 align-items: center;
@@ -1150,6 +1146,7 @@ watchEffect(() => {
                 gap: 0 10px;
                 margin-bottom: 8px;
                 overflow: hidden;
+
                 .title {
                   flex: 1;
                   font-size: 14px;
@@ -1159,6 +1156,7 @@ watchEffect(() => {
                   white-space: nowrap;
                   overflow: hidden;
                 }
+
                 .time {
                   flex-shrink: 0;
                   font-size: 12px;
@@ -1166,6 +1164,7 @@ watchEffect(() => {
                   line-height: 22px;
                 }
               }
+
               .author {
                 margin-bottom: 16px;
                 font-size: 12px;
@@ -1175,10 +1174,12 @@ watchEffect(() => {
                 // align-items: center;
                 gap: 0 20px;
                 word-break: break-all;
+
                 .author-name {
                   flex-shrink: 0;
                 }
               }
+
               .message-box {
                 box-sizing: border-box;
                 padding: 11px 10px;
@@ -1189,23 +1190,28 @@ watchEffect(() => {
                 border-radius: 6px;
                 border: 1px solid #efefef;
                 background: #fff;
+
                 .message-text {
                   flex: 1;
                   font-size: 12px;
                   color: var(--default-font-color);
                   line-height: 16px;
+
                   &.message-text-err {
                     color: #ff5151;
                   }
                 }
+
                 .handle-box {
                   display: flex;
+
                   .btn-agree,
                   .btn-refuse {
                     box-sizing: border-box;
                     width: 60px;
                     border-radius: 6px;
                     cursor: pointer;
+
                     &:active {
                       opacity: 0.8;
                     }

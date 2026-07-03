@@ -1683,7 +1683,7 @@ const getRepositoryInfo = (id) => {
     }
   ]
   detailFileList.value = []
-  get_know_info({
+  return get_know_info({
     know_id: id,
     parent_item_id: 0,
     sort_type: sortType.value,
@@ -3438,10 +3438,38 @@ const removeItemsAfterIndex = (array, index) => {
 }
 watch(
   () => props.attrs.randomId,
-  (newVal) => {
+  async (newVal) => {
     if (newVal) {
       activeRepositoryId.value = newVal.split('-')[0]
-      getRepositoryInfo(activeRepositoryId.value)
+      var item_path_info = props.attrs.item_path_info
+      if (item_path_info && item_path_info.length > 0) {
+        await getRepositoryInfo(activeRepositoryId.value)
+        // 打开所在位置 - 退出搜索并定位到该文件的父目录
+          pathList.value = [
+            {
+              name: '内容',
+              id: 0
+            }
+          ] 
+          if (item_path_info && item_path_info.length > 1) {
+            item_path_info.forEach((item, index) => {
+              if (index < item_path_info.length - 1) {
+                pathList.value.push({
+                  name: item.title,
+                  id: item.id
+                })
+              }
+            })
+          }
+        searchText.value = ''
+        isSearching.value = false
+        contextMenu.value.show = false
+        if (activeRepository.value.is_public != 1) {
+           refreshList()
+        }
+      } else {
+        getRepositoryInfo(activeRepositoryId.value)
+      }
     }
   },
   {
