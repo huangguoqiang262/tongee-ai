@@ -50,7 +50,7 @@
           autosize
           class="input"
           resize="none"
-          placeholder="@知识库或直接提问"
+          placeholder="@知识库或联网提问"
           type="textarea"
           :options="mentionOptions"
           :whole="true"
@@ -94,6 +94,9 @@
               <div class="circle-icon"></div>
             </div>
           </template>
+          <div class="mention-el" @click.stop="triggerMention">
+            @
+          </div>
           <div class="histore-issue-box">
             <div
               v-for="(item, index) in KnowledgeBase"
@@ -278,6 +281,7 @@ export default {
       showNextBtn: false,
       isHoveringAttachBox: false,
       mentioned: [],
+      allKnowsList: [],
       login_show_knows: 0
     }
   },
@@ -342,6 +346,12 @@ export default {
       })
     },
     handleWholeRemove(e) {
+      // 如果删除的是"所有知识库"，清空所有 mentioned
+      if (e === '所有知识库') {
+        this.mentioned = []
+        this.message.text = this.message.text.replace(/@所有知识库\s?/g, '')
+        return
+      }
       // 匹配提及内容并删除
       var reg = new RegExp('@' + e, 'g')
       this.message.text = this.message.text.replace(reg, '')
@@ -382,6 +392,48 @@ export default {
           modelInfo: this.modelInfo
         }
       })
+    },
+    triggerMention() {
+      const text = this.message.text
+      const lastAtIndex = text.lastIndexOf('@')
+      // 检查 @ 后面是否紧跟着空格（用户输入了 @ 但没有选择提及，直接空格后输入了其他内容）
+      // 例如：'@ 后续内容' → @ 位置在0，后面第一个字符是空格
+      const afterAt = lastAtIndex !== -1 ? text.substring(lastAtIndex + 1) : ''
+      const atFollowedBySpace = afterAt.startsWith(' ')
+
+      if (lastAtIndex !== -1 && atFollowedBySpace) {
+        // @ 后面紧跟空格，用户本意是想提及但没选，光标定位到 @ 后面
+        this.focus = true
+        this.$nextTick(() => {
+          const inputEl = this.$el.querySelector('.input textarea, .input input')
+          if (inputEl) {
+            inputEl.focus()
+            // 光标定位到 @ 后面（@ 和空格之间）
+            inputEl.setSelectionRange(lastAtIndex + 1, lastAtIndex + 1)
+          }
+        })
+      } else if (lastAtIndex !== -1 && lastAtIndex === text.length - 1) {
+        // @ 在文本末尾，后面为空，等待输入提及
+        this.focus = true
+        this.$nextTick(() => {
+          const inputEl = this.$el.querySelector('.input textarea, .input input')
+          if (inputEl) {
+            inputEl.focus()
+            inputEl.setSelectionRange(text.length, text.length)
+          }
+        })
+      } else {
+        // 没有未完成的 @，追加一个 @ 并聚焦
+        this.message.text += '@'
+        this.focus = true
+        this.$nextTick(() => {
+          const inputEl = this.$el.querySelector('.input textarea, .input input')
+          if (inputEl) {
+            inputEl.focus()
+            inputEl.setSelectionRange(this.message.text.length, this.message.text.length)
+          }
+        })
+      }
     },
     handleMentionSelect(item) {
       this.mentioned.push(item)
@@ -432,7 +484,7 @@ export default {
               provider_key: defaultModel.provider_key,
               model_id: defaultModel.id,
               net_status: defaultModel.net_status,
-              isNetwork: false
+              isNetwork: true
             }
           } else {
             this.modelValue =
@@ -448,7 +500,7 @@ export default {
               provider_key: this.models[0].provider_key,
               model_id: this.models[0].id,
               net_status: this.models[0].net_status,
-              isNetwork: false
+              isNetwork: true
             }
           }
           if (this.modelInfo.net_status == 2) {
@@ -483,6 +535,18 @@ export default {
                 provider_key: children.vector_model?.provider_key || ''
               })
             })
+          })
+        }
+        // 保存全量知识库列表，用于 _all_ 展开
+        this.allKnowsList = [...list]
+        // 在最前面插入"所有知识库"选项
+        if (list.length > 0) {
+          list.unshift({
+            value: '所有知识库',
+            know_key: '_all_',
+            label: '所有知识库',
+            model_name: '',
+            provider_key: ''
           })
         }
         this.mentionOptions = list
@@ -801,7 +865,7 @@ export default {
           provider_key: e.split('/')[1],
           model_id: e.split('/')[2],
           net_status: e.split('/')[3],
-          isNetwork: false
+          isNetwork: true
         }
         if (this.modelInfo.net_status == 2) {
           this.modelInfo.isNetwork = false
@@ -868,6 +932,25 @@ export default {
           this.fileList = []
         } else {
           var prompt = ''
+          // 检查是否包含 _all_，如果有则展开所有知识库
+          var hasAll = this.mentioned.some((item) => item.know_key === '_all_')
+          var knowsToSend
+          if (hasAll) {
+            // 过滤掉 _all_ 标记项，并用全量知识库替换
+            knowsToSend = this.mentioned
+              .filter((item) => item.know_key !== '_all_')
+              .concat(
+                this.allKnowsList.map((k) => ({
+                  know_key: k.know_key,
+                  label: k.label,
+                  value: k.value,
+                  model_name: k.model_name || '',
+                  provider_key: k.provider_key || ''
+                }))
+              )
+          } else {
+            knowsToSend = cloneDeep(this.mentioned)
+          }
           this.replaceActiveTab({
             title: this.message.text,
             url: 'HomePage',
@@ -875,7 +958,7 @@ export default {
             attrs: {
               attach_files: cloneDeep(this.fileList),
               message_text: this.message.text,
-              knows: cloneDeep(this.mentioned),
+              knows: knowsToSend,
               prompt: prompt,
               modelInfo: this.modelInfo
             }
@@ -1160,6 +1243,24 @@ export default {
             height: 4px;
             background: #909090;
             border-radius: 50%;
+          }
+        }
+        .mention-el {
+          flex-shrink: 0;
+          width: fit-content;
+          min-height: 28px;
+          padding: 3px 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          font-weight: 500;
+          font-size: 16px;
+          color: #555555;
+          cursor: pointer;
+          transition: all 0.3s;
+          &:hover {
+            background: var(--primary-bg-color);
           }
         }
         .histore-issue-box {

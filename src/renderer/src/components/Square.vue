@@ -58,7 +58,7 @@
           </template>
           <template #default>
             <div v-if="list.length" v-infinite-scroll="loadData" class="list-box">
-              <div v-for="item in list" :key="item.id" class="list-item">
+              <div v-for="item in list" :key="item.id" class="list-item" :class="{ 'cursor-pointer': item.already_joined}" @click="toKnowledge(item)">
                 <img v-if="item.picurl" class="logo" :src="item.picurl" alt="" />
                 <defaultCoverSvg v-else class="logo" />
                 <div class="item-right">
@@ -78,7 +78,7 @@
                       <span> {{ item.user_count }}人加入 </span>
                     </div>
                     <div v-if="item.already_joined" class="_operation is_join">已加入</div>
-                    <div v-else class="_operation" @click="joinKnowledge(item)">加入知识库</div>
+                    <div v-else class="_operation" @click.stop="joinKnowledge(item)">加入知识库</div>
                   </div>
                 </div>
               </div>
@@ -96,13 +96,16 @@
 <script setup>
 import { Search } from '@element-plus/icons-vue'
 import { emit } from '@renderer/utils/eventBus'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
+import { useCheckLogin } from '@renderer/hooks/checkLogin'
 import { know_types, getKnowSquareList, apply_know_join } from '@renderer/api/repository'
 import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
+import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
 let searchVal = ref('')
 let tabs = ref([])
 let activeTab = ref('')
+const addNewTab = inject('addNewTab')
 const tabHandle = (id) => {
   activeTab.value = id
   resetList()
@@ -159,6 +162,25 @@ const joinKnowledge = (item) => {
         // eslint-disable-next-line no-undef
         ElMessage.primary('申请已提交')
       }
+    }
+  })
+}
+//进入知识库
+const toKnowledge = (item) => {
+  if (!item.already_joined) {
+    return 
+  }
+  if (!useCheckLogin().value) {
+    return
+  }
+  addNewTab({
+    url: 'RepositoryStore',
+    title: '知识库',
+    icon: repositoryIcon,
+    isInternal: true,
+    attrs: {
+      RepositoryId: item.id,
+      randomId: item.id + '-' + Math.random().toString(36).substring(2)
     }
   })
 }
@@ -320,6 +342,9 @@ onMounted(() => {
             &:hover {
               background: inherit !important;
             }
+          }
+          &.cursor-pointer {
+            cursor: pointer;
           }
           &:hover {
             background: rgba(0, 0, 0, 0.02);

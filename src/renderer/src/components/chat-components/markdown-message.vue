@@ -266,6 +266,25 @@ const handleKnowledgeHover = (event) => {
   if (!knowledgeTag && !annTag) return
   showPopover(knowledgeTag || annTag)
 }
+// 点击知识库/引用标签直接打开文档
+const handleKnowledgeClick = (event) => {
+  const knowledgeTag = event.target.closest('.knowledge-tag')
+  const annTag = event.target.closest('.ann-tag')
+  if (!knowledgeTag && !annTag) return
+
+  const tag = knowledgeTag || annTag
+  const knowledgeId = tag.getAttribute('data-knowledge-id')
+  const annTagId = tag.getAttribute('data-ann-id')
+  let docInfo = null
+  if (annTagId) {
+    docInfo = getAnnexInfo(annTagId)
+  } else if (knowledgeId) {
+    docInfo = getDocumentInfo(knowledgeId)
+  }
+  if (docInfo) {
+    toKnowledge(docInfo)
+  }
+}
 // 跳转保养计划页面
 const handleEquipmentClick = (event) => {
   const equipmentTag = event.target.closest('.equipment-tag')
@@ -281,8 +300,10 @@ onMounted(() => {
   if (markdownContainer.value && !props.isPreView) {
     // 监听鼠标移入事件
     markdownContainer.value.addEventListener('mouseenter', handleKnowledgeHover, true)
-    // 监听鼠标移入事件
+    // 监听设备标签点击事件
     markdownContainer.value.addEventListener('click', handleEquipmentClick, true)
+    // 监听知识库/引用标签点击事件（直接打开文档）
+    markdownContainer.value.addEventListener('click', handleKnowledgeClick, true)
   }
 })
 
@@ -290,8 +311,8 @@ onMounted(() => {
 onUnmounted(() => {
   if (markdownContainer.value && !props.isPreView) {
     markdownContainer.value.removeEventListener('mouseenter', handleKnowledgeHover, true)
-    // 监听鼠标移入事件
-    markdownContainer.value.addEventListener('click', handleEquipmentClick, true)
+    markdownContainer.value.removeEventListener('click', handleEquipmentClick, true)
+    markdownContainer.value.removeEventListener('click', handleKnowledgeClick, true)
   }
 })
 </script>
