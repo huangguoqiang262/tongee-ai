@@ -57,19 +57,19 @@
     <div v-if="resultVisible" class="feedback-result">感谢您对糖源ai的反馈</div>
     <div class="search-box">
       <chat-input
-        v-if="activeSession.model_name"
+        v-if="activeSession.model_key"
         key="input"
         ref="chatInputRef"
         :is-active-tab="isActiveTab"
         class="message-input"
         :models="models"
         :model_id="
-          activeSession.model_name +
-          '/' +
+          activeSession.model_key +
+          '%' +
           activeSession.provider_key +
-          '/' +
+          '%' +
           activeSession.model_id +
-          '/' +
+          '%' +
           activeSession.enableSearch
         "
         :is-network="activeSession.isNetwork"
@@ -260,7 +260,7 @@ const activeSession = ref({
   messages: [],
   chat_key: '',
   model_id: '',
-  model_name: '',
+  model_key: '',
   provider_key: '',
   know_key: '',
   temperature: 0.7,
@@ -272,16 +272,16 @@ const activeSession = ref({
   isNetwork: false,
   enableSearch: 2,
   vector_folder_path: '',
-  know_modelName: '',
+  know_model_key: '',
   know_provider_key: ''
 })
 const evtSource = ref(null)
 const selectModel = (model) => {
   if (model) {
-    activeSession.value.model_name = model.split('/')[0]
-    activeSession.value.provider_key = model.split('/')[1] || ''
-    activeSession.value.model_id = model.split('/')[2] || ''
-    activeSession.value.enableSearch = model.split('/')[3] || 2
+    activeSession.value.model_key = model.split('%')[0]
+    activeSession.value.provider_key = model.split('%')[1] || ''
+    activeSession.value.model_id = model.split('%')[2] || ''
+    activeSession.value.enableSearch = model.split('%')[3] || 2
     if (activeSession.value.enableSearch == 2) {
       activeSession.value.isNetwork = false
     }
@@ -336,7 +336,7 @@ const handleSendMessage = async (message) => {
       sessionId: activeSession.value.chat_key
     },
     chatParams: {
-      modelName: activeSession.value.model_name || '',
+      modelName: activeSession.value.model_key || '',
       modelPlatform: activeSession.value.provider_key || '',
       enableSearch: activeSession.value.isNetwork,
       prompt: activeSession.value.prompt || '',
@@ -355,7 +355,7 @@ const handleSendMessage = async (message) => {
     },
     knowledgeBaseParamsList: mentionedList.value.map((item) => {
       return {
-        modelName: item.model_name || '',
+        modelName: item.model_key || '',
         modelPlatform: item.provider_key || '',
         knowledgeBaseId: item.know_key || '/',
         folderPath: '/' + item.know_key || '/'
@@ -904,7 +904,7 @@ const createChat = () => {
     activeSession.value.chat_key = res.data.chat_key
     activeSession.value.know_key = res.data.know_key
     activeSession.value.model_id = res.data.model_info?.model_id || ''
-    activeSession.value.model_name = res.data.model_info?.model_name
+    activeSession.value.model_key = res.data.model_info?.model_key
     activeSession.value.provider_key = res.data.model_info?.provider_key
     activeSession.value.prompt = props.attrs?.prompt || ''
     activeSession.value.enableSearch = res.data.model_info?.net_status || 2

@@ -40,12 +40,19 @@
                 <span v-if="item.size" class="file-size">·</span>
                 <span class="file-path">上传至：{{ props.knowledgePath }}</span>
               </div>
-              <img
-                class="delete-icon"
-                src="@renderer/assets/del-icon1.png"
-                alt=""
-                @click="delErrItem(index)"
-              />
+              <div class="right-center-actions">
+                <!-- 失败时显示重新上传按钮 -->
+                <div v-if="item.status === 'error'" class="retry-btn" @click="retryUpload(index)">
+                  <el-icon class="retry-icon"><Refresh /></el-icon>
+                  <span>重新上传</span>
+                </div>
+                <img
+                  class="delete-icon"
+                  src="@renderer/assets/del-icon1.png"
+                  alt=""
+                  @click="delErrItem(index)"
+                />
+              </div>
             </div>
             <div class="right-bottom">
               <div class="progress">
@@ -165,6 +172,7 @@ import pptIcon from '@renderer/assets/file-icons/ppt-icon.png'
 import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
+import { Refresh } from '@element-plus/icons-vue'
 let repositoryuploadPopover = ref(null)
 let uploadVisible = defineModel({ type: Boolean })
 // let waitUploadList = ref([])
@@ -378,6 +386,21 @@ const uploadSingleFile = async (fileItem) => {
 const delErrItem = (index) => {
   uploadList.value.splice(index, 1)
   clearSuccessUploadItems()
+}
+
+// 重新上传失败的文件或文件夹
+const retryUpload = (index) => {
+  const item = uploadList.value[index]
+  if (!item || item.status !== uploadStatus.ERROR) return
+
+  // 重置上传状态
+  item.status = uploadStatus.PENDING
+  item.progress = 0
+  item.uploadedCount = 0
+  item.errorMessage = ''
+
+  // 开始重新上传
+  startUpload()
 }
 // 修复：改为每个任务独立的轮询管理
 const taskPollingMap = new Map() // 存储每个任务的轮询信息
@@ -679,6 +702,9 @@ const formatFileSize = (bytes) => {
             &:hover {
               background: #f9f9f9;
               border-radius: 4px;
+              .right-center-actions {
+                display: flex !important;
+              }
               .delete-icon {
                 display: block !important;
               }
@@ -766,6 +792,32 @@ const formatFileSize = (bytes) => {
                   white-space: nowrap;
                   text-overflow: ellipsis;
                   overflow: hidden;
+                }
+              }
+              .right-center-actions {
+                display: none;
+                flex-shrink: 0;
+                align-items: center;
+                gap: 8px;
+
+                .retry-btn {
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  cursor: pointer;
+                  color: var(--el-color-primary);
+                  font-size: 12px;
+                  line-height: 16px;
+                  white-space: nowrap;
+
+                  .retry-icon {
+                    width: 14px;
+                    height: 14px;
+                  }
+
+                  &:hover {
+                    opacity: 0.8;
+                  }
                 }
               }
               .delete-icon {

@@ -47,9 +47,13 @@
           autosize
           class="input"
           resize="none"
-          placeholder="基于知识库提问"
+          placeholder="@知识库或直接提问"
           type="textarea"
+          :options="mentionOptions"
+          :whole="true"
+          @whole-remove="handleWholeRemove"
           @focus="focus = true"
+          @select="handleMentionSelect"
           @blur="focus = false"
           @keydown.enter.prevent="sendMessage"
           @paste="handlePaste"
@@ -67,17 +71,17 @@
           >
             <el-option
               v-for="item in models"
-              :key="item.model_name + '/' + item.provider_key + '/' + item.id"
+              :key="item.model_key + '%' + item.provider_key + '%' + item.id"
               :label="item.model_name"
               :value="
-                item.model_name + '/' + item.provider_key + '/' + item.id + '/' + item.net_status
+                item.model_key + '%' + item.provider_key + '%' + item.id + '%' + item.net_status
               "
             >
               <div class="value-text">{{ item.model_name }}</div>
               <div class="value-label">{{ item.desc }}</div>
             </el-option>
           </el-select>
-          <!-- <template v-if="enableSearch == 1">
+          <template v-if="enableSearch == 1">
             <div class="line"></div>
             <div
               class="networking"
@@ -87,7 +91,10 @@
               联网
               <div class="circle-icon"></div>
             </div>
-          </template> -->
+          </template>
+          <div class="mention-el" @click.stop="triggerMention">
+            @
+          </div>
         </div>
         <div class="btn-box">
           <el-popover
@@ -134,6 +141,7 @@
 <script>
 import sendSvgIcon from '@renderer/assets/send-icon.svg'
 import DialogueSettingsSvgIcon from '@renderer/assets/chat-icon/dialogueSettings-icon.svg'
+import { get_user_knows } from '@renderer/api/chat'
 export default {
   name: 'RepositoryChatInput',
   components: {
@@ -187,7 +195,8 @@ export default {
     'selectModel',
     'uploadedAttachment',
     'send',
-    'configurationChange'
+    'configurationChange',
+    'mention-change'
   ],
   data() {
     return {
@@ -205,7 +214,10 @@ export default {
       showPrevBtn: false,
       showNextBtn: false,
       isHoveringAttachBox: false,
-      settingVisible: false
+      settingVisible: false,
+      mentionOptions: [],
+      mentioned: [],
+      allKnowsList: []
     }
   },
   watch: {
@@ -220,6 +232,7 @@ export default {
   },
   mounted() {
     this.modelValue = this.model_id
+    this.getKnows()
     // this.setupScreenshotListeners()
     this.$watch(
       'fileList',
@@ -240,6 +253,131 @@ export default {
     },
     closeSettings() {
       this.$refs.dialogueSettingsPopover.hide()
+    },
+    // 是否联网
+    getKnows() {
+      get_user_knows().then((res) => {
+        var list = []
+        if (res.data.length) {
+          res.data.map((item) => {
+            item.knows.map((children) => {
+              list.push({
+                value: children.title,
+                know_key: children.know_key,
+                label: children.title,
+                model_key: children.vector_model?.model_key || '',
+                provider_key: children.vector_model?.provider_key || ''
+              })
+            })
+          })
+        }
+        // 保存全量知识库列表，用于 _all_ 展开
+        this.allKnowsList = [...list]
+        // 在最前面插入"所有知识库"选项
+        if (list.length > 0) {
+          list.unshift({
+            value: '所有知识库',
+            know_key: '_all_',
+            label: '所有知识库',
+            model_key: '',
+            provider_key: ''
+          })
+        }
+        this.mentionOptions = list
+      })
+    },
+    handleWholeRemove(e) {
+      // 如果删除的是"所有知识库"，清空所有 mentioned
+      if (e === '所有知识库') {
+        this.mentioned = []
+        this.message.text = this.message.text.replace(/@所有知识库\s?/g, '')
+        this.$emit('mention-change', this.mentioned)
+        return
+      }
+      // 匹配提及内容并删除
+      var reg = new RegExp('@' + e, 'g')
+      this.message.text = this.message.text.replace(reg, '')
+      this.mentioned = this.mentioned.filter((item) => item.label !== e)
+      this.$emit('mention-change', this.mentioned)
+    },
+    handleMentionSelect(item) {
+      if (item.know_key === '_all_') {
+        // 选中"所有知识库"时，展开为全量知识库
+        this.mentioned = this.mentioned
+          .filter((m) => m.know_key !== '_all_')
+          .concat(
+            this.allKnowsList.map((k) => ({
+              know_key: k.know_key,
+              label: k.label,
+              value: k.value,
+              model_key: k.model_key || '',
+              provider_key: k.provider_key || ''
+            }))
+          )
+      } else {
+        this.mentioned.push(item)
+      }
+      this.$emit('mention-change', this.mentioned)
+    },
+    triggerMention() {
+      const text = this.message.text
+      const lastAtIndex = text.lastIndexOf('@')
+      // 检查 @ 后面是否紧跟着空格
+      const afterAt = lastAtIndex !== -1 ? text.substring(lastAtIndex + 1) : ''
+      const atFollowedBySpace = afterAt.startsWith(' ')
+
+      if (lastAtIndex !== -1 && atFollowedBySpace) {
+        // @ 后面紧跟空格，光标定位到 @ 后面
+        this.focus = true
+        this.$nextTick(() => {
+          const inputEl = this.$el.querySelector('.input textarea, .input input')
+          if (inputEl) {
+            inputEl.focus()
+            inputEl.setSelectionRange(lastAtIndex + 1, lastAtIndex + 1)
+          }
+        })
+      } else if (lastAtIndex !== -1 && lastAtIndex === text.length - 1) {
+        // @ 在文本末尾，后面为空，等待输入提及
+        this.focus = true
+        this.$nextTick(() => {
+          const inputEl = this.$el.querySelector('.input textarea, .input input')
+          if (inputEl) {
+            inputEl.focus()
+            inputEl.setSelectionRange(text.length, text.length)
+          }
+        })
+      } else {
+        // 没有未完成的 @，追加一个 @ 并聚焦
+        this.message.text += '@'
+        this.focus = true
+        this.$nextTick(() => {
+          const inputEl = this.$el.querySelector('.input textarea, .input input')
+          if (inputEl) {
+            inputEl.focus()
+            inputEl.setSelectionRange(this.message.text.length, this.message.text.length)
+          }
+        })
+      }
+    },
+    checkIfSearchingMention(text) {
+      if (!text.includes('@')) return false
+      // 获取最后一个 @ 的位置
+      const lastAtIndex = text.lastIndexOf('@')
+      if (lastAtIndex === -1) return false
+      // 获取 @ 之后到文本结尾的内容
+      const afterAt = text.substring(lastAtIndex + 1)
+      // 如果 @ 后面是空字符串，返回 false
+      if (afterAt.length > 0) return false
+      // 检查 @ 后面是否有空格或换行（如果有，说明提及已结束）
+      const firstCharAfterAt = afterAt[0]
+      if (firstCharAfterAt === ' ' || firstCharAfterAt === '\n') {
+        return false
+      }
+      // 检查 @ 后面的内容是否包含空格（如果包含，说明提及已结束）
+      if (afterAt.includes(' ') || afterAt.includes('\n')) {
+        return false
+      }
+      return true
     },
     // 是否联网
     networkChange() {
@@ -593,6 +731,9 @@ export default {
             })
             return
           }
+          if (this.checkIfSearchingMention(this.message.text)) {
+            return
+          }
           this.$emit('send', this.message)
           this.message = { text: '', image: '' }
         }
@@ -910,6 +1051,24 @@ export default {
             height: 4px;
             background: #909090;
             border-radius: 50%;
+          }
+        }
+        .mention-el {
+          flex-shrink: 0;
+          width: fit-content;
+          min-height: 28px;
+          padding: 3px 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          font-weight: 500;
+          font-size: 16px;
+          color: #555555;
+          cursor: pointer;
+          transition: all 0.3s;
+          &:hover {
+            background: var(--primary-bg-color);
           }
         }
         .histore-issue-box {

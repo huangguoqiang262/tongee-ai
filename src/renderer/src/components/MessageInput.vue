@@ -73,10 +73,10 @@
           >
             <el-option
               v-for="item in models"
-              :key="item.model_name + '/' + item.provider_key + '/' + item.id"
+              :key="item.model_key + '%' + item.provider_key + '%' + item.id"
               :label="item.model_name"
               :value="
-                item.model_name + '/' + item.provider_key + '/' + item.id + '/' + item.net_status
+                item.model_key + '%' + item.provider_key + '%' + item.id + '%' + item.net_status
               "
             >
               <div class="value-text">{{ item.model_name }}</div>
@@ -472,15 +472,16 @@ export default {
           var defaultModel = this.models.find((item) => item.is_default == 1)
           if (defaultModel) {
             this.modelValue =
-              defaultModel.model_name +
-              '/' +
+              defaultModel.model_key +
+              '%' +
               defaultModel.provider_key +
-              '/' +
+              '%' +
               defaultModel.id +
-              '/' +
+              '%' +
               defaultModel.net_status
             this.modelInfo = {
               model_name: defaultModel.model_name,
+              model_key: defaultModel.model_key,
               provider_key: defaultModel.provider_key,
               model_id: defaultModel.id,
               net_status: defaultModel.net_status,
@@ -488,15 +489,16 @@ export default {
             }
           } else {
             this.modelValue =
-              this.models[0].model_name +
-              '/' +
+              this.models[0].model_key +
+              '%' +
               this.models[0].provider_key +
-              '/' +
+              '%' +
               this.models[0].id +
-              '/' +
+              '%' +
               this.models[0].net_status
             this.modelInfo = {
               model_name: this.models[0].model_name,
+              model_key: this.models[0].model_key,
               provider_key: this.models[0].provider_key,
               model_id: this.models[0].id,
               net_status: this.models[0].net_status,
@@ -860,11 +862,14 @@ export default {
     },
     selectModel(e) {
       if (e) {
+        const modelKey = e.split('%')[0]
+        const modelObj = this.models.find((m) => m.model_key === modelKey)
         this.modelInfo = {
-          model_name: e.split('/')[0],
-          provider_key: e.split('/')[1],
-          model_id: e.split('/')[2],
-          net_status: e.split('/')[3],
+          model_name: modelObj?.model_name || '',
+          model_key: modelKey,
+          provider_key: e.split('%')[1],
+          model_id: e.split('%')[2],
+          net_status: e.split('%')[3],
           isNetwork: true
         }
         if (this.modelInfo.net_status == 2) {
