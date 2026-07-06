@@ -292,7 +292,7 @@ const openFile = (item) => {
         attrs: {
           fileUrl: item.extra_data.url,
           fileName: item.extra_data.title,
-          fileId: item.file_key,
+          fileId: item.extra_data.file_key,
         }
       })
     }

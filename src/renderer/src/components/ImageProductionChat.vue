@@ -161,7 +161,7 @@ const activeSession = ref({
   messages: [],
   chat_key: '',
   model_id: '',
-  model_name: '',
+  model_key: '',
   provider_key: '',
   know_key: '',
   temperature: 0.7,
@@ -172,7 +172,7 @@ const activeSession = ref({
   generateQuestions: true,
   isNetwork: false,
   vector_folder_path: '',
-  know_modelName: '',
+  know_model_key: '',
   know_provider_key: '',
   image_size: props.attrs.image_size || '512*512',
   image_style: props.attrs.image_style || '风格不限'
@@ -616,7 +616,7 @@ const createChat = () => {
     activeSession.value.chat_key = res.data.chat_key
     activeSession.value.know_key = res.data.know_key
     activeSession.value.model_id = res.data.model_info?.model_id || ''
-    activeSession.value.model_name = res.data.model_info?.model_name
+    activeSession.value.model_key = res.data.model_info?.model_key
     activeSession.value.provider_key = res.data.model_info?.provider_key
     activeSession.value.isNetwork = res.data.is_network ? true : false
     // activeSession.value.vector_folder_path = res.data.vector_folder_path || ''

@@ -521,7 +521,7 @@ const activeSession = ref({
   messages: [],
   chat_key: '',
   model_id: '',
-  model_name: '',
+  model_key: '',
   provider_key: '',
   know_key: '',
   know_id: '',
@@ -535,7 +535,7 @@ const activeSession = ref({
   isNetwork: false,
   enableSearch: 2,
   vector_folder_path: '',
-  know_modelName: '',
+  know_model_key: '',
   know_provider_key: ''
 })
 let feedbackList = ref([])
@@ -583,11 +583,11 @@ const createChat = () => {
     activeSession.value.chat_key = res.data.chat_key
     activeSession.value.know_key = res.data.know_key
     activeSession.value.model_id = res.data.model_info?.model_id || ''
-    activeSession.value.model_name = res.data.model_info?.model_name
+    activeSession.value.model_key = res.data.model_info?.model_key
     activeSession.value.provider_key = res.data.model_info?.provider_key
     activeSession.value.isNetwork = res.data.is_network ? true : false
     activeSession.value.vector_folder_path = res.data.vector_folder_path || ''
-    activeSession.value.know_model_name = res.data.know_vector_model?.model_name || ''
+    activeSession.value.know_model_key = res.data.know_vector_model?.model_key || ''
     activeSession.value.know_provider_key = res.data.know_vector_model?.provider_key || ''
     activeSession.value.enableSearch = res.data.model_info?.net_status || 2
     activeSession.value.isNetwork = res.data.is_use_net ? true : false
@@ -684,7 +684,7 @@ const handleSendMessage = async (message) => {
       sessionId: activeSession.value.chat_key
     },
     chatParams: {
-      modelName: activeSession.value.model_name || '',
+      modelName: activeSession.value.model_key || '',
       modelPlatform: activeSession.value.provider_key || '',
       contextNumber: activeSession.value.contextNumber,
       prompt: activeSession.value.prompt || '',
@@ -695,7 +695,7 @@ const handleSendMessage = async (message) => {
     },
     knowledgeBaseParamsList: [
       {
-        modelName: activeSession.value.know_model_name || '',
+        modelName: activeSession.value.know_model_key || '',
         modelPlatform: activeSession.value.know_provider_key || '',
         knowledgeBaseId: activeSession.value.know_key || '',
         folderPath: activeSession.value.vector_folder_path || ''
