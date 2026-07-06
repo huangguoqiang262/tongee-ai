@@ -1085,8 +1085,6 @@ onMounted(() => {
 const attach_file = ref([])
 let mentionedList = ref([])
 const selectModel = (model) => {
-  console.log('model', model);
-  
   if (model) {
     activeSession.value.model_key = model.split('%')[0]
     activeSession.value.provider_key = model.split('%')[1] || ''
