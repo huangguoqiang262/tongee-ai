@@ -30,7 +30,7 @@ export function task_detail(data) {
 // 获取文件列表及上传进度
 export function task_file_list(data) {
   return request({
-    url: '/know/upload/task_file_list',
+    url: '/know/upload/file_list',
     method: 'get',
     params: data
   })
