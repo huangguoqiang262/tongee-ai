@@ -320,7 +320,7 @@ const getKnows = () => {
             value: children.title,
             know_key: children.know_key,
             label: children.title,
-            model_name: children.vector_model?.model_name || '',
+            model_key: children.vector_model?.model_key || '',
             provider_key: children.vector_model?.provider_key || ''
           })
         })
