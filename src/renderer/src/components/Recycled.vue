@@ -287,6 +287,7 @@ const handleContextMenuAction = ({ action }) => {
       if (res.code == 200) {
         // eslint-disable-next-line no-undef
         ElMessage.primary('一键还原成功')
+        contextMenu.value.show = false
         refresh()
       }
     })
@@ -296,6 +297,7 @@ const handleContextMenuAction = ({ action }) => {
       if (res.code == 200) {
         // eslint-disable-next-line no-undef
         ElMessage.primary('永久删除成功')
+        contextMenu.value.show = false
         refresh()
       }
     })

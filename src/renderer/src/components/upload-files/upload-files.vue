@@ -42,10 +42,10 @@
               </div>
               <div class="right-center-actions">
                 <!-- 失败时显示重新上传按钮 -->
-                <div v-if="item.status === 'error'" class="retry-btn" @click="retryUpload(index)">
+                <!-- <div v-if="item.status === 'error'" class="retry-btn" @click="retryUpload(index)">
                   <el-icon class="retry-icon"><Refresh /></el-icon>
                   <span>重新上传</span>
-                </div>
+                </div> -->
                 <img
                   class="delete-icon"
                   src="@renderer/assets/del-icon1.png"
@@ -61,10 +61,10 @@
             </div>
             <!-- <div v-if="item.status === 'success'" class="right-bottom">
               <div class="success-text">上传成功</div>
-            </div>
-            <div v-else-if="item.status === 'error'" class="right-bottom">
-              <div class="error-text">上传失败: {{ item.errorMessage }}</div>
             </div> -->
+            <div v-if="item.status === 'error'" class="right-bottom">
+              <div class="error-text">上传失败: {{ item.errorMessage }}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -465,7 +465,7 @@ const getUploadProgress = async (taskId) => {
           uploadItem.uploadedCount = item.success_files
           uploadItem.status = mapStatus[item.status]
           uploadItem.totalCount = item.total_files
-
+          uploadItem.errorMessage = item.error_message
           // 检查任务是否完成
           if (item.processed_files >= item.total_files) {
             // 任务完成，停止该任务的轮询
