@@ -61,10 +61,10 @@
             </div>
             <!-- <div v-if="item.status === 'success'" class="right-bottom">
               <div class="success-text">上传成功</div>
-            </div>
-            <div v-else-if="item.status === 'error'" class="right-bottom">
-              <div class="error-text">上传失败: {{ item.errorMessage }}</div>
             </div> -->
+            <div v-if="item.status === 'error'" class="right-bottom">
+              <div class="error-text">上传失败: {{ item.errorMessage }}</div>
+            </div>
           </div>
         </div>
       </div>
