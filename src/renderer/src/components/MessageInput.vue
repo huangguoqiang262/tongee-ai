@@ -363,7 +363,7 @@ export default {
         know_key: item.know_key,
         label: item.title,
         value: item.title,
-        model_name: item.vector_model?.model_name || '',
+        model_key: item.vector_model?.model_key || '',
         provider_key: item.vector_model?.provider_key || ''
       }
       this.mentioned.push(obj)
@@ -376,7 +376,7 @@ export default {
         know_key: item.know_key,
         label: item.know_title,
         value: item.know_title,
-        model_name: item.know_vector_model?.model_name || '',
+        model_key: item.know_vector_model?.model_key || '',
         provider_key: item.know_vector_model?.provider_key || ''
       }
       var prompt = ''
@@ -533,7 +533,7 @@ export default {
                 value: children.title,
                 know_key: children.know_key,
                 label: children.title,
-                model_name: children.vector_model?.model_name || '',
+                model_key: children.vector_model?.model_key || '',
                 provider_key: children.vector_model?.provider_key || ''
               })
             })
@@ -548,6 +548,7 @@ export default {
             know_key: '_all_',
             label: '所有知识库',
             model_name: '',
+            model_key: '',
             provider_key: ''
           })
         }
@@ -950,6 +951,7 @@ export default {
                   label: k.label,
                   value: k.value,
                   model_name: k.model_name || '',
+                  model_key: k.model_key || '',
                   provider_key: k.provider_key || ''
                 }))
               )
