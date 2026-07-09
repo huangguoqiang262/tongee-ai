@@ -188,6 +188,7 @@ const close = () => {
 const pathChange = (i) => {
   pathList.value = removeItemsAfterIndex(pathList.value, i)
   nextTick(() => {
+    searchText.value = ''
     refreshList()
   })
 }
@@ -202,6 +203,7 @@ const handleCheckChange = (item) => {
     pathList.value.push({
       ...item
     })
+    searchText.value = ''
     refreshList()
     return
   } else if (item.next_type == 3) {
@@ -209,6 +211,7 @@ const handleCheckChange = (item) => {
       ...item,
       know_id: item.id
     })
+    searchText.value = ''
     refreshList()
     return
   } else if (item.item_type == 2 && !props.moveFiles.map((i) => i.id).includes(item.id)) {
@@ -216,6 +219,7 @@ const handleCheckChange = (item) => {
       ...item,
       know_id: activePath.value.know_id
     })
+    searchText.value = ''
     refreshList()
   }
 }
@@ -253,6 +257,7 @@ const backPath = () => {
     return
   }
   pathList.value.pop()
+  searchText.value = ''
   refreshList()
 }
 watch(

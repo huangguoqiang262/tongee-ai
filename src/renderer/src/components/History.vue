@@ -170,7 +170,7 @@
                     @change="tabHandle('3')"
                   />
                   <template v-if="list.length">
-                    <div v-for="(item, index) in list" :key="index" class="list-item">
+                    <div v-for="(item, index) in list" :key="index" class="list-item" @contextmenu="showContextMenu(item, $event)" @click="lookSystem(item)">
                       <FileSvgShadowIcon class="left-icon" />
                       <div class="center-box">
                         <div class="title-box">
@@ -283,6 +283,16 @@
         </div>
       </template>
     </el-dialog>
+    <HandleContextMenu
+      :show="contextMenu.show"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      :permission-type="contextMenu.permission_type"
+      :action-sheet="contextMenu.actionSheet"
+      @action="handleContextMenuAction"
+    />
+    <synergia-look v-model="synergiaLookVisible" :know-id="activeItem.know_id" :item-id="activeItem.item_id">
+    </synergia-look>
   </div>
 </template>
 
@@ -306,10 +316,12 @@ import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
 import FileSvgShadowIcon from '@renderer/assets/file-icon1.svg'
+import openLocationIcon from '@renderer/assets/contextMenu/open-location-icon.png'
+import synergyLookIcon from '@renderer/assets/contextMenu/synergy-look-icon.png'
 import { convertToPlainText } from '@renderer/utils/convertToPlainText'
 import { chat_lists, del_chat, del_all_chat, modifyChatHistory } from '@renderer/api/chat'
 import { synergia_type_list } from '@renderer/api/repository'
-import { ref, onMounted, inject, onErrorCaptured } from 'vue'
+import { ref, onMounted, onUnmounted, inject, onErrorCaptured } from 'vue'
 onErrorCaptured((err, instance, info) => {
   console.error('组件捕获到错误:', err, info)
   return false // 阻止继续向上传播错误
@@ -328,6 +340,65 @@ let tabs = ref([
     name: '协作历史'
   }
 ])
+const contextMenu = ref({ show: true, x: 0, y: 0, actionSheet: [] })
+const lookSystem = (item) => {
+  if (!item.url) {
+    return
+  }
+  addNewTab({
+    icon: getSynergiaFileIcon(item),
+    title: item.title,
+    url: 'SynergiaDetail',
+    isInternal: true,
+    attrs: {
+      fileUrl: item.url,
+      fileName: item.title,
+      fileId: item.file_key,
+      itemId: item.item_id || ''
+    }
+  })
+}
+const activeItem = ref({})
+const synergiaLookVisible = ref(false)
+// 右键菜单相关函数
+const showContextMenu = (item, e) => {
+  e.stopPropagation()
+  e.preventDefault()
+  activeItem.value = item
+  contextMenu.value = {
+    show: true,
+    permission_type: 'cannotView',
+    x: e.clientX,
+    y: e.clientY,
+    actionSheet: [
+      {
+        name: '打开协同文件',
+        icon: openLocationIcon,
+        action: 'synergyOpen'
+      },
+      {
+        name: '查看协同状态',
+        icon: synergyLookIcon,
+        action: 'synergyLook'
+      }
+    ]
+  }
+}
+const handleContextMenuAction = ({ action }) => {
+  // 打开协同文件
+  if (action === 'synergyOpen') {
+    lookSystem(activeItem.value)
+  // 查看协同状态
+  } else if (action === 'synergyLook') {
+    synergiaLookVisible.value = true
+  }
+  contextMenu.value.show = false
+}
+const hideContextMenu = (e) => {
+  if (contextMenu.value.show && !e.target.closest('.handleContextMenu')) {
+    contextMenu.value.show = false
+  }
+}
 // 获取文件图标
 const getFileIcon = (item) => {
   if (item.item_type == 2) {
@@ -337,6 +408,34 @@ const getFileIcon = (item) => {
   }
   // 根据文件扩展名返回不同的图标
   const ext = item.file_add_info?.url?.split('.').pop()?.toLowerCase()
+  const iconMap = {
+    doc: wordIcon,
+    docx: wordIcon,
+    pdf: pdfIcon,
+    xls: excelIcon,
+    xlsx: excelIcon,
+    csv: csvIcon,
+    ppt: pptIcon,
+    pptx: pptIcon,
+    txt: txtIcon,
+    png: imgIcon,
+    jpg: imgIcon,
+    jpeg: imgIcon,
+    gif: imgIcon,
+    web: webPageIcon
+  }
+
+  return iconMap[ext] || wordIcon
+}
+// 获取协同文件图标
+const getSynergiaFileIcon = (item) => {
+  // if (item.item_type == 2) {
+  //   return catalogueIcon
+  // } else if (item.item_type == 3) {
+  //   return webPageIcon
+  // }
+  // 根据文件扩展名返回不同的图标
+  const ext = item.url?.split('.').pop()?.toLowerCase()
   const iconMap = {
     doc: wordIcon,
     docx: wordIcon,
@@ -645,6 +744,10 @@ const submitRenameForm = (FormRef) => {
 onMounted(() => {
   getTypeList()
   getList()
+  document.addEventListener('click', hideContextMenu)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', hideContextMenu)
 })
 </script>
 
@@ -792,7 +895,7 @@ onMounted(() => {
             display: flex;
             justify-content: space-between;
             gap: 20px;
-
+            cursor: pointer;
             &:last-child {
               border-bottom: none;
             }
@@ -927,6 +1030,10 @@ onMounted(() => {
               flex-shrink: 0;
               width: 20%;
               text-align: center;
+              cursor: pointer;
+              &:nth-last-of-type(1) {
+                cursor: default;
+              }
               // 添加高亮聚光灯效果 锥形
               &.actives {
                 color: var(--el-color-primary);
@@ -985,6 +1092,7 @@ onMounted(() => {
               display: flex;
               justify-content: space-between;
               gap: 20px;
+              cursor: pointer;
               &:last-child {
                 border-bottom: none;
               }

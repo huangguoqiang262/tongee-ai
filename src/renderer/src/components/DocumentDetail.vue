@@ -27,7 +27,7 @@
             </div>
           </div>
           <div v-else-if="IS_WEB" class="note-box">
-              <webview class="note-content" allowpopups :src="webUrl"></webview>
+              <webview ref="webview" id="webview" class="note-content" allowpopups :src="webUrl"></webview>
           </div>
         </template>
       </el-splitter-panel>
@@ -44,7 +44,7 @@ import Player from 'xgplayer';
 import 'xgplayer/dist/index.min.css';
 import { I18N } from 'xgplayer'
 import ZH from 'xgplayer/es/lang/zh-cn'
-import { nextTick, ref, watchEffect } from 'vue'
+import { nextTick, ref, watchEffect, inject, onMounted, onUnmounted } from 'vue'
 import { get_note_info } from '@renderer/api/note'
 // 启用中文
 I18N.use(ZH)
@@ -57,6 +57,24 @@ const props = defineProps({
     type: Boolean,
     default: false
   }
+})
+const addNewTab = inject('addNewTab')
+let webview = ref(null)
+const callBack = (event) => {
+    // 在当前标签页导航到目标URL
+    const details = event.detail
+    addNewTab({
+      url: details.url,
+      title: details.title || '',
+      icon: details.icon || '',
+      isInternal: false
+    })
+}
+onMounted(()=> {
+  webview.value&&webview.value.addEventListener('new-window', callBack)
+})
+onUnmounted(()=> {
+  webview.value&&webview.value.removeEventListener('new-window', callBack)
 })
 let fileUrl = ref('')
 let fileName = ref('')

@@ -657,7 +657,7 @@
     <!-- 知识库成员弹窗 -->
     <RepositoryMember v-model="repositoryMemberVisible" :member-list="repositoryMemberList"
       :unread-apply-number="unreadApplyNumber" :apply-list="repositoryMemberApplyList" :tree-data="repositoryMemberTree"
-      @close="closeRepositoryMemberDialog" @set-permission="setRepositoryMemberPermission" />
+      @close="closeRepositoryMemberDialog" @set-permission="setRepositoryMemberPermission" @refresh-member-list="refreshMemberList"/>
     <input ref="directoryInputRef" type="file" webkitdirectory directory accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.mp4,.avi,
       .mov,
       .wmv,
@@ -1520,6 +1520,7 @@ const refreshRepository = () => {
 onUnmounted(() => {
   document.removeEventListener('click', hideContextMenu)
   off('refresh-repository', refreshRepository)
+  off('note-created-from-repo', handleNoteCreatedFromRepo)
 })
 onMounted(async () => {
   document.addEventListener('click', hideContextMenu)
@@ -1531,7 +1532,15 @@ onMounted(async () => {
   getCommonJoinList(props.attrs.RepositoryId)
   getPersonalCreateList(props.attrs.RepositoryId)
   on('refresh-repository', refreshRepository)
+  on('note-created-from-repo', handleNoteCreatedFromRepo)
 })
+// 处理来自 Note.vue 创建笔记完成后的回调
+const handleNoteCreatedFromRepo = (payload) => {
+  // payload: { sessionId, noteId, notebookId,know_id,parentItemId}
+  if (payload.know_id == activeRepositoryId.value && payload.parentItemId == parentItemId.value) {
+    submitImport([payload.noteId], false)
+  }
+}
 const repositoryPermission = ref({})
 // 获取知识库权限
 const getRepositoryPermission = () => {
@@ -1644,18 +1653,20 @@ const detailFileList = ref([])
 // 活动知识库
 const activeRepository = ref({})
 // 导入笔记
-const submitImport = (ids) => {
+const submitImport = (ids, showTip = true) => {
   import_note({
     knowledge_id: activeRepositoryId.value,
     note_ids: ids,
     item_id: parentItemId.value || 0
   }).then((res) => {
     if (res.code == 200) {
-      // eslint-disable-next-line no-undef
-      ElMessage({
-        type: 'primary',
-        message: '导入成功'
-      })
+      if (showTip) {
+        // eslint-disable-next-line no-undef
+        ElMessage({
+          type: 'primary',
+          message: '导入成功'
+        })
+      }
       refreshList()
       onlineNoteVisible.value = false
     }
@@ -1910,9 +1921,17 @@ let repositoryMemberList = ref([])
 let repositoryMemberApplyList = ref([])
 // 知识库成员树
 let repositoryMemberTree = ref([])
+// 刷新知识库成员列表
+let refreshMemberList = (searchMemberText = '') => {
+  get_know_persons({ know_id: activeRepository.value.id,search: searchMemberText}).then((res) => {
+    if (res.code == 200) {
+      repositoryMemberList.value = res.data
+    }
+  })
+}
 const beforeRepositoryMember = async (visible = true) => {
   try {
-    await get_know_persons({ know_id: activeRepository.value.id }).then((res) => {
+    await get_know_persons({ know_id: activeRepository.value.id, search: '' }).then((res) => {
       if (res.code == 200) {
         repositoryMemberList.value = res.data
         const countNodes = (nodeList) => {
@@ -2110,7 +2129,7 @@ const webForm = ref({
 })
 let validateURL = (rule, value, callback) => {
   const urlRegex =
-    /^(((ht|f)tps?):\/\/)?([^!@#$%^&*?.\s-]([^!@#$%^&*?.\s]{0,63}[^!@#$%^&*?.\s])?\.)+[a-z]{2,6}\/?/
+    /^(https?|ftps?):\/\/(localhost|([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(\d{1,3}\.){3}\d{1,3})(:\d{1,5})?(\/.*)?$/i
   if (urlRegex.test(value)) {
     callback()
   } else {
@@ -3035,7 +3054,13 @@ const beforeUploadFiles = (type) => {
       title: '笔记',
       url: 'Note',
       icon: noteIcon,
-      isInternal: true
+      isInternal: true,
+      attrs: {
+        _sourceAction: 'createFromRepo',
+        _know_id: activeRepositoryId.value,
+        _parentItemId: parentItemId.value || 0,
+        _sessionId: 'repo_' + Date.now()
+      }
     })
   } else if (type == 'importNotes') {
     onlineNoteVisible.value = true
