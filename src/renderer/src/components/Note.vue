@@ -443,6 +443,8 @@ const openChat = () => {
   chatVisible.value = true
 }
 let noteDetailVisible = ref(false)
+// 来自知识库创建笔记的会话标识，用于创建成功后触发一次性回调
+let repoCreateSessionId = ref(null)
 const formatTimeFun = (time) => {
   return formatTime(time)
 }
@@ -501,6 +503,18 @@ const saveNote = (detail) => {
         noteDetailVisible.value = false
         // eslint-disable-next-line no-undef
         ElMessage.primary('添加成功')
+
+        // 如果来自知识库的创建请求，触发一次性回调并清除标识
+        if (repoCreateSessionId.value) {
+          emit('note-created-from-repo', {
+            sessionId: repoCreateSessionId.value,
+            noteId: res.data?.id || res.data?.insert_id,
+            notebookId: activeNotebook.value,
+            know_id: props.attrs._know_id,
+            parentItemId: props.attrs._parentItemId
+          })
+          repoCreateSessionId.value = null
+        }
       }
     })
   } else {
@@ -993,6 +1007,11 @@ onMounted(() => {
   } else {
     getBookList()
   }
+
+  // 检测是否来自知识库的创建笔记请求
+  if (props.attrs._sourceAction === 'createFromRepo' && props.attrs._sessionId) {
+    repoCreateSessionId.value = props.attrs._sessionId
+  }
 })
 
 // watch 整个 attrs 对象引用（而非 note_id），因为 addNewTab 每次都会传入新的 attrs 对象，
@@ -1002,6 +1021,10 @@ watch(
   (newAttrs) => {
     if (newAttrs && newAttrs.note_id) {
       openTargetNote(newAttrs.note_id, newAttrs.notebook_id)
+    }
+    // 检测来自知识库的创建笔记请求（处理 Note tab 已存在、attrs 更新的场景）
+    if (newAttrs && newAttrs._sourceAction === 'createFromRepo' && newAttrs._sessionId) {
+      repoCreateSessionId.value = newAttrs._sessionId
     }
   }
 )

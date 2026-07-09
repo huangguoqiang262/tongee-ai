@@ -34,6 +34,16 @@
         </div>
         <div class="content-box">
           <div v-if="activeTab === '1'" class="member-list-box">
+                <div class="filter-input-box">
+                  <el-input
+                    v-model="memberSearch"
+                    class="filter-input"
+                    size="small"
+                    clearable
+                    placeholder="输入进行筛选"
+                    @change="handleSearchChange"
+                  />
+                </div>
             <div class="member-header">
               <div class="member-header-item">成员</div>
               <div class="member-header-item member-header-item-role">项目角色</div>
@@ -143,7 +153,7 @@ import { ref, watch } from 'vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import DefaultAvatar from '@renderer/assets/default-avatar.png'
 const repositoryVisible = defineModel({ type: Boolean })
-const emits = defineEmits(['setPermission'])
+const emits = defineEmits(['setPermission','refreshMemberList'])
 const userInfo = useUserInfo()
 let organizationRef = ref(null)
 let checkedNodes = ref([])
@@ -180,6 +190,10 @@ let tabList = ref([
   }
 ])
 let activeTab = ref('1')
+let memberSearch = ref('')
+const handleSearchChange = (val) => {
+  emits('refreshMemberList',val)
+}
 const tabChange = (id) => {
   activeTab.value = id
 }
@@ -351,10 +365,31 @@ const handleCheckChange = () => {
               padding: 0 19px;
               height: 100%;
               overflow-y: auto;
-              .member-header {
+              .filter-input-box {
+                height: 28px;
+                font-size: 12px;
                 position: sticky;
                 left: 0;
                 top: 0;
+                z-index: 1;
+                background: #f9f9f9;
+                .filter-input {
+                  height: 28px;
+                  font-size: 12px;
+                  .el-input__wrapper {
+                    border-radius: 6px !important;
+                    padding: 1px 10px;
+                  }
+                }
+                .el-input__wrapper {
+                  border-radius: 6px !important;
+                  padding: 1px 10px;
+                }
+              }
+              .member-header {
+                position: sticky;
+                left: 0;
+                top: 28px;
                 z-index: 1;
                 background: #f9f9f9;
                 display: flex;
