@@ -728,7 +728,7 @@ export default {
 
                     .user-box {
                         flex-shrink: 0;
-                        font-weight: 500;
+                        font-weight: 400;
                         font-size: 12px;
                         color: var(--default-font-color);
                         line-height: 12px;

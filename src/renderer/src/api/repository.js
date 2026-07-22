@@ -391,3 +391,11 @@ export function search_know_files(data) {
     data
   })
 }
+// 重新向量化
+export function ReVectorFileNew(data) {
+  return request({
+    url: '/intelligence/ReVectorFileNew',
+    method: 'post',
+    data
+  })
+}

@@ -478,12 +478,13 @@
                             <template v-if="
                               item.progress == 100 ||
                               (item.is_collaboration == 1 && item.collaboration_status != 5) ||
-                              item.info.vector_status == 2 || item.info?.file_type == 'video'
+                              item.info.vector_status == 1 || item.info?.file_type == 'video'
                             ">
                               <span v-if="item.item_type == 3" class="web-url">{{
                                 item.info?.web_url
                               }}</span>
-                              <span v-else-if="item.info?.url.split('.').pop() == 'txt' && (!item.note_id || item.note_id == 0)">文本</span>
+                              <span
+                                v-else-if="item.info?.url.split('.').pop() == 'txt' && (!item.note_id || item.note_id == 0)">文本</span>
                               <span v-else-if="item.note_id && item.note_id != 0">笔记</span>
                               <span v-else-if="
                                 ['png', 'jpg', 'jpeg', 'gif'].includes(
@@ -531,7 +532,16 @@
                 <div class="abstract-box">
                   <div class="abstract-title">{{ item.title }}</div>
                   <div class="time">上传时间：{{ item.createtime }}</div>
-                  <div class="abstract-desc">{{ item.info?.ai_desc || '该内容暂未生成摘要' }}</div>
+                  <div v-if="item.info?.file_type != 'video'" class="abstract-desc">
+                    {{ item.info?.ai_desc || '该内容暂未生成摘要' }}
+                    <el-button v-if="
+                      item.progress != 100 &&
+                      !(item.is_collaboration == 1 && item.collaboration_status != 5) &&
+                      item.info.vector_status != 1 && item.info?.file_type != 'video'
+                    " type="primary" size="small" text bg @click="reVectorize(item)" class="reVectorize">
+                      重新向量化
+                    </el-button>
+                  </div>
                   <div v-if="item.tags" class="tag-box">
                     <div v-for="tag in item.tags.split(',')" :key="tag" class="tag"
                       :class="{ activeTag: tag == searchText }">
@@ -657,7 +667,8 @@
     <!-- 知识库成员弹窗 -->
     <RepositoryMember v-model="repositoryMemberVisible" :member-list="repositoryMemberList"
       :unread-apply-number="unreadApplyNumber" :apply-list="repositoryMemberApplyList" :tree-data="repositoryMemberTree"
-      @close="closeRepositoryMemberDialog" @set-permission="setRepositoryMemberPermission" @refresh-member-list="refreshMemberList"/>
+      @close="closeRepositoryMemberDialog" @set-permission="setRepositoryMemberPermission"
+      @refresh-member-list="refreshMemberList" />
     <input ref="directoryInputRef" type="file" webkitdirectory directory accept=".doc,.xls,.xlsx,.pdf,.txt,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.mp4,.avi,
       .mov,
       .wmv,
@@ -795,7 +806,8 @@ import {
   synergia_simple_feedback,
   synergia_task_complete,
   synergia_complete_approve,
-  apply_know_refuse
+  apply_know_refuse,
+  ReVectorFileNew
 } from '@renderer/api/repository'
 import { user_info } from '@renderer/api/user'
 onErrorCaptured((err, instance, info) => {
@@ -820,6 +832,28 @@ const submitMove = (data) => {
       moveFileVisible.value = false
       refreshList()
     }
+  })
+}
+// 重新向量化
+const reVectorize = (item) => {
+  var data = {
+    know_id: item.know_id,
+    file_id: item.info?.id,
+    t: new Date().getTime()
+  }
+  // eslint-disable-next-line no-undef
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.3)'
+  })
+  ReVectorFileNew(data).then(res => {
+    if (res.code == 200) {
+      // eslint-disable-next-line no-undef
+      ElMessage.primary('正在进行向量化，请稍候')
+    }
+  }).finally(() => {
+    loading.close()
   })
 }
 // 带选中文件/文件夹id
@@ -1310,17 +1344,17 @@ const detailChange = (item, e, i) => {
       //   isInternal: false
       // })
       addNewTab({
-          icon: item.info?.logo || getFileIcon(item),
-          title: item.title,
-          url: 'DocumentDetail',
-          isInternal: true,
-          attrs: {
-            fileUrl: item.info?.url,
-            fileName: item.title,
-            fileId: item.info?.file_key || '',
-            download: false,
-            webUrl: item.info?.web_url
-          }
+        icon: item.info?.logo || getFileIcon(item),
+        title: item.title,
+        url: 'DocumentDetail',
+        isInternal: true,
+        attrs: {
+          fileUrl: item.info?.url,
+          fileName: item.title,
+          fileId: item.info?.file_key || '',
+          download: false,
+          webUrl: item.info?.web_url
+        }
       })
     } else {
       if (item.is_create_user && item.note_id && item.notebook_id) {
@@ -1361,17 +1395,17 @@ const detailChange = (item, e, i) => {
       //   isInternal: false
       // })
       addNewTab({
-          icon: item.info?.logo || getFileIcon(item),
-          title: item.title,
-          url: 'DocumentDetail',
-          isInternal: true,
-          attrs: {
-            fileUrl: item.info?.url,
-            fileName: item.title,
-            fileId: item.info?.file_key || '',
-            download: false,
-            webUrl: item.info?.web_url
-          }
+        icon: item.info?.logo || getFileIcon(item),
+        title: item.title,
+        url: 'DocumentDetail',
+        isInternal: true,
+        attrs: {
+          fileUrl: item.info?.url,
+          fileName: item.title,
+          fileId: item.info?.file_key || '',
+          download: false,
+          webUrl: item.info?.web_url
+        }
       })
     } else {
       if (item.is_create_user && item.note_id && item.notebook_id) {
@@ -1933,7 +1967,7 @@ let repositoryMemberApplyList = ref([])
 let repositoryMemberTree = ref([])
 // 刷新知识库成员列表
 let refreshMemberList = (searchMemberText = '') => {
-  get_know_persons({ know_id: activeRepository.value.id,search: searchMemberText}).then((res) => {
+  get_know_persons({ know_id: activeRepository.value.id, search: searchMemberText }).then((res) => {
     if (res.code == 200) {
       repositoryMemberList.value = res.data
     }
@@ -2419,7 +2453,7 @@ const showContextMenu = (e, item) => {
       icon: moveIcon,
       action: 'moveFile'
     })
-    
+
   } else {
     item.checked = true
     if (item.permission_type === 1 && repositoryPermission.value.is_public == 1) {
@@ -2652,18 +2686,18 @@ const showContextMenu = (e, item) => {
       })
     } else if (activeFiles.value.length === 1 && isSearching.value && searchText.value.trim() && !contextMenu.value.show) {
       contextMenu.value = {
-          show: true,
-          permission_type: 'cannotView',
-          x: e.clientX,
-          y: e.clientY,
-          actionSheet: [
-            {
-              name: '打开所在位置',
-              icon: openLocationIcon,
-              action: 'openLocation'
-            }
-          ]
-        }
+        show: true,
+        permission_type: 'cannotView',
+        x: e.clientX,
+        y: e.clientY,
+        actionSheet: [
+          {
+            name: '打开所在位置',
+            icon: openLocationIcon,
+            action: 'openLocation'
+          }
+        ]
+      }
     }
   }
 }
@@ -2978,7 +3012,7 @@ const handleBlur = () => {
   }
   var timer = setTimeout(() => {
     clearTimeout(timer)
-      // 右键菜单显示时不刷新列表，避免覆盖 checked 状态
+    // 右键菜单显示时不刷新列表，避免覆盖 checked 状态
     if (contextMenu.value.show) return
     refreshList()
   }, 300);
@@ -3346,7 +3380,7 @@ const getFileIcon1 = (item) => {
     return catalogueIcon
   } else if (item.item_type == 3) {
     return webPageIcon
-  }  else if (item.note_id && item.note_id != 0) {
+  } else if (item.note_id && item.note_id != 0) {
     return noteSmallIcon
   }
   // 根据文件扩展名返回不同的图标
@@ -3460,7 +3494,7 @@ const dirChange = (item, e, i) => {
   }
 
   if (parentItemId.value != item.id) {
-      pathList.value.push({
+    pathList.value.push({
       name: item.title,
       id: item.id
     })
@@ -3490,27 +3524,27 @@ watch(
         waitCheckedFile.value = item_path_info[item_path_info.length - 1].id
         await getRepositoryInfo(activeRepositoryId.value)
         // 打开所在位置 - 退出搜索并定位到该文件的父目录
-          pathList.value = [
-            {
-              name: '内容',
-              id: 0
-            }
-          ] 
-          if (item_path_info && item_path_info.length > 1) {
-            item_path_info.forEach((item, index) => {
-              if (index < item_path_info.length - 1) {
-                pathList.value.push({
-                  name: item.title,
-                  id: item.id
-                })
-              }
-            })
+        pathList.value = [
+          {
+            name: '内容',
+            id: 0
           }
+        ]
+        if (item_path_info && item_path_info.length > 1) {
+          item_path_info.forEach((item, index) => {
+            if (index < item_path_info.length - 1) {
+              pathList.value.push({
+                name: item.title,
+                id: item.id
+              })
+            }
+          })
+        }
         searchText.value = ''
         isSearching.value = false
         contextMenu.value.show = false
         if (activeRepository.value.is_public != 1) {
-           refreshList()
+          refreshList()
         }
       } else {
         getRepositoryInfo(activeRepositoryId.value)
@@ -4798,6 +4832,10 @@ const disposeSocketMessage = (data) => {
       font-size: 14px;
       color: #646464;
       line-height: 24px;
+
+      .reVectorize {
+        float: right;
+      }
     }
 
     .tag-box {
