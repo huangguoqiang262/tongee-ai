@@ -4,7 +4,7 @@
             <div class="input-box">
                 <img v-show="!focus && !fileList.length" class="circle-logo" src="@renderer/assets/logo.png" />
                 <!-- 按回车键发送，输入框高度三行 -->
-                <el-mention v-model="message.text" autosize class="input" resize="none" placeholder="请输入文件名称进行检索"
+                <el-mention v-model="message.text" autosize class="input" resize="none" placeholder="@知识库或输入文件名称进行检索"
                     type="textarea" :options="mentionOptions" :whole="true" @whole-remove="handleWholeRemove"
                     @focus="focus = true" @select="handleMentionSelect" @keydown.enter.prevent="sendMessage">
                 </el-mention>
@@ -371,7 +371,7 @@ export default {
                         item.knows.map((children) => {
                             list.push({
                                 value: children.title,
-                                know_id: children.know_id,
+                                know_id: children.id,
                                 know_key: children.know_key,
                                 label: children.title,
                                 model_key: children.vector_model?.model_key || '',
@@ -486,6 +486,10 @@ export default {
                 if (this.loading) {
                     return
                 }
+                this.page = 1
+                this.page_size = 10
+                this.total = 0
+                this.fileList = []
                 this.getFiles()
             }
         }
@@ -494,13 +498,16 @@ export default {
 </script>
 <style lang="scss" scoped>
 .empty {
-    padding: 10px 10px 10px 20px;
+    height: 156px;
     transition: all 0.3s ease-in-out;
     background: #F9F9F9;
     border-radius: 16px;
     color: #737475;
     font-size: 13px;
     text-align: center;
+    .el-empty {
+        padding-top: 20px;
+    }
 }
 
 .search-file-box {
