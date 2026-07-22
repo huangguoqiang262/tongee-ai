@@ -822,6 +822,8 @@ const submitMove = (data) => {
     }
   })
 }
+// 带选中文件/文件夹id
+const waitCheckedFile = ref('')
 // 拖拽相关数据
 const showDragOverlay = ref(false)
 
@@ -1721,6 +1723,14 @@ const refreshList = () => {
     if (res.code == 200) {
       activeRepository.value = res.data
       detailFileList.value = res.data.items
+      if (waitCheckedFile.value) {
+        detailFileList.value.forEach(item => {
+          if (item.id == waitCheckedFile.value) {
+            item.checked = true
+          }
+        })
+        waitCheckedFile.value = ''
+      }
       getUserInfo()
       // if (activeRepository.value.is_public == 1) {
       //   getRepositoryPermission()
@@ -2852,6 +2862,12 @@ const handleContextMenuAction = ({ action }) => {
     })
       .then(() => {
         // 确认反馈
+        // eslint-disable-next-line no-undef
+        let loadcontext = ElLoading.service({
+          lock: true,
+          text: 'Loading',
+          background: 'rgba(0, 0, 0, 0.3)',
+        })
         synergia_task_complete({
           item_id: activeFiles.value[0].id || ''
         }).then((res) => {
@@ -2860,6 +2876,8 @@ const handleContextMenuAction = ({ action }) => {
             ElMessage.primary('通过成功')
             refreshList()
           }
+        }).finally(() => {
+          loadcontext.close()
         })
       })
       .catch(() => { })
@@ -3465,9 +3483,11 @@ watch(
   () => props.attrs.randomId,
   async (newVal) => {
     if (newVal) {
+      waitCheckedFile.value = ''
       activeRepositoryId.value = newVal.split('-')[0]
       var item_path_info = props.attrs.item_path_info
       if (item_path_info && item_path_info.length > 0) {
+        waitCheckedFile.value = item_path_info[item_path_info.length - 1].id
         await getRepositoryInfo(activeRepositoryId.value)
         // 打开所在位置 - 退出搜索并定位到该文件的父目录
           pathList.value = [

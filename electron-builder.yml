@@ -45,7 +45,7 @@ appImage:
 npmRebuild: false
 publish:
   provider: generic
-  url: http://192.168.31.187:3000/updates
+  url: http://192.168.1.187:3000/updates
   channel: 'latest'
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

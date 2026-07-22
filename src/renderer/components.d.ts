@@ -97,6 +97,7 @@ declare module 'vue' {
     RepositoryStore: typeof import('./src/components/RepositoryStore.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SearchAllFile: typeof import('./src/components/convenient-component/SearchAllFile.vue')['default']
     SearchHome: typeof import('./src/components/SearchHome.vue')['default']
     ServiceManual: typeof import('./src/components/account-settings/ServiceManual.vue')['default']
     Sidebar: typeof import('./src/components/layout/Sidebar.vue')['default']

@@ -18,14 +18,35 @@
     <div class="logo-box">
       <img class="logo" src="@renderer/assets/home/large-logo.png" alt="" />
     </div>
+    <div class="tab-box">
+      <div class="tab-item" :class="{'active-tab': homeTab === 'repository'}" @click="homeTab = 'repository'">
+        <img v-show="homeTab == 'repository'" class="tab-icon" src="@renderer/assets/home/tab-repository-active-icon.png" alt=""/>
+        <img v-show="homeTab != 'repository'" class="tab-icon" src="@renderer/assets/home/tab-repository-icon.png" alt=""/>
+        AI知识库
+      </div>
+      <div class="tab-item" :class="{'active-tab': homeTab === 'searchFile'}" @click="homeTab = 'searchFile'">
+        <img v-show="homeTab == 'searchFile'" class="tab-icon" src="@renderer/assets/home/tab-file-active-icon.png" alt=""/>
+        <img v-show="homeTab != 'searchFile'" class="tab-icon" src="@renderer/assets/home/tab-file-icon.png" alt=""/>
+        文件检索
+      </div>
+    </div>
     <div class="search-box">
       <MessageInput
+        v-if="homeTab == 'repository'"
         ref="messageInput"
         key="input"
         :is-active-tab="props.isActiveTab"
         class="message-input"
       >
       </MessageInput>
+      <SearchAllFile
+        v-else
+        key="searchFile"
+        ref="searchAllFile"
+        :is-active-tab="props.isActiveTab"
+        class="search-all-file"
+      >
+      </SearchAllFile>
     </div>
   </div>
 </template>
@@ -38,9 +59,12 @@ const props = defineProps({
     default: false
   }
 })
+const homeTab = ref('repository')
 const messageInput = ref(null)
+const searchAllFile = ref(null)
 const handleClick = (e) => {
   messageInput.value?.focusChange(e)
+  searchAllFile.value?.focusChange(e)
 }
 // 拖拽相关数据
 const showDragOverlay = ref(false)
@@ -136,12 +160,47 @@ const handleDrop = (event) => {
       color: var(--default-font-color);
     }
   }
+  .tab-box {
+    width: 100%;
+    max-width: 770px;
+    margin-bottom: 10px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    .tab-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      width: 106px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid #DFDFDF;
+      font-size: 14px;
+      color: var(--default-font-color);
+      line-height: 20px;
+      cursor: pointer;
+      &:hover {
+        background: #f6f6f6;
+      }
+      &.active-tab {
+        background: var(--el-color-primary);
+        color: #fff;
+      }
+      .tab-icon {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
   .search-box {
     width: 100%;
-    .message-input {
+    .message-input, .search-all-file {
       width: 100%;
       max-width: 770px;
       margin: 0 auto;
+      min-height: 226px;
     }
   }
 }

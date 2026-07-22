@@ -136,11 +136,13 @@ service.interceptors.response.use(
     const userStore = useUserStore()
     //如果是重复请求则不提示
     if (axios.isCancel(error)) {
+      removePendingRequest(error.config || {}) 
       return Promise.reject(error)
     }
     const errorCode = error.response ? error.response.status : null
 
     if (errorCode == 401) {
+      removePendingRequest(error.config || {}) 
       userStore.reset()
       return Promise.reject(error)
     }

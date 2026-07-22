@@ -1023,8 +1023,8 @@ export default {
   .input-wrapper {
     margin-bottom: 22px;
     padding: 15px;
-    min-height: 60px;
-    max-height: 60px;
+    min-height: 58px;
+    max-height: 58px;
     position: relative;
     display: flex;
     align-items: center;
@@ -1034,6 +1034,7 @@ export default {
     border-radius: 16px;
     border: 1px solid #dfdfdf;
     transition:
+      border-color 0.2s linear,
       min-height 0.3s linear,
       max-height 0.6s linear;
     .attach-list-box {
@@ -1375,7 +1376,7 @@ export default {
     }
   }
   .common-issue {
-    padding: 0 20px;
+    padding: 0 10px 0 20px;
     transition: all 0.3s ease-in-out;
     .common-issue-title {
       margin-bottom: 11px;
@@ -1384,6 +1385,8 @@ export default {
     }
     .common-issue-content {
       min-height: 80px;
+      max-height: 35vh;
+      overflow-y: auto;
       .common-issue-item {
         margin-bottom: 19px;
         overflow: hidden;

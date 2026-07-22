@@ -135,6 +135,12 @@ const confirmPass = () => {
   })
     .then(() => {
       // 确认反馈
+      // eslint-disable-next-line no-undef
+      let loadcontext = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(0, 0, 0, 0.3)',
+      })
       synergia_task_complete({
         item_id: props.attrs.itemId || ''
       }).then((res) => {
@@ -143,6 +149,8 @@ const confirmPass = () => {
           ElMessage.primary('通过成功')
           getDetailStatus()
         }
+      }).finally(() => {
+        loadcontext.close()
       })
     })
     .catch(() => {})

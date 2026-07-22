@@ -327,12 +327,12 @@ const uploadSingleFile = async (fileItem) => {
     // 继续上传逻辑...
     // ... 原有的上传代码
   } catch (error) {
-    // 错误处理
+    // 错误处理：标记当前文件失败，阻断当前文件继续上传
     fileItem.status = uploadStatus.ERROR
     fileItem.errorMessage = error.message || '上传失败'
     console.error('上传失败:', error)
-    // 抛出错误，让上层函数知道上传失败
-    // throw error
+    // 抛出错误阻断当前文件，uploadItem/startUpload 会捕获并继续处理后续文件
+    throw error
   }
   return new Promise((resolve, reject) => {
     // 模拟文件上传过程
@@ -516,7 +516,7 @@ const uploadDirectory = async (directoryItem) => {
   formData.append('know_id', props.knowledgeId)
   formData.append('file_type', 2)
   formData.append('parent_item_id', props.parentItemId)
-  create_folder_task(formData)
+  return create_folder_task(formData)
     .then((res) => {
       directoryItem.task_id = res.data.task_id
       emits('refreshList')
@@ -524,12 +524,11 @@ const uploadDirectory = async (directoryItem) => {
     })
     .catch((err) => {
       directoryItem.status = uploadStatus.ERROR
-      directoryItem.errorMessage = err || '上传失败'
+      directoryItem.errorMessage = err?.message || err || '上传失败'
     })
     .finally(() => {
       loadcontext.close()
     })
-  return
   // 错误边界
   // let hasError = false
 

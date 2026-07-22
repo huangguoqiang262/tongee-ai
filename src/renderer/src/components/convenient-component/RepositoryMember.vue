@@ -1,31 +1,15 @@
 <template>
   <div class="repository-member-box">
-    <el-dialog
-      v-model="repositoryVisible"
-      draggable
-      :close-on-click-modal="false"
-      align-center
-      destroy-on-close
-      modal-class="repository-member-box-dialog"
-      width="390"
-    >
+    <el-dialog v-model="repositoryVisible" draggable :close-on-click-modal="false" align-center destroy-on-close
+      modal-class="repository-member-box-dialog" width="390">
       <template #header>
-        <img
-          class="dialog-header-del-icon"
-          src="@renderer/assets/repository/cysz-icon.png"
-          alt=""
-        />
+        <img class="dialog-header-del-icon" src="@renderer/assets/repository/cysz-icon.png" alt="" />
         <div class="">成员设置</div>
       </template>
       <div class="form-box">
         <div class="tab-list-box">
-          <div
-            v-for="item in tabList"
-            :key="item.id"
-            class="tab-item"
-            :class="{ active: activeTab === item.id }"
-            @click="tabChange(item.id)"
-          >
+          <div v-for="item in tabList" :key="item.id" class="tab-item" :class="{ active: activeTab === item.id }"
+            @click="tabChange(item.id)">
             {{ item.name }}
             <div v-if="item.id === '2' && props.unreadApplyNumber > 0" class="unreadApplyNumber">
               {{ props.unreadApplyNumber > 99 ? 99 : props.unreadApplyNumber }}
@@ -34,17 +18,11 @@
         </div>
         <div class="content-box">
           <div v-if="activeTab === '1'" class="member-list-box">
-                <div class="filter-input-box">
-                  <el-input
-                    v-model="memberSearch"
-                    class="filter-input"
-                    size="small"
-                    clearable
-                    placeholder="输入进行筛选"
-                    @change="handleSearchChange"
-                  />
-                </div>
-            <div class="member-header">
+            <div class="filter-input-box">
+              <el-input v-model="memberSearch" class="filter-input" size="small" clearable placeholder="输入进行筛选"
+                @change="handleSearchChange" />
+            </div>
+            <div class="member-header  member-header-bak ">
               <div class="member-header-item">成员</div>
               <div class="member-header-item member-header-item-role">项目角色</div>
             </div>
@@ -58,13 +36,8 @@
                   <template v-if="item.is_creator == 1">
                     <div class="creator">创建者</div>
                   </template>
-                  <el-select
-                    v-else
-                    v-model="item.is_manager"
-                    :disabled="item.ding_uid == userInfo.ding_uid"
-                    placeholder="请选择角色"
-                    @change="handlePermissionsChange(item)"
-                  >
+                  <el-select v-else v-model="item.is_manager" :disabled="item.ding_uid == userInfo.ding_uid"
+                    placeholder="请选择角色" @change="handlePermissionsChange(item)">
                     <el-option label="普通成员" :value="0" />
                     <el-option label="管理员" :value="1" />
                     <el-option label="移出" :value="2" />
@@ -86,20 +59,8 @@
                   <div class="member-name">{{ item.name }}</div>
                 </div>
                 <div class="item-right handle-btn-box">
-                  <el-button
-                    class="confirm-btn"
-                    size="small"
-                    type="danger"
-                    @click="handleRefuse(item)"
-                    >拒绝添加</el-button
-                  >
-                  <el-button
-                    class="confirm-btn"
-                    size="small"
-                    type="primary"
-                    @click="handleAdd(item)"
-                    >确认添加</el-button
-                  >
+                  <el-button class="confirm-btn" size="small" type="danger" @click="handleRefuse(item)">拒绝添加</el-button>
+                  <el-button class="confirm-btn" size="small" type="primary" @click="handleAdd(item)">确认添加</el-button>
                 </div>
               </div>
             </template>
@@ -108,36 +69,17 @@
           <div v-if="activeTab === '3'" class="add-member-box">
             <template v-if="props.treeData.length">
               <div class="tree-head-box">
-                <el-input
-                  v-model="filterText"
-                  class="filter-left-input"
-                  size="small"
-                  clearable
-                  placeholder="输入进行筛选"
-                />
+                <el-input v-model="filterText" class="filter-left-input" size="small" clearable placeholder="输入进行筛选" />
                 <div class="hd-label">可选列：{{ choosableCount(props.treeData) }}</div>
               </div>
-              <el-tree
-                ref="organizationRef"
-                style="width: 100%"
-                :data="props.treeData"
-                show-checkbox
-                node-key="ding_id"
-                :default-expand-all="false"
-                :expand-on-click-node="false"
-                :props="{ class: 'customNodeClass', label: 'name' }"
-                :filter-node-method="customfilterHandle"
-                @check="handleCheckChange"
-              >
+              <el-tree ref="organizationRef" style="width: 100%" :data="props.treeData" show-checkbox node-key="ding_id"
+                :default-expand-all="false" :expand-on-click-node="false"
+                :props="{ class: 'customNodeClass', label: 'name' }" :filter-node-method="customfilterHandle"
+                @check="handleCheckChange">
               </el-tree>
               <div class="foot-box">
-                <el-button
-                  :disabled="!checkedNodes.length"
-                  class="confirm-btn"
-                  type="primary"
-                  @click="handleConfirm"
-                  >确认</el-button
-                >
+                <el-button :disabled="!checkedNodes.length" class="confirm-btn" type="primary"
+                  @click="handleConfirm">确认</el-button>
               </div>
             </template>
             <div v-else class="empty">暂无可选成员</div>
@@ -153,7 +95,7 @@ import { ref, watch } from 'vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import DefaultAvatar from '@renderer/assets/default-avatar.png'
 const repositoryVisible = defineModel({ type: Boolean })
-const emits = defineEmits(['setPermission','refreshMemberList'])
+const emits = defineEmits(['setPermission', 'refreshMemberList'])
 const userInfo = useUserInfo()
 let organizationRef = ref(null)
 let checkedNodes = ref([])
@@ -192,7 +134,7 @@ let tabList = ref([
 let activeTab = ref('1')
 let memberSearch = ref('')
 const handleSearchChange = (val) => {
-  emits('refreshMemberList',val)
+  emits('refreshMemberList', val)
 }
 const tabChange = (id) => {
   activeTab.value = id
@@ -289,6 +231,7 @@ const handleCheckChange = () => {
     .el-dialog {
       height: 492px;
       padding: 17px 20px 20px;
+
       .el-dialog__header {
         padding-bottom: 10px;
         display: flex;
@@ -314,11 +257,13 @@ const handleCheckChange = () => {
 
         .form-box {
           box-sizing: border-box;
+
           .tab-list-box {
             margin-bottom: 18px;
             display: flex;
             align-items: center;
             gap: 9px;
+
             .tab-item {
               position: relative;
               width: 110px;
@@ -332,14 +277,17 @@ const handleCheckChange = () => {
               border: 1px solid #f9f9f9;
               cursor: pointer;
               transition: all 0.2s linear;
+
               &.active {
                 background: var(--el-color-primary-light-9);
                 border-color: var(--el-color-primary);
                 color: var(--el-color-primary);
+
                 &:hover {
                   opacity: 0.8;
                 }
               }
+
               .unreadApplyNumber {
                 position: absolute;
                 top: -2px;
@@ -355,16 +303,19 @@ const handleCheckChange = () => {
               }
             }
           }
+
           .content-box {
             width: 100%;
             height: 354px;
             background: #f9f9f9;
             border-radius: 8px;
             padding: 9px 0px 0;
+
             .member-list-box {
               padding: 0 19px;
               height: 100%;
               overflow-y: auto;
+
               .filter-input-box {
                 height: 28px;
                 font-size: 12px;
@@ -373,23 +324,27 @@ const handleCheckChange = () => {
                 top: 0;
                 z-index: 1;
                 background: #f9f9f9;
+
                 .filter-input {
                   height: 28px;
                   font-size: 12px;
+
                   .el-input__wrapper {
                     border-radius: 6px !important;
                     padding: 1px 10px;
                   }
                 }
+
                 .el-input__wrapper {
                   border-radius: 6px !important;
                   padding: 1px 10px;
                 }
               }
+
               .member-header {
                 position: sticky;
                 left: 0;
-                top: 28px;
+                top: 0;
                 z-index: 1;
                 background: #f9f9f9;
                 display: flex;
@@ -399,15 +354,20 @@ const handleCheckChange = () => {
                 font-size: 14px;
                 color: #909090;
                 line-height: 30px;
+                &.member-header-bak {
+                  top: 28px;
+                }
                 .member-header-item {
                   flex-shrink: 0;
                   width: 76px;
                   text-align: center;
+
                   &.member-header-item-role {
                     width: 124px;
                   }
                 }
               }
+
               .no-member {
                 height: 260px;
                 line-height: 260px;
@@ -415,6 +375,7 @@ const handleCheckChange = () => {
                 font-size: 13px;
                 color: #909090;
               }
+
               .member-item {
                 display: flex;
                 align-items: center;
@@ -424,49 +385,60 @@ const handleCheckChange = () => {
                 color: var(--default-font-color);
                 line-height: 20px;
                 border-bottom: 1px solid #efefef;
+
                 .item-left {
                   flex: 1;
                   overflow: hidden;
                   display: flex;
                   align-items: center;
                   gap: 8px;
+
                   .member-avatar {
                     display: block;
                     width: 16px;
                     height: 16px;
                     border-radius: 50%;
                   }
+
                   .member-name {
                     flex-shrink: 0;
                   }
                 }
+
                 .item-right {
                   flex-shrink: 0;
                   width: 124px;
+
                   &.handle-btn-box {
                     width: fit-content;
                     display: flex;
                     align-items: center;
+
                     .confirm-btn {
                       width: 72px;
                       margin: 0 10px 0 10px;
+
                       &:nth-last-of-type(1) {
                         margin: 0;
                       }
                     }
                   }
+
                   .creator {
                     width: 100%;
                     padding: 0 12px;
                   }
+
                   .el-select__wrapper {
                     background-color: #eaeaea !important;
                     border-radius: 4px !important;
                     box-shadow: 0 0 0 1px #f9f9f9 inset;
+
                     &.is-focus {
                       box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
                     }
                   }
+
                   .confirm-btn {
                     display: block;
                     width: 82px;
@@ -476,10 +448,12 @@ const handleCheckChange = () => {
                 }
               }
             }
+
             .add-member-box {
               padding: 0 19px;
               width: 100%;
               height: 100%;
+
               .tree-head-box {
                 box-sizing: border-box;
                 position: sticky;
@@ -494,27 +468,32 @@ const handleCheckChange = () => {
                 align-items: center;
                 gap: 0 20px;
                 background: #f9f9f9;
+
                 .hd-label {
                   font-size: 14px;
                   color: #909090;
                   line-height: 18px;
                 }
+
                 .filter-left-input {
                   flex: 1;
                   height: 28px;
                   font-size: 12px;
+
                   .el-input__wrapper {
                     border-radius: 6px !important;
                     padding: 1px 10px;
                   }
                 }
               }
+
               .el-tree {
                 padding-right: 40px;
                 background: transparent;
                 height: calc(100% - 110px);
                 overflow-y: auto;
               }
+
               .empty {
                 height: 260px;
                 line-height: 260px;
@@ -522,6 +501,7 @@ const handleCheckChange = () => {
                 font-size: 13px;
                 color: #909090;
               }
+
               .foot-box {
                 height: 63px;
                 display: flex;
@@ -529,12 +509,14 @@ const handleCheckChange = () => {
                 align-items: center;
                 gap: 10px;
                 border-top: 1px solid #efefef;
+
                 .confirm-btn {
                   width: 80px;
                   height: 36px;
                   border-radius: 8px;
                 }
               }
+
               .customNodeClass {
                 .el-tree-node__content {
                   height: 36px;
@@ -554,16 +536,15 @@ const handleCheckChange = () => {
                     /* 将checkbox放到最后 */
                   }
                 }
+
                 .el-icon.el-tree-node__expand-icon {
                   width: 14px;
                   height: 14px;
-                  background: url('@renderer/assets/repository/unopened-icon.png') no-repeat center
-                    center/14px 14px;
+                  background: url('@renderer/assets/repository/unopened-icon.png') no-repeat center center/14px 14px;
 
                   &.expanded {
                     transform: rotate(0deg);
-                    background: url('@renderer/assets/repository/opened-icon.png') no-repeat center
-                      center/14px 14px;
+                    background: url('@renderer/assets/repository/opened-icon.png') no-repeat center center/14px 14px;
 
                     svg {
                       display: none;

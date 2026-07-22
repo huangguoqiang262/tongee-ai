@@ -382,6 +382,12 @@ const handleAgree = (item) => {
         audit_type: 1,
         item_id: refuseForm.value.item_id
       }
+      // eslint-disable-next-line no-undef
+      let loadcontext = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(0, 0, 0, 0.3)',
+      })
       synergia_audit_in_know(data).then((res) => {
         if (res.code == 200) {
           tabHandle(4)
@@ -394,6 +400,8 @@ const handleAgree = (item) => {
             message: '同意入库成功'
           })
         }
+      }).finally(() => {
+        loadcontext.close()
       })
     })
     .catch(() => { })

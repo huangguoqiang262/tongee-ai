@@ -383,3 +383,11 @@ export function del_process_user(data) {
     data
   })
 }
+// 全知识库搜索文件
+export function search_know_files(data) {
+  return request({
+    url: '/intelligence/search_know_files',
+    method: 'post',
+    data
+  })
+}
