@@ -340,7 +340,7 @@ let tabs = ref([
     name: '协作历史'
   }
 ])
-const contextMenu = ref({ show: true, x: 0, y: 0, actionSheet: [] })
+const contextMenu = ref({ show: false, x: 0, y: 0, actionSheet: [] })
 const lookSystem = (item) => {
   if (!item.url) {
     return
