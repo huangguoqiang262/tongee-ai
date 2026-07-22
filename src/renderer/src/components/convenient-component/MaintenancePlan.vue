@@ -149,7 +149,7 @@ const tabs = [
   { id: 3, name: '质量部' }
 ]
 const actionItem = ref(null)
-const contextMenu = ref({ show: true, x: 0, y: 0, actionSheet: [] })
+const contextMenu = ref({ show: false, x: 0, y: 0, actionSheet: [] })
 //右键菜单相关函数
 const showContextMenu = (e, monthItem) => {
   e.stopPropagation()

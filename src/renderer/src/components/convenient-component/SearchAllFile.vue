@@ -67,7 +67,7 @@
                 </div>
             </div>
         </div>
-        <div v-else class="empty">
+        <div v-else v-loading="loading" class="empty">
             <el-empty :image-size="60" description="暂无数据" />
         </div>
         <HandleContextMenu :show="contextMenu.show" :x="contextMenu.x" :y="contextMenu.y"
@@ -125,7 +125,7 @@ export default {
             page: 1,
             page_size: 10,
             total: 0,
-            contextMenu: { show: true, x: 0, y: 0, actionSheet: [] },
+            contextMenu: { show: false, x: 0, y: 0, actionSheet: [] },
             activeItem: {},
             loading: false
         }
@@ -198,7 +198,7 @@ export default {
                 page_size: this.page_size,
                 page: this.page,
                 search_key: this.searchText,
-                know_key: this.knowsToSend.length ? this.knowsToSend.map(item => item.know_id) : [] //
+                know_ids: this.knowsToSend.length ? this.knowsToSend.map(item => item.know_id) : [] //
             }
             this.loading = true
             search_know_files(data).then(res => {
@@ -457,6 +457,9 @@ export default {
         handleSendClick() {
             if (!useCheckLogin().value) {
                 return
+            }
+            if (!/@[^\s]+/g.test(this.message.text)) {
+                this.mentioned = []
             }
             if (this.message.text.trim().length) {
                 // 检查是否包含 _all_，如果有则展开所有知识库
