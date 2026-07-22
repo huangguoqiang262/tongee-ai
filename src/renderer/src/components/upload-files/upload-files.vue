@@ -1,29 +1,14 @@
 <template>
   <div class="upload-files-box">
-    <el-dialog
-      v-model="uploadVisible"
-      draggable
-      :close-on-click-modal="false"
-      align-center
-      modal-class="upload-files-box-dialog"
-      width="430"
-      @close="closeUploadDialog"
-    >
+    <el-dialog v-model="uploadVisible" draggable :close-on-click-modal="false" align-center
+      modal-class="upload-files-box-dialog" width="430" @close="closeUploadDialog">
       <template #header>
-        <img
-          class="dialog-header-del-icon"
-          src="@renderer/assets/upload-files/upload-file-icon.png"
-          alt=""
-        />
+        <img class="dialog-header-del-icon" src="@renderer/assets/upload-files/upload-file-icon.png" alt="" />
         <div class="">上传文件</div>
       </template>
       <div class="file-list">
-        <div
-          v-for="(item, index) in uploadList"
-          :key="item.uid"
-          class="file-item"
-          :class="{ err: item.status === 'error' }"
-        >
+        <div v-for="(item, index) in uploadList" :key="item.uid" class="file-item"
+          :class="{ err: item.status === 'error' }">
           <catalogueSvgIcon v-if="item.type == 'directory'" class="icon" />
           <img v-else class="icon" :src="getFileIcon(item)" alt="" />
           <div class="file-item-right">
@@ -40,18 +25,16 @@
                 <span v-if="item.size" class="file-size">·</span>
                 <span class="file-path">上传至：{{ props.knowledgePath }}</span>
               </div>
-              <div class="right-center-actions">
+              <div v-if="item.status === 'error'" class="right-center-actions">
                 <!-- 失败时显示重新上传按钮 -->
-                <!-- <div v-if="item.status === 'error'" class="retry-btn" @click="retryUpload(index)">
-                  <el-icon class="retry-icon"><Refresh /></el-icon>
+                <div v-if="item.type == 'file'" class="retry-btn"
+                  @click="retryUpload(index)">
+                  <el-icon class="retry-icon">
+                    <Refresh />
+                  </el-icon>
                   <span>重新上传</span>
-                </div> -->
-                <img
-                  class="delete-icon"
-                  src="@renderer/assets/del-icon1.png"
-                  alt=""
-                  @click="delErrItem(index)"
-                />
+                </div>
+                <img class="delete-icon" src="@renderer/assets/del-icon1.png" alt="" @click="delErrItem(index)" />
               </div>
             </div>
             <div class="right-bottom">
@@ -70,20 +53,11 @@
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-popover
-            ref="repositoryuploadPopover"
-            popper-class="custom-repository-popover"
-            trigger="click"
-            placement="bottom"
-            :show-arrow="false"
-          >
+          <el-popover ref="repositoryuploadPopover" popper-class="custom-repository-popover" trigger="click"
+            placement="bottom" :show-arrow="false">
             <template #reference>
               <el-button class="continue-uploading">
-                <img
-                  class="icon"
-                  src="@renderer/assets/upload-files/continue-uploading-icon.png"
-                  alt=""
-                />
+                <img class="icon" src="@renderer/assets/upload-files/continue-uploading-icon.png" alt="" />
                 继续上传
               </el-button>
             </template>
@@ -268,22 +242,34 @@ const initializeUploadList = (fileList) => {
 
 // 开始上传（添加错误边界）
 const startUpload = async () => {
-  for (const item of uploadList.value) {
-    // 检查是否已经有上传任务在进行
-    if (item.status === uploadStatus.UPLOADING) {
-      console.log('已有上传任务在进行中，跳过重复上传')
-      continue
-    }
-
-    if (item.status === uploadStatus.PENDING) {
-      try {
-        await uploadItem(item)
-      } catch (error) {
-        console.error('上传任务失败:', error)
-        // 不再继续处理下一个文件
+  // 统一的 loading 遮罩，避免多个文件夹上传时闪烁
+  // eslint-disable-next-line no-undef
+  let loadcontext = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.3)',
+    customClass: 'upload-loading'
+  })
+  try {
+    for (const item of uploadList.value) {
+      // 检查是否已经有上传任务在进行
+      if (item.status === uploadStatus.UPLOADING) {
+        console.log('已有上传任务在进行中，跳过重复上传')
         continue
       }
+
+      if (item.status === uploadStatus.PENDING) {
+        try {
+          await uploadItem(item)
+        } catch (error) {
+          console.error('上传任务失败:', error)
+          // 不再继续处理下一个文件
+          continue
+        }
+      }
     }
+  } finally {
+    loadcontext.close()
   }
 }
 
@@ -367,7 +353,7 @@ const uploadSingleFile = async (fileItem) => {
         fileItem.errorMessage = response.msg || '上传失败'
         // eslint-disable-next-line no-undef
         ElMessage.error(response.msg || '上传失败')
-        reject(new Error(response.code || xhr.status))
+        reject(new Error(response.msg || xhr.status))
         clearSuccessUploadItems()
       }
     }
@@ -425,11 +411,8 @@ const startTaskPolling = (taskId) => {
   })
 }
 const closeUploadDialog = () => {
-  // 清除所有任务的轮询
-  taskPollingMap.forEach(({ interval }, taskId) => {
-    clearInterval(interval)
-    taskPollingMap.delete(taskId)
-  })
+  // 不在此处清除轮询，否则关闭后再打开无法跟进上传进度
+  // 轮询会在任务完成（getUploadProgress中）或组件卸载（onUnmounted）时自动清理
 }
 const clearSuccessUploadItems = () => {
   uploadList.value = uploadList.value.filter((item) => item.status !== uploadStatus.SUCCESS)
@@ -495,13 +478,6 @@ const getUploadProgress = async (taskId) => {
 }
 // 上传文件夹（保持错误边界）
 const uploadDirectory = async (directoryItem) => {
-  // eslint-disable-next-line no-undef
-  let loadcontext = ElLoading.service({
-    lock: true,
-    text: 'Loading',
-    background: 'rgba(0, 0, 0, 0.3)',
-    customClass: 'upload-loading'
-  })
   // const files = flattenDirectory(directoryItem)
   // directoryItem.totalCount = files.length
   const userStore = useUserStore()
@@ -525,9 +501,6 @@ const uploadDirectory = async (directoryItem) => {
     .catch((err) => {
       directoryItem.status = uploadStatus.ERROR
       directoryItem.errorMessage = err?.message || err || '上传失败'
-    })
-    .finally(() => {
-      loadcontext.close()
     })
   // 错误边界
   // let hasError = false
@@ -686,9 +659,11 @@ const formatFileSize = (bytes) => {
       color: var(--default-font-color);
       line-height: 22px;
       overflow: hidden;
+
       .file-list {
         height: 100%;
         overflow-y: auto;
+
         .file-item {
           padding: 8px 10px;
           margin-bottom: 2px;
@@ -697,22 +672,21 @@ const formatFileSize = (bytes) => {
           font-size: 14px;
           color: var(--default-font-color);
           line-height: 22px;
+
           &.err {
-            &:hover {
-              background: #f9f9f9;
-              border-radius: 4px;
-              .right-center-actions {
-                display: flex !important;
-              }
-              .delete-icon {
-                display: block !important;
-              }
+            background: #f9f9f9;
+            border-radius: 4px;
+
+            .right-center-actions {
+              display: flex !important;
             }
           }
+
           &:hover {
             background: #f9f9f9;
             border-radius: 4px;
           }
+
           .icon {
             flex-shrink: 0;
             display: block;
@@ -772,20 +746,24 @@ const formatFileSize = (bytes) => {
               align-items: center;
               gap: 5px;
               overflow: hidden;
+
               .right-center-label {
                 flex: 1;
                 display: flex;
                 align-items: center;
                 gap: 2px;
                 overflow: hidden;
+
                 span {
                   font-size: 12px;
                   color: #909090;
                   line-height: 16px;
                 }
+
                 .file-size {
                   flex-shrink: 0;
                 }
+
                 .file-path {
                   flex: 1;
                   white-space: nowrap;
@@ -793,6 +771,7 @@ const formatFileSize = (bytes) => {
                   overflow: hidden;
                 }
               }
+
               .right-center-actions {
                 display: none;
                 flex-shrink: 0;
@@ -818,14 +797,15 @@ const formatFileSize = (bytes) => {
                     opacity: 0.8;
                   }
                 }
+
+                .delete-icon {
+                  flex-shrink: 0;
+                  width: 14px;
+                  height: 14px;
+                  cursor: pointer;
+                }
               }
-              .delete-icon {
-                display: none;
-                flex-shrink: 0;
-                width: 14px;
-                height: 14px;
-                cursor: pointer;
-              }
+
             }
 
             .right-bottom {
