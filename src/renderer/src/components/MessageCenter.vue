@@ -270,7 +270,8 @@ const lookSystem = (item) => {
       fileUrl: item.file_edit_url,
       fileName: item.process_title,
       fileId: item.file_key,
-      itemId: item.item_id || ''
+      itemId: item.item_id || '',
+      download: true
     }
   })
 }

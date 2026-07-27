@@ -1,57 +1,30 @@
 <template>
   <div class="note-detail-box disabled-tools-chat">
-    <el-dialog
-      v-model="noteVisible"
-      :close-on-click-modal="false"
-      align-center
-      :show-close="false"
-      destroy-on-close
-      modal-class="note-detail-box-dialog"
-    >
+    <el-dialog v-model="noteVisible" :close-on-click-modal="false" align-center :show-close="false" destroy-on-close
+      modal-class="note-detail-box-dialog">
       <div class="parent-box">
         <div class="detail-box">
           <div class="head">
             <div class="head-left">
-              <img
-                class="dialog-header-del-icon"
-                src="@renderer/assets/notebook/notebook-icon.png"
-                alt=""
-              />
+              <img class="dialog-header-del-icon" src="@renderer/assets/notebook/notebook-icon.png" alt="" />
               <div class="">{{ noteTitle }}</div>
             </div>
             <div class="head-right">
-              <div
-                v-if="deepData.type !== 'add' && !chatVisible"
-                class="open-chat"
-                @click="openChat"
-              >
+              <div v-if="deepData.type !== 'add' && !chatVisible" class="open-chat" @click="openChat">
                 <img class="logo" src="@renderer/assets/logo.png" alt="" />
                 问问糖源
               </div>
-              <img
-                class="save"
-                src="@renderer/assets/notebook/save-icon.png"
-                alt=""
-                @click="submitNote"
-              />
-              <el-icon class="close-icon" @click="close"><Close /></el-icon>
+              <img class="save" src="@renderer/assets/notebook/save-icon.png" alt="" @click="submitNote" />
+              <el-icon class="close-icon" @click="close">
+                <Close />
+              </el-icon>
             </div>
           </div>
           <div class="detail-content-box">
             <Toolbar :default-config="defaultConfig" :editor="editorRef" mode="default" />
-            <el-input
-              v-model="deepData.title"
-              size="large"
-              class="title-input"
-              placeholder="请输入标题"
-            ></el-input>
-            <Editor
-              v-model="deepData.content"
-              class="editor-content"
-              :default-config="editorConfig"
-              mode="default"
-              @on-created="handleCreated"
-            />
+            <el-input v-model="deepData.title" size="large" class="title-input" placeholder="请输入标题"></el-input>
+            <Editor v-model="deepData.content" class="editor-content" :default-config="editorConfig" mode="default"
+              @on-created="handleCreated" />
           </div>
           <div class="dialog-footer">
             <div class="last-save">最后保存：{{ formatTimeFun() }}</div>
@@ -59,12 +32,8 @@
           </div>
         </div>
         <div v-if="chatVisible" class="chat-box">
-          <ToolChat
-            :notebook-id="notebookId"
-            :note-id="noteDetail.id"
-            @close-chat="chatVisible = false"
-            @submit-import="submitImport"
-          />
+          <ToolChat :notebook-id="notebookId" :note-id="noteDetail.id" @close-chat="chatVisible = false"
+            @submit-import="submitImport" />
         </div>
       </div>
     </el-dialog>
@@ -188,171 +157,202 @@ const submitNote = () => {
 
 <style scoped lang="scss">
 .note-detail-box {
-  :deep(.note-detail-box-dialog) > .el-overlay-dialog > .el-dialog {
-    padding: 0;
-    max-width: 80vw;
-    min-width: 850px;
-    width: fit-content;
-    background: transparent;
-    > .el-dialog__header {
-      padding-bottom: 0;
-    }
-    > .el-dialog__body {
-      font-size: 14px;
-      color: var(--default-font-color);
-      line-height: 22px;
-      overflow: hidden;
-      height: 660px;
-      border-radius: 10px;
-      .parent-box {
-        height: 100%;
-        display: flex;
-        align-items: flex-start;
-        gap: 0 10px;
-        .detail-box {
-          padding: 10px 20px;
-          flex: 1;
-          box-sizing: border-box;
-          width: 850px;
-          min-width: 560px;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
+  :deep(.note-detail-box-dialog) {
+      position: absolute !important;
+      background-color: rgba(216, 216, 216, 0.2) !important;
+    .el-overlay-dialog {
+      position: absolute !important;
+      .el-dialog {
+        padding: 0;
+        max-width: 80vw;
+        min-width: 850px;
+        width: fit-content;
+        background: transparent;
+
+        >.el-dialog__header {
+          padding-bottom: 0;
+        }
+
+        >.el-dialog__body {
+          font-size: 14px;
+          color: var(--default-font-color);
+          line-height: 22px;
+          overflow: hidden;
+          height: 660px;
           border-radius: 10px;
-          background: #fff;
-          .head {
-            flex-shrink: 0;
-            padding-bottom: 10px;
+
+          .parent-box {
+            height: 100%;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            font-weight: 500;
-            font-size: 14px;
-            color: var(--default-font-color);
-            line-height: 22px;
-            .head-left {
+            align-items: flex-start;
+            gap: 0 10px;
+
+            .detail-box {
+              padding: 10px 20px;
+              flex: 1;
+              box-sizing: border-box;
+              width: 850px;
+              min-width: 560px;
+              height: 100%;
               display: flex;
-              align-items: center;
-              gap: 10px;
-              .dialog-header-del-icon {
-                width: 16px;
-                height: 16px;
-              }
-            }
-            .head-right {
-              display: flex;
-              align-items: center;
-              gap: 20px;
-              .close-icon {
-                color: #737475;
-                font-size: 18px;
-                cursor: pointer;
-                transition: all 0.2s linear;
-                &:hover {
-                  color: var(--el-color-primary);
-                }
-              }
-              .open-chat {
+              flex-direction: column;
+              border-radius: 10px;
+              background: #fff;
+
+              .head {
                 flex-shrink: 0;
+                padding-bottom: 10px;
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                gap: 6px;
-                width: 99px;
-                height: 36px;
+                justify-content: space-between;
+                gap: 10px;
+                font-weight: 500;
                 font-size: 14px;
                 color: var(--default-font-color);
+                line-height: 22px;
+
+                .head-left {
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+
+                  .dialog-header-del-icon {
+                    width: 16px;
+                    height: 16px;
+                  }
+                }
+
+                .head-right {
+                  display: flex;
+                  align-items: center;
+                  gap: 20px;
+
+                  .close-icon {
+                    color: #737475;
+                    font-size: 18px;
+                    cursor: pointer;
+                    transition: all 0.2s linear;
+
+                    &:hover {
+                      color: var(--el-color-primary);
+                    }
+                  }
+
+                  .open-chat {
+                    flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
+                    width: 99px;
+                    height: 36px;
+                    font-size: 14px;
+                    color: var(--default-font-color);
+                    background: #f9f9f9;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+
+                    &:active {
+                      background: #e9e9e9;
+                    }
+
+                    .logo {
+                      flex-shrink: 0;
+                      display: block;
+                      width: 16px;
+                      height: 16px;
+                    }
+                  }
+
+                  .save {
+                    flex-shrink: 0;
+                    width: 20px;
+                    height: 20px;
+                    cursor: pointer;
+                  }
+                }
+              }
+
+              .detail-content-box {
+                box-sizing: border-box;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
                 background: #f9f9f9;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: all 0.2s;
-
-                &:active {
-                  background: #e9e9e9;
-                }
-
-                .logo {
-                  flex-shrink: 0;
-                  display: block;
-                  width: 16px;
-                  height: 16px;
-                }
+                overflow: hidden;
               }
-              .save {
+
+              .w-e-toolbar {
                 flex-shrink: 0;
-                width: 20px;
-                height: 20px;
-                cursor: pointer;
+                background: transparent !important;
               }
-            }
-          }
-          .detail-content-box {
-            box-sizing: border-box;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #f9f9f9;
-            overflow: hidden;
-          }
-          .w-e-toolbar {
-            flex-shrink: 0;
-            background: transparent !important;
-          }
-          .title-input {
-            flex-shrink: 0;
-            width: calc(100% - 10px);
-            margin: 10px auto 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--default-font-color);
-            .el-input__wrapper {
-              padding: 1px 10px;
-              box-shadow: none;
-              background: transparent;
-              &.is-focus {
-                background: #f8fafc;
-              }
-              .el-input__inner {
-                font-weight: 600;
+
+              .title-input {
+                flex-shrink: 0;
+                width: calc(100% - 10px);
+                margin: 10px auto 0;
                 font-size: 16px;
-                &::placeholder {
-                  font-size: 16px;
-                  font-weight: 600;
-                  color: #909090;
+                font-weight: 600;
+                color: var(--default-font-color);
+
+                .el-input__wrapper {
+                  padding: 1px 10px;
+                  box-shadow: none;
+                  background: transparent;
+
+                  &.is-focus {
+                    background: #f8fafc;
+                  }
+
+                  .el-input__inner {
+                    font-weight: 600;
+                    font-size: 16px;
+
+                    &::placeholder {
+                      font-size: 16px;
+                      font-weight: 600;
+                      color: #909090;
+                    }
+                  }
                 }
               }
-            }
-          }
-          .editor-content {
-            flex: 1;
-            padding: 0 5px;
-            background: transparent !important;
-            overflow: hidden;
-            .w-e-text-container {
-              background: transparent !important;
-              .w-e-text-placeholder {
+
+              .editor-content {
+                flex: 1;
+                padding: 0 5px;
+                background: transparent !important;
+                overflow: hidden;
+
+                .w-e-text-container {
+                  background: transparent !important;
+
+                  .w-e-text-placeholder {
+                    color: #909090;
+                  }
+                }
+              }
+
+              .dialog-footer {
+                flex-shrink: 0;
+                padding-top: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 14px;
                 color: #909090;
+                line-height: 20px;
               }
             }
+
+            .chat-box {
+              flex: 1;
+              flex-shrink: 0;
+              min-width: 375px;
+              height: 100%;
+              overflow: hidden;
+            }
           }
-          .dialog-footer {
-            flex-shrink: 0;
-            padding-top: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 14px;
-            color: #909090;
-            line-height: 20px;
-          }
-        }
-        .chat-box {
-          flex: 1;
-          flex-shrink: 0;
-          min-width: 375px;
-          height: 100%;
-          overflow: hidden;
         }
       }
     }
