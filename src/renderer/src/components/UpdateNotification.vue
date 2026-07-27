@@ -111,7 +111,7 @@
           <div class="ready-actions">
             <el-button type="primary" size="large" class="install-btn" @click="quitAndInstall">
               <el-icon><RefreshRight /></el-icon>
-              立即重启并安装
+              重启糖源并安装
             </el-button>
             <el-button size="large" class="secondary-btn" @click="installLater">
               稍后安装

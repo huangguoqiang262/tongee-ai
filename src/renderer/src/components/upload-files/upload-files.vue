@@ -1,10 +1,12 @@
 <template>
   <div class="upload-files-box">
-    <el-dialog v-model="uploadVisible" draggable :close-on-click-modal="false" align-center
-      modal-class="upload-files-box-dialog" width="430" @close="closeUploadDialog">
+    <el-dialog v-model="uploadVisible" :modal="false" :modal-penetrable="true" :close-on-click-modal="false" align-center
+      modal-class="upload-files-box-dialog"  width="430" @close="closeUploadDialog">
       <template #header>
-        <img class="dialog-header-del-icon" src="@renderer/assets/upload-files/upload-file-icon.png" alt="" />
-        <div class="">上传文件</div>
+        <div class="dialog-header-drag-handle" @mousedown="onDialogHeaderMouseDown">
+          <img class="dialog-header-del-icon" src="@renderer/assets/upload-files/upload-file-icon.png" alt="" />
+          <div class="">上传文件</div>
+        </div>
       </template>
       <div class="file-list">
         <div v-for="(item, index) in uploadList" :key="item.uid" class="file-item"
@@ -23,7 +25,7 @@
               <div class="right-center-label">
                 <span v-if="item.size" class="file-size">{{ formatFileSize(item.size) }}</span>
                 <span v-if="item.size" class="file-size">·</span>
-                <span class="file-path">上传至：{{ props.knowledgePath }}</span>
+                <span class="file-path">上传至：{{ item.knowledge_path }}</span>
               </div>
               <div v-if="item.status === 'error'" class="right-center-actions">
                 <!-- 失败时显示重新上传按钮 -->
@@ -56,7 +58,10 @@
           <el-popover ref="repositoryuploadPopover" popper-class="custom-repository-popover" trigger="click"
             placement="bottom" :show-arrow="false">
             <template #reference>
-              <el-button class="continue-uploading">
+              <el-button class="continue-uploading" :disabled="!((props.activeRepository.is_public == 1 &&
+                  (props.activeRepository.user_permission?.is_manager == 1 ||
+                    props.activeRepository.user_permission?.is_creator == 1)) ||
+                props.activeRepository.is_public == 0)">
                 <img class="icon" src="@renderer/assets/upload-files/continue-uploading-icon.png" alt="" />
                 继续上传
               </el-button>
@@ -137,6 +142,87 @@ import { user_info } from '@renderer/api/user'
 import { useUserStore } from '@renderer/stores/user'
 import cloneDeep from 'lodash.clonedeep'
 import { ref, watch, onUnmounted } from 'vue'
+
+// ---- 对话框拖拽限制在 RepositoryStore 区域内 ----
+const isDraggingDialog = ref(false)
+let dragOffsetX = 0
+let dragOffsetY = 0
+let cachedDialogEl = null
+let cachedRepoRect = null
+let rafId = null
+let targetClientX = 0
+let targetClientY = 0
+
+const onDialogHeaderMouseDown = (e) => {
+  if (e.button !== 0) return
+
+  const dialogEl = document.querySelector('.upload-files-box-dialog .el-dialog')
+  const repositoryBox = document.querySelector('.repository-box')
+  if (!dialogEl || !repositoryBox) return
+
+  // 缓存 DOM 引用，避免 mousemove 时反复查询
+  cachedDialogEl = dialogEl
+  cachedRepoRect = repositoryBox.getBoundingClientRect()
+
+  isDraggingDialog.value = true
+  const dialogRect = dialogEl.getBoundingClientRect()
+  dragOffsetX = e.clientX - dialogRect.left
+  dragOffsetY = e.clientY - dialogRect.top
+
+  targetClientX = e.clientX
+  targetClientY = e.clientY
+
+  document.addEventListener('mousemove', onDialogMouseMove, { passive: false })
+  document.addEventListener('mouseup', onDialogMouseUp)
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+const onDialogMouseMove = (e) => {
+  if (!isDraggingDialog.value) return
+  targetClientX = e.clientX
+  targetClientY = e.clientY
+
+  // rAF 节流，保证丝滑且不丢帧
+  if (!rafId) {
+    rafId = requestAnimationFrame(updateDialogPosition)
+  }
+}
+
+const updateDialogPosition = () => {
+  rafId = null
+  if (!cachedDialogEl || !cachedRepoRect) return
+
+  const dialogWidth = cachedDialogEl.offsetWidth
+  const dialogHeight = cachedDialogEl.offsetHeight
+
+  let newLeft = targetClientX - dragOffsetX
+  let newTop = targetClientY - dragOffsetY
+
+  // 限制在 repository-box 边界内（getBoundingClientRect 返回 viewport 坐标）
+  newLeft = Math.max(cachedRepoRect.left, Math.min(newLeft, cachedRepoRect.right - dialogWidth))
+  newTop = Math.max(cachedRepoRect.top, Math.min(newTop, cachedRepoRect.bottom - dialogHeight))
+
+  // position: fixed 相对于 viewport，与 repoRect 坐标系一致
+  cachedDialogEl.style.position = 'fixed'
+  cachedDialogEl.style.left = newLeft + 'px'
+  cachedDialogEl.style.top = newTop + 'px'
+  cachedDialogEl.style.margin = '0'
+  cachedDialogEl.style.transform = 'none'
+}
+
+const onDialogMouseUp = () => {
+  isDraggingDialog.value = false
+  if (rafId) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
+  cachedDialogEl = null
+  cachedRepoRect = null
+  document.removeEventListener('mousemove', onDialogMouseMove)
+  document.removeEventListener('mouseup', onDialogMouseUp)
+}
+// ---- 拖拽限制 end ----
 import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import catalogueSvgIcon from '@renderer/assets/upload-files/catalogue-icon.svg'
 import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
@@ -190,6 +276,10 @@ const props = defineProps({
   parentItemId: {
     type: [String, Number],
     default: ''
+  },
+  activeRepository: {
+    type: Object,
+    default: () => ({})
   }
 })
 
@@ -205,18 +295,18 @@ watch(
   },
   { deep: true }
 )
-watch(
-  () => props.knowledgeId,
-  () => {
-    uploadList.value = []
-  }
-)
-watch(
-  () => props.parentItemId,
-  () => {
-    uploadList.value = []
-  }
-)
+// watch(
+//   () => props.knowledgeId,
+//   () => {
+//     uploadList.value = []
+//   }
+// )
+// watch(
+//   () => props.parentItemId,
+//   () => {
+//     uploadList.value = []
+//   }
+// )
 // 初始化上传列表
 const initializeUploadList = (fileList) => {
   var tempList = []
@@ -226,6 +316,9 @@ const initializeUploadList = (fileList) => {
     path: file.path || '',
     size: file.size || 0,
     type: file.type || 'file',
+    knowledge_id: props.knowledgeId,
+    parent_item_id: props.parentItemId,
+    knowledge_path: props.knowledgePath,
     status: uploadStatus.PENDING,
     progress: 0,
     uploadedCount: 0,
@@ -324,8 +417,8 @@ const uploadSingleFile = async (fileItem) => {
     // 模拟文件上传过程
     const formData = new FormData()
     formData.append('uniacid', userStore.uniacid)
-    formData.append('knowledge_id', props.knowledgeId)
-    formData.append('parent_item_id', props.parentItemId)
+    formData.append('knowledge_id', fileItem.knowledge_id)
+    formData.append('parent_item_id', fileItem.parent_item_id)
     formData.append('same_name_type', fileItem.same_name_type)
     formData.append('file[]', fileItem.file) // 实际使用时需要真实文件数据
     formData.append('t', Date.now())
@@ -427,6 +520,9 @@ onUnmounted(() => {
     clearInterval(interval)
     taskPollingMap.delete(taskId)
   })
+  // 清理拖拽事件监听
+  document.removeEventListener('mousemove', onDialogMouseMove)
+  document.removeEventListener('mouseup', onDialogMouseUp)
 })
 // 获取文件上传进度（修复版本）
 const getUploadProgress = async (taskId) => {
@@ -489,9 +585,9 @@ const uploadDirectory = async (directoryItem) => {
     formData.append(Buffer.from(key).toString('base64'), file)
   })
   formData.append('uniacid', userStore.uniacid)
-  formData.append('know_id', props.knowledgeId)
+  formData.append('know_id', directoryItem.knowledge_id)
   formData.append('file_type', 2)
-  formData.append('parent_item_id', props.parentItemId)
+  formData.append('parent_item_id', directoryItem.parent_item_id)
   return create_folder_task(formData)
     .then((res) => {
       directoryItem.task_id = res.data.task_id
@@ -630,12 +726,17 @@ const formatFileSize = (bytes) => {
 </style>
 <style scoped lang="scss">
 :deep(.upload-files-box-dialog) {
+  position: absolute !important;
+  background-color: rgba(216, 216, 216, 0.2) !important;
+  .el-overlay-dialog {
+    position: absolute !important;
+  }
   .el-dialog {
     padding: 17px 10px;
     height: 510px;
     display: flex;
     flex-direction: column;
-
+    border-radius: 16px;
     .el-dialog__header {
       flex-shrink: 0;
       padding-left: 10px;
@@ -647,9 +748,19 @@ const formatFileSize = (bytes) => {
       color: var(--default-font-color);
       line-height: 22px;
 
+      .dialog-header-drag-handle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        cursor: move;
+        user-select: none;
+      }
+
       .dialog-header-del-icon {
         width: 16px;
         height: 16px;
+        flex-shrink: 0;
       }
     }
 

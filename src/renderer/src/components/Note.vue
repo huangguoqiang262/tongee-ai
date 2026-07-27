@@ -1070,6 +1070,7 @@ const waitAndOpen = (targetNoteId, targetNotebookId) => {
 .notebook-box {
   width: 100%;
   height: 100%;
+  position: relative;
   // display: flex;
   // align-items: flex-start;
   background: var(--primary-bg-color);

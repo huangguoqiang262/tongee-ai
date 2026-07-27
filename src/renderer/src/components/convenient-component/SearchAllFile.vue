@@ -67,7 +67,7 @@
                 </div>
             </div>
         </div>
-        <div v-else v-loading="loading" class="empty">
+        <div v-else-if="hasSearched && !loading" class="empty">
             <el-empty :image-size="60" description="暂无数据" />
         </div>
         <HandleContextMenu :show="contextMenu.show" :x="contextMenu.x" :y="contextMenu.y"
@@ -127,6 +127,7 @@ export default {
             total: 0,
             contextMenu: { show: false, x: 0, y: 0, actionSheet: [] },
             activeItem: {},
+            hasSearched: false,
             loading: false
         }
     },
@@ -203,7 +204,11 @@ export default {
             this.loading = true
             search_know_files(data).then(res => {
                 if (res.code == 200) {
-                    this.fileList = this.fileList.concat(res.data?.data || [])
+                    if (this.page == 1) {
+                        this.fileList = res.data?.data || []
+                    } else {
+                        this.fileList = this.fileList.concat(res.data?.data || [])
+                    }
                     this.total = res.data?.total || 0
                     this.page = res.data?.current_page || 1
                     this.page_size = res.data?.per_page || 10
@@ -489,10 +494,10 @@ export default {
                 if (this.loading) {
                     return
                 }
+                this.hasSearched = true
                 this.page = 1
                 this.page_size = 10
                 this.total = 0
-                this.fileList = []
                 this.getFiles()
             }
         }

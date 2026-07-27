@@ -581,7 +581,7 @@
     <HandleContextMenu :show="contextMenu.show" :x="contextMenu.x" :y="contextMenu.y"
       :permission-type="contextMenu.permission_type" :action-sheet="contextMenu.actionSheet"
       @action="handleContextMenuAction" />
-    <UploadFiles v-model="uploadVisible" :ready-upload-list="ReadyUploadList" :knowledge-id="activeRepositoryId"
+    <UploadFiles v-model="uploadVisible" :active-repository="activeRepository" :ready-upload-list="ReadyUploadList" :knowledge-id="activeRepositoryId"
       :knowledge-path="activeRepository.title +
         (pathList.length > 1 ? '/' : '') +
         pathList

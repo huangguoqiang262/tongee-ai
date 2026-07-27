@@ -354,7 +354,8 @@ const lookSystem = (item) => {
       fileUrl: item.url,
       fileName: item.title,
       fileId: item.file_key,
-      itemId: item.item_id || ''
+      itemId: item.item_id || '',
+      download: true
     }
   })
 }
