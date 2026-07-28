@@ -337,12 +337,12 @@ const initializeUploadList = (fileList) => {
 const startUpload = async () => {
   // 统一的 loading 遮罩，避免多个文件夹上传时闪烁
   // eslint-disable-next-line no-undef
-  let loadcontext = ElLoading.service({
-    lock: true,
-    text: 'Loading',
-    background: 'rgba(0, 0, 0, 0.3)',
-    customClass: 'upload-loading'
-  })
+  // let loadcontext = ElLoading.service({
+  //   lock: false,
+  //   text: 'Loading',
+  //   background: 'rgba(0, 0, 0, 0.3)',
+  //   customClass: 'upload-loading'
+  // })
   try {
     for (const item of uploadList.value) {
       // 检查是否已经有上传任务在进行
@@ -362,7 +362,7 @@ const startUpload = async () => {
       }
     }
   } finally {
-    loadcontext.close()
+    // loadcontext.close()
   }
 }
 
