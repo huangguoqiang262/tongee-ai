@@ -1,11 +1,8 @@
 <template>
-  <div
-    class="content-area"
-    :style="{
-      backgroundColor: props.activeTab?.backgroundColor || '#fff',
-      borderRadius: activeTab?.isInternal ? '12px' : '0px 0px 12px 12px'
-    }"
-  >
+  <div class="content-area" :style="{
+    backgroundColor: props.activeTab?.backgroundColor || '#fff',
+    borderRadius: activeTab?.isInternal ? '12px' : '0px 0px 12px 12px'
+  }">
     <div v-if="!tabs.length" class="empty-state">
       <i class="fas fa-window-maximize"></i>
       <p>没有打开的标签页</p>
@@ -18,12 +15,8 @@
 
       <div v-show="activeTab.isInternal" class="internal-page">
         <template v-for="tab in tabs" :key="tab.id">
-          <component
-            :is="internalComponents[tab.url]"
-            v-show="tab.isInternal && isActiveTab(tab.id)"
-            :attrs="tab.attrs || {}"
-            :is-active-tab="isActiveTab(tab.id)"
-          />
+          <component :is="internalComponents[tab.url]" v-show="tab.isInternal && isActiveTab(tab.id)"
+            :attrs="tab.attrs || {}" :is-active-tab="isActiveTab(tab.id)" />
         </template>
       </div>
       <div v-show="!activeTab.isInternal" class="webview-container">
@@ -34,20 +27,12 @@
         </div>
         <!-- 为每个标签页创建独立的webview -->
         <template v-for="tab in tabs" :key="tab.id">
-          <webview
-            v-if="!tab.isInternal && tab.url"
-            id="webview"
-            :key="tab.id"
-            :ref="(el) => setWebviewRef(tab.id, el)"
-            :src="tab.url"
-            allowpopups
-            class="webview"
-            :style="{
+          <webview v-if="!tab.isInternal && tab.url" id="webview" :key="tab.id" :ref="(el) => setWebviewRef(tab.id, el)"
+            :src="tab.url" allowpopups class="webview" :style="{
               display: isActiveTab(tab.id) ? 'flex' : 'none',
               width: '100%',
               height: '100%'
-            }"
-          >
+            }">
           </webview>
         </template>
       </div>
@@ -197,8 +182,12 @@ const setupWebviewListeners = (tabId, webview) => {
     }
   })
   // 页面标题更新
+  const lastTitle = ref('')
   webview.addEventListener('page-title-updated', (event) => {
-    // 只有当该标签页是活动标签时才更新标题
+    // 去重：title 没变就不处理
+    if (event.title === lastTitle.value) return
+    lastTitle.value = event.title
+
     if (props.activeTab && props.activeTab.id === tabId) {
       emit('add-syc-tab', {
         title: event.title,
@@ -381,6 +370,7 @@ const setupWebviewListeners = (tabId, webview) => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }

@@ -19,15 +19,15 @@
         /> -->
         <div v-if="IS_VIDEO" id="video-player"></div>
         <template v-else>
-          <onlyofficePreview v-if="fileUrl && !IS_NOTE && !IS_WEB" class="center-content" :src="fileUrl" :file-name="fileName"
-            :file-key="fileKey" :download="download" :mode="'view'" />
+          <onlyofficePreview v-if="fileUrl && !IS_NOTE && !IS_WEB" class="center-content" :src="fileUrl"
+            :file-name="fileName" :file-key="fileKey" :download="download" :mode="'view'" />
           <div v-if="IS_NOTE" class="note-box">
             <div class="note-content">
               <v-md-preview :text="noteInfo.content"></v-md-preview>
             </div>
           </div>
           <div v-else-if="IS_WEB" class="note-box">
-              <webview ref="webview" id="webview" class="note-content" allowpopups :src="webUrl"></webview>
+            <webview ref="webview" id="webview" class="note-content" allowpopups :src="webUrl"></webview>
           </div>
         </template>
       </el-splitter-panel>
@@ -46,6 +46,7 @@ import { I18N } from 'xgplayer'
 import ZH from 'xgplayer/es/lang/zh-cn'
 import { nextTick, ref, watchEffect, inject, onMounted, onUnmounted } from 'vue'
 import { get_note_info } from '@renderer/api/note'
+import { add_web_log } from '@renderer/api/history'
 // 启用中文
 I18N.use(ZH)
 const props = defineProps({
@@ -61,20 +62,35 @@ const props = defineProps({
 const addNewTab = inject('addNewTab')
 let webview = ref(null)
 const callBack = (event) => {
-    // 在当前标签页导航到目标URL
-    const details = event.detail
-    addNewTab({
-      url: details.url,
-      title: details.title || '',
-      icon: details.icon || '',
-      isInternal: false
-    })
+  // 在当前标签页导航到目标URL
+  const details = event.detail
+  addNewTab({
+    url: details.url,
+    title: details.title || '',
+    icon: details.icon || '',
+    isInternal: false
+  })
 }
-onMounted(()=> {
-  webview.value&&webview.value.addEventListener('new-window', callBack)
+// 网页历史更新
+const lastTitle = ref('')
+const updateLog = (event) => {
+  // 去重：title 没变就不处理
+  if (event.title === lastTitle.value) return
+  lastTitle.value = event.title
+  add_web_log({
+    title: event.title,
+    web_url: webview.value.getURL(),
+    t: Date.now()
+  })
+}
+onMounted(() => {
+  webview.value && webview.value.addEventListener('new-window', callBack)
+  webview.value && webview.value.addEventListener('page-title-updated', updateLog)
 })
-onUnmounted(()=> {
-  webview.value&&webview.value.removeEventListener('new-window', callBack)
+onUnmounted(() => {
+  webview.value && webview.value.removeEventListener('new-window', callBack)
+  webview.value && webview.value.removeEventListener('page-title-updated', updateLog)
+  lastTitle.value = ''
 })
 let fileUrl = ref('')
 let fileName = ref('')
