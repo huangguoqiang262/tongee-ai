@@ -84,7 +84,7 @@ import { useUserInfo } from '@renderer/hooks/checkLogin'
 const userInfo = useUserInfo()
 const serverUrl = ref(import.meta.env.VITE_API_BASE_ONLYOFFICE_URL)
 const props = defineProps({
-  // 文档访问 URL（建议用局域网可访问的 http(s) 链接，例如: http://192.168.1.187:3000/files/example.docx）
+  // 文档访问 URL（建议用局域网可访问的 http(s) 链接，例如: http://192.168.11.241/files/example.docx）
   src: { type: String, required: true },
   // 视图模式: 'view' 或 'edit'（edit 需要文档服务器允许保存并配置回调接口）
   mode: { type: String, default: 'view' },
