@@ -159,7 +159,7 @@
                   </div>
                 </div>
 
-                <div class="synergia-list">
+                <div class="synergia-list" v-infinite-scroll="loadData" >
                   <el-select
                     v-model="process_type"
                     class="typeList-box"

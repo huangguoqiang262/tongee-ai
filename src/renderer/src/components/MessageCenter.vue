@@ -120,7 +120,7 @@
           </div>
         </div>
         <div v-if="activeTab == '4'" class="synergia-box">
-          <div class="synergia-list">
+          <div v-if="synergiaMsgList.length" v-infinite-scroll="loadData" class="synergia-list">
             <div v-for="(item, index) in synergiaMsgList" :key="index" class="list-item" @click="lookSystem(item)">
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
@@ -164,6 +164,9 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div v-else class="empty">
+            <el-empty :image-size="120" description="暂无数据" />
           </div>
         </div>
       </div>
@@ -1212,6 +1215,7 @@ watchEffect(() => {
                 }
 
                 .handle-box {
+                  flex-shrink: 0;
                   display: flex;
 
                   .btn-agree,
