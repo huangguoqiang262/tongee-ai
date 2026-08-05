@@ -626,6 +626,12 @@ let moveNoteRules = ref({
 const submitMoveNoteForm = async (formRef) => {
   formRef.validate((valid) => {
     if (valid) {
+       // eslint-disable-next-line no-undef
+      const loading = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
       var data = {
         notebook_id: moveNoteForm.value.id,
         note_id: activeNote.value.id
@@ -638,6 +644,8 @@ const submitMoveNoteForm = async (formRef) => {
           formRef.resetFields()
           moveNoteVisible.value = false
         }
+      }).finally(() => {
+        loading.close()
       })
     } else {
       console.log('表单验证失败')
