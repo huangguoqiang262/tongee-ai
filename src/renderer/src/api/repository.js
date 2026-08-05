@@ -359,6 +359,14 @@ export function get_project_user_status(data) {
     data
   })
 }
+// 获取协作编辑key
+export function getEditKey(data) {
+  return request({
+    url: '/onlyoffice/getEditKey',
+    method: 'post',
+    data
+  })
+}
 // 文件更换知识库或文件夹
 export function changeKnowFilePosition(data) {
   return request({

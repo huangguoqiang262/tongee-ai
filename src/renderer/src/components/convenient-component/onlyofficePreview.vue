@@ -1,38 +1,15 @@
 <!-- eslint-disable vue/attribute-hyphenation -->
 <template>
   <div class="onlyoffice-preview" :style="{ height, width }">
-    <DocumentEditor
-      v-if="fileKey && !isImage && config.token"
-      :id="onlyofficePreviewId"
-      :document-server-url="serverUrl"
-      :config="config"
-      :events_onDocumentReady="handleDocumentReady"
-      :event_onContextMenuShow="handleContextMenuShow"
-      :events_onSave="handleSave"
-      :events_onError="handleError"
-      :events_onDestroy="handleDestroy"
-      v-bind="$attrs"
-    />
+    <DocumentEditor v-if="fileKey && !isImage && config.token" :id="onlyofficePreviewId"
+      :document-server-url="serverUrl" :config="config" :events_onDocumentReady="handleDocumentReady"
+      :event_onContextMenuShow="handleContextMenuShow" :events_onSave="handleSave" :events_onError="handleError"
+      :events_onDestroy="handleDestroy" v-bind="$attrs" />
     <!-- 图片预览 -->
-    <div
-      v-if="isImage"
-      ref="imgContainer"
-      class="file-preview-img-container"
-      @wheel.prevent="handleWheel"
-      @mousedown="handleMouseDown"
-      @mousemove="handleMouseMove"
-      @mouseup="handleMouseUp"
-      @mouseleave="handleMouseUp"
-    >
-      <img
-        v-if="!loading"
-        :src="props.src"
-        class="file-preview-img"
-        :style="imageStyle"
-        alt="预览图片"
-        draggable="false"
-        @load="handleImageLoad"
-      />
+    <div v-if="isImage" ref="imgContainer" class="file-preview-img-container" @wheel.prevent="handleWheel"
+      @mousedown="handleMouseDown" @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
+      <img v-if="!loading" :src="props.src" class="file-preview-img" :style="imageStyle" alt="预览图片" draggable="false"
+        @load="handleImageLoad" />
 
       <!-- 图片控制工具栏 -->
       <div class="image-controls">
@@ -50,16 +27,13 @@
           <svg viewBox="0 0 24 24" width="16" height="16">
             <path
               d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"
-              fill="currentColor"
-            />
+              fill="currentColor" />
           </svg>
         </button>
         <button class="control-btn" title="全屏" @click="toggleFullscreen">
           <svg viewBox="0 0 24 24" width="16" height="16">
-            <path
-              d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
-              fill="currentColor"
-            />
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
+              fill="currentColor" />
           </svg>
         </button>
         <div class="zoom-info">{{ Math.round(scale * 100) }}%</div>
@@ -81,6 +55,7 @@ import cloneDeep from 'lodash.clonedeep'
 import { ref, reactive, computed, watchEffect, onMounted, onUnmounted } from 'vue'
 import { DocumentEditor } from '@onlyoffice/document-editor-vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
+import { getEditKey } from '@renderer/api/repository'
 const userInfo = useUserInfo()
 const serverUrl = ref(import.meta.env.VITE_API_BASE_ONLYOFFICE_URL)
 const props = defineProps({
@@ -218,6 +193,36 @@ let users = {
   name: cloneDeep(userInfo.value?.name || '')
 }
 let t = Date.now()
+
+// const config = ref({
+//   width: '100%',
+//   height: '100%',
+//   type: fileExt.value || 'docx',
+//   documentType: docType(fileExt.value),
+//   document: {
+//     title: props.fileName || props.src.split('/').pop(),
+//     url: props.src,
+//     fileType: fileExt.value || 'docx',
+//     key: t + '' || ''
+//   },
+//   editorConfig: {
+//     mode: props.mode === 'edit' ? 'edit' : 'view',
+//     lang: 'zh-cn',
+//     customization: {
+//       autosave: true,
+//       forcesave: true,
+//     },
+//     coEditing: {
+//       mode: 'fast',
+//       change: true
+//     },
+//     callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
+//   },
+//   user: {
+//     id: userInfo.value?.ding_uid || '',
+//     name: userInfo.value?.name || ''
+//   }
+// })
 const config = ref({
   width: '100%',
   height: '100%',
@@ -225,9 +230,12 @@ const config = ref({
   documentType: docType(fileExt.value),
   document: {
     title: props.fileName || props.src.split('/').pop(),
-    url: props.src,
+    url: props.src + '?t=' + t,
     fileType: fileExt.value || 'docx',
-    key: t + '' || ''
+    key: props.fileKey || '',
+    permissions: {
+      download: props.download || false
+    }
   },
   editorConfig: {
     mode: props.mode === 'edit' ? 'edit' : 'view',
@@ -240,81 +248,25 @@ const config = ref({
       mode: 'fast',
       change: true
     },
-    callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
-  },
-  user: {
-    id: userInfo.value?.ding_uid || '',
-    name: userInfo.value?.name || ''
+    callbackUrl:
+      import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey || '', // 默认回调为 Document Server，自行在后端实现保存回调接口
+    user: users
   }
 })
-watchEffect(() => {
-  config.value = {
-    width: '100%',
-    height: '100%',
-    type: fileExt.value || 'docx',
-    documentType: docType(fileExt.value),
-    document: {
-      title: props.fileName || props.src.split('/').pop(),
-      url: props.src,
-      fileType: fileExt.value || 'docx',
-      key: t + '' || '',
-      permissions: {
-        download: props.download || false
-      }
-    },
-    editorConfig: {
-      mode: props.mode === 'edit' ? 'edit' : 'view',
-      lang: 'zh-cn',
-      customization: {
-        autosave: true,
-        forcesave: true,
-      },
-      coEditing: {
-        mode: 'fast',
-        change: true
-      },
-      callbackUrl:
-        import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey || '', // 默认回调为 Document Server，自行在后端实现保存回调接口
-      user: users
-    }
+const getKey = async () => {
+  try {
+    var res = await getEditKey({ file_key: props.fileKey })
+    config.value.document.key = res.data.office_key
+    createJWT(config.value,
+      onlyofficeSecret
+    ).then((token) => {
+      config.value.token = token
+    })
+  } catch (err) {
+    console.log(err)
   }
-  createJWT(
-    {
-      width: '100%',
-      height: '100%',
-      type: fileExt.value || 'docx',
-      documentType: docType(fileExt.value),
-      document: {
-        title: props.fileName || props.src.split('/').pop(),
-        url: props.src+'?t=' + t,
-        fileType: fileExt.value || 'docx',
-        key: t + '' || '',
-        permissions: {
-          download: props.download || false
-        }
-      },
-      editorConfig: {
-        mode: props.mode === 'edit' ? 'edit' : 'view',
-        lang: 'zh-cn',
-        customization: {
-          autosave: true,
-          forcesave: true,
-        },
-        coEditing: {
-          mode: 'fast',
-          change: true
-        },
-        callbackUrl:
-          import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey ||
-          '', // 默认回调为 Document Server，自行在后端实现保存回调接口
-        user: users
-      }
-    },
-    onlyofficeSecret
-  ).then((token) => {
-    config.value.token = token
-  })
-})
+}
+getKey()
 const handleDocumentReady = (event) => {
   loading.value = false
   error.value = false
@@ -496,6 +448,7 @@ onUnmounted(() => {
   height: 100%;
   background: #fff;
 }
+
 .loading-overlay {
   position: absolute;
   left: 0;
@@ -509,6 +462,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.9);
   z-index: 1000;
 }
+
 .loading-spinner {
   width: 36px;
   height: 36px;
@@ -517,10 +471,12 @@ onUnmounted(() => {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
 .loading-text {
   margin-top: 8px;
   color: #666;
 }
+
 /* 图片预览容器 */
 .file-preview-img-container {
   width: 100%;
@@ -625,6 +581,7 @@ onUnmounted(() => {
 :deep(.file-preview-img-container:fullscreen .image-controls) {
   bottom: 30px;
 }
+
 .error-overlay {
   position: absolute;
   left: 0;
@@ -637,10 +594,12 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.95);
   z-index: 1001;
 }
+
 .error-message {
   text-align: center;
   color: #f56c6c;
 }
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

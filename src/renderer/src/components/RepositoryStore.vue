@@ -364,7 +364,8 @@
               <Search />
             </el-icon>
           </div>
-          <div v-if="detailFileList.length" class="list-box" @mousedown="handleMouseDown" @mousemove="handleMouseMove"
+          <div v-if="detailFileList.length" v-infinite-scroll="loadData" :infinite-scroll-disabled="pagenation.loading"
+            :infinite-scroll-immediate="false" class="list-box" @mousedown="handleMouseDown" @mousemove="handleMouseMove"
             @mouseup="handleMouseUp" @mouseleave="handleMouseLeave">
             <template v-for="(item, index) in detailFileList" :key="item.id">
               <div v-if="item.item_type == 2" class="list-item"
@@ -823,6 +824,12 @@ const props = defineProps({
 let moveFileVisible = ref(false)
 // 确认移动
 const submitMove = (data) => {
+  // eslint-disable-next-line no-undef
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.3)'
+  })
   changeKnowFilePosition({
     change_items: JSON.stringify(data.change_items)
   }).then((res) => {
@@ -832,6 +839,8 @@ const submitMove = (data) => {
       moveFileVisible.value = false
       refreshList()
     }
+  }).finally(() => {
+    loading.close()
   })
 }
 // 重新向量化
@@ -1579,12 +1588,14 @@ const handleNoteCreatedFromRepo = (payload) => {
 }
 const repositoryPermission = ref({})
 // 获取知识库权限
-const getRepositoryPermission = () => {
+const getRepositoryPermission = (isRefresh = true) => {
   get_know_permission({ know_id: activeRepositoryId.value }).then((res) => {
     if (res.code == 200) {
       repositoryPermission.value = res.data
       repositoryMemberTree.value = res.data.tree
-      refreshList()
+      if (isRefresh) {
+        refreshList()
+      }
     }
   })
 }
@@ -1686,6 +1697,12 @@ const repositoryType = ref('common')
 const submitRepositoryType = ref('create')
 // 知识库详情文件列表
 const detailFileList = ref([])
+const pagenation = ref({
+  page: 1,
+  page_size: 30,
+  total: 0,
+  loading: false
+})
 // 活动知识库
 const activeRepository = ref({})
 // 导入笔记
@@ -1730,48 +1747,84 @@ const getRepositoryInfo = (id) => {
     }
   ]
   detailFileList.value = []
+  pagenation.value = {
+    page: 1,
+    page_size: 10,
+    total: 0,
+    loading: true
+  }
   return get_know_info({
     know_id: id,
     parent_item_id: 0,
     sort_type: sortType.value,
-    search_key: searchText.value
+    search_key: searchText.value,
+    page: pagenation.value.page,
+    page_size: pagenation.value.page_size
   }).then((res) => {
     if (res.code == 200) {
       activeRepository.value = res.data
-      detailFileList.value = res.data.items
+      detailFileList.value = detailFileList.value.concat(res.data.items || [])
+      pagenation.value.total = res.data.total || 0
+      pagenation.value.page = res.data.current_page || 1
+      pagenation.value.page_size = res.data.per_page || 30
       if (activeRepository.value.is_public == 1) {
-        getRepositoryPermission()
+        getRepositoryPermission(false)
         getUnreadApplyNumber()
       }
     }
+  }).finally(() => {
+    pagenation.value.loading = false
   })
 }
-// 刷新知识库详情列表
-const refreshList = () => {
+// 请求数据
+const fetchList = () => {
   get_know_info({
     know_id: activeRepository.value.id,
     parent_item_id: parentItemId.value,
     sort_type: sortType.value,
-    search_key: searchText.value
+    search_key: searchText.value,
+    page: pagenation.value.page,
+    page_size: pagenation.value.page_size
   }).then((res) => {
     if (res.code == 200) {
       activeRepository.value = res.data
-      detailFileList.value = res.data.items
+      detailFileList.value = detailFileList.value.concat(res.data.items || [])
+      pagenation.value.total = res.data.total || 0
+      pagenation.value.page = res.data.current_page || 1
+      pagenation.value.page_size = res.data.per_page || 30
       if (waitCheckedFile.value) {
         detailFileList.value.forEach(item => {
           if (item.id == waitCheckedFile.value) {
             item.checked = true
+            waitCheckedFile.value = ''
           }
         })
-        waitCheckedFile.value = ''
       }
       getUserInfo()
-      // if (activeRepository.value.is_public == 1) {
-      //   getRepositoryPermission()
-      //   getUnreadApplyNumber()
-      // }
     }
+  }).finally(() => {
+    pagenation.value.loading = false
   })
+}
+// 刷新知识库详情列表
+const refreshList = () => {
+  detailFileList.value = []
+  pagenation.value = {
+    page: 1,
+    page_size: 10,
+    total: 0,
+    loading: true
+  }
+  fetchList()
+}
+
+// 加载更多
+const loadData = () => {
+  if ((pagenation.value.page * pagenation.value.page_size < pagenation.value.total) && !pagenation.value.loading) {
+    pagenation.value.page++
+    pagenation.value.loading = true
+    fetchList()
+  }
 }
 const getUnreadApplyNumber = () => {
   know_apply_number({ know_id: activeRepositoryId.value }).then((res) => {
@@ -2228,6 +2281,13 @@ let activeFiles = computed(() => {
 const synergiaLookVisible = ref(false)
 // 右键菜单相关函数
 const showContextMenu = (e, item) => {
+  contextMenu.value = {
+      show: false,
+      permission_type: 'cannotView',
+      x: e.clientX,
+      y: e.clientY,
+      actionSheet: []
+    }
   e.stopPropagation()
   e.preventDefault()
   repositoryaddPopover.value?.hide()
@@ -2678,6 +2738,21 @@ const showContextMenu = (e, item) => {
         }
       }
     }
+    
+    // 如果是协同文档的创建者且没有审核前可以删除该协同文档
+    if (
+          activeFiles.value[0].is_collaboration_creator == 1 &&
+          activeFiles.value[0].collaboration_status == 1
+        ) {
+          var hasDel = contextMenu.value.actionSheet.find(item => item.action === 'delete')
+          if (!hasDel) {
+            contextMenu.value.actionSheet.push({
+              name: '删除',
+              icon: deleteIcon,
+              action: 'delete'
+            })
+          }
+        }
     if (activeFiles.value.length === 1 && isSearching.value && searchText.value.trim() && contextMenu.value.show) {
       contextMenu.value.actionSheet.push({
         name: '打开所在位置',
@@ -3543,9 +3618,7 @@ watch(
         searchText.value = ''
         isSearching.value = false
         contextMenu.value.show = false
-        if (activeRepository.value.is_public != 1) {
-          refreshList()
-        }
+        refreshList()
       } else {
         getRepositoryInfo(activeRepositoryId.value)
       }
