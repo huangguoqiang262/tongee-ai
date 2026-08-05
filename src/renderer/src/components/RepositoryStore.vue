@@ -1749,7 +1749,7 @@ const getRepositoryInfo = (id) => {
   detailFileList.value = []
   pagenation.value = {
     page: 1,
-    page_size: 10,
+    page_size: 30,
     total: 0,
     loading: true
   }
@@ -1811,7 +1811,7 @@ const refreshList = () => {
   detailFileList.value = []
   pagenation.value = {
     page: 1,
-    page_size: 10,
+    page_size: 30,
     total: 0,
     loading: true
   }
