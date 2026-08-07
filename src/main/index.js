@@ -221,6 +221,7 @@ app.whenReady().then(() => {
   autoUpdater.autoDownload = false
   let updateRetryCount = 0
   const maxUpdateRetries = 3
+  let isDownloadCancelled = false
   const updaterCacheDir = join(app.getPath('userData'), 'tongee-app-updater')
   // 更新事件处理
   autoUpdater.on('update-available', ({ version }) => {
@@ -249,6 +250,16 @@ app.whenReady().then(() => {
 
   autoUpdater.on('error', (error) => {
     console.error('Update error:', error)
+    // 如果是用户取消下载导致的错误，不重试
+    if (isDownloadCancelled) {
+      isDownloadCancelled = false
+      updateRetryCount = 0
+      mainWindow.webContents.send('update-status', {
+        stage: 'error',
+        error: '下载已取消'
+      })
+      return
+    }
     if (updateRetryCount < maxUpdateRetries) {
       updateRetryCount++
       console.log(`Retrying update download (${updateRetryCount}/${maxUpdateRetries})`)
@@ -299,7 +310,28 @@ ipcMain.handle('check-updates', async () => {
 })
 
 ipcMain.handle('download-update', async () => {
+  isDownloadCancelled = false
+  updateRetryCount = 0
   autoUpdater.downloadUpdate()
+})
+
+ipcMain.handle('cancel-download', async () => {
+  isDownloadCancelled = true
+  // 清理下载缓存来中断下载
+  try {
+    if (fs.existsSync(updaterCacheDir)) {
+      const files = fs.readdirSync(updaterCacheDir)
+      files.forEach((file) => {
+        const filePath = join(updaterCacheDir, file)
+        if (fs.statSync(filePath).isFile()) {
+          fs.unlinkSync(filePath)
+        }
+      })
+    }
+  } catch (err) {
+    console.error('Error clearing cache on cancel:', err)
+  }
+  return true
 })
 
 ipcMain.handle('quit-install', async () => {

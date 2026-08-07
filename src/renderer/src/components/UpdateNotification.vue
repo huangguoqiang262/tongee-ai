@@ -283,6 +283,10 @@ const cancelDownload = async () => {
       type: 'warning'
     })
 
+    // 调用主进程取消下载
+    if (window.customApi?.cancelDownload) {
+      await window.customApi.cancelDownload()
+    }
     // 重置状态
     updateStatus.value = 'available'
     isDownloading.value = false

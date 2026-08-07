@@ -31,6 +31,7 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   deleteAppDataOnUninstall: true
+  include: build/installer.nsh
 mac:
   category: public.app-category.utilities
   artifactName: ${name}-${version}-setup.${ext}
