@@ -367,6 +367,30 @@ export function getEditKey(data) {
     data
   })
 }
+// 获取文档历史版本列表
+// 注意: 历史版本的 key 必须与后端「保存该版本时」使用的 key 一致（即版本级 key，
+// 区别于协同会话用的 office_key）。前端无法凭空生成，必须由后端返回。
+// 返回结构约定: { data: { currentVersion, history: [
+//   { version, key, created, user: { id, name }, serverVersion? }
+// ] } }
+export function getOfficeVersionList(data) {
+  return request({
+    url: '/onlyoffice/getVersionList',
+    method: 'post',
+    data
+  })
+}
+// 获取单个历史版本的文档内容（用于预览/对比/恢复）
+// 返回结构约定: { data: {
+//   fileType, version, key, url, previous?: { key, url }, changesUrl?
+// } }
+export function getOfficeVersionData(data) {
+  return request({
+    url: '/onlyoffice/getVersionData',
+    method: 'post',
+    data
+  })
+}
 // 文件更换知识库或文件夹
 export function changeKnowFilePosition(data) {
   return request({

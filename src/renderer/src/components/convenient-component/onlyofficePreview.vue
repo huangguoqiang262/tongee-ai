@@ -2,9 +2,10 @@
 <template>
   <div class="onlyoffice-preview" :style="{ height, width }">
     <DocumentEditor v-if="fileKey && !isImage && config.token" :id="onlyofficePreviewId"
-      :document-server-url="serverUrl" :config="config" :events_onDocumentReady="handleDocumentReady"
-      :event_onContextMenuShow="handleContextMenuShow" :events_onSave="handleSave" :events_onError="handleError"
-      :events_onDestroy="handleDestroy" v-bind="$attrs" />
+      :document-server-url="serverUrl" :config="config" :events_onAppReady="onAppReady"
+      :events_onDocumentReady="onDocumentReady" :events_onDocumentSave="onDocumentSave"
+      :events_onError="onError" :events_onWarning="onWarning"
+      v-bind="$attrs"/>
     <!-- 图片预览 -->
     <div v-if="isImage" ref="imgContainer" class="file-preview-img-container" @wheel.prevent="handleWheel"
       @mousedown="handleMouseDown" @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
@@ -39,13 +40,6 @@
         <div class="zoom-info">{{ Math.round(scale * 100) }}%</div>
       </div>
     </div>
-    <!-- <div v-if="error" class="error-overlay">
-      <div class="error-message">
-        <i class="el-icon-warning"></i>
-        <p>文档预览错误</p>
-        <p>{{ errorMessage }}</p>
-      </div>
-    </div> -->
   </div>
 </template>
 
@@ -56,6 +50,8 @@ import { ref, reactive, computed, watchEffect, onMounted, onUnmounted } from 'vu
 import { DocumentEditor } from '@onlyoffice/document-editor-vue'
 import { useUserInfo } from '@renderer/hooks/checkLogin'
 import { getEditKey } from '@renderer/api/repository'
+// 历史版本接口
+import { getOfficeVersionList, getOfficeVersionData } from '@renderer/api/repository'
 const userInfo = useUserInfo()
 const serverUrl = ref(import.meta.env.VITE_API_BASE_ONLYOFFICE_URL)
 const props = defineProps({
@@ -70,7 +66,6 @@ const props = defineProps({
   download: { type: Boolean, default: false },
 })
 let onlyofficePreviewId = ref('onlyoffice-preview-' + Math.random().toString(36).substr(2, 9))
-const emit = defineEmits(['ready', 'error', 'loaded'])
 let imgContainer = ref(null)
 const loading = ref(true)
 const error = ref(false)
@@ -190,39 +185,137 @@ const createJWT = async (json, secret) => {
 }
 let users = {
   id: cloneDeep(userInfo.value?.ding_uid || ''),
-  name: cloneDeep(userInfo.value?.name || '')
+  name: cloneDeep(userInfo.value?.name || ''),
+  image: cloneDeep(userInfo.value?.avatar || '')
 }
 let t = Date.now()
-
-// const config = ref({
-//   width: '100%',
-//   height: '100%',
-//   type: fileExt.value || 'docx',
-//   documentType: docType(fileExt.value),
-//   document: {
-//     title: props.fileName || props.src.split('/').pop(),
-//     url: props.src,
-//     fileType: fileExt.value || 'docx',
-//     key: t + '' || ''
-//   },
-//   editorConfig: {
-//     mode: props.mode === 'edit' ? 'edit' : 'view',
-//     lang: 'zh-cn',
-//     customization: {
-//       autosave: true,
-//       forcesave: true,
-//     },
-//     coEditing: {
-//       mode: 'fast',
-//       change: true
-//     },
-//     callbackUrl: import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL || '' // 默认回调为 Document Server，自行在后端实现保存回调接口
-//   },
-//   user: {
-//     id: userInfo.value?.ding_uid || '',
-//     name: userInfo.value?.name || ''
+let docEditor = null
+// 在 onAppReady 中通过 window.DocEditor.instances[id] 获取编辑器实例
+const onAppReady = () => {
+  docEditor = window.DocEditor?.instances?.[onlyofficePreviewId.value]
+}
+const onDocumentReady = () => {
+  // 文档加载完成
+}
+const onDocumentSave = () => {
+  // 用户点击保存（Ctrl+S / 保存按钮）——实际落盘由后端 callback 处理
+}
+const onError = (event) => {
+  console.error('[ONLYOFFICE]', event?.data)
+}
+const onWarning = (event) => {
+  console.warn('[ONLYOFFICE]', event?.data)
+}
+// // 用户点击"版本历史"图标 -> 拉取版本列表并喂给编辑器
+//  :events_onRequestHistory="onRequestHistory"
+      // :events_onRequestHistoryData="onRequestHistoryData"
+      // :events_onRequestHistoryClose="onRequestHistoryClose"
+      // :events_onRequestRestore="onRequestRestore"
+// const onRequestHistory = async () => {
+//   console.log(111,docEditor)
+//   if (!docEditor || !props.fileKey) return
+//   console.log('[ONLYOFFICE] onRequestHistory 触发, fileKey=', props.fileKey)
+//   try {
+//     const res = await getOfficeVersionList({ file_key: props.fileKey })
+//     const raw = res?.data || res
+//     const list = raw?.history || raw?.data?.history || []
+//     const currentVersion = raw?.currentVersion ?? raw?.data?.currentVersion ?? list.length
+//     // 组装 ONLYOFFICE 要求的 history 数据结构
+//     // 每个历史版本的 key 必须由后端提供（即该版本保存时用的真实 key），不能前端拼接
+//     const history = await Promise.all(
+//       list.map(async (item) => {
+//         const version = item.version ?? item.id ?? 0
+//         const key = item.key
+//         if (!key) {
+//           console.warn('[ONLYOFFICE] 版本缺少 key, 跳过', item)
+//           return null
+//         }
+//         const token = await createJWT(
+//           { document: { key }, documentType: docType(fileExt.value) },
+//           onlyofficeSecret
+//         ).catch(() => config.value.token)
+//         return {
+//           version,
+//           key,
+//           created: item.created || item.create_time || '',
+//           user: {
+//             id: item.user?.id ?? item.user_id ?? '',
+//             name: item.user?.name ?? item.user_name ?? ''
+//           },
+//           serverVersion: item.serverVersion ?? 4,
+//           token: token || undefined
+//         }
+//       })
+//     )
+//     const filtered = history.filter(Boolean)
+//     console.log('[ONLYOFFICE] 历史版本列表', { currentVersion, count: filtered.length })
+//     docEditor.refreshHistory({ currentVersion, history: filtered })
+//   } catch (err) {
+//     console.error('[ONLYOFFICE] 获取历史版本失败', err)
 //   }
-// })
+// }
+// // 用户点击某个历史版本 -> 拉取该版本详情并喂给编辑器（用于对比/恢复）
+// const onRequestHistoryData = async (event) =>{
+//   const version = event?.data?.version
+//   if (!version || !props.fileKey) return
+//   console.log('[ONLYOFFICE] onRequestHistoryData 触发, version=', version)
+//   try {
+//     const res = await getOfficeVersionData({ file_key: props.fileKey, version })
+//     const raw = res?.data || res
+//     const key = raw.key
+//     if (!key) {
+//       console.warn('[ONLYOFFICE] 版本详情缺少 key', raw)
+//       return
+//     }
+//     const token = await createJWT(
+//       { document: { key }, documentType: docType(fileExt.value) },
+//       onlyofficeSecret
+//     ).catch(() => config.value.token)
+//     const data = {
+//       fileType: raw.fileType || fileExt.value || 'docx',
+//       version,
+//       key,
+//       url: raw.url,
+//       token: token || undefined
+//     }
+//     if (raw.previous?.key) {
+//       data.previous = {
+//         key: raw.previous.key,
+//         url: raw.previous.url,
+//         token:
+//           (await createJWT(
+//             { document: { key: raw.previous.key }, documentType: docType(fileExt.value) },
+//             onlyofficeSecret
+//           ).catch(() => config.value.token)) || undefined
+//       }
+//     }
+//     if (raw.changesUrl) data.changesUrl = raw.changesUrl
+//     docEditor.setHistoryData(data)
+//   } catch (err) {
+//     console.error('[ONLYOFFICE] 获取历史版本详情失败', err)
+//   }
+// }
+// // // 用户关闭历史版本面板
+// const onRequestHistoryClose = async ()=> {
+//   console.log('[ONLYOFFICE] onRequestHistoryClose')
+// }
+// // // 用户点击"恢复此版本" -> 通知后端恢复（可选，后端按需实现）
+// const onRequestRestore = async (event) => {
+//   const version = event?.data?.version
+//   if (!version || !props.fileKey) return
+//   try {
+//     await getOfficeVersionData({ file_key: props.fileKey, version, restore: true })
+//     await getKey()
+//   } catch (err) {
+//     console.error('[ONLYOFFICE] 恢复历史版本失败', err)
+//   }
+// }
+const handleError = (event) => {
+  loading.value = false
+  error.value = true
+  errorMessage.value = event && event.message ? event.message : 'Unknown error'
+}
+
 const config = ref({
   width: '100%',
   height: '100%',
@@ -242,7 +335,7 @@ const config = ref({
     lang: 'zh-cn',
     customization: {
       autosave: true,
-      forcesave: true,
+      forcesave: true
     },
     coEditing: {
       mode: 'fast',
@@ -252,6 +345,7 @@ const config = ref({
       import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey || '', // 默认回调为 Document Server，自行在后端实现保存回调接口
     user: users
   }
+
 })
 const getKey = async () => {
   try {
@@ -267,30 +361,7 @@ const getKey = async () => {
   }
 }
 getKey()
-const handleDocumentReady = (event) => {
-  loading.value = false
-  error.value = false
-  emit('ready', event)
-  emit('loaded', event)
-}
-// 右键时菜单出现
-const handleContextMenuShow = (event) => {
-  console.log(event)
-}
-const handleSave = (event) => {
-  // 可选：处理保存事件
-  console.log('Document saved:', event)
-}
-const handleError = (event) => {
-  loading.value = false
-  error.value = true
-  errorMessage.value = event && event.message ? event.message : 'Unknown error'
-  emit('error', { message: errorMessage.value })
-}
-const handleDestroy = (event) => {
-  // 可选：处理销毁事件
-  console.log('Document editor destroyed:', event)
-}
+
 
 // 图片预览相关状态
 const scale = ref(1) // 缩放比例
