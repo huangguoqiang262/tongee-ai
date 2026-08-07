@@ -90,7 +90,7 @@ const props = defineProps({
     default: () => []
   },
   activeTabId: {
-    type: Number,
+    type: [Number, String],
     default: null
   },
   dropIndicator: {
