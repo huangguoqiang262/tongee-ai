@@ -7,6 +7,10 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // import icon from '../../resources/icon.png?asset'
 let mainWindow = null // 全局窗口变量
 let tray = null // 托盘实例变量
+let isDownloadCancelled = false
+let updateRetryCount = 0
+const maxUpdateRetries = 3
+const updaterCacheDir = join(app.getPath('userData'), 'tongee-app-updater')
 const gotTheLock = app.requestSingleInstanceLock()
 // 新增多开限制逻辑（必须在协议注册前添加）
 if (!gotTheLock) {
@@ -219,10 +223,6 @@ app.whenReady().then(() => {
   autoUpdater.requestHeaders = { insecure: 'true' } // 跳过证书验证
   autoUpdater.autoInstallOnAppQuit = false
   autoUpdater.autoDownload = false
-  let updateRetryCount = 0
-  const maxUpdateRetries = 3
-  let isDownloadCancelled = false
-  const updaterCacheDir = join(app.getPath('userData'), 'tongee-app-updater')
   // 更新事件处理
   autoUpdater.on('update-available', ({ version }) => {
     mainWindow.webContents.send('update-status', {
