@@ -165,21 +165,21 @@
               </div>
               <el-button class="btn-box" type="primary">选择文件</el-button>
             </el-upload>
-            <div v-if="synergiaForm.file" class="uploaded-box">
+            <div v-if="synergiaForm.file.length" class="uploaded-box">
               <div class="uploaded-title">已选文件</div>
               <div class="uploaded-list">
-                <div class="uploaded-item">
-                  <img class="icon" :src="getFileIcon(synergiaForm.file)" alt="" />
+                <div v-for="(item, index) in synergiaForm.file" :key="index" class="uploaded-item">
+                  <img class="icon" :src="getFileIcon(item)" alt="" />
                   <div class="item-content">
-                    <div class="item-name">{{ synergiaForm.file.name }}</div>
+                    <div class="item-name">{{ item.name }}</div>
                     <div class="item-size-ext">
                       <span class="ext">
-                        {{ synergiaForm.file.name.split('.').pop().toUpperCase() }}
+                        {{ item.name.split('.').pop().toUpperCase() }}
                       </span>
-                      <span>{{ formatFileSize(synergiaForm.file.size) }}</span>
+                      <span>{{ formatFileSize(item.size) }}</span>
                     </div>
                   </div>
-                  <el-icon class="close-icon" color="#737475" @click="handleRemove(item)"
+                  <el-icon class="close-icon" color="#737475" @click="handleRemove(index)"
                     ><Close
                   /></el-icon>
                 </div>
@@ -231,7 +231,7 @@ let synergiaForm = ref({
   type_id: '',
   modifiers: [],
   approvers: [],
-  file: null
+  file: []
 })
 let fileTypes = ref([])
 const modifiersTreeData = ref([])
@@ -262,7 +262,7 @@ let synergiaRules = ref({
   type_id: [{ required: true, message: '请选择文件类型', trigger: ['blur'] }],
   modifiers: [{ required: true, message: '请选择修改人员', trigger: ['change'] }],
   approvers: [{ required: true, message: '请选择批准人员', trigger: ['change'] }],
-  file: [{ required: true, message: '请上传文件', trigger: ['change'] }]
+  file: [{ type: 'array', required: true, message: '请上传文件', trigger: ['change'] }]
 })
 // 文件选取回调
 const handleFiileChange = (file) => {
@@ -287,11 +287,11 @@ const handleFiileChange = (file) => {
     ElMessage.warning('不支持的文件类型')
     return
   }
-  synergiaForm.value.file = file.raw
+  synergiaForm.value.file.push(file.raw)
 }
 // 删除文件
-const handleRemove = () => {
-  synergiaForm.value.file = null
+const handleRemove = (index) => {
+  synergiaForm.value.file.splice(index, 1)
 }
 // 获取文件图标
 const getFileIcon = (file) => {
@@ -376,11 +376,18 @@ const handleAdd = () => {
   if (synergiaFormRef.value) {
     synergiaFormRef.value.validate((valid) => {
       if (valid) {
-        if (!synergiaForm.value.file) {
+        if (!synergiaForm.value.file.length) {
           // eslint-disable-next-line no-undef
           ElMessage.warning('请上传文件')
           return
         }
+        // 添加loading
+        // eslint-disable-next-line no-undef
+        const loading = ElLoading.service({
+          lock: true,
+          text: 'Loading',
+          background: 'rgba(0, 0, 0, 0.3)'
+        })
         var data = {
           completion_time: parseInt(synergiaForm.value.finishTime / 1000),
           type_id: synergiaForm.value.type_id,
@@ -400,7 +407,7 @@ const handleAdd = () => {
               type_id: '',
               modifiers: [],
               approvers: [],
-              file: null
+              file: []
             }
             synergiaFormRef.value.resetFields()
             // 重置树状图选中状态
@@ -410,6 +417,8 @@ const handleAdd = () => {
             // 隐藏弹窗
             synergiaUploadVisible.value = false
           }
+        }).finally(() => {
+          loading.close()
         })
       }
     })
@@ -703,6 +712,7 @@ const approversCheckChange = () => {
                 }
 
                 .document-icon {
+                  flex-shrink: 0;
                   margin-bottom: 20px;
                   width: 28px;
                   height: 33px;
@@ -723,13 +733,15 @@ const approversCheckChange = () => {
                 }
 
                 .btn-box {
-                  margin-bottom: 60px;
+                  margin-bottom: 20px;
                   width: 104px;
                   height: 36px;
                   border-radius: 8px;
                 }
               }
               .uploaded-box {
+                 flex-shrink: 0;
+                 overflow: hidden;
                 .uploaded-title {
                   margin: 20px 0 14px;
                   font-size: 14px;
@@ -737,7 +749,13 @@ const approversCheckChange = () => {
                   line-height: 20px;
                 }
                 .uploaded-list {
+                  max-height: 220px;
+                  overflow-y: auto;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 10px;
                   .uploaded-item {
+                    flex-shrink: 0;
                     box-sizing: border-box;
                     padding: 12px 10px;
                     display: flex;
