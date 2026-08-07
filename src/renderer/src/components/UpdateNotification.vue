@@ -111,7 +111,7 @@
           <div class="ready-actions">
             <el-button type="primary" size="large" class="install-btn" :loading="isInstalling" @click="quitAndInstall">
               <el-icon><RefreshRight /></el-icon>
-              {{ isInstalling ? '正在安装...' : '立即重启安装' }}
+              {{ isInstalling ? '正在安装...' : '重启糖源并安装' }}
             </el-button>
             <el-button size="large" class="secondary-btn" @click="installLater" :disabled="isInstalling">
               稍后安装

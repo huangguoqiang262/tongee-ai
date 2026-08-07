@@ -155,6 +155,7 @@
               drag
               :show-file-list="false"
               :auto-upload="false"
+              :multiple="true"
               :on-change="handleFiileChange"
               accept=".doc,.xls,.xlsx,.csv,.pdf,.txt,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif"
             >
