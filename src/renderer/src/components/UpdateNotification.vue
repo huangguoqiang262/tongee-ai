@@ -459,6 +459,12 @@ const closeUpdate = () => {
     clearInterval(countdownTimer.value)
     countdownTimer.value = null
   }
+  // 如果正在下载，取消下载
+  if (updateStatus.value === 'downloading') {
+    if (window.customApi?.cancelDownload) {
+      window.customApi.cancelDownload()
+    }
+  }
   // 如果已下载完成，清理缓存避免下次检查时跳过下载
   if (updateStatus.value === 'ready') {
     if (window.customApi?.clearUpdateCache) {
