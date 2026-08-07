@@ -78,6 +78,7 @@ const customApi = {
   checkForUpdates: () => ipcRenderer.invoke('check-updates'),
   downloadUpdate: () => ipcRenderer.invoke('download-update'),
   quitAndInstall: () => ipcRenderer.invoke('quit-install'),
+  clearUpdateCache: () => ipcRenderer.invoke('clear-update-cache'),
   openDirectoryDialog: () => ipcRenderer.invoke('open-directory-dialog'),
   checkScreenRecordingPermission: () => ipcRenderer.invoke('check-screen-recording-permission'),
   // ... existing code ...

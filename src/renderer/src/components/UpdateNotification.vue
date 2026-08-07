@@ -104,18 +104,30 @@
             <el-icon class="success-icon"><CircleCheck /></el-icon>
           </div>
           <div class="status-content">
-            <h4>更新准备就绪</h4>
-            <p class="success-message">更新已下载完成，准备安装</p>
-            <p class="ready-tip">安装完成后应用将自动重启</p>
+            <h4>更新已下载完成</h4>
+            <p class="success-message">即将自动安装更新</p>
+            <p class="ready-tip">应用将在 {{ countdown }} 秒后自动重启安装...</p>
           </div>
           <div class="ready-actions">
-            <el-button type="primary" size="large" class="install-btn" @click="quitAndInstall">
+            <el-button type="primary" size="large" class="install-btn" :loading="isInstalling" @click="quitAndInstall">
               <el-icon><RefreshRight /></el-icon>
-              重启糖源并安装
+              {{ isInstalling ? '正在安装...' : '立即重启安装' }}
             </el-button>
-            <el-button size="large" class="secondary-btn" @click="installLater">
+            <el-button size="large" class="secondary-btn" @click="installLater" :disabled="isInstalling">
               稍后安装
             </el-button>
+          </div>
+        </div>
+
+        <!-- 正在安装更新 -->
+        <div v-else-if="updateStatus === 'installing'" class="update-installing">
+          <div class="status-icon">
+            <el-icon class="loading-icon"><Loading /></el-icon>
+          </div>
+          <div class="status-content">
+            <h4>正在安装更新</h4>
+            <p class="installing-message">请稍候，应用正在安装新版本</p>
+            <p class="installing-tip">安装完成后将自动重启</p>
           </div>
         </div>
 
@@ -187,9 +199,12 @@ const updateInfo = ref({
 const downloadProgress = ref(0)
 const isDownloading = ref(false)
 const isReadyToInstall = ref(false)
+const isInstalling = ref(false)
+const countdown = ref(5)
 const errorMessage = ref('')
 const currentVersion = ref('')
 const checkTimeout = ref(null)
+const countdownTimer = ref(null)
 
 // 检查更新 - 事件驱动版本
 const checkForUpdates = async (silent = false) => {
@@ -285,19 +300,38 @@ const quitAndInstall = async () => {
   }
 
   try {
-    await ElMessageBox.confirm('应用将重启以完成更新，请保存好您的工作', '确认安装', {
-      confirmButtonText: '立即重启',
-      cancelButtonText: '稍后重启',
-      type: 'warning'
-    })
-
+    isInstalling.value = true
+    updateStatus.value = 'installing'
+    // 清除倒计时
+    if (countdownTimer.value) {
+      clearInterval(countdownTimer.value)
+      countdownTimer.value = null
+    }
+    // 短暂延迟让用户看到"正在安装"提示，然后执行安装
+    await new Promise((resolve) => setTimeout(resolve, 800))
     await window.customApi.quitAndInstall()
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('安装更新失败:', error)
-      ElMessage.error('安装更新失败')
-    }
+    console.error('安装更新失败:', error)
+    isInstalling.value = false
+    updateStatus.value = 'ready'
+    ElMessage.error('安装更新失败')
   }
+}
+
+// 启动倒计时自动安装
+const startAutoInstallCountdown = () => {
+  countdown.value = 5
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+  }
+  countdownTimer.value = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(countdownTimer.value)
+      countdownTimer.value = null
+      quitAndInstall()
+    }
+  }, 1000)
 }
 
 // 更新状态监听 - 核心事件处理
@@ -335,7 +369,9 @@ const handleUpdateStatus = (event, status) => {
       isDownloading.value = false
       isReadyToInstall.value = true
       downloadProgress.value = 100
-      ElMessage.primary('更新下载完成，准备安装')
+      ElMessage.primary('更新下载完成，即将自动安装')
+      // 启动5秒倒计时自动安装
+      startAutoInstallCountdown()
       break
 
     case 'error':
@@ -373,13 +409,27 @@ const resetUpdateState = () => {
   downloadProgress.value = 0
   isDownloading.value = false
   isReadyToInstall.value = false
+  isInstalling.value = false
+  countdown.value = 5
   errorMessage.value = ''
+  // 清除倒计时定时器
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+    countdownTimer.value = null
+  }
 }
 
 // 用户交互方法
 const remindLater = () => {
+  // 如果已下载完成，清理缓存避免下次检查时跳过下载
+  if (updateStatus.value === 'ready') {
+    if (window.customApi?.clearUpdateCache) {
+      window.customApi.clearUpdateCache()
+    }
+  }
   showUpdate.value = false
   updateStatus.value = 'idle'
+  resetUpdateState()
   // 设置2小时后再次提醒
   setTimeout(
     () => {
@@ -390,12 +440,27 @@ const remindLater = () => {
 }
 
 const installLater = () => {
+  // 清理已下载的更新缓存，下次需要重新下载
+  if (window.customApi?.clearUpdateCache) {
+    window.customApi.clearUpdateCache()
+  }
   showUpdate.value = false
   updateStatus.value = 'idle'
-  isReadyToInstall.value = false
+  resetUpdateState()
 }
 
 const closeUpdate = () => {
+  // 清除倒计时定时器
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+    countdownTimer.value = null
+  }
+  // 如果已下载完成，清理缓存避免下次检查时跳过下载
+  if (updateStatus.value === 'ready') {
+    if (window.customApi?.clearUpdateCache) {
+      window.customApi.clearUpdateCache()
+    }
+  }
   showUpdate.value = false
   updateStatus.value = 'idle'
   resetUpdateState()
@@ -432,8 +497,13 @@ onUnmounted(() => {
   if (checkTimeout.value) {
     clearTimeout(checkTimeout.value)
   }
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+    countdownTimer.value = null
+  }
   isDownloading.value = false
   isReadyToInstall.value = false
+  isInstalling.value = false
 })
 
 // 暴露方法给父组件
@@ -642,6 +712,18 @@ defineExpose({
 .success-message {
   color: var(--el-color-primary) !important;
   font-weight: 500;
+}
+
+.installing-message {
+  color: var(--el-color-primary) !important;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.installing-tip {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 8px;
 }
 
 .congrats-message {
