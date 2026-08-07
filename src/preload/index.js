@@ -77,6 +77,7 @@ const customApi = {
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   checkForUpdates: () => ipcRenderer.invoke('check-updates'),
   downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  cancelDownload: () => ipcRenderer.invoke('cancel-download'),
   quitAndInstall: () => ipcRenderer.invoke('quit-install'),
   clearUpdateCache: () => ipcRenderer.invoke('clear-update-cache'),
   openDirectoryDialog: () => ipcRenderer.invoke('open-directory-dialog'),
