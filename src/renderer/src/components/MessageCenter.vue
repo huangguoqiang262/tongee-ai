@@ -54,7 +54,7 @@
               <div class="export-box" @click="exportFeedback">导出反馈</div>
             </div>
           </div>
-          <div v-if="feedList.length" v-infinite-scroll="loadData" class="list-box">
+          <div v-if="feedList.length" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="list-box">
             <div v-for="item in feedList" :key="item.id" class="list-item">
               <FileSvgIcon class="left-icon" />
               <div class="center-box">
@@ -83,7 +83,7 @@
           </div>
         </div>
         <div v-if="activeTab == '2'" class="repository-box">
-          <div v-if="fileList.length" v-infinite-scroll="loadData" class="list-box">
+          <div v-if="fileList.length" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="list-box">
             <div v-for="item in fileList" :key="item.id" class="list-item file-item" @click="openFile(item)">
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
@@ -103,7 +103,7 @@
           </div>
         </div>
         <div v-if="activeTab == '3'" class="repository-box">
-          <div v-if="systemMsgList.length" v-infinite-scroll="loadData" class="list-box">
+          <div v-if="systemMsgList.length" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="list-box">
             <div v-for="item in systemMsgList" :key="item.id" class="list-item">
               <InformSvgIcon class="left-icon" />
               <div class="center-box">
@@ -120,7 +120,7 @@
           </div>
         </div>
         <div v-if="activeTab == '4'" class="synergia-box">
-          <div v-if="synergiaMsgList.length" v-infinite-scroll="loadData" class="synergia-list">
+          <div v-if="synergiaMsgList.length" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="synergia-list">
             <div v-for="(item, index) in synergiaMsgList" :key="index" class="list-item" @click="lookSystem(item)">
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
@@ -269,6 +269,7 @@ const lookSystem = (item) => {
     title: item.process_title,
     url: 'SynergiaDetail',
     isInternal: true,
+    id: item.file_key,
     attrs: {
       fileUrl: item.file_edit_url,
       fileName: item.process_title,

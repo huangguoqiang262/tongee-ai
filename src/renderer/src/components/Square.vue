@@ -57,7 +57,7 @@
             </div>
           </template>
           <template #default>
-            <div v-if="list.length" v-infinite-scroll="loadData" class="list-box">
+            <div v-if="list.length" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="list-box">
               <div v-for="item in list" :key="item.id" class="list-item" :class="{ 'cursor-pointer': item.already_joined}" @click="toKnowledge(item)">
                 <img v-if="item.picurl" class="logo" :src="item.picurl" alt="" />
                 <defaultCoverSvg v-else class="logo" />

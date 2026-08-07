@@ -95,7 +95,7 @@
     </div>
     <div class="history-box">
       <div class="history-hd">反馈历史</div>
-      <div v-infinite-scroll="loadData" class="list-box">
+      <div :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="list-box">
         <template v-if="historyList.length">
           <div
             v-for="item in historyList"

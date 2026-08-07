@@ -14,7 +14,7 @@
             </div>
         </div>
         <div v-if="fileList.length" v-loading="loading"  class="all-file-box">
-            <div class="all-file-content" v-infinite-scroll="loadData">
+            <div class="all-file-content" :infinite-scroll-distance="1" v-infinite-scroll="loadData">
                 <div class="list-item" v-for="item in fileList" :key="item.id"
                     @contextmenu="showContextMenu(item, $event)" @click="detailChange(item, $event, index)">
                     <div class="item-right">

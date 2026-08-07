@@ -142,7 +142,9 @@ const addNewTab = (config = {}) => {
     history: [],
     currentHistoryIndex: -1
   }
-
+  if (options.url === 'SynergiaDetail'&& options.id) {
+    newTab.id = options.id
+  }
   newTab.isInternal = !/^(https?|ftp|file|mailto|tel):/.test(options.url)
   const index = tabs.value.findIndex((tab) => tab.url === options.url)
   let whiteList = [
@@ -158,9 +160,17 @@ const addNewTab = (config = {}) => {
     tabs.value[index].attrs = newTab.attrs
     activeTabId.value = tabs.value[index].id
     return
+  } else if (newTab.url === 'SynergiaDetail') {
+     var SynergiaIndex = tabs.value.findIndex((tab) => tab.id === newTab.id)
+     if (SynergiaIndex !== -1) {
+      tabs.value[SynergiaIndex].attrs = newTab.attrs
+      activeTabId.value = tabs.value[SynergiaIndex].id
+      return
+    }
   }
 
   const activeIndex = tabs.value.findIndex((tab) => tab.id === activeTabId.value)
+  
   if (activeIndex !== -1) {
     tabs.value.splice(activeIndex + 1, 0, newTab)
   } else {
