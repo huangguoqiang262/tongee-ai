@@ -1,13 +1,13 @@
 import { app, BrowserWindow, ipcMain, Tray, Menu, MenuItem, protocol, dialog } from 'electron'
 // 在文件顶部添加导入
-import { autoUpdater } from 'electron-updater'
+import { autoUpdater, CancellationToken } from 'electron-updater'
 import { join } from 'path'
 import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // import icon from '../../resources/icon.png?asset'
 let mainWindow = null // 全局窗口变量
 let tray = null // 托盘实例变量
-let isDownloadCancelled = false
+let cancellationToken = new CancellationToken()
 let updateRetryCount = 0
 const maxUpdateRetries = 3
 const updaterCacheDir = join(app.getPath('userData'), 'tongee-app-updater')
@@ -250,16 +250,6 @@ app.whenReady().then(() => {
 
   autoUpdater.on('error', (error) => {
     console.error('Update error:', error)
-    // 如果是用户取消下载导致的错误，不重试
-    if (isDownloadCancelled) {
-      isDownloadCancelled = false
-      updateRetryCount = 0
-      mainWindow.webContents.send('update-status', {
-        stage: 'error',
-        error: '下载已取消'
-      })
-      return
-    }
     if (updateRetryCount < maxUpdateRetries) {
       updateRetryCount++
       console.log(`Retrying update download (${updateRetryCount}/${maxUpdateRetries})`)
@@ -278,7 +268,10 @@ app.whenReady().then(() => {
         console.error('Error clearing cache:', err)
       }
       setTimeout(() => {
-        autoUpdater.downloadUpdate()
+        cancellationToken = new CancellationToken()
+        autoUpdater.downloadUpdate(cancellationToken).catch(() => {
+          // CancellationError，忽略
+        })
       }, 2000) // 2秒后重试
     } else {
       mainWindow.webContents.send('update-status', {
@@ -310,14 +303,18 @@ ipcMain.handle('check-updates', async () => {
 })
 
 ipcMain.handle('download-update', async () => {
-  isDownloadCancelled = false
   updateRetryCount = 0
-  autoUpdater.downloadUpdate()
+  // 每次下载前创建新的 CancellationToken
+  cancellationToken = new CancellationToken()
+  autoUpdater.downloadUpdate(cancellationToken).catch(() => {
+    // CancellationError，忽略
+  })
 })
 
 ipcMain.handle('cancel-download', async () => {
-  isDownloadCancelled = true
-  // 清理下载缓存来中断下载
+  // 通过 CancellationToken 取消下载
+  cancellationToken.cancel()
+  // 清理已下载的部分缓存文件
   try {
     if (fs.existsSync(updaterCacheDir)) {
       const files = fs.readdirSync(updaterCacheDir)
@@ -340,7 +337,6 @@ ipcMain.handle('quit-install', async () => {
 })
 ipcMain.handle('clear-update-cache', async () => {
   try {
-    const updaterCacheDir = join(app.getPath('userData'), 'tongee-app-updater')
     if (fs.existsSync(updaterCacheDir)) {
       const files = fs.readdirSync(updaterCacheDir)
       files.forEach((file) => {
