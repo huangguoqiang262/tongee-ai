@@ -306,6 +306,25 @@ ipcMain.handle('quit-install', async () => {
   app.isQuitting = true
   autoUpdater.quitAndInstall()
 })
+ipcMain.handle('clear-update-cache', async () => {
+  try {
+    const updaterCacheDir = join(app.getPath('userData'), 'tongee-app-updater')
+    if (fs.existsSync(updaterCacheDir)) {
+      const files = fs.readdirSync(updaterCacheDir)
+      files.forEach((file) => {
+        const filePath = join(updaterCacheDir, file)
+        if (fs.statSync(filePath).isFile()) {
+          fs.unlinkSync(filePath)
+        }
+      })
+    }
+    console.log('更新缓存已清理')
+    return true
+  } catch (err) {
+    console.error('清理更新缓存失败:', err)
+    return false
+  }
+})
 ipcMain.handle('get-app-version', async () => {
   return app.getVersion()
 })
