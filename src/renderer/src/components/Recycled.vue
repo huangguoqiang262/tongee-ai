@@ -23,7 +23,7 @@
         </div>
       </div>
       <div class="content-box">
-        <div v-infinite-scroll="loadData" class="repository-box">
+        <div :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="repository-box">
           <el-skeleton :loading="loading" animated>
             <template #template>
               <div class="list-box">

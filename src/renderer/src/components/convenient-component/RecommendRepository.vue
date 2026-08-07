@@ -12,7 +12,7 @@
         </div>
         <el-icon class="close-icon" @click="handleClose"><Close /></el-icon>
       </div>
-      <div v-infinite-scroll="loadData" class="content-box">
+      <div :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="content-box">
         <el-skeleton class="list-box" :loading="loading" animated>
           <template #template>
             <div v-for="item in 8" :key="item" class="list-item skeleton-item">
@@ -34,7 +34,7 @@
             </div>
           </template>
           <template #default>
-            <div v-if="list.length" v-infinite-scroll="loadData" class="list-box">
+            <div v-if="list.length" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="list-box">
               <div v-for="item in list" :key="item.id" class="list-item">
                 <img v-if="item.picurl" class="logo" :src="item.picurl" alt="" />
                 <defaultCoverSvg v-else class="logo" />

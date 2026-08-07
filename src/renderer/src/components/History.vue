@@ -52,7 +52,7 @@
               </div>
             </template>
             <template #default>
-              <div v-if="activeTab == '1'" v-infinite-scroll="loadData" class="list-box">
+              <div v-if="activeTab == '1'" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="list-box">
                 <template v-if="list.length">
                   <div v-for="(item, i) in list" :key="i" class="list-item" @click="openChat(item)">
                     <answersIcon class="left-icon" />
@@ -89,7 +89,7 @@
                   <el-empty :image-size="120" description="暂无数据" />
                 </div>
               </div>
-              <div v-if="activeTab == '2'" v-infinite-scroll="loadData" class="list-box">
+              <div v-if="activeTab == '2'" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="list-box">
                 <template v-if="list.length">
                   <div v-for="item in list" :key="item" class="list-item" @click="openWeb(item)">
                     <webpageIcon class="left-icon" />
@@ -159,7 +159,7 @@
                   </div>
                 </div>
 
-                <div class="synergia-list" v-infinite-scroll="loadData" >
+                <div class="synergia-list" :infinite-scroll-distance="1" v-infinite-scroll="loadData" >
                   <el-select
                     v-model="process_type"
                     class="typeList-box"
@@ -350,6 +350,7 @@ const lookSystem = (item) => {
     title: item.title,
     url: 'SynergiaDetail',
     isInternal: true,
+    id: item.file_key,
     attrs: {
       fileUrl: item.url,
       fileName: item.title,

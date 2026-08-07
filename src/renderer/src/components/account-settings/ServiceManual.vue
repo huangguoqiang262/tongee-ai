@@ -9,7 +9,7 @@
             <img class="square-icon" src="@renderer/assets/close-chat-icon.png" alt="" />
           </div>
         </div>
-        <div v-infinite-scroll="loadData" class="notebook-list">
+        <div :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="notebook-list">
           <el-skeleton animated :loading="loading">
             <template #template>
               <el-skeleton-item v-for="i in 10" :key="i" variant="text" style="margin: 10px 0" />

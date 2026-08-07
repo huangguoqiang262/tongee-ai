@@ -364,7 +364,7 @@
               <Search />
             </el-icon>
           </div>
-          <div v-if="detailFileList.length" v-infinite-scroll="loadData" :infinite-scroll-disabled="pagenation.loading"
+          <div v-if="detailFileList.length" :infinite-scroll-distance="1" v-infinite-scroll="loadData" :infinite-scroll-disabled="pagenation.loading"
             :infinite-scroll-immediate="false" class="list-box" @mousedown="handleMouseDown" @mousemove="handleMouseMove"
             @mouseup="handleMouseUp" @mouseleave="handleMouseLeave">
             <template v-for="(item, index) in detailFileList" :key="item.id">
@@ -1328,6 +1328,7 @@ const detailChange = (item, e, i) => {
       title: item.title,
       url: 'SynergiaDetail',
       isInternal: true,
+      id: item.info?.file_key,
       attrs: {
         fileUrl: item.info?.url,
         fileName: item.title,
@@ -2998,6 +2999,7 @@ const handleContextMenuAction = ({ action }) => {
       title: activeFiles.value[0].title,
       url: 'SynergiaDetail',
       isInternal: true,
+      id: activeFiles.value[0].info?.file_key,
       attrs: {
         fileUrl: activeFiles.value[0].info?.url,
         fileName: activeFiles.value[0].title,

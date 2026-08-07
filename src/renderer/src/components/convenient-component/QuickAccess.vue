@@ -7,7 +7,7 @@
       </div>
       <el-icon class="close-icon" @click="handleClose"><Close /></el-icon>
     </div>
-    <div v-infinite-scroll="loadData" class="content-box">
+    <div :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="content-box">
       <div class="list-box">
         <el-skeleton :loading="loading" animated>
           <template #template>

@@ -28,7 +28,7 @@
       </div>
       <div class="history-sidebar-box" :class="{ visible: historySidebarVisible }">
         <div class="history-title">问答历史</div>
-        <div v-infinite-scroll="loadHistoryData" class="history-list">
+        <div :infinite-scroll-distance="1" v-infinite-scroll="loadHistoryData" class="history-list">
           <template v-if="historyList.length">
             <div
               v-for="(item, i) in historyList"
