@@ -50,6 +50,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { add_web_log } from '@renderer/api/history'
+import { safeLoadURL } from '@renderer/utils/webview'
 import defaultIcon from '@renderer/assets/logo.png'
 const tabs = ref([])
 const activeTabId = ref(null)
@@ -332,6 +333,9 @@ const navigateToUrl = (uri) => {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       finalUrl = 'https://' + url
     }
+    // 修复 URL 中的双斜杠问题（如 //xwdt/... → /xwdt/...）
+    // 只替换路径部分的双斜杠，保留协议部分的 ://
+    finalUrl = finalUrl.replace(/(https?:\/\/[^\/]*)\/\/+/g, '$1/')
 
     // 确保从内部页面切换到外部链接时正确设置isInternal为false
     activeTab.value.isInternal = false
@@ -364,7 +368,8 @@ const navigateToUrl = (uri) => {
     // 让webview处理实际的导航
     const webview = activeWebview.value
     if (webview && webview.loadURL) {
-      webview.loadURL(finalUrl)
+      // webview 未 dom-ready 时由 safeLoadURL 暂存待加载，避免抛错
+      safeLoadURL(webview, finalUrl)
     } else {
       // 如果没有webview实例，模拟加载过程
       simulateLoading(activeTab.value)

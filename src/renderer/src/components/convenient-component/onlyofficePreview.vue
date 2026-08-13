@@ -319,7 +319,6 @@ const handleError = (event) => {
 const config = ref({
   width: '100%',
   height: '100%',
-  type: fileExt.value || 'docx',
   documentType: docType(fileExt.value),
   document: {
     title: props.fileName || props.src.split('/').pop(),

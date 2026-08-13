@@ -8,9 +8,25 @@
     <true/>
     <key>com.apple.security.cs.allow-dyld-environment-variables</key>
     <true/>
+    <!-- 摄像头权限 (WebRTC getUserMedia) -->
     <key>com.apple.security.device.camera</key>
     <true/>
+    <!-- 麦克风权限 (WebRTC getUserMedia) -->
     <key>com.apple.security.device.audio-input</key>
+    <true/>
+    <!-- 屏幕录制权限 (WebRTC getDisplayMedia) -->
+    <key>com.apple.security.device.screen-capture</key>
+    <true/>
+    <!-- USB 设备访问（外接摄像头等） -->
+    <key>com.apple.security.device.usb</key>
+    <true/>
+    <!-- 蓝牙设备访问（蓝牙耳机/麦克风） -->
+    <key>com.apple.security.device.bluetooth</key>
+    <true/>
+    <!-- 网络访问（WebRTC 信令/STUN/TURN） -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.network.server</key>
     <true/>
   </dict>
 </plist>
