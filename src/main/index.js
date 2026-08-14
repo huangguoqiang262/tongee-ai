@@ -15,13 +15,44 @@ app.commandLine.appendSwitch('enable-features', 'WebRTC,WebRTC-H264WithOpenH264F
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
 // 注意：ignore-certificate-errors 会改变 TLS 握手行为，可能导致 WAF 检测异常，禁用
 // app.commandLine.appendSwitch('ignore-certificate-errors')
-// 允许不安全来源的媒体设备访问
-app.commandLine.appendSwitch('unsafely-treat-insecure-origin-as-secure', 'http://localhost')
+// 允许内网 OnlyOffice 来源访问媒体设备；长期应将 Document Server 切换为 HTTPS
+app.commandLine.appendSwitch(
+  'unsafely-treat-insecure-origin-as-secure',
+  ['http://localhost', 'http://192.168.1.187:9999', 'http://192.168.11.241:9999'].join(',')
+)
 // ===== WebRTC 命令行开关结束 =====
 
 // import icon from '../../resources/icon.png?asset'
 let mainWindow = null // 全局窗口变量
 const configuredWebviewSessions = new WeakSet()
+const configuredPermissionSessions = new WeakSet()
+const allowedPermissions = [
+  'media',
+  'mediaKeySystem',
+  'geolocation',
+  'notifications',
+  'midi',
+  'midiSysex',
+  'pointerLock',
+  'fullscreen',
+  'openExternal',
+  'clipboard-sanitized-write',
+  'display-capture'
+]
+
+function configureSessionPermissions(targetSession) {
+  if (configuredPermissionSessions.has(targetSession)) return
+  configuredPermissionSessions.add(targetSession)
+
+  targetSession.setPermissionCheckHandler((webContents, permission) => {
+    return allowedPermissions.includes(permission)
+  })
+
+  targetSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(allowedPermissions.includes(permission))
+  })
+}
+
 let tray = null // 托盘实例变量
 let cancellationToken = new CancellationToken()
 let updateRetryCount = 0
@@ -77,6 +108,7 @@ function createWindow() {
       autoplayPolicy: 'no-user-gesture-required' // WebRTC 自动播放音视频流
     }
   })
+  configureSessionPermissions(mainWindow.webContents.session)
   global.mainWindow = mainWindow
   // 打开控制台
   // mainWindow.webContents.openDevTools()
@@ -149,34 +181,8 @@ function createWindow() {
       })
     }
 
-    // ===== WebRTC 权限处理（完整双阶段） =====
-    const allowedPermissions = [
-      'media',                      // 摄像头/麦克风
-      'mediaKeySystem',             // 媒体密钥系统（DRM）
-      'geolocation',                // 地理位置
-      'notifications',              // 通知
-      'midi',                       // MIDI 设备
-      'midiSysex',                  // MIDI Sysex
-      'pointerLock',                // 指针锁定
-      'fullscreen',                 // 全屏
-      'openExternal',               // 打开外部链接
-      'clipboard-sanitized-write',  // 剪贴板写入
-      'display-capture'             // 屏幕共享/窗口捕获 (getDisplayMedia)
-    ]
-
-    // 阶段1：权限检查（permission check）— 浏览器先做 check，通过后才发 request
-    wc.session.setPermissionCheckHandler((webContents, permission) => {
-      return allowedPermissions.includes(permission)
-    })
-
-    // 阶段2：权限请求（permission request）— check 通过后，用户授权环节
-    wc.session.setPermissionRequestHandler((webContents, permission, callback) => {
-      if (allowedPermissions.includes(permission)) {
-        callback(true)
-      } else {
-        callback(false)
-      }
-    })
+    // OnlyOffice 使用主窗口 session；外部 webview 使用独立 session，两者都需配置权限
+    configureSessionPermissions(webviewSession)
 
     // 监听媒体设备访问状态
     wc.on('media-started-playing', () => {
