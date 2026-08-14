@@ -1,4 +1,15 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, MenuItem, protocol, dialog, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  Tray,
+  Menu,
+  MenuItem,
+  protocol,
+  dialog,
+  shell,
+  webFrameMain
+} from 'electron'
 // 在文件顶部添加导入
 import { autoUpdater, CancellationToken } from 'electron-updater'
 import { join } from 'path'
@@ -26,6 +37,238 @@ app.commandLine.appendSwitch(
 let mainWindow = null // 全局窗口变量
 const configuredWebviewSessions = new WeakSet()
 const configuredPermissionSessions = new WeakSet()
+const configuredJitsiLogoRedirectSessions = new WeakSet()
+const onlyOfficeJitsiPluginOrigin = 'https://onlyoffice.github.io'
+const onlyOfficeJitsiPluginPath = '/sdkjs-plugins/content/jitsi/index.html'
+const onlyOfficeDocumentServerOrigins = new Set([
+  'http://192.168.1.187:9999',
+  'http://192.168.11.241:9999'
+])
+const jitsiIframeAllow =
+  'camera; microphone; display-capture; autoplay; fullscreen; screen-wake-lock; clipboard-write; speaker-selection'
+const jitsiPermissionsPolicyHeader =
+  'camera=*, microphone=*, display-capture=*, autoplay=*, fullscreen=*, screen-wake-lock=*, clipboard-write=*, speaker-selection=*'
+const topOnlyOfficePolicyScript = `
+(() => {
+  const marker = '__tongeeTopOnlyOfficePolicy__'
+  const reloadMarker = 'tongeeOnlyofficePolicyReloaded'
+  const targetOrigins = ${JSON.stringify([...onlyOfficeDocumentServerOrigins])}
+  const requiredPermissions = ['screen-wake-lock', 'speaker-selection']
+  const pageUrl = new URL(window.location.href)
+  const isApplicationMainFrame = window.top === window && (
+    (pageUrl.protocol === 'http:' && pageUrl.hostname === 'localhost') ||
+    pageUrl.protocol === 'file:' ||
+    pageUrl.protocol === 'app:'
+  )
+  if (!isApplicationMainFrame) return
+
+  const matchesDocumentServer = (iframe) => {
+    if (!(iframe instanceof HTMLIFrameElement)) return false
+    try {
+      const url = new URL(iframe.getAttribute('src') || '', document.baseURI)
+      return targetOrigins.includes(url.origin)
+    } catch {
+      return false
+    }
+  }
+  const applyPolicy = (iframe) => {
+    if (!matchesDocumentServer(iframe)) return
+    const previousAllow = iframe.getAttribute('allow') || ''
+    const existingPermissions = previousAllow
+      .split(';')
+      .map((directive) => directive.trim().split(/\\s+/)[0].toLowerCase())
+      .filter(Boolean)
+    const missingPermissions = requiredPermissions.filter(
+      (permission) => !existingPermissions.includes(permission)
+    )
+    if (missingPermissions.length === 0) return
+
+    const normalizedPreviousAllow = previousAllow.trim()
+    const separator = normalizedPreviousAllow.endsWith(';') ? ' ' : '; '
+    const newAllow = normalizedPreviousAllow
+      ? normalizedPreviousAllow + separator + missingPermissions.join('; ')
+      : missingPermissions.join('; ')
+    iframe.setAttribute('allow', newAllow)
+
+    if (!iframe.dataset[reloadMarker] && iframe.isConnected) {
+      const src = iframe.getAttribute('src')
+      if (src) {
+        iframe.dataset[reloadMarker] = 'true'
+        iframe.setAttribute('src', src)
+      }
+    }
+  }
+  const applyTree = (node) => {
+    if (!(node instanceof Element)) return
+    applyPolicy(node)
+    node.querySelectorAll('iframe').forEach((iframe) => applyPolicy(iframe))
+  }
+
+  if (window[marker]) {
+    document.querySelectorAll('iframe').forEach((iframe) => applyPolicy(iframe))
+    return
+  }
+
+  window[marker] = { observer: null }
+  document.querySelectorAll('iframe').forEach((iframe) => applyPolicy(iframe))
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes') {
+        applyPolicy(mutation.target)
+        return
+      }
+      mutation.addedNodes.forEach(applyTree)
+    })
+  })
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['src']
+  })
+  window[marker].observer = observer
+})()
+`
+const outerJitsiPolicyScript = `
+(() => {
+  const marker = '__tongeeOnlyOfficeOuterJitsiPolicy__'
+  const targetOrigin = ${JSON.stringify(onlyOfficeJitsiPluginOrigin)}
+  const targetPath = ${JSON.stringify(onlyOfficeJitsiPluginPath)}
+  const allow = ${JSON.stringify(jitsiIframeAllow)}
+  const requiredPermissions = allow.split(';').map((value) => value.trim()).filter(Boolean)
+
+  const existingState = window[marker]
+  const state = existingState || { observer: null, reloadPerformed: false }
+  if (!existingState) window[marker] = state
+  const matchesPlugin = (iframe) => {
+    if (!(iframe instanceof HTMLIFrameElement)) return false
+    try {
+      const url = new URL(iframe.getAttribute('src') || '', document.baseURI)
+      return url.origin === targetOrigin && url.pathname === targetPath
+    } catch {
+      return false
+    }
+  }
+  const applyPolicy = (iframe) => {
+    if (!matchesPlugin(iframe)) return
+    const previousAllow = iframe.getAttribute('allow') || ''
+    const previousPermissions = previousAllow
+      .split(';')
+      .map((value) => value.trim().split(/\\s+/)[0])
+      .filter(Boolean)
+    const needsNavigationPolicyRefresh = requiredPermissions.some(
+      (permission) => !previousPermissions.includes(permission)
+    )
+
+    iframe.setAttribute('allow', allow)
+    iframe.setAttribute('allowfullscreen', '')
+
+    if (needsNavigationPolicyRefresh && !state.reloadPerformed && iframe.isConnected) {
+      state.reloadPerformed = true
+      const src = iframe.getAttribute('src')
+      if (src) {
+        iframe.setAttribute('src', src)
+      }
+    }
+  }
+  const applyTree = (node) => {
+    if (!(node instanceof Element)) return
+    applyPolicy(node)
+    node.querySelectorAll('iframe').forEach(applyPolicy)
+  }
+
+  if (existingState) {
+    document.querySelectorAll('iframe').forEach(applyPolicy)
+    return
+  }
+
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes') {
+        applyPolicy(mutation.target)
+        return
+      }
+      mutation.addedNodes.forEach(applyTree)
+    })
+  })
+  state.observer = observer
+  document.querySelectorAll('iframe').forEach(applyPolicy)
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['src']
+  })
+})()
+`
+const jitsiLogoFallbackUrl =
+  'https://onlyoffice.github.io/sdkjs-plugins/content/jitsi/resources/light/icon.png'
+const failedJitsiLogoUrls = [
+  'chrome-extension://kglhbbefdnlheedjiejgomgmfplipfeb/jitsi-logo-48x48.png',
+  'chrome-extension://eeecajlpbgjppibfledfihobcabccihn/jitsi-logo-48x48.png'
+]
+const jitsiIframePermissionScript = `
+(() => {
+  const marker = '__tongeeOnlyOfficeJitsiPermissions__'
+  if (window[marker]) return
+
+  const allow = ${JSON.stringify(jitsiIframeAllow)}
+  const updateIframe = (iframe) => {
+    if (!(iframe instanceof HTMLIFrameElement) || !iframe.closest('#meet')) return false
+    try {
+      const src = iframe.getAttribute('src')
+      if (!src) return false
+      const url = new URL(src, document.baseURI)
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') return false
+      iframe.setAttribute('allow', allow)
+      iframe.setAttribute('allowfullscreen', '')
+      return true
+    } catch {
+      return false
+    }
+  }
+  const updateTree = (node) => {
+    if (!(node instanceof Element)) return
+    updateIframe(node)
+    node.querySelectorAll('iframe').forEach(updateIframe)
+  }
+
+  window[marker] = { observer: null }
+  document.querySelectorAll('#meet iframe').forEach(updateIframe)
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes') {
+        updateIframe(mutation.target)
+        return
+      }
+      mutation.addedNodes.forEach(updateTree)
+    })
+  })
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['src']
+  })
+  window[marker].observer = observer
+})()
+`
+const isOnlyOfficeJitsiPluginFrame = (value) => {
+  try {
+    const url = new URL(value)
+    return url.origin === onlyOfficeJitsiPluginOrigin && url.pathname === onlyOfficeJitsiPluginPath
+  } catch {
+    return false
+  }
+}
+const isOnlyOfficeDocumentServerFrame = (frame) => {
+  try {
+    return onlyOfficeDocumentServerOrigins.has(frame.origin) ||
+      onlyOfficeDocumentServerOrigins.has(new URL(frame.url).origin)
+  } catch {
+    return false
+  }
+}
 const allowedPermissions = [
   'media',
   'mediaKeySystem',
@@ -45,11 +288,14 @@ function configureSessionPermissions(targetSession) {
   configuredPermissionSessions.add(targetSession)
 
   targetSession.setPermissionCheckHandler((webContents, permission) => {
+    void webContents
     return allowedPermissions.includes(permission)
   })
 
   targetSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    callback(allowedPermissions.includes(permission))
+    void webContents
+    const allowed = allowedPermissions.includes(permission)
+    callback(allowed)
   })
 }
 
@@ -109,7 +355,49 @@ function createWindow() {
     }
   })
   configureSessionPermissions(mainWindow.webContents.session)
+  const mainSession = mainWindow.webContents.session
+  if (!configuredJitsiLogoRedirectSessions.has(mainSession)) {
+    configuredJitsiLogoRedirectSessions.add(mainSession)
+    // 仅替换已确认失效的 Jitsi 扩展 Logo。
+    mainSession.webRequest.onBeforeRequest({ urls: failedJitsiLogoUrls }, (details, callback) => {
+      void details
+      callback({ redirectURL: jitsiLogoFallbackUrl })
+    })
+    // 对 OnlyOffice/Jitsi 链路上的文档响应注入 Permissions-Policy，
+    // 在 JS 执行前生效，避免 iframe allow 属性的时序竞争。
+    mainSession.webRequest.onHeadersReceived((details, callback) => {
+      const responseHeaders = details.responseHeaders || {}
+      const setResponseHeader = (name, value) => {
+        const headerName = Object.keys(responseHeaders).find(
+          (key) => key.toLowerCase() === name.toLowerCase()
+        )
+        const key = headerName || name
+        responseHeaders[key] = [value]
+      }
+      const normalizedUrl = details.url.toLowerCase()
+      const isPolicyRelevantDoc =
+        details.resourceType === 'subFrame' ||
+        details.resourceType === 'mainFrame' ||
+        details.resourceType === 'xhr'
+      if (
+        isPolicyRelevantDoc &&
+        (normalizedUrl.includes('onlyoffice.github.io/sdkjs-plugins/content/jitsi') ||
+          normalizedUrl.includes('meet.jit.si') ||
+          normalizedUrl.includes('192.168.1.187:9999') ||
+          normalizedUrl.includes('192.168.11.241:9999'))
+      ) {
+        setResponseHeader('Permissions-Policy', jitsiPermissionsPolicyHeader)
+        callback({ responseHeaders })
+        return
+      }
+      callback({})
+    })
+  }
   global.mainWindow = mainWindow
+  mainWindow.webContents.on('dom-ready', () => {
+    const frame = mainWindow.webContents.mainFrame
+    frame.executeJavaScript(topOnlyOfficePolicyScript).catch(() => {})
+  })
   // 打开控制台
   // mainWindow.webContents.openDevTools()
   // // 点击关闭按钮最小化到托盘
@@ -122,6 +410,31 @@ function createWindow() {
   //   if (tray) tray.displayBalloon({ title: '应用已最小化', content: '点击托盘图标恢复窗口' })
   // })
   // 配置通过特殊按键ALT+SHIFT+F12打开开发者工具
+  mainWindow.webContents.on('did-frame-finish-load', (
+    event,
+    isMainFrame,
+    frameProcessId,
+    frameRoutingId
+  ) => {
+    void event
+    if (isMainFrame) return
+    const frame = webFrameMain.fromId(frameProcessId, frameRoutingId)
+    if (!frame || frame.isDestroyed()) return
+
+    if (isOnlyOfficeDocumentServerFrame(frame)) {
+      frame.executeJavaScript(outerJitsiPolicyScript).catch(() => {})
+    }
+
+    if (!isOnlyOfficeJitsiPluginFrame(frame.url)) return
+
+    const parentFrame = frame.parent
+    if (parentFrame && !parentFrame.isDestroyed() && isOnlyOfficeDocumentServerFrame(parentFrame)) {
+      parentFrame.executeJavaScript(outerJitsiPolicyScript).catch(() => {})
+    }
+
+    // 插件加载完成后提前补充 Jitsi iframe 权限委派。
+    frame.executeJavaScript(jitsiIframePermissionScript).catch(() => {})
+  })
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'F12' && input.alt && input.shift) {
       event.preventDefault()
