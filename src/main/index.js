@@ -363,7 +363,7 @@ function createWindow() {
       void details
       callback({ redirectURL: jitsiLogoFallbackUrl })
     })
-    // 对 OnlyOffice/Jitsi 链路上的文档响应注入 Permissions-Policy，
+    // 对 OnlyOffice/Jitsi 链路上的文档响应注入 Permissions-Policy 并移除 CSP 限制，
     // 在 JS 执行前生效，避免 iframe allow 属性的时序竞争。
     mainSession.webRequest.onHeadersReceived((details, callback) => {
       const responseHeaders = details.responseHeaders || {}
@@ -379,13 +379,35 @@ function createWindow() {
         details.resourceType === 'subFrame' ||
         details.resourceType === 'mainFrame' ||
         details.resourceType === 'xhr'
-      if (
-        isPolicyRelevantDoc &&
-        (normalizedUrl.includes('onlyoffice.github.io/sdkjs-plugins/content/jitsi') ||
-          normalizedUrl.includes('meet.jit.si') ||
-          normalizedUrl.includes('192.168.1.187:9999') ||
-          normalizedUrl.includes('192.168.11.241:9999'))
-      ) {
+      const isJitsiRelated =
+        normalizedUrl.includes('onlyoffice.github.io/sdkjs-plugins/content/jitsi') ||
+        normalizedUrl.includes('meet.jit.si') ||
+        normalizedUrl.includes('192.168.1.187:9999') ||
+        normalizedUrl.includes('192.168.11.241:9999')
+      
+      if (isPolicyRelevantDoc && isJitsiRelated) {
+        // 移除或修改 CSP 头，允许 Worker 和跨源资源加载
+        const cspKey = Object.keys(responseHeaders).find(
+          (key) => key.toLowerCase() === 'content-security-policy'
+        )
+        if (cspKey && Array.isArray(responseHeaders[cspKey])) {
+          responseHeaders[cspKey] = responseHeaders[cspKey].map((policy) => {
+            // 移除 frame-ancestors 限制，允许被嵌入
+            let modified = policy.replace(/frame-ancestors\s+[^;]*;?/gi, '')
+            // 放宽 worker-src 限制，允许创建 Web Worker
+            modified = modified.replace(
+              /worker-src\s+[^;]*;?/gi,
+              'worker-src *;'
+            )
+            // 放宽 script-src 限制，确保 Jitsi JS 能正常加载
+            modified = modified.replace(
+              /script-src\s+([^;]*);?/gi,
+              "script-src $1 'unsafe-inline' 'unsafe-eval';"
+            )
+            return modified.trim()
+          })
+        }
+        // 注入 Permissions-Policy
         setResponseHeader('Permissions-Policy', jitsiPermissionsPolicyHeader)
         callback({ responseHeaders })
         return
