@@ -1,11 +1,58 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, MenuItem, protocol, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, Tray, Menu, MenuItem, protocol, dialog, shell } from 'electron'
 // 在文件顶部添加导入
 import { autoUpdater, CancellationToken } from 'electron-updater'
 import { join } from 'path'
 import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { initScreenshoots } from './screenshoots'
+
+// ===== WebRTC 相关 Chromium 命令行开关 =====
+// 启用屏幕捕获（getDisplayMedia / 屏幕共享）
+app.commandLine.appendSwitch('enable-usermedia-screen-capturing')
+// 启用 WebRTC 相关实验特性
+app.commandLine.appendSwitch('enable-features', 'WebRTC,WebRTC-H264WithOpenH264FFmpeg,WebRTCPipeWireCapturer')
+// 允许自动播放音视频（WebRTC 远程流自动播放）
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
+// 注意：ignore-certificate-errors 会改变 TLS 握手行为，可能导致 WAF 检测异常，禁用
+// app.commandLine.appendSwitch('ignore-certificate-errors')
+// 允许内网 OnlyOffice 来源访问媒体设备；长期应将 Document Server 切换为 HTTPS
+app.commandLine.appendSwitch(
+  'unsafely-treat-insecure-origin-as-secure',
+  ['http://localhost', 'http://192.168.1.187:9999', 'http://192.168.11.241:9999'].join(',')
+)
+// ===== WebRTC 命令行开关结束 =====
+
 // import icon from '../../resources/icon.png?asset'
 let mainWindow = null // 全局窗口变量
+const configuredWebviewSessions = new WeakSet()
+const configuredPermissionSessions = new WeakSet()
+const allowedPermissions = [
+  'media',
+  'mediaKeySystem',
+  'geolocation',
+  'notifications',
+  'midi',
+  'midiSysex',
+  'pointerLock',
+  'fullscreen',
+  'openExternal',
+  'clipboard-sanitized-write',
+  'display-capture'
+]
+
+function configureSessionPermissions(targetSession) {
+  if (configuredPermissionSessions.has(targetSession)) return
+  configuredPermissionSessions.add(targetSession)
+
+  targetSession.setPermissionCheckHandler((webContents, permission) => {
+    return allowedPermissions.includes(permission)
+  })
+
+  targetSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(allowedPermissions.includes(permission))
+  })
+}
+
 let tray = null // 托盘实例变量
 let cancellationToken = new CancellationToken()
 let updateRetryCount = 0
@@ -57,9 +104,11 @@ function createWindow() {
       sandbox: false,
       webviewTag: true,
       webgl: true,
-      experimentalFeatures: true
+      experimentalFeatures: true,
+      autoplayPolicy: 'no-user-gesture-required' // WebRTC 自动播放音视频流
     }
   })
+  configureSessionPermissions(mainWindow.webContents.session)
   global.mainWindow = mainWindow
   // 打开控制台
   // mainWindow.webContents.openDevTools()
@@ -86,10 +135,61 @@ function createWindow() {
     mainWindow.webContents.send('main-window-new-window', details)
     return { action: 'deny' }
   })
+
+  // ===== will-attach-webview: webview 附加前提前配置权限（比 did-attach-webview 更早） =====
+  const chromeVersion = process.versions.chrome
+  const webviewUserAgent =
+    `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`
+  mainWindow.webContents.on('will-attach-webview', (event, webPreferences) => {
+    // 提前为 webview 启用 WebRTC 相关权限
+    webPreferences.autoplayPolicy = 'no-user-gesture-required'
+    webPreferences.webSecurity = true
+    webPreferences.userAgent = webviewUserAgent
+    const webviewPreloadPath = join(__dirname, '../preload/webview-preload.js')
+    if (fs.existsSync(webviewPreloadPath)) {
+      webPreferences.preload = webviewPreloadPath
+    }
+  })
+
   mainWindow.webContents.on('did-attach-webview', (event, wc) => {
     wc.setWindowOpenHandler((details) => {
       mainWindow.webContents.send('webview-new-window', wc.id, details)
       return { action: 'deny' }
+    })
+
+    const webviewSession = wc.session
+    if (!configuredWebviewSessions.has(webviewSession)) {
+      configuredWebviewSessions.add(webviewSession)
+
+      // ===== 移除 X-Frame-Options / CSP frame-ancestors 限制 =====
+      webviewSession.webRequest.onHeadersReceived((details, callback) => {
+        const responseHeaders = { ...details.responseHeaders }
+        if (responseHeaders['x-frame-options']) {
+          delete responseHeaders['x-frame-options']
+        }
+        if (responseHeaders['content-security-policy']) {
+          responseHeaders['content-security-policy'] = responseHeaders['content-security-policy'].map(
+            (policy) => policy.replace(/frame-ancestors\s+[^;]+;?/gi, '')
+          )
+        }
+
+        if (details.resourceType === 'mainFrame' && [202, 400, 412].includes(details.statusCode)) {
+          mainWindow.webContents.send('antibot-detected', details.url)
+        }
+
+        callback({ responseHeaders })
+      })
+    }
+
+    // OnlyOffice 使用主窗口 session；外部 webview 使用独立 session，两者都需配置权限
+    configureSessionPermissions(webviewSession)
+
+    // 监听媒体设备访问状态
+    wc.on('media-started-playing', () => {
+      console.log('[WebRTC] 媒体开始播放')
+    })
+    wc.on('media-paused', () => {
+      console.log('[WebRTC] 媒体暂停')
     })
   })
   // 添加快捷键监听
@@ -213,6 +313,12 @@ app.whenReady().then(() => {
   })
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+  // 渲染进程请求用系统浏览器打开 URL（用于反爬网站）
+  ipcMain.on('renderer-open-external', (_, url) => {
+    if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+      shell.openExternal(url)
+    }
+  })
   createWindow()
 
   autoUpdater.setFeedURL({
@@ -374,4 +480,3 @@ app.on('before-quit', () => {
     tray.destroy()
   }
 })
-import { initScreenshoots } from './screenshoots'

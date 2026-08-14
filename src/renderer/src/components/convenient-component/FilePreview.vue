@@ -54,7 +54,7 @@
     </div>
 
     <!-- PDF 预览 -->
-    <webview v-else-if="isPdf" :src="fileUrl" class="file-preview-iframe"></webview>
+    <webview v-else-if="isPdf" :src="fileUrl" class="file-preview-iframe" allowpopups autoplay disablewebsecurity="true" allow="camera; microphone; display-capture; geolocation; fullscreen; autoplay"></webview>
 
     <!-- 文本预览（txt） -->
     <div v-else-if="isTxt" class="file-preview-iframe">
@@ -69,7 +69,7 @@
       :src="fileUrl"
     ></office-preview>
     <!-- 网页 -->
-    <webview v-else-if="isWebUrl" :src="fileUrl" class="file-preview-iframe"></webview>
+    <webview v-else-if="isWebUrl" :src="fileUrl" class="file-preview-iframe" allowpopups autoplay disablewebsecurity="true" allow="camera; microphone; display-capture; geolocation; fullscreen; autoplay"></webview>
     <!-- 其他类型：仅提供打开/下载 -->
     <div v-else class="file-preview-unsupported">
       <p>暂不支持该类型的在线预览。</p>

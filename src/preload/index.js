@@ -12,10 +12,11 @@ ipcRenderer.on('main-window-new-window', (e, details) => {
   )
 })
 ipcRenderer.on('webview-new-window', (e, webContentsId, details) => {
-  const webview = document.getElementById('webview')
-  webview.dispatchEvent(
-    new CustomEvent('new-window', {
+  // 改为在 window 级别派发，避免多个 webview 共用 id="webview" 导致事件派发到错误实例
+  window.dispatchEvent(
+    new CustomEvent('webview-new-window', {
       detail: {
+        webContentsId,
         ...details
       }
     })
@@ -228,7 +229,36 @@ const customApi = {
 
   // 右键菜单
   showTabMenu: (options) => ipcRenderer.send('show-tab-menu', options),
-  showWindowMenu: (options) => ipcRenderer.send('show-window-menu', options)
+  showWindowMenu: (options) => ipcRenderer.send('show-window-menu', options),
+
+  // WebRTC 状态检测（检查 webview 内 WebRTC 是否就绪）
+  checkWebRTC: () => {
+    return new Promise((resolve) => {
+      // 获取当前活跃的 webview 的 webContents 并检查 WebRTC 状态
+      const webview = document.getElementById('webview')
+      if (webview && webview.__webrtcReady !== undefined) {
+        resolve(webview.__webrtcReady)
+      } else if (webview && webview.__checkWebRTC) {
+        resolve(webview.__checkWebRTC())
+      } else {
+        // webview 可能还没加载完，返回 null
+        resolve(null)
+      }
+    })
+  },
+  // 用系统默认浏览器打开 URL（用于反爬网站）
+  openExternal: (url) => {
+    if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+      ipcRenderer.send('renderer-open-external', url)
+    }
+  },
+  // 监听反爬网站检测事件（主进程检测到 202 状态码时触发）
+  // 返回一个移除监听器的函数，避免组件反复挂载/卸载时累积监听器导致内存泄漏与重复回调
+  onAntibotDetected: (callback) => {
+    const handler = (_, url) => callback(url)
+    ipcRenderer.on('antibot-detected', handler)
+    return () => ipcRenderer.removeListener('antibot-detected', handler)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
