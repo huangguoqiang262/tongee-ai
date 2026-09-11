@@ -66,6 +66,11 @@ const props = defineProps({
   useAnnexList: {
     type: Array,
     default: () => []
+  },
+  // 这个是需要显示原文两个字
+  hideAttachFiles: {
+    type: Array,
+    default: () => []
   }
 })
 const addNewTab = inject('addNewTab')
@@ -162,8 +167,10 @@ const findDocPosition = (knowledgeId, sourceType) => {
 const processedMessage = computed(() => {
   // 处理 kno_ 标签：相邻且 fileIndex 相同的，只保留第一个，后面的替换为空
   let result = props.message.replace(/`?\[\s?kno_(\d+)\s?\]`?/g, (match, id, offset, str) => {
-    const { fileIndex } = findDocPosition(id, 'kno')
-    const replacement = `<span class="knowledge-tag" data-knowledge-id="${id}" data-file-index="${fileIndex}">${fileIndex >= 0 ? fileIndex + 1 : id}</span>`
+    const { fileIndex, doc } = findDocPosition(id, 'kno')
+    const isHidden = doc && props.hideAttachFiles && props.hideAttachFiles.some((item) => item === doc.fileId)
+    const displayText = isHidden ? '原文' : (fileIndex >= 0 ? fileIndex + 1 : id)
+    const replacement = `<span class="knowledge-tag" data-knowledge-id="${id}" data-file-index="${fileIndex}">${displayText}</span>`
 
     // 检查前面是否紧邻一个 fileIndex 相同的 kno_ 标签（包括已替换的 <span> 和未替换的原始标签）
     const before = str.substring(0, offset)
@@ -180,8 +187,12 @@ const processedMessage = computed(() => {
 
   // 处理 ann_ 标签：相邻且 fileIndex 相同的，只保留第一个，后面的替换为空
   result = result.replace(/`?\[\s?ann_(\d+)\s?\]`?/g, (match, id, offset, str) => {
-    const { fileIndex } = findDocPosition(id, 'ann')
-    const replacement = `<span class="ann-tag" data-ann-id="${id}" data-file-index="${fileIndex}">${fileIndex >= 0 ? fileIndex + 1 : id}</span>`
+    const { fileIndex, doc } = findDocPosition(id, 'ann')
+    console.log('ann_标签替换:',props.hideAttachFiles, {  doc })
+
+    const isHidden = doc && props.hideAttachFiles && props.hideAttachFiles.some((item) => item === doc.fileId)
+    const displayText = isHidden ? '原文' : (fileIndex >= 0 ? fileIndex + 1 : id)
+    const replacement = `<span class="ann-tag" data-ann-id="${id}" data-file-index="${fileIndex}">${displayText}</span>`
 
     const before = str.substring(0, offset)
     const tailMatch = before.match(/(<span class="ann-tag"[^>]*data-file-index="(\d+)"[^>]*>[^<]*<\/span>|`?\[\s?ann_(\d+)\s?\]`?)\s*$/)

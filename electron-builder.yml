@@ -39,13 +39,22 @@ mac:
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   hardenedRuntime: true
+  gatekeeperAssess: false
+  notarize:
+    teamId: ${ASC_PROVIDER}
   extendInfo:
     NSCameraUsageDescription: "糖源AI需要使用摄像头进行视频通话和拍照"
     NSMicrophoneUsageDescription: "糖源AI需要使用麦克风进行语音通话和录音"
     NSScreenCaptureUsageDescription: "糖源AI需要录制屏幕内容用于屏幕共享"
   target:
-    - target: 'default'
-      arch: 'x64'
+    - target: 'dmg'
+      arch:
+        - 'x64'
+        - 'arm64'
+    - target: 'zip'
+      arch:
+        - 'x64'
+        - 'arm64'
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false

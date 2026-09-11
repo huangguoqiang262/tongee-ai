@@ -212,6 +212,7 @@ const processedReasoning = computed(() => {
             :type="props.message.type"
             :retrieved-document-list="props.message.retrievedDocumentList"
             :message="props.message.textContent"
+            :hide-attach-files="props.hideAttachFiles"
             :use-annex-list="props.message.use_annex"
           ></MarkdownMessage>
           <div v-if="props.direction != 'right'" class="empty-message">
@@ -334,6 +335,7 @@ const processedReasoning = computed(() => {
               ref="markdownMessage"
               :type="props.message.type"
               :is-pre-view="true"
+              :hide-attach-files="props.hideAttachFiles"
               :message="props.message.textContent"
               :retrieved-document-list="props.message.retrievedDocumentList"
               :use-annex-list="props.message.use_annex"

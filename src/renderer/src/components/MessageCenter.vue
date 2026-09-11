@@ -125,7 +125,17 @@
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
                 <div class="title-box">
-                  <div class="title">{{ item.title }}</div>
+                  <div class="title-left">
+                    <div class="title">{{ item.title }}</div>
+                    <div v-if="item.user_status == 0" class="status">协同中</div>
+                    <div v-else-if="item.user_status == 1" class="status">已完成协同</div>
+                    <div v-else-if="item.user_status == 2" class="status">协同审批中</div>
+                    <div v-else-if="item.user_status == 3" class="status">已完成协同审批</div>
+                    <div v-else-if="item.user_status == 4" class="status">入库审批中</div>
+                    <div v-else-if="item.user_status == 5" class="status">已完成入库审批</div>
+                    <div v-else-if="item.user_status == 6" class="status">待反馈</div>
+                    <div v-else-if="item.user_status == 7" class="status">已反馈</div>
+                  </div>
                   <div class="time">{{ formatTimeFun(item.createtime) }}</div>
                 </div>
                 <div class="author">
@@ -1160,14 +1170,38 @@ watchEffect(() => {
                 margin-bottom: 8px;
                 overflow: hidden;
 
-                .title {
+                .title-left {
                   flex: 1;
-                  font-size: 14px;
-                  color: var(--default-font-color);
-                  line-height: 22px;
-                  text-overflow: ellipsis;
-                  white-space: nowrap;
+                  display: flex;
+                  align-items: center;
                   overflow: hidden;
+                  gap: 0 10px;
+                  .title {
+                    max-width: calc(100% - 90px);
+                    font-size: 14px;
+                    color: var(--default-font-color);
+                    line-height: 22px;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    overflow: hidden;
+                  }
+                  .status {
+                    flex-shrink: 0;
+                    box-sizing: border-box;
+                    padding: 0 6px;
+                    font-size: 10px;
+                    color: var(--el-color-primary);
+                    line-height: 14px;
+                    height: 16px;
+                    background: var(--el-color-primary-light-9);
+                    border-radius: 2px;
+                    border: 1px solid var(--el-color-primary);
+                    &.err-status {
+                      color: var(--el-danger-color);
+                      border-color: var(--el-danger-color);
+                      background: var(--el-danger-color-light-9);
+                    }
+                  }
                 }
 
                 .time {
