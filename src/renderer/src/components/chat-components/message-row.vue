@@ -337,6 +337,7 @@ const againText = (text) => {
             :message="props.message.textContent"
             :retrieved-document-list="props.message.retrievedDocumentList"
             :use-annex-list="props.message.use_annex"
+            :hide-attach-files="props.hideAttachFiles"
             @click="againText(props.message.textContent)"
           ></MarkdownMessage>
           <div v-if="props.direction != 'right'" class="empty-message">
@@ -483,6 +484,7 @@ const againText = (text) => {
             :type="props.message.type"
             :message="props.message.textContent"
             :is-pre-view="props.isPreView"
+            :hide-attach-files="props.hideAttachFiles"
             :retrieved-document-list="props.message.retrievedDocumentList"
             :use-annex-list="props.message.use_annex"
           ></MarkdownMessage>
