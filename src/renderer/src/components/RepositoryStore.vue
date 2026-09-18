@@ -2871,7 +2871,7 @@ const handleContextMenuAction = ({ action }) => {
     // 导出
     downloadFile(
       activeFiles.value[0]?.info.url,
-      `${activeFiles.value[0]?.info.title.split('.')[0] || '文件'}-${new Date().getTime()}.${activeFiles.value[0]?.info.title.split('.').pop()}`
+      `${activeFiles.value[0]?.info.title || ''}`
     )
   } else if (action === 'delete') {
     let tempFiles = JSON.parse(JSON.stringify(activeFiles.value))
