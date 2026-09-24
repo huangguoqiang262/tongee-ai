@@ -48,6 +48,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Unlock macOS keychain
+        run: security unlock-keychain -p "" login.keychain-db
+
       - name: Build and notarize Electron app
         run: npm run build:mac
         env:
