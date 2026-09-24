@@ -49,7 +49,33 @@ jobs:
         run: npm ci
 
       - name: Build and notarize Electron app
-        run: npm run build:mac
+        shell: bash
+        run: |
+          set -o pipefail
+          max_attempts=3
+
+          for attempt in $(seq 1 "$max_attempts"); do
+            log_file="$(mktemp)"
+            echo "Starting macOS build and notarization (attempt ${attempt}/${max_attempts})"
+
+            if npm run build:mac 2>&1 | tee "$log_file"; then
+              exit 0
+            fi
+
+            if ! grep -Eq 'NSURLErrorDomain Code=-1009|No network route|The Internet connection appears to be offline' "$log_file"; then
+              echo "Build failed for a non-network reason; not retrying."
+              exit 1
+            fi
+
+            if [ "$attempt" -eq "$max_attempts" ]; then
+              echo "Apple notarization remained unreachable after ${max_attempts} attempts."
+              exit 1
+            fi
+
+            wait_seconds=$((attempt * 60))
+            echo "Apple notarization was temporarily unreachable; retrying in ${wait_seconds}s."
+            sleep "$wait_seconds"
+          done
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
