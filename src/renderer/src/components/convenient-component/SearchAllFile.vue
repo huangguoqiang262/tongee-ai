@@ -16,7 +16,7 @@
         <div v-if="fileList.length" v-loading="loading"  class="all-file-box">
             <div class="all-file-content" :infinite-scroll-distance="1" v-infinite-scroll="loadData">
                 <div class="list-item" v-for="item in fileList" :key="item.id"
-                    @contextmenu="showContextMenu(item, $event)" @click="detailChange(item, $event, index)">
+                    @contextmenu="showContextMenu(item, $event)" @click="detailChange(item)">
                     <div class="item-right">
                         <div class="title">
                             <!-- 将字符串分割为每个字符 -->
@@ -76,13 +76,13 @@
     </div>
 </template>
 <script>
-import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import cloneDeep from 'lodash.clonedeep'
-import { useCheckLogin, useUserInfo } from '@renderer/hooks/checkLogin'
+import { useCheckLogin } from '@renderer/hooks/checkLogin'
 import { useUserStore } from '@renderer/stores/user'
 import { get_user_knows } from '@renderer/api/chat'
 import { search_know_files } from '@renderer/api/repository'
 import { user_info } from '@renderer/api/user'
+import { syncMentionedByText } from '@renderer/utils/mention'
 import excelIcon from '@renderer/assets/file-icons/excel-icon.png'
 import imgIcon from '@renderer/assets/file-icons/img-icon.png'
 import videoIcon from '@renderer/assets/file-icons/video-icon.png'
@@ -92,6 +92,7 @@ import txtIcon from '@renderer/assets/file-icons/txt-icon.png'
 import wordIcon from '@renderer/assets/file-icons/word-icon.png'
 import webPageIcon from '@renderer/assets/file-icons/web-page-icon.png'
 import csvIcon from '@renderer/assets/file-icons/csv-icon.png'
+import catalogueIcon from '@renderer/assets/upload-files/catalogue-icon.png'
 import noteIcon from '@renderer/assets/menu/note-icon.png'
 import noteSmallIcon from '@renderer/assets/notebook/notebook-small.png'
 import openLocationIcon from '@renderer/assets/contextMenu/open-location-icon.png'
@@ -100,7 +101,6 @@ import repositoryIcon from '@renderer/assets/menu/repository-icon.png'
 export default {
     name: 'MessageInput',
     components: {
-        defaultCoverSvg,
         searchBtn
     },
     inject: ['addNewTab', 'replaceActiveTab'],
@@ -127,8 +127,13 @@ export default {
             total: 0,
             contextMenu: { show: false, x: 0, y: 0, actionSheet: [] },
             activeItem: {},
-            hasSearched: false,
-            loading: false
+            hasSearched: false
+        }
+    },
+    watch: {
+        // 全选删除、清空、剪切等操作不会触发 whole-remove，这里以文本为准兜底同步
+        'message.text'() {
+            this.syncMentioned()
         }
     },
     async mounted() {
@@ -217,7 +222,7 @@ export default {
                 this.loading = false
             })
         },
-        detailChange(item, e, i) {
+        detailChange(item) {
             if (item.item_type == 3) {
                 this.addNewTab({
                     icon: item.info?.logo || this.getFileIcon(item),
@@ -270,6 +275,13 @@ export default {
                     userStore.updateUser(res.data?.user_info)
                 }
             })
+        },
+        // 依据输入框文本同步引用的知识库，兜底处理不会触发 whole-remove 的删除方式
+        syncMentioned() {
+            const next = syncMentionedByText(this.message.text, this.mentioned)
+            if (next !== this.mentioned) {
+                this.mentioned = next
+            }
         },
         handleWholeRemove(e) {
             // 如果删除的是"所有知识库"，清空所有 mentioned
@@ -651,6 +663,7 @@ export default {
                         display: -webkit-box;
                         -webkit-box-orient: vertical;
                         -webkit-line-clamp: 2;
+                        line-clamp: 2;
                         overflow: hidden;
                         text-overflow: ellipsis;
 

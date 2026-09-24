@@ -496,8 +496,16 @@ const removePerson = (data, task_type) => {
 .SynergiaUpload-box {
   :deep(.SynergiaUpload-box-dialog) {
     .el-dialog {
-      height: 672px;
-      min-width: 1060px;
+      --synergia-dialog-width: 1060px;
+      --synergia-dialog-height: 672px;
+      --synergia-statistics-height: 172px;
+      --synergia-statistics-title-margin: 30px;
+      --synergia-content-height: 428px;
+
+      width: min(var(--synergia-dialog-width), calc(100vw - 32px)) !important;
+      height: min(var(--synergia-dialog-height), calc(100dvh - 32px));
+      max-height: calc(100dvh - 32px);
+      min-width: 0;
       padding: 17px 20px 20px;
       .el-dialog__header {
         padding-bottom: 10px;
@@ -550,19 +558,19 @@ const removePerson = (data, task_type) => {
         font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
-        overflow: hidden;
+        overflow: auto;
 
         .form-box {
           box-sizing: border-box;
           .statistics-box {
             box-sizing: border-box;
             padding: 20px;
-            height: 172px;
+            height: var(--synergia-statistics-height);
             width: 100%;
             background: #f9f9f9;
             border-radius: 10px;
             .statistics-title {
-              margin-bottom: 30px;
+              margin-bottom: var(--synergia-statistics-title-margin);
               font-weight: 500;
               font-size: 14px;
               color: var(--default-font-color);
@@ -605,7 +613,7 @@ const removePerson = (data, task_type) => {
           .content-box {
             box-sizing: border-box;
             width: 100%;
-            height: calc(600px - 172px);
+            height: min(var(--synergia-content-height), calc(100dvh - 216px));
             background: #fff;
             border-radius: 10px;
             display: flex;
@@ -907,6 +915,20 @@ const removePerson = (data, task_type) => {
             }
           }
         }
+      }
+    }
+  }
+}
+
+@media (max-height: 800px) {
+  .SynergiaUpload-box {
+    :deep(.SynergiaUpload-box-dialog) {
+      .el-dialog {
+        --synergia-dialog-width: 920px;
+        --synergia-dialog-height: 560px;
+        --synergia-statistics-height: 140px;
+        --synergia-statistics-title-margin: 18px;
+        --synergia-content-height: 344px;
       }
     }
   }

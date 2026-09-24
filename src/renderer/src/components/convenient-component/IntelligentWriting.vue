@@ -264,6 +264,7 @@
 import { doc_create_count, doc_type_tree } from '@renderer/api/IntelligentWriting'
 import { useUserStore } from '@renderer/stores/user'
 import { get_user_knows } from '@renderer/api/chat'
+import { syncMentionedByText } from '@renderer/utils/mention'
 import cloneDeep from 'lodash.clonedeep'
 import { ref, watch, nextTick, onMounted, inject } from 'vue'
 import sendSvgIcon from '@renderer/assets/send-icon.svg'
@@ -344,6 +345,17 @@ const message = ref({
   text: '',
   image: ''
 })
+// 全选删除、清空、剪切等操作不会触发 whole-remove，这里以文本为准兜底同步
+// 注意：知识库引用的输入框绑定的是 activeRepository（而非 message.text）
+watch(
+  () => activeRepository.value,
+  (text) => {
+    const next = syncMentionedByText(text, mentioned.value)
+    if (next !== mentioned.value) {
+      mentioned.value = next
+    }
+  }
+)
 const emit = defineEmits(['closeMenu'])
 const closeMenu = () => {
   emit('closeMenu')

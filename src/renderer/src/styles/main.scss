@@ -99,9 +99,13 @@ body {
   height: 100vh;
 }
 .el-overlay {
+  --app-dialog-viewport-gutter: 16px;
+
   background-color: rgba(216, 216, 216, 0.5) !important;
   user-select: none;
   .el-overlay-dialog {
+    box-sizing: border-box;
+    padding: var(--app-dialog-viewport-gutter);
     user-select: none;
   }
   .el-message-box {
@@ -111,9 +115,26 @@ body {
     }
   }
   .el-dialog {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+    min-width: 0 !important;
     padding: 17px 20px;
     box-shadow: 0px 2px 60px 8px rgba(0, 0, 0, 0.07);
     border-radius: 16px !important;
+
+    .el-dialog__header,
+    .el-dialog__footer {
+      flex: 0 0 auto;
+    }
+
+    .el-dialog__body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto !important;
+    }
   }
 }
 .el-splitter-bar__dragger::before,
