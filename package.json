@@ -47,7 +47,7 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@vitejs/plugin-vue": "^6.0.0",
     "electron": "^39.2.7",
-    "electron-builder": "^26.4.0",
+    "electron-builder": "26.16.1",
     "electron-icon-builder": "^2.0.1",
     "electron-vite": "^4.0.0",
     "eslint": "^9.31.0",

@@ -46,10 +46,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
-
-      - name: Unlock macOS keychain
-        run: security unlock-keychain -p "" login.keychain-db
+        run: npm ci
 
       - name: Build and notarize Electron app
         run: npm run build:mac
