@@ -487,8 +487,14 @@ const approversCheckChange = () => {
 .SynergiaUpload-box {
   :deep(.SynergiaUpload-box-dialog) {
     .el-dialog {
-      height: 672px;
-      min-width: 1060px;
+      --synergia-dialog-width: 1060px;
+      --synergia-dialog-height: 672px;
+      --synergia-content-height: 596px;
+
+      width: min(var(--synergia-dialog-width), calc(100vw - 32px)) !important;
+      height: min(var(--synergia-dialog-height), calc(100dvh - 32px));
+      max-height: calc(100dvh - 32px);
+      min-width: 0;
       padding: 17px 20px 20px;
       .el-dialog__header {
         padding-bottom: 10px;
@@ -511,14 +517,14 @@ const approversCheckChange = () => {
         font-size: 14px;
         color: var(--default-font-color);
         line-height: 22px;
-        overflow: hidden;
+        overflow: auto;
 
         .form-box {
           box-sizing: border-box;
           .content-box {
             box-sizing: border-box;
             width: 100%;
-            height: 596px;
+            height: min(var(--synergia-content-height), calc(100dvh - 120px));
             background: #fff;
             border-radius: 10px;
             border: 1px solid #efefef;
@@ -811,6 +817,18 @@ const approversCheckChange = () => {
             }
           }
         }
+      }
+    }
+  }
+}
+
+@media (max-height: 800px) {
+  .SynergiaUpload-box {
+    :deep(.SynergiaUpload-box-dialog) {
+      .el-dialog {
+        --synergia-dialog-width: 920px;
+        --synergia-dialog-height: 560px;
+        --synergia-content-height: 484px;
       }
     }
   }

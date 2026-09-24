@@ -8,6 +8,7 @@ import {
   protocol,
   dialog,
   shell,
+  screen,
   webFrameMain
 } from 'electron'
 // 在文件顶部添加导入
@@ -320,13 +321,51 @@ if (!gotTheLock) {
     }
   })
 }
+const preferredWindowSize = { width: 1260, height: 800 }
+const preferredMinimumWindowSize = { width: 960, height: 640 }
+
+function getWindowSizeForDisplay(display) {
+  const { width, height } = display.workAreaSize
+
+  return {
+    width: Math.min(preferredWindowSize.width, width),
+    height: Math.min(preferredWindowSize.height, height),
+    minWidth: Math.min(preferredMinimumWindowSize.width, width),
+    minHeight: Math.min(preferredMinimumWindowSize.height, height)
+  }
+}
+
+function keepWindowInWorkArea(window, display = screen.getDisplayMatching(window.getBounds())) {
+  if (!window || window.isDestroyed()) return
+
+  const { x, y, width: workAreaWidth, height: workAreaHeight } = display.workArea
+  const size = getWindowSizeForDisplay(display)
+  window.setMinimumSize(size.minWidth, size.minHeight)
+
+  if (window.isMaximized() || window.isFullScreen()) return
+
+  const bounds = window.getBounds()
+  const width = Math.min(bounds.width, workAreaWidth)
+  const height = Math.min(bounds.height, workAreaHeight)
+  const maxX = x + workAreaWidth - width
+  const maxY = y + workAreaHeight - height
+
+  window.setBounds({
+    x: Math.min(Math.max(bounds.x, x), maxX),
+    y: Math.min(Math.max(bounds.y, y), maxY),
+    width,
+    height
+  })
+}
+
 function createWindow() {
   // Create the browser window.
+  const size = getWindowSizeForDisplay(screen.getPrimaryDisplay())
   mainWindow = new BrowserWindow({
-    width: 1260, // 初始宽度
-    height: 800, // 初始高度
-    minWidth: 1260, // 最小宽度
-    minHeight: 800, // 最小高度
+    width: size.width,
+    height: size.height,
+    minWidth: size.minWidth,
+    minHeight: size.minHeight,
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
@@ -384,7 +423,7 @@ function createWindow() {
         normalizedUrl.includes('meet.jit.si') ||
         normalizedUrl.includes('192.168.1.187:9999') ||
         normalizedUrl.includes('192.168.11.241:9999')
-      
+
       if (isPolicyRelevantDoc && isJitsiRelated) {
         // 移除或修改 CSP 头，允许 Worker 和跨源资源加载
         const cspKey = Object.keys(responseHeaders).find(
@@ -596,6 +635,13 @@ ipcMain.handle('open-directory-dialog', async () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   initScreenshoots()
+  screen.on('display-metrics-changed', (_, display, changedMetrics) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    if (!changedMetrics.includes('workArea') && !changedMetrics.includes('scaleFactor')) return
+
+    const windowDisplay = screen.getDisplayMatching(mainWindow.getBounds())
+    if (windowDisplay.id === display.id) keepWindowInWorkArea(mainWindow, windowDisplay)
+  })
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.tongee.ai')
   // 创建系统托盘

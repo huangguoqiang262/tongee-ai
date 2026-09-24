@@ -142,6 +142,7 @@
 import sendSvgIcon from '@renderer/assets/send-icon.svg'
 import DialogueSettingsSvgIcon from '@renderer/assets/chat-icon/dialogueSettings-icon.svg'
 import { get_user_knows } from '@renderer/api/chat'
+import { syncMentionedByText } from '@renderer/utils/mention'
 export default {
   name: 'RepositoryChatInput',
   components: {
@@ -228,6 +229,10 @@ export default {
         }
       },
       immediate: true
+    },
+    // 全选删除、清空、剪切等操作不会触发 whole-remove，这里以文本为准兜底同步
+    'message.text'() {
+      this.syncMentioned()
     }
   },
   mounted() {
@@ -285,6 +290,14 @@ export default {
         }
         this.mentionOptions = list
       })
+    },
+    // 依据输入框文本同步引用的知识库，兜底处理不会触发 whole-remove 的删除方式
+    syncMentioned() {
+      const next = syncMentionedByText(this.message.text, this.mentioned)
+      if (next !== this.mentioned) {
+        this.mentioned = next
+        this.$emit('mention-change', this.mentioned)
+      }
     },
     handleWholeRemove(e) {
       // 如果删除的是"所有知识库"，清空所有 mentioned
