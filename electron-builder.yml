@@ -34,7 +34,7 @@ nsis:
   include: build/installer.nsh
 mac:
   category: public.app-category.utilities
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${name}-${version}-mac-${arch}.${ext}
   icon: build/icon.icns
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
