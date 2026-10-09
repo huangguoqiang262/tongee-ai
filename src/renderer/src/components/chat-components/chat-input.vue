@@ -759,6 +759,8 @@ export default {
           if (this.checkIfSearchingMention(this.message.text)) {
             return
           }
+          // 发送前兜底同步一次引用，避免全选覆盖等场景残留
+          this.syncMentioned()
           this.$emit('send', this.message)
           this.fileList = []
           this.message = { text: '', image: '' }
@@ -772,6 +774,8 @@ export default {
           })
           return
         }
+        // 发送前兜底同步一次引用，避免全选覆盖等场景残留
+        this.syncMentioned()
         this.$emit('send', this.message)
         this.fileList = []
         this.message = { text: '', image: '' }

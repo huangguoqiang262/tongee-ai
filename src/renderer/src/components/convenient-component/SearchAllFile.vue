@@ -475,9 +475,8 @@ export default {
             if (!useCheckLogin().value) {
                 return
             }
-            if (!/@[^\s]+/g.test(this.message.text)) {
-                this.mentioned = []
-            }
+            // 发送前兜底同步一次引用，避免全选覆盖等场景残留
+            this.syncMentioned()
             if (this.message.text.trim().length) {
                 // 检查是否包含 _all_，如果有则展开所有知识库
                 var hasAll = this.mentioned.some((item) => item.know_key === '_all_')
