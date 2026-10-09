@@ -932,6 +932,8 @@ export default {
       this.handleSendClick()
     },
     handleSendClick() {
+      // 发送前兜底同步一次引用，避免全选覆盖等场景残留（watcher 未及时触发时的最终防线）
+      this.syncMentioned()
       if (!useCheckLogin().value) {
         return
       }

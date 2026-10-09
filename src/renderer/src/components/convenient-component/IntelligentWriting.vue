@@ -356,6 +356,13 @@ watch(
     }
   }
 )
+// 发送时也会调用，兜底处理 watcher 未触发的场景（如全选后输入覆盖）
+const syncMentioned = () => {
+  const next = syncMentionedByText(activeRepository.value, mentioned.value)
+  if (next !== mentioned.value) {
+    mentioned.value = next
+  }
+}
 const emit = defineEmits(['closeMenu'])
 const closeMenu = () => {
   emit('closeMenu')
@@ -393,6 +400,8 @@ const getTree = () => {
 const localfileList = ref([])
 // 处理发送点击
 const handleSendClick = () => {
+  // 发送前兜底同步一次引用，避免全选覆盖等场景残留
+  syncMentioned()
   if (message.value.text.trim().length) {
     var prompt = `
     ${activeFirstTab.value.title}

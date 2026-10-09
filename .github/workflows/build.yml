@@ -2,9 +2,9 @@ name: Build Electron App
 
 on:
   push:
-    branches: [dev]
+    branches: [tangji]
   pull_request:
-    branches: [dev]
+    branches: [tangji]
 
 jobs:
   build-windows:
