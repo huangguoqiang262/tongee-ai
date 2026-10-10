@@ -63,6 +63,7 @@ import settingIcon from '@renderer/assets/menu/setting-icon.png'
 import defaultCoverSvg from '@renderer/assets/repository/default-cover.svg'
 import defaultAvatar from '@renderer/assets/default-avatar.png'
 const addNewTab = inject('addNewTab')
+const showMangement = ref(false)
 const menuList = ref([
   {
     name: '知识库',
@@ -73,11 +74,6 @@ const menuList = ref([
     name: '笔记',
     url: 'Note',
     icon: noteIcon
-  },
-  {
-    name: '管理后台',
-    url: 'Management',
-    icon: managementIcon
   }
 ])
 const recordMenuList = ref([
@@ -165,6 +161,14 @@ const getUnreadCount = () => {
             obj.details[item.type] = item.count
           }
         })
+        if (res.data.is_site_admin != 0) {
+          menuList.value.splice(2,1,{
+            name: '管理后台',
+            url: 'Management',
+            icon: managementIcon
+          })
+          
+        }
         userStore.updateTips(obj)
       }
     })

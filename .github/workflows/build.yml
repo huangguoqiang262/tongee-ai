@@ -32,6 +32,7 @@ jobs:
           path: |
             dist/*.exe
             dist/*.yml
+            dist/*.blockmap
 
   build-macos:
     runs-on: macos-latest
