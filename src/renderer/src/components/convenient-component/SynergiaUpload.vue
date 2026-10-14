@@ -489,7 +489,7 @@ const approversCheckChange = () => {
     .el-dialog {
       --synergia-dialog-width: 1060px;
       --synergia-dialog-height: 672px;
-      --synergia-content-height: 596px;
+      --synergia-content-height: 592px;
 
       width: min(var(--synergia-dialog-width), calc(100vw - 32px)) !important;
       height: min(var(--synergia-dialog-height), calc(100dvh - 32px));
@@ -828,7 +828,7 @@ const approversCheckChange = () => {
       .el-dialog {
         --synergia-dialog-width: 920px;
         --synergia-dialog-height: 560px;
-        --synergia-content-height: 484px;
+        --synergia-content-height: 480px;
       }
     }
   }
