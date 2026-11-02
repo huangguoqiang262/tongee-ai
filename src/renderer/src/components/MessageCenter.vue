@@ -121,20 +121,23 @@
         </div>
         <div v-if="activeTab == '4'" class="synergia-box">
           <div v-if="synergiaMsgList.length" :infinite-scroll-distance="1" v-infinite-scroll="loadData" class="synergia-list">
-            <div v-for="(item, index) in synergiaMsgList" :key="index" class="list-item" @click="lookSystem(item)">
+            <div v-for="(item, index) in synergiaMsgList" :key="index" class="list-item" :class="{'invalid': item.is_invalid == 1}" @click="lookSystem(item)">
               <FileSvgShadowIcon class="left-icon" />
               <div class="center-box">
                 <div class="title-box">
                   <div class="title-left">
                     <div class="title">{{ item.title }}</div>
-                    <div v-if="item.user_status == 0" class="status">协同中</div>
-                    <div v-else-if="item.user_status == 1" class="status">已完成协同</div>
-                    <div v-else-if="item.user_status == 2" class="status">协同审批中</div>
-                    <div v-else-if="item.user_status == 3" class="status">已完成协同审批</div>
-                    <div v-else-if="item.user_status == 4" class="status">入库审批中</div>
-                    <div v-else-if="item.user_status == 5" class="status">已完成入库审批</div>
-                    <div v-else-if="item.user_status == 6" class="status">待反馈</div>
-                    <div v-else-if="item.user_status == 7" class="status">已反馈</div>
+                    <template v-if="item.is_invalid != 1">
+                      <div v-if="item.user_status == 0" class="status">协同中</div>
+                      <div v-else-if="item.user_status == 1" class="status">已完成协同</div>
+                      <div v-else-if="item.user_status == 2" class="status">协同审批中</div>
+                      <div v-else-if="item.user_status == 3" class="status">已完成协同审批</div>
+                      <div v-else-if="item.user_status == 4" class="status">入库审批中</div>
+                      <div v-else-if="item.user_status == 5" class="status">已完成入库审批</div>
+                      <div v-else-if="item.user_status == 6" class="status">待反馈</div>
+                      <div v-else-if="item.user_status == 7" class="status">已反馈</div>
+                    </template>
+                    <div v-else class="status">已失效</div>
                   </div>
                   <div class="time">{{ formatTimeFun(item.createtime) }}</div>
                 </div>
@@ -274,6 +277,9 @@ const refuseRules = ref({
 const addNewTab = inject('addNewTab')
 const msgTips = useMsgTips()
 const lookSystem = (item) => {
+  if (item.is_invalid == 1) {
+  return false
+  }
   addNewTab({
     icon: getFileIcon(item),
     title: item.process_title,
@@ -1147,6 +1153,10 @@ watchEffect(() => {
             justify-content: space-between;
             gap: 20px;
             cursor: pointer;
+            &.invalid {
+              filter: grayscale(1);
+              cursor: not-allowed;
+            }
             &:last-child {
               border-bottom: none;
             }
