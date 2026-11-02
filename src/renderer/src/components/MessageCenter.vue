@@ -171,8 +171,8 @@
                     >
                   </div> -->
                   <div v-if="item.user_status == 4 && item.msg_type == 6" class="handle-box">
-                    <el-button class="btn-refuse" size="small" @click="handleRefuse(item)">拒绝</el-button>
-                    <el-button class="btn-agree" type="primary" size="small" @click="handleAgree(item)">同意</el-button>
+                    <el-button class="btn-refuse" size="small" @click.stop="handleRefuse(item)">拒绝</el-button>
+                    <el-button class="btn-agree" type="primary" size="small" @click.stop="handleAgree(item)">同意</el-button>
                   </div>
                 </div>
               </div>
