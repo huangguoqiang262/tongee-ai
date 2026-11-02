@@ -161,13 +161,18 @@ const getUnreadCount = () => {
             obj.details[item.type] = item.count
           }
         })
-        if (res.data.is_site_admin != 0) {
-          menuList.value.splice(2,1,{
-            name: '管理后台',
-            url: 'Management',
-            icon: managementIcon
-          })
-          
+        if (res.data.is_site_admin == 1) {
+          if (menuList.value.length < 3) {
+            menuList.value.splice(2,1,{
+              name: '管理后台',
+              url: 'Management',
+              icon: managementIcon
+            })
+          }
+        } else if (res.data.is_site_admin == 0){
+          if (menuList.value.length > 2) {
+            menuList.value.splice(2,1)
+          }
         }
         userStore.updateTips(obj)
       }
@@ -182,6 +187,9 @@ const getUnreadCount = () => {
           4: 0 // 协同通知
         }
       })
+      if (menuList.value.length > 2) {
+        menuList.value.splice(2,1)
+      }
     })
 }
 const getList = () => {
@@ -205,6 +213,10 @@ onBeforeMount(() => {
     if (userInfo.value.id) {
       getList()
       getUnreadCount()
+    } else {
+      if (menuList.value.length > 2) {
+        menuList.value.splice(2,1)
+      }
     }
   }, 10000)
 })

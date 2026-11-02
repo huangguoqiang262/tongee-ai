@@ -12,13 +12,25 @@
                   >确认通过</el-button
                 >
               </template>
-              <el-button
-                v-else-if="user_status == 2"
-                class="btn"
-                size="small"
-                @click="approverInbound"
-                >批准入库</el-button
-              >
+              <template v-else-if="user_status == 2">
+                <el-popover
+                  placement="bottom-start"
+                  :width="90"
+                  trigger="hover"
+                >
+                  <template #reference>
+                    <el-button class="btn" size="small" type="danger">退回</el-button>
+                  </template>
+                  <template #default>
+                    <div class="send-back-box">
+                      <div class="send-back-chilren" @click="backCreate">退至发起人</div>
+                      <div class="send-back-chilren" @click="backAll">退至协同人</div>
+                    </div>
+                  </template>
+                </el-popover>
+                
+                <el-button class="btn" size="small" type="primary" @click="approverInbound">批准入库</el-button>
+              </template>
             </template>
             <div v-if="!chatVisible" class="open-chat" @click="openChat">
               <img class="logo" src="@renderer/assets/logo.png" alt="" />
@@ -39,7 +51,7 @@
           :file-name="fileName"
           :file-key="fileKey"
           :download="download"
-          :mode="user_status == 0 || (is_creator == 1 && status == 1) ? 'edit' : 'view'"
+          :mode="user_status == 0 || (is_creator == 1 && status == 1) || user_status == 2 ? 'edit' : 'view'"
         />
       </el-splitter-panel>
       <el-splitter-panel v-if="chatVisible" :min="375" :size="375" class="right-box">
@@ -60,7 +72,8 @@ import {
   get_project_user_status,
   synergia_simple_feedback,
   synergia_task_complete,
-  synergia_complete_approve
+  synergia_complete_approve,
+  rollback_to_processing
 } from '@renderer/api/repository'
 const props = defineProps({
   attrs: {
@@ -102,6 +115,57 @@ const getDetailStatus = () => {
     .finally(() => {
       loading.value = true
     })
+}
+// 退回公共处理
+// rollback_to: creator 退回至发起人  all 退回全部
+const handleRollback = (rollbackTo, title, successMsg) => {
+  // eslint-disable-next-line no-undef
+  ElMessageBox.prompt(`确定要${title}吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+    inputType: 'textarea',
+    inputPlaceholder: '请输入退回原因',
+    customClass: 'rollback-prompt',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) return '请输入退回原因'
+      // if (value.trim().length > 200) return '退回原因不能超过200个字符'
+      return true
+    }
+  })
+    .then(({ value }) => {
+      // eslint-disable-next-line no-undef
+      let loadcontext = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      })
+      rollback_to_processing({
+        item_id: props.attrs.itemId || '',
+        reason: value.trim(),
+        rollback_to: rollbackTo
+      })
+        .then((res) => {
+          if (res.code == 200) {
+            // eslint-disable-next-line no-undef
+            ElMessage.primary(successMsg)
+            // getDetailStatus()
+          }
+        })
+        .finally(() => {
+          loadcontext.close()
+          getDetailStatus()
+        })
+    })
+    .catch(() => {})
+}
+// 退回创建者（rollback_to: creator 退回至发起人）
+const backCreate = () => {
+  handleRollback('creator', '退回至发起人', '退回成功')
+}
+// 退回全部（rollback_to: all 退回全部）
+const backAll = () => {
+  handleRollback('all', '退回全部', '退回成功')
 }
 // 确认反馈
 const confirmFeedback = () => {
@@ -192,6 +256,27 @@ watchEffect(() => {
 })
 </script>
 <style scoped lang="scss">
+.send-back-box {
+  .send-back-chilren {
+    border-radius: 6px;
+    width: 100%;
+    height: 38px;
+    margin-bottom: 6px;
+    line-height: 36px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--el-color-danger);
+    border: 1px solid var(--el-color-danger);
+    background: var(--el-color-danger-light-9);
+    cursor: pointer;
+    &:nth-last-of-type(1) {
+      margin: 0;
+    }
+    &:hover {
+      background: var(--el-color-danger-light-8);
+    }
+  }
+}
 .document-detail {
   width: 100%;
   height: 100%;
@@ -296,6 +381,17 @@ watchEffect(() => {
     // display: flex;
     // flex-direction: column;
     // border-left: 1px solid #efefef;
+  }
+}
+</style>
+<!-- 非 scoped：ElMessageBox 全局挂载到 body，需通过 customClass 限定作用域 -->
+<style lang="scss">
+.rollback-prompt {
+  .el-textarea__inner {
+    border-radius: 8px;
+    height: 96px;
+    resize: none;
+    line-height: 20px;
   }
 }
 </style>

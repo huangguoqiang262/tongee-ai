@@ -500,7 +500,7 @@ const removePerson = (data, task_type) => {
       --synergia-dialog-height: 672px;
       --synergia-statistics-height: 172px;
       --synergia-statistics-title-margin: 30px;
-      --synergia-content-height: 428px;
+      --synergia-content-height: 418px;
 
       width: min(var(--synergia-dialog-width), calc(100vw - 32px)) !important;
       height: min(var(--synergia-dialog-height), calc(100dvh - 32px));
@@ -926,9 +926,9 @@ const removePerson = (data, task_type) => {
       .el-dialog {
         --synergia-dialog-width: 920px;
         --synergia-dialog-height: 560px;
-        --synergia-statistics-height: 140px;
+        --synergia-statistics-height: 158px;
         --synergia-statistics-title-margin: 18px;
-        --synergia-content-height: 344px;
+        --synergia-content-height: 320px;
       }
     }
   }

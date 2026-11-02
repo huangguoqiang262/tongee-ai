@@ -367,6 +367,14 @@ export function getEditKey(data) {
     data
   })
 }
+// 审批回退到协同
+export function rollback_to_processing(data) {
+  return request({
+    url: '/collaboration/rollback_to_processing',
+    method: 'post',
+    data
+  })
+}
 // 获取文档历史版本列表
 // 注意: 历史版本的 key 必须与后端「保存该版本时」使用的 key 一致（即版本级 key，
 // 区别于协同会话用的 office_key）。前端无法凭空生成，必须由后端返回。

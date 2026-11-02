@@ -341,7 +341,7 @@ const config = ref({
       change: true
     },
     callbackUrl:
-      import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + props.fileKey || '', // 默认回调为 Document Server，自行在后端实现保存回调接口
+      import.meta.env.VITE_API_BASE_ONLYOFFICE_CALLBACK_URL + '&file_key=' + (props.fileKey || '') + '&last_edit_ding_uid='+(users.id || ''), // 默认回调为 Document Server，自行在后端实现保存回调接口
     user: users
   }
 
